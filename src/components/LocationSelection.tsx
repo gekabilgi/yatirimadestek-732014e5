@@ -28,15 +28,7 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
   const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
   const [districts, setDistricts] = useState<string[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
-
-  // Mock districts data - in real implementation, this could also come from database
-  const mockDistricts: Record<string, string[]> = {
-    "İstanbul": ["Bahçelievler", "Beşiktaş", "Beyoğlu", "Fatih", "Kadıköy", "Şişli", "Üsküdar"],
-    "Ankara": ["Altındağ", "Çankaya", "Etimesgut", "Keçiören", "Mamak", "Sincan", "Yenimahalle"],
-    "İzmir": ["Balçova", "Bayraklı", "Bornova", "Buca", "Çiğli", "Gaziemir", "Konak"],
-    "Bursa": ["Gemlik", "Gürsu", "İnegöl", "Karacabey", "Mudanya", "Nilüfer", "Osmangazi"],
-    "Kocaeli": ["Başiskele", "Çayırova", "Darıca", "Dilovası", "Gebze", "Gölcük", "İzmit"],
-  };
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -63,15 +55,43 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
   }, []);
 
   useEffect(() => {
-    if (selectedProvince) {
-      const provinceDistricts = mockDistricts[selectedProvince] || [];
-      setDistricts(provinceDistricts);
-      if (selectedDistrict && !provinceDistricts.includes(selectedDistrict)) {
-        onDistrictChange('');
+    const fetchDistricts = async () => {
+      if (!selectedProvince) {
+        setDistricts([]);
+        return;
       }
-    } else {
-      setDistricts([]);
-    }
+
+      setIsLoadingDistricts(true);
+      try {
+        const { data, error } = await supabase
+          .from('location_support')
+          .select('ilce')
+          .eq('il', selectedProvince)
+          .order('ilce');
+
+        if (error) {
+          console.error('Error fetching districts:', error);
+          setDistricts([]);
+          return;
+        }
+
+        // Extract unique district names
+        const uniqueDistricts = [...new Set(data.map(item => item.ilce))];
+        setDistricts(uniqueDistricts);
+        
+        // Reset district selection if current district is not in the new list
+        if (selectedDistrict && !uniqueDistricts.includes(selectedDistrict)) {
+          onDistrictChange('');
+        }
+      } catch (error) {
+        console.error('Error fetching districts:', error);
+        setDistricts([]);
+      } finally {
+        setIsLoadingDistricts(false);
+      }
+    };
+
+    fetchDistricts();
   }, [selectedProvince, selectedDistrict, onDistrictChange]);
 
   const handleProvinceChange = (province: string) => {
@@ -114,15 +134,17 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
           <Select 
             value={selectedDistrict} 
             onValueChange={onDistrictChange}
-            disabled={!selectedProvince || districts.length === 0}
+            disabled={!selectedProvince || isLoadingDistricts}
           >
             <SelectTrigger>
               <SelectValue placeholder={
                 !selectedProvince 
                   ? "Önce il seçiniz" 
-                  : districts.length === 0 
-                    ? "Bu il için ilçe bulunamadı" 
-                    : "İlçe seçiniz..."
+                  : isLoadingDistricts 
+                    ? "Yükleniyor..." 
+                    : districts.length === 0 
+                      ? "Bu il için ilçe bulunamadı" 
+                      : "İlçe seçiniz..."
               } />
             </SelectTrigger>
             <SelectContent>
