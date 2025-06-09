@@ -105,6 +105,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           osb_status: osbBoolean
         });
 
+        // Try with exact case-sensitive matching first
         const { data, error } = await supabase
           .from('sgk_durations')
           .select('alt_bolge')
@@ -125,8 +126,26 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           console.log('Setting alt bolge to:', altBolgeText);
           setAltBolge(altBolgeText);
         } else {
-          console.log('No alt bolge data found');
-          setAltBolge('');
+          // If no exact match, try case-insensitive matching
+          console.log('No exact match found, trying case-insensitive search...');
+          
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('sgk_durations')
+            .select('alt_bolge')
+            .ilike('province', selectedProvince)
+            .ilike('district', selectedDistrict)
+            .eq('osb_status', osbBoolean);
+
+          console.log('Fallback query result:', { fallbackData, fallbackError });
+
+          if (fallbackData && fallbackData.length > 0 && fallbackData[0].alt_bolge !== null) {
+            const altBolgeText = `${fallbackData[0].alt_bolge}. Alt Bölge`;
+            console.log('Setting alt bolge from fallback to:', altBolgeText);
+            setAltBolge(altBolgeText);
+          } else {
+            console.log('No alt bolge data found in fallback either');
+            setAltBolge('');
+          }
         }
       } catch (error) {
         console.error('Error fetching alt bolge:', error);
