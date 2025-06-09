@@ -149,21 +149,27 @@ export type Database = {
       }
       sgk_durations: {
         Row: {
-          district: string
-          osb_status: boolean
-          province: string
+          alt_bolge: number | null
+          bolge: number | null
+          district: string | null
+          osb_status: boolean | null
+          province: string | null
           sgk_duration: number | null
         }
         Insert: {
-          district: string
-          osb_status: boolean
-          province: string
+          alt_bolge?: number | null
+          bolge?: number | null
+          district?: string | null
+          osb_status?: boolean | null
+          province?: string | null
           sgk_duration?: number | null
         }
         Update: {
-          district?: string
-          osb_status?: boolean
-          province?: string
+          alt_bolge?: number | null
+          bolge?: number | null
+          district?: string | null
+          osb_status?: boolean | null
+          province?: string | null
           sgk_duration?: number | null
         }
         Relationships: []

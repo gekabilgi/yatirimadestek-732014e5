@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +28,8 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
   const [districts, setDistricts] = useState<string[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+  const [altBolge, setAltBolge] = useState<string>('');
+  const [isLoadingAltBolge, setIsLoadingAltBolge] = useState(false);
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -93,6 +94,48 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
 
     fetchDistricts();
   }, [selectedProvince, selectedDistrict, onDistrictChange]);
+
+  useEffect(() => {
+    const fetchAltBolge = async () => {
+      if (!selectedProvince || !selectedDistrict || !osbStatus) {
+        setAltBolge('');
+        return;
+      }
+
+      setIsLoadingAltBolge(true);
+      try {
+        const osbBoolean = osbStatus === "İÇİ";
+        
+        const { data, error } = await supabase
+          .from('sgk_durations')
+          .select('alt_bolge, bolge')
+          .eq('province', selectedProvince)
+          .eq('district', selectedDistrict)
+          .eq('osb_status', osbBoolean)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching alt bolge:', error);
+          setAltBolge('');
+          return;
+        }
+
+        if (data) {
+          const altBolgeText = data.alt_bolge ? `${data.alt_bolge}. Alt Bölge` : '';
+          setAltBolge(altBolgeText);
+        } else {
+          setAltBolge('');
+        }
+      } catch (error) {
+        console.error('Error fetching alt bolge:', error);
+        setAltBolge('');
+      } finally {
+        setIsLoadingAltBolge(false);
+      }
+    };
+
+    fetchAltBolge();
+  }, [selectedProvince, selectedDistrict, osbStatus]);
 
   const handleProvinceChange = (province: string) => {
     onProvinceChange(province);
@@ -184,6 +227,21 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
             <p className="text-sm text-muted-foreground">
               <strong>{selectedProvince}</strong> ili <strong>{getProvinceRegion(selectedProvince)}. Bölge</strong> kategorisindedir.
             </p>
+          </div>
+        )}
+
+        {selectedProvince && selectedDistrict && osbStatus && (
+          <div className="p-3 bg-secondary/20 rounded-lg border border-secondary/30">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Alt Bölge Bilgisi</p>
+              {isLoadingAltBolge ? (
+                <p className="text-sm">Yükleniyor...</p>
+              ) : altBolge ? (
+                <p className="font-semibold text-sm">{altBolge}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Bu lokasyon için alt bölge bilgisi bulunamadı</p>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
