@@ -3,7 +3,8 @@ import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Target, Star, Zap, Cpu, CheckCircle, XCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calculator, Target, Star, Zap, Cpu, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { UnifiedQueryData } from '@/components/UnifiedIncentiveQuery';
 import { IncentiveResult } from '@/types/incentive';
 import { LocationSupport } from '@/types/database';
@@ -25,6 +26,20 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
   isCalculating,
   setIsCalculating,
 }) => {
+  // Helper function to format percentage
+  const formatPercentage = (value: string): string => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return value;
+    return `%${(numValue * 100).toFixed(0)}`;
+  };
+
+  // Helper function to format currency
+  const formatCurrency = (value: string): string => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return value;
+    return `${numValue.toLocaleString('tr-TR')} TL`;
+  };
+
   const getProvinceRegion = async (provinceName: string): Promise<number> => {
     try {
       const { data, error } = await supabase
@@ -75,7 +90,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         .select('sgk_duration')
         .eq('province', province)
         .eq('district', district)
-        .eq('osb_status', osbBoolean)
+        .is('osb_status', osbBoolean)
         .maybeSingle();
 
       if (error) {
@@ -103,7 +118,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         .select('alt_bolge')
         .eq('province', province)
         .eq('district', district)
-        .eq('osb_status', osbBoolean)
+        .is('osb_status', osbBoolean)
         .maybeSingle();
 
       if (error) {
@@ -320,9 +335,9 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                   <div className="space-y-2">
                     <h5 className="font-medium text-sm text-blue-600">Hedef Yatırım Destekleri</h5>
                     <div className="text-xs space-y-1">
-                      <div>Vergi İndirimi: {incentiveResult.supports.target_tax_discount}</div>
-                      <div>Faiz Desteği: {incentiveResult.supports.target_interest_support}</div>
-                      <div>Üst Limit: {incentiveResult.supports.target_cap}</div>
+                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {incentiveResult.supports.target_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.target_tax_discount) : "N/A"}</div>
+                      <div>Faiz/Kar Payı Desteği Oranı: {incentiveResult.supports.target_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.target_interest_support) : "N/A"}</div>
+                      <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {incentiveResult.supports.target_cap !== "N/A" ? formatCurrency(incentiveResult.supports.target_cap) : "N/A"}</div>
                     </div>
                   </div>
                 )}
@@ -331,15 +346,29 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                   <div className="space-y-2">
                     <h5 className="font-medium text-sm text-green-600">Öncelikli Yatırım Destekleri</h5>
                     <div className="text-xs space-y-1">
-                      <div>Vergi İndirimi: {incentiveResult.supports.priority_tax_discount}</div>
-                      <div>Faiz Desteği: {incentiveResult.supports.priority_interest_support}</div>
-                      <div>Üst Limit: {incentiveResult.supports.priority_cap}</div>
+                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {incentiveResult.supports.priority_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.priority_tax_discount) : "N/A"}</div>
+                      <div>Faiz/Kar Payı Desteği Oranı: {incentiveResult.supports.priority_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.priority_interest_support) : "N/A"}</div>
+                      <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {incentiveResult.supports.priority_cap !== "N/A" ? formatCurrency(incentiveResult.supports.priority_cap) : "N/A"}</div>
+                      <div>Sabit Yatırım Tutarı Oranı Sınırı: {incentiveResult.supports.priority_cap_ratio !== "N/A" ? formatPercentage(incentiveResult.supports.priority_cap_ratio) : "N/A"}</div>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
+
+          {/* Warning about Faiz/Kar Payı limit */}
+          {((incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A") || 
+            (incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A")) && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının{" "}
+                {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && 
+                  formatPercentage(incentiveResult.supports.target_cap_ratio)}'unu geçemez.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {incentiveResult.sector.conditions && (
             <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">

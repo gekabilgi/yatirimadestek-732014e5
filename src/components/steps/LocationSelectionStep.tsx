@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -29,6 +28,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
   const [altBolge, setAltBolge] = useState<string>('');
+  const [isLoadingAltBolge, setIsLoadingAltBolge] = useState(false);
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -95,16 +95,37 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         return;
       }
 
+      setIsLoadingAltBolge(true);
       try {
         const osbBoolean = osbStatus === "İÇİ";
         
+        
+        console.log('Fetching alt_bolge for:', {
+          province: selectedProvince,
+          district: selectedDistrict,
+          osb_status: osbBoolean
+        });
+
+        // First, let's check what data exists in the table for debugging
+        const { data: allData, error: debugError } = await supabase
+          .from('sgk_durations')
+          .select('province, district, osb_status, alt_bolge')
+          .eq('province', selectedProvince)
+          .eq('district', selectedDistrict)
+          .is('osb_status', osbBoolean);
+        
+        console.log('All matching province data:', allData);
+        console.log('Debug error:', debugError);
+
+        // Now try the exact query
         const { data, error } = await supabase
           .from('sgk_durations')
           .select('alt_bolge')
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
-          .eq('osb_status', osbBoolean)
-          .maybeSingle();
+          .is('osb_status', osbBoolean);
+
+        console.log('Query result:', { data, error });
 
         if (error) {
           console.error('Error fetching alt bolge:', error);
@@ -112,11 +133,23 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           return;
         }
 
-        const altBolgeText = data?.alt_bolge ? `${data.alt_bolge}. Alt Bölge` : '';
-        setAltBolge(altBolgeText);
+        if (data && data.length > 0 && data[0].alt_bolge !== null) {
+          const altBolgeText = `${data[0].alt_bolge}. Alt Bölge`;
+          console.log('Found alt_bolge:', data[0].alt_bolge);
+          setAltBolge(altBolgeText);
+        } else {
+          console.log('No matching record found for:', {
+            province: selectedProvince,
+            district: selectedDistrict,
+            osb_status: osbBoolean
+          });
+          setAltBolge('');
+        }
       } catch (error) {
         console.error('Error fetching alt bolge:', error);
         setAltBolge('');
+      } finally {
+        setIsLoadingAltBolge(false);
       }
     };
 
@@ -124,18 +157,20 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   }, [selectedProvince, selectedDistrict, osbStatus]);
 
   const handleProvinceChange = (province: string) => {
+    // Reset district and OSB status when province changes
     onLocationUpdate({
       province,
       district: '',
-      osbStatus,
+      osbStatus: null,
     });
   };
 
   const handleDistrictChange = (district: string) => {
+    // Reset OSB status when district changes to ensure fresh calculation
     onLocationUpdate({
       province: selectedProvince,
       district,
-      osbStatus,
+      osbStatus: null,
     });
   };
 
@@ -224,15 +259,33 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
       {selectedProvince && (
         <div className="p-3 bg-muted rounded-lg">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary">{getProvinceRegion(selectedProvince)}. Bölge</Badge>
             <span className="text-sm text-muted-foreground">
               <strong>{selectedProvince}</strong> ili
             </span>
-            {altBolge && (
-              <>
-                <Badge variant="outline">{altBolge}</Badge>
-              </>
+            {selectedDistrict && (
+              <span className="text-sm text-muted-foreground">
+                - <strong>{selectedDistrict}</strong> ilçesi
+              </span>
+            )}
+            {osbStatus && (
+              <span className="text-sm text-muted-foreground">
+                - OSB {osbStatus}
+              </span>
+            )}
+            {isLoadingAltBolge && (
+              <Badge variant="outline">Alt bölge yükleniyor...</Badge>
+            )}
+            {altBolge && !isLoadingAltBolge && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                {altBolge}
+              </Badge>
+            )}
+            {!altBolge && !isLoadingAltBolge && osbStatus && (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                Alt bölge bulunamadı
+              </Badge>
             )}
           </div>
         </div>

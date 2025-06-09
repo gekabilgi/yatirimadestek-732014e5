@@ -50,4 +50,6 @@ export interface SgkDuration {
   district: string;
   sgk_duration: number | null;
   osb_status: boolean;
+  bolge: number;
+  alt_bolge: number;
 }
