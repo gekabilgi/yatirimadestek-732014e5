@@ -104,14 +104,13 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           province: selectedProvince,
           district: selectedDistrict,
           osb_status: osbBoolean
-          bolge: 
         });
 
         // First, let's check what data exists in the table for debugging
         const { data: allData, error: debugError } = await supabase
           .from('sgk_durations')
           .select('province, district, osb_status, alt_bolge')
-          .eq('province', selectedProvince);
+          .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
           .eq('osb_status', osbBoolean);
         
