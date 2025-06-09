@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -348,6 +349,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                       <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {incentiveResult.supports.priority_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.priority_tax_discount) : "N/A"}</div>
                       <div>Faiz/Kar Payı Desteği Oranı: {incentiveResult.supports.priority_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.priority_interest_support) : "N/A"}</div>
                       <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {incentiveResult.supports.priority_cap !== "N/A" ? formatCurrency(incentiveResult.supports.priority_cap) : "N/A"}</div>
+                      <div>Sabit Yatırım Tutarı Oranı Sınırı: {incentiveResult.supports.priority_cap_ratio !== "N/A" ? formatPercentage(incentiveResult.supports.priority_cap_ratio) : "N/A"}</div>
                     </div>
                   </div>
                 )}
