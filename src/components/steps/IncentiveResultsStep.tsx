@@ -365,10 +365,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
               <AlertDescription>
                 <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının{" "}
                 {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && 
-                  formatPercentage(incentiveResult.supports.target_cap_ratio)}
-                {incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A" && 
-                  formatPercentage(incentiveResult.supports.priority_cap_ratio)}
-                'ini geçemez.
+                  formatPercentage(incentiveResult.supports.target_cap_ratio)}'unu geçemez.
               </AlertDescription>
             </Alert>
           )}
