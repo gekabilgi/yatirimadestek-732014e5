@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -29,6 +28,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
   const [altBolge, setAltBolge] = useState<string>('');
+  const [isLoadingAltBolge, setIsLoadingAltBolge] = useState(false);
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -95,16 +95,24 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         return;
       }
 
+      setIsLoadingAltBolge(true);
       try {
         const osbBoolean = osbStatus === "İÇİ";
         
+        console.log('Fetching alt_bolge for:', {
+          province: selectedProvince,
+          district: selectedDistrict,
+          osb_status: osbBoolean
+        });
+
         const { data, error } = await supabase
           .from('sgk_durations')
           .select('alt_bolge')
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
-          .eq('osb_status', osbBoolean)
-          .maybeSingle();
+          .eq('osb_status', osbBoolean);
+
+        console.log('Alt bolge query result:', { data, error });
 
         if (error) {
           console.error('Error fetching alt bolge:', error);
@@ -112,11 +120,19 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           return;
         }
 
-        const altBolgeText = data?.alt_bolge ? `${data.alt_bolge}. Alt Bölge` : '';
-        setAltBolge(altBolgeText);
+        if (data && data.length > 0 && data[0].alt_bolge !== null) {
+          const altBolgeText = `${data[0].alt_bolge}. Alt Bölge`;
+          console.log('Setting alt bolge to:', altBolgeText);
+          setAltBolge(altBolgeText);
+        } else {
+          console.log('No alt bolge data found');
+          setAltBolge('');
+        }
       } catch (error) {
         console.error('Error fetching alt bolge:', error);
         setAltBolge('');
+      } finally {
+        setIsLoadingAltBolge(false);
       }
     };
 
@@ -236,8 +252,23 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                 - <strong>{selectedDistrict}</strong> ilçesi
               </span>
             )}
-            {altBolge && (
-              <Badge variant="outline">{altBolge}</Badge>
+            {osbStatus && (
+              <span className="text-sm text-muted-foreground">
+                - OSB {osbStatus}
+              </span>
+            )}
+            {isLoadingAltBolge && (
+              <Badge variant="outline">Alt bölge yükleniyor...</Badge>
+            )}
+            {altBolge && !isLoadingAltBolge && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                {altBolge}
+              </Badge>
+            )}
+            {!altBolge && !isLoadingAltBolge && osbStatus && (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                Alt bölge bulunamadı
+              </Badge>
             )}
           </div>
         </div>
