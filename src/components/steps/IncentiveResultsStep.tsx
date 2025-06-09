@@ -90,7 +90,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         .select('sgk_duration')
         .eq('province', province)
         .eq('district', district)
-        .is('osb_status', osbBoolean)
+        .eq('osb_status', osbBoolean)
         .maybeSingle();
 
       if (error) {
@@ -118,7 +118,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         .select('alt_bolge')
         .eq('province', province)
         .eq('district', district)
-        .is('osb_status', osbBoolean)
+        .eq('osb_status', osbBoolean)
         .maybeSingle();
 
       if (error) {
@@ -365,7 +365,10 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
               <AlertDescription>
                 <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının{" "}
                 {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && 
-                  formatPercentage(incentiveResult.supports.target_cap_ratio)}'unu geçemez.
+                  formatPercentage(incentiveResult.supports.target_cap_ratio)}
+                {incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A" && 
+                  formatPercentage(incentiveResult.supports.priority_cap_ratio)}
+                'ini geçemez.
               </AlertDescription>
             </Alert>
           )}
