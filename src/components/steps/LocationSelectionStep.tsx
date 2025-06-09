@@ -105,13 +105,13 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           osb_status: osbBoolean
         });
 
-        // Use the working query pattern with LIKE operators and IS true/false
+        // Use exact equality matching with .eq() instead of .like() and .is()
         const { data, error } = await supabase
           .from('sgk_durations')
           .select('alt_bolge')
-          .like('province', selectedProvince)
-          .like('district', selectedDistrict)
-          .is('osb_status', osbBoolean);
+          .eq('province', selectedProvince)
+          .eq('district', selectedDistrict)
+          .eq('osb_status', osbBoolean);
 
         console.log('Query result:', { data, error });
 
