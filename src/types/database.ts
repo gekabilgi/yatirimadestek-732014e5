@@ -46,9 +46,8 @@ export interface LocationSupport {
 }
 
 export interface SgkDuration {
-  id: number;
-  region_number: number;
-  duration_years: number;
-  description: string | null;
-  created_at: string;
+  province: string;
+  district: string;
+  sgk_duration: number | null;
+  osb_status: boolean;
 }

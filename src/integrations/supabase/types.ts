@@ -149,25 +149,22 @@ export type Database = {
       }
       sgk_durations: {
         Row: {
-          created_at: string | null
-          description: string | null
-          duration_years: number
-          id: number
-          region_number: number
+          district: string
+          osb_status: boolean
+          province: string
+          sgk_duration: number | null
         }
         Insert: {
-          created_at?: string | null
-          description?: string | null
-          duration_years: number
-          id?: number
-          region_number: number
+          district: string
+          osb_status: boolean
+          province: string
+          sgk_duration?: number | null
         }
         Update: {
-          created_at?: string | null
-          description?: string | null
-          duration_years?: number
-          id?: number
-          region_number?: number
+          district?: string
+          osb_status?: boolean
+          province?: string
+          sgk_duration?: number | null
         }
         Relationships: []
       }
