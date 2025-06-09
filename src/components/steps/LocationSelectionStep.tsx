@@ -105,26 +105,13 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           osb_status: osbBoolean
         });
 
-        // First, check what data is in the table
-        const { data: allData, error: allError } = await supabase
-          .from('sgk_durations')
-          .select('*');
-
-        console.log('All data in sgk_durations table:', { allData, allError });
-
-        if (allData && allData.length === 0) {
-          console.log('Table sgk_durations is empty!');
-          setAltBolge('');
-          return;
-        }
-
-        // Now try the exact query as you specified
+        // Use the working query pattern with LIKE operators and IS true/false
         const { data, error } = await supabase
           .from('sgk_durations')
           .select('alt_bolge')
-          .eq('province', selectedProvince)
-          .eq('district', selectedDistrict)
-          .eq('osb_status', osbBoolean);
+          .like('province', selectedProvince)
+          .like('district', selectedDistrict)
+          .is('osb_status', osbBoolean);
 
         console.log('Query result:', { data, error });
 
