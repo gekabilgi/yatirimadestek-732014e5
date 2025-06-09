@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, CheckCircle, XCircle, Info } from 'lucide-react';
+import { Search, CheckCircle, Info } from 'lucide-react';
 import { SectorSearchData } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const IncentiveEligibilitySearch: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResult, setSearchResult] = useState<SectorSearchData | null>(null);
+  const [searchResults, setSearchResults] = useState<SectorSearchData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -35,8 +35,7 @@ const IncentiveEligibilitySearch: React.FC = () => {
         .from('sector_search')
         .select('*')
         .or(`nace_kodu.ilike.%${searchTermLower}%,sektor.ilike.%${searchTermLower}%`)
-        .limit(1)
-        .maybeSingle();
+        .order('sektor');
 
       if (error) {
         console.error('Search error:', error);
@@ -48,19 +47,19 @@ const IncentiveEligibilitySearch: React.FC = () => {
         return;
       }
 
-      setSearchResult(data);
+      setSearchResults(data || []);
       setHasSearched(true);
       
-      if (!data) {
+      if (!data || data.length === 0) {
         toast({
           title: "Sonuç Bulunamadı",
-          description: "Girilen sektör teşvik kapsamında değil.",
+          description: "Girilen kriterlere uygun sektör bulunamadı.",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Sektör Bulundu",
-          description: `${data.sektor} sektörü teşvik kapsamında.`,
+          title: "Arama Tamamlandı",
+          description: `${data.length} sektör bulundu ve teşvik kapsamında.`,
         });
       }
     } catch (error) {
@@ -74,26 +73,6 @@ const IncentiveEligibilitySearch: React.FC = () => {
       setIsSearching(false);
     }
   };
-
-  const getEligibilityStatus = () => {
-    if (!hasSearched) return null;
-    
-    if (!searchResult) {
-      return {
-        eligible: false,
-        message: "Bu sektör teşvik kapsamında değildir.",
-        icon: <XCircle className="h-5 w-5 text-red-500" />
-      };
-    }
-
-    return {
-      eligible: true,
-      message: "Bu sektör teşvik kapsamındadır!",
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />
-    };
-  };
-
-  const eligibilityStatus = getEligibilityStatus();
 
   return (
     <div className="space-y-6">
@@ -125,72 +104,89 @@ const IncentiveEligibilitySearch: React.FC = () => {
             </Button>
           </div>
 
-          {eligibilityStatus && (
-            <Card className={`border-2 ${eligibilityStatus.eligible ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+          {hasSearched && searchResults.length === 0 && (
+            <Card className="border-2 border-red-200 bg-red-50">
               <CardContent className="pt-4">
                 <div className="flex items-center gap-2 mb-3">
-                  {eligibilityStatus.icon}
-                  <span className={`font-semibold ${eligibilityStatus.eligible ? 'text-green-700' : 'text-red-700'}`}>
-                    {eligibilityStatus.message}
+                  <Info className="h-5 w-5 text-red-500" />
+                  <span className="font-semibold text-red-700">
+                    Bu kriterlere uygun sektör teşvik kapsamında değildir.
                   </span>
                 </div>
-                
-                {searchResult && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-lg">{searchResult.sektor}</h4>
-                      <Badge variant="outline">{searchResult.nace_kodu}</Badge>
-                    </div>
-                    
-                    <div className="flex gap-2 flex-wrap">
-                      {searchResult.hedef_yatirim && <Badge className="bg-blue-100 text-blue-800">Hedef Yatırım</Badge>}
-                      {searchResult.oncelikli_yatirim && <Badge className="bg-purple-100 text-purple-800">Öncelikli Yatırım</Badge>}
-                      {searchResult.yuksek_teknoloji && <Badge className="bg-green-100 text-green-800">Yüksek Teknoloji</Badge>}
-                      {searchResult.orta_yuksek_teknoloji && <Badge className="bg-orange-100 text-orange-800">Orta-Yüksek Teknoloji</Badge>}
-                    </div>
-                    
-                    {searchResult.sartlar && (
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-start gap-2">
-                          <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="text-sm font-medium text-blue-800 mb-1">Özel Şartlar:</p>
-                            <p className="text-sm text-blue-700">{searchResult.sartlar}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {searchResults.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <span className="font-semibold text-green-700">
+                  {searchResults.length} sektör bulundu ve teşvik kapsamında!
+                </span>
+              </div>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {searchResults.map((result) => (
+                  <Card key={result.id} className="border-2 border-green-200 bg-green-50">
+                    <CardContent className="pt-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-lg">{result.sektor}</h4>
+                          <Badge variant="outline">{result.nace_kodu}</Badge>
+                        </div>
+                        
+                        <div className="flex gap-2 flex-wrap">
+                          {result.hedef_yatirim && <Badge className="bg-blue-100 text-blue-800">Hedef Yatırım</Badge>}
+                          {result.oncelikli_yatirim && <Badge className="bg-purple-100 text-purple-800">Öncelikli Yatırım</Badge>}
+                          {result.yuksek_teknoloji && <Badge className="bg-green-100 text-green-800">Yüksek Teknoloji</Badge>}
+                          {result.orta_yuksek_teknoloji && <Badge className="bg-orange-100 text-orange-800">Orta-Yüksek Teknoloji</Badge>}
+                        </div>
+                        
+                        {result.sartlar && (
+                          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-start gap-2">
+                              <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-blue-800 mb-1">Özel Şartlar:</p>
+                                <p className="text-sm text-blue-700">{result.sartlar}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="text-muted-foreground">1. Bölge:</span>
+                            <span className="ml-1 font-medium">{result.bolge_1?.toLocaleString('tr-TR')} TL</span>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="text-muted-foreground">2. Bölge:</span>
+                            <span className="ml-1 font-medium">{result.bolge_2?.toLocaleString('tr-TR')} TL</span>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="text-muted-foreground">3. Bölge:</span>
+                            <span className="ml-1 font-medium">{result.bolge_3?.toLocaleString('tr-TR')} TL</span>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="text-muted-foreground">4. Bölge:</span>
+                            <span className="ml-1 font-medium">{result.bolge_4?.toLocaleString('tr-TR')} TL</span>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="text-muted-foreground">5. Bölge:</span>
+                            <span className="ml-1 font-medium">{result.bolge_5?.toLocaleString('tr-TR')} TL</span>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="text-muted-foreground">6. Bölge:</span>
+                            <span className="ml-1 font-medium">{result.bolge_6?.toLocaleString('tr-TR')} TL</span>
                           </div>
                         </div>
                       </div>
-                    )}
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="text-muted-foreground">1. Bölge:</span>
-                        <span className="ml-1 font-medium">{searchResult.bolge_1?.toLocaleString('tr-TR')} TL</span>
-                      </div>
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="text-muted-foreground">2. Bölge:</span>
-                        <span className="ml-1 font-medium">{searchResult.bolge_2?.toLocaleString('tr-TR')} TL</span>
-                      </div>
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="text-muted-foreground">3. Bölge:</span>
-                        <span className="ml-1 font-medium">{searchResult.bolge_3?.toLocaleString('tr-TR')} TL</span>
-                      </div>
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="text-muted-foreground">4. Bölge:</span>
-                        <span className="ml-1 font-medium">{searchResult.bolge_4?.toLocaleString('tr-TR')} TL</span>
-                      </div>
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="text-muted-foreground">5. Bölge:</span>
-                        <span className="ml-1 font-medium">{searchResult.bolge_5?.toLocaleString('tr-TR')} TL</span>
-                      </div>
-                      <div className="p-2 bg-gray-50 rounded">
-                        <span className="text-muted-foreground">6. Bölge:</span>
-                        <span className="ml-1 font-medium">{searchResult.bolge_6?.toLocaleString('tr-TR')} TL</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
