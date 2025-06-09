@@ -122,6 +122,34 @@ const IncentiveWizard: React.FC = () => {
     }
   };
 
+  const getAltBolge = async (province: string, district: string, osbStatus: "İÇİ" | "DIŞI"): Promise<string> => {
+    try {
+      const osbBoolean = osbStatus === "İÇİ";
+      
+      const { data, error } = await supabase
+        .from('sgk_durations')
+        .select('alt_bolge, bolge')
+        .eq('province', province)
+        .eq('district', district)
+        .eq('osb_status', osbBoolean)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching alt bolge:', error);
+        return "";
+      }
+
+      if (data && data.alt_bolge) {
+        return `${data.alt_bolge}. Alt Bölge`;
+      }
+
+      return "";
+    } catch (error) {
+      console.error('Error fetching alt bolge:', error);
+      return "";
+    }
+  };
+
   const calculateIncentives = async () => {
     if (!canProceedToStep3 || !wizardData.selectedSector) {
       toast({
@@ -144,11 +172,14 @@ const IncentiveWizard: React.FC = () => {
       // Get SGK duration from the new table
       const sgkDuration = await getSgkDuration(wizardData.selectedProvince, wizardData.selectedDistrict, wizardData.osbStatus!);
       
+      // Get Alt Bölge from sgk_durations table
+      const altBolge = await getAltBolge(wizardData.selectedProvince, wizardData.selectedDistrict, wizardData.osbStatus!);
+      
       // Create mock location data if no data found in database
       const mockLocationData: LocationData = {
         il: wizardData.selectedProvince,
         ilce: wizardData.selectedDistrict,
-        alt_bolge: `${region}. Alt Bölge`,
+        alt_bolge: altBolge,
         kdv_istisnasi: locationSupportData?.kdv_istisnasi || true,
         gumruk_muafiyeti: locationSupportData?.gumruk_muafiyeti || true,
         oncelikli_vergi_indirimi_yko: locationSupportData?.oncelikli_vergi_indirimi_yko || "%40",
@@ -178,7 +209,7 @@ const IncentiveWizard: React.FC = () => {
           district: wizardData.selectedDistrict,
           osb_status: wizardData.osbStatus!,
           region: region,
-          subregion: mockLocationData.alt_bolge,
+          subregion: altBolge,
           sgk_duration: sgkDuration
         },
         supports: {
