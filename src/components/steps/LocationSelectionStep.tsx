@@ -90,25 +90,37 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
   useEffect(() => {
     const fetchAltBolge = async () => {
-      if (!selectedProvince || !selectedDistrict) {
+      if (!selectedProvince || !selectedDistrict || !osbStatus) {
         setAltBolge('');
         return;
       }
 
       setIsLoadingAltBolge(true);
       try {
+        const osbBoolean = osbStatus === "İÇİ";
+        
         console.log('Fetching alt_bolge for:', {
           province: selectedProvince,
-          district: selectedDistrict
+          district: selectedDistrict,
+          osb_status: osbBoolean
         });
 
-        // Query the location_support table instead of sgk_durations
+        // First, let's check what data exists in the table for debugging
+        const { data: allData, error: debugError } = await supabase
+          .from('sgk_durations')
+          .select('province, district, osb_status, alt_bolge')
+          .eq('province', selectedProvince);
+        
+        console.log('All matching province data:', allData);
+        console.log('Debug error:', debugError);
+
+        // Now try the exact query
         const { data, error } = await supabase
-          .from('location_support')
+          .from('sgk_durations')
           .select('alt_bolge')
-          .eq('il', selectedProvince)
-          .eq('ilce', selectedDistrict)
-          .single();
+          .eq('province', selectedProvince)
+          .eq('district', selectedDistrict)
+          .eq('osb_status', osbBoolean);
 
         console.log('Query result:', { data, error });
 
@@ -118,14 +130,15 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           return;
         }
 
-        if (data && data.alt_bolge !== null) {
-          const altBolgeText = `${data.alt_bolge}. Alt Bölge`;
-          console.log('Found alt_bolge:', data.alt_bolge);
+        if (data && data.length > 0 && data[0].alt_bolge !== null) {
+          const altBolgeText = `${data[0].alt_bolge}. Alt Bölge`;
+          console.log('Found alt_bolge:', data[0].alt_bolge);
           setAltBolge(altBolgeText);
         } else {
-          console.log('No alt_bolge found for:', {
+          console.log('No matching record found for:', {
             province: selectedProvince,
-            district: selectedDistrict
+            district: selectedDistrict,
+            osb_status: osbBoolean
           });
           setAltBolge('');
         }
@@ -138,7 +151,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     };
 
     fetchAltBolge();
-  }, [selectedProvince, selectedDistrict]);
+  }, [selectedProvince, selectedDistrict, osbStatus]);
 
   const handleProvinceChange = (province: string) => {
     // Reset district and OSB status when province changes
@@ -266,7 +279,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                 {altBolge}
               </Badge>
             )}
-            {!altBolge && !isLoadingAltBolge && selectedDistrict && (
+            {!altBolge && !isLoadingAltBolge && osbStatus && (
               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                 Alt bölge bulunamadı
               </Badge>
