@@ -137,10 +137,26 @@ const IncentiveEligibilitySearch: React.FC = () => {
                         </div>
                         
                         <div className="flex gap-2 flex-wrap">
-                          {result.hedef_yatirim && <Badge className="bg-blue-100 text-blue-800">Hedef Yatırım</Badge>}
-                          {result.oncelikli_yatirim && <Badge className="bg-purple-100 text-purple-800">Öncelikli Yatırım</Badge>}
-                          {result.yuksek_teknoloji && <Badge className="bg-green-100 text-green-800">Yüksek Teknoloji</Badge>}
-                          {result.orta_yuksek_teknoloji && <Badge className="bg-orange-100 text-orange-800">Orta-Yüksek Teknoloji</Badge>}
+                          {result.hedef_yatirim && (
+                            <Badge className="bg-blue-600 text-white hover:bg-blue-700">
+                              Hedef Yatırım
+                            </Badge>
+                          )}
+                          {result.oncelikli_yatirim && (
+                            <Badge className="bg-green-600 text-white hover:bg-green-700">
+                              Öncelikli Yatırım
+                            </Badge>
+                          )}
+                          {result.yuksek_teknoloji && (
+                            <Badge className="bg-orange-600 text-white hover:bg-orange-700">
+                              Yüksek Teknoloji
+                            </Badge>
+                          )}
+                          {result.orta_yuksek_teknoloji && (
+                            <Badge className="bg-purple-600 text-white hover:bg-purple-700">
+                              Orta-Yüksek Teknoloji
+                            </Badge>
+                          )}
                         </div>
                         
                         {result.sartlar && (

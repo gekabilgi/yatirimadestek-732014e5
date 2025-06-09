@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,10 +140,26 @@ const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSec
                     <Badge variant="outline">{selectedSector.nace_kodu}</Badge>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {selectedSector.hedef_yatirim === "Evet" && <Badge variant="secondary">Hedef Yatırım</Badge>}
-                    {selectedSector.oncelikli_yatirim === "Evet" && <Badge variant="secondary">Öncelikli Yatırım</Badge>}
-                    {selectedSector.yuksek_teknoloji === "Evet" && <Badge variant="secondary">Yüksek Teknoloji</Badge>}
-                    {selectedSector.orta_yuksek_teknoloji === "Evet" && <Badge variant="secondary">Orta-Yüksek Teknoloji</Badge>}
+                    {selectedSector.hedef_yatirim === "Evet" && (
+                      <Badge className="bg-blue-600 text-white hover:bg-blue-700">
+                        Hedef Yatırım
+                      </Badge>
+                    )}
+                    {selectedSector.oncelikli_yatirim === "Evet" && (
+                      <Badge className="bg-green-600 text-white hover:bg-green-700">
+                        Öncelikli Yatırım
+                      </Badge>
+                    )}
+                    {selectedSector.yuksek_teknoloji === "Evet" && (
+                      <Badge className="bg-orange-600 text-white hover:bg-orange-700">
+                        Yüksek Teknoloji
+                      </Badge>
+                    )}
+                    {selectedSector.orta_yuksek_teknoloji === "Evet" && (
+                      <Badge className="bg-purple-600 text-white hover:bg-purple-700">
+                        Orta-Yüksek Teknoloji
+                      </Badge>
+                    )}
                   </div>
                   {selectedSector.sartlar && (
                     <p className="text-sm text-muted-foreground">{selectedSector.sartlar}</p>
@@ -174,10 +191,26 @@ const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSec
                         <Badge variant="outline">{sector.nace_kodu}</Badge>
                       </div>
                       <div className="flex gap-2 flex-wrap">
-                        {sector.hedef_yatirim === "Evet" && <Badge variant="secondary" className="text-xs">Hedef</Badge>}
-                        {sector.oncelikli_yatirim === "Evet" && <Badge variant="secondary" className="text-xs">Öncelikli</Badge>}
-                        {sector.yuksek_teknoloji === "Evet" && <Badge variant="secondary" className="text-xs">Yüksek Tek.</Badge>}
-                        {sector.orta_yuksek_teknoloji === "Evet" && <Badge variant="secondary" className="text-xs">Orta-Yüksek Tek.</Badge>}
+                        {sector.hedef_yatirim === "Evet" && (
+                          <Badge className="bg-blue-600 text-white hover:bg-blue-700 text-xs">
+                            Hedef
+                          </Badge>
+                        )}
+                        {sector.oncelikli_yatirim === "Evet" && (
+                          <Badge className="bg-green-600 text-white hover:bg-green-700 text-xs">
+                            Öncelikli
+                          </Badge>
+                        )}
+                        {sector.yuksek_teknoloji === "Evet" && (
+                          <Badge className="bg-orange-600 text-white hover:bg-orange-700 text-xs">
+                            Yüksek Tek.
+                          </Badge>
+                        )}
+                        {sector.orta_yuksek_teknoloji === "Evet" && (
+                          <Badge className="bg-purple-600 text-white hover:bg-purple-700 text-xs">
+                            Orta-Yüksek Tek.
+                          </Badge>
+                        )}
                       </div>
                       {sector.sartlar && (
                         <p className="text-xs text-muted-foreground">{sector.sartlar}</p>

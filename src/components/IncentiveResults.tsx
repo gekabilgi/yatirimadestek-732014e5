@@ -44,10 +44,26 @@ const IncentiveResults: React.FC<IncentiveResultsProps> = ({ result }) => {
               <p className="text-muted-foreground">NACE Kodu: {result.sector.nace_code}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {result.sector.isTarget && <Badge variant="secondary">Hedef Yatırım</Badge>}
-              {result.sector.isPriority && <Badge variant="secondary">Öncelikli Yatırım</Badge>}
-              {result.sector.isHighTech && <Badge variant="secondary">Yüksek Teknoloji</Badge>}
-              {result.sector.isMidHighTech && <Badge variant="secondary">Orta-Yüksek Teknoloji</Badge>}
+              {result.sector.isTarget && (
+                <Badge className="bg-blue-600 text-white hover:bg-blue-700">
+                  Hedef Yatırım
+                </Badge>
+              )}
+              {result.sector.isPriority && (
+                <Badge className="bg-green-600 text-white hover:bg-green-700">
+                  Öncelikli Yatırım
+                </Badge>
+              )}
+              {result.sector.isHighTech && (
+                <Badge className="bg-orange-600 text-white hover:bg-orange-700">
+                  Yüksek Teknoloji
+                </Badge>
+              )}
+              {result.sector.isMidHighTech && (
+                <Badge className="bg-purple-600 text-white hover:bg-purple-700">
+                  Orta-Yüksek Teknoloji
+                </Badge>
+              )}
             </div>
           </div>
           

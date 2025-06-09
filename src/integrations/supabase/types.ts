@@ -9,6 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      districts: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+          province_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+          province_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+          province_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "districts_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "provinces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incentive_supports: {
+        Row: {
+          created_at: string | null
+          customs_exemption: boolean | null
+          district_id: number
+          id: number
+          kdv_exemption: boolean | null
+          osb_status: boolean
+          priority_cap: string | null
+          priority_cap_ratio: string | null
+          priority_interest_support: string | null
+          priority_tax_discount: string | null
+          province_id: number
+          sgk_duration: string | null
+          target_cap: string | null
+          target_cap_ratio: string | null
+          target_interest_support: string | null
+          target_tax_discount: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customs_exemption?: boolean | null
+          district_id: number
+          id?: number
+          kdv_exemption?: boolean | null
+          osb_status: boolean
+          priority_cap?: string | null
+          priority_cap_ratio?: string | null
+          priority_interest_support?: string | null
+          priority_tax_discount?: string | null
+          province_id: number
+          sgk_duration?: string | null
+          target_cap?: string | null
+          target_cap_ratio?: string | null
+          target_interest_support?: string | null
+          target_tax_discount?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customs_exemption?: boolean | null
+          district_id?: number
+          id?: number
+          kdv_exemption?: boolean | null
+          osb_status?: boolean
+          priority_cap?: string | null
+          priority_cap_ratio?: string | null
+          priority_interest_support?: string | null
+          priority_tax_discount?: string | null
+          province_id?: number
+          sgk_duration?: string | null
+          target_cap?: string | null
+          target_cap_ratio?: string | null
+          target_interest_support?: string | null
+          target_tax_discount?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_supports_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incentive_supports_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "provinces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_support: {
         Row: {
           alt_bolge: string | null
@@ -69,6 +170,60 @@ export type Database = {
         }
         Relationships: []
       }
+      nace_codes: {
+        Row: {
+          code: string
+          conditions: string | null
+          created_at: string | null
+          description: string
+          id: number
+          is_high_tech: boolean | null
+          is_mid_high_tech: boolean | null
+          is_priority: boolean | null
+          is_target: boolean | null
+          min_investment_region_1: number | null
+          min_investment_region_2: number | null
+          min_investment_region_3: number | null
+          min_investment_region_4: number | null
+          min_investment_region_5: number | null
+          min_investment_region_6: number | null
+        }
+        Insert: {
+          code: string
+          conditions?: string | null
+          created_at?: string | null
+          description: string
+          id?: number
+          is_high_tech?: boolean | null
+          is_mid_high_tech?: boolean | null
+          is_priority?: boolean | null
+          is_target?: boolean | null
+          min_investment_region_1?: number | null
+          min_investment_region_2?: number | null
+          min_investment_region_3?: number | null
+          min_investment_region_4?: number | null
+          min_investment_region_5?: number | null
+          min_investment_region_6?: number | null
+        }
+        Update: {
+          code?: string
+          conditions?: string | null
+          created_at?: string | null
+          description?: string
+          id?: number
+          is_high_tech?: boolean | null
+          is_mid_high_tech?: boolean | null
+          is_priority?: boolean | null
+          is_target?: boolean | null
+          min_investment_region_1?: number | null
+          min_investment_region_2?: number | null
+          min_investment_region_3?: number | null
+          min_investment_region_4?: number | null
+          min_investment_region_5?: number | null
+          min_investment_region_6?: number | null
+        }
+        Relationships: []
+      }
       province_region_map: {
         Row: {
           created_at: string | null
@@ -87,6 +242,27 @@ export type Database = {
           id?: number
           province_name?: string
           region_number?: number
+        }
+        Relationships: []
+      }
+      provinces: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+          region_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+          region_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+          region_id?: number
         }
         Relationships: []
       }
