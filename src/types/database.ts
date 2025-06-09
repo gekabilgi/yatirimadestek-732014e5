@@ -3,10 +3,10 @@ export interface SectorSearchData {
   id: number;
   nace_kodu: string;
   sektor: string;
-  hedef_yatirim: "Evet" | "Hayır";
-  oncelikli_yatirim: "Evet" | "Hayır";
-  yuksek_teknoloji: "Evet" | "Hayır";
-  orta_yuksek_teknoloji: "Evet" | "Hayır";
+  hedef_yatirim: boolean;
+  oncelikli_yatirim: boolean;
+  yuksek_teknoloji: boolean;
+  orta_yuksek_teknoloji: boolean;
   sartlar: string | null;
   bolge_1: number;
   bolge_2: number;
