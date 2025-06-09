@@ -105,28 +105,28 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           osb_status: osbBoolean
         });
 
-        // First, let's see what data exists in the table
+        // First, check what data is in the table
         const { data: allData, error: allError } = await supabase
           .from('sgk_durations')
-          .select('*')
-          .limit(10);
+          .select('*');
 
-        console.log('Sample data from sgk_durations table:', { allData, allError });
+        console.log('All data in sgk_durations table:', { allData, allError });
 
-        // Now try to find matching records
+        if (allData && allData.length === 0) {
+          console.log('Table sgk_durations is empty!');
+          setAltBolge('');
+          return;
+        }
+
+        // Now try the exact query as you specified
         const { data, error } = await supabase
           .from('sgk_durations')
-          .select('alt_bolge, province, district, osb_status')
+          .select('alt_bolge')
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
           .eq('osb_status', osbBoolean);
 
-        console.log('Alt bolge query result:', { data, error });
-        console.log('Query parameters used:', {
-          province: selectedProvince,
-          district: selectedDistrict,
-          osb_status: osbBoolean
-        });
+        console.log('Query result:', { data, error });
 
         if (error) {
           console.error('Error fetching alt bolge:', error);
@@ -136,38 +136,15 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
         if (data && data.length > 0 && data[0].alt_bolge !== null) {
           const altBolgeText = `${data[0].alt_bolge}. Alt Bölge`;
-          console.log('Setting alt bolge to:', altBolgeText);
+          console.log('Found alt_bolge:', data[0].alt_bolge);
           setAltBolge(altBolgeText);
         } else {
-          // Try partial matching to see if there are similar records
-          console.log('No exact match found, checking for similar records...');
-          
-          const { data: similarData, error: similarError } = await supabase
-            .from('sgk_durations')
-            .select('*')
-            .ilike('province', `%${selectedProvince}%`)
-            .ilike('district', `%${selectedDistrict}%`);
-
-          console.log('Similar records found:', { similarData, similarError });
-
-          // Also try with trimmed values in case there are whitespace issues
-          const { data: trimmedData, error: trimmedError } = await supabase
-            .from('sgk_durations')
-            .select('alt_bolge, province, district, osb_status')
-            .eq('province', selectedProvince.trim())
-            .eq('district', selectedDistrict.trim())
-            .eq('osb_status', osbBoolean);
-
-          console.log('Trimmed query result:', { trimmedData, trimmedError });
-
-          if (trimmedData && trimmedData.length > 0 && trimmedData[0].alt_bolge !== null) {
-            const altBolgeText = `${trimmedData[0].alt_bolge}. Alt Bölge`;
-            console.log('Setting alt bolge from trimmed query to:', altBolgeText);
-            setAltBolge(altBolgeText);
-          } else {
-            console.log('No alt bolge data found in any query variant');
-            setAltBolge('');
-          }
+          console.log('No matching record found for:', {
+            province: selectedProvince,
+            district: selectedDistrict,
+            osb_status: osbBoolean
+          });
+          setAltBolge('');
         }
       } catch (error) {
         console.error('Error fetching alt bolge:', error);
