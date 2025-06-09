@@ -1,9 +1,7 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calculator, Search } from 'lucide-react';
-import IncentiveWizard from '@/components/IncentiveWizard';
-import IncentiveEligibilitySearch from '@/components/IncentiveEligibilitySearch';
+import React from 'react';
+import { Search } from 'lucide-react';
+import UnifiedIncentiveQuery from '@/components/UnifiedIncentiveQuery';
 
 const Index = () => {
   return (
@@ -12,30 +10,18 @@ const Index = () => {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Yatırım Teşvik Sistemi</h1>
           <p className="text-muted-foreground">
-            9903 Sayılı Kararnameye göre yatırım teşviklerinizi hesaplayın ve uygunluk sorgulayın
+            9903 Sayılı Kararnameye göre yatırım teşviklerinizi sorgulayın ve hesaplayın
           </p>
         </div>
         
-        <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="search" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Uygunluk Sorgulama
-            </TabsTrigger>
-            <TabsTrigger value="calculator" className="flex items-center gap-2">
-              <Calculator className="h-4 w-4" />
-              Teşvik Hesaplama
-            </TabsTrigger>
-          </TabsList>
+        <div className="w-full">
+          <div className="flex items-center gap-2 mb-6 justify-center">
+            <Search className="h-5 w-5" />
+            <h2 className="text-xl font-semibold">Teşvik Sorgusu</h2>
+          </div>
           
-          <TabsContent value="search" className="mt-6">
-            <IncentiveEligibilitySearch />
-          </TabsContent>
-          
-          <TabsContent value="calculator" className="mt-6">
-            <IncentiveWizard />
-          </TabsContent>
-        </Tabs>
+          <UnifiedIncentiveQuery />
+        </div>
       </div>
     </div>
   );
