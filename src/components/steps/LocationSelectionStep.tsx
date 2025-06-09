@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -27,7 +28,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   const [districts, setDistricts] = useState<string[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
-  const [altBolge, setAltBolge] = useState<string[]>([]);
+  const [altBolge, setAltBolge] = useState<string>('');
   const [isLoadingAltBolge, setIsLoadingAltBolge] = useState(false);
 
   useEffect(() => {
