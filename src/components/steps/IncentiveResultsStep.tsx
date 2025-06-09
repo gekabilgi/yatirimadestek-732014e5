@@ -88,8 +88,8 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       const { data, error } = await supabase
         .from('sgk_durations')
         .select('sgk_duration')
-        .like('province', province)
-        .like('district', district)
+        .eq('province', province)
+        .eq('district', district)
         .is('osb_status', osbBoolean)
         .maybeSingle();
 
@@ -116,8 +116,8 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       const { data, error } = await supabase
         .from('sgk_durations')
         .select('alt_bolge')
-        .like('province', province)
-        .like('district', district)
+        .eq('province', province)
+        .eq('district', district)
         .is('osb_status', osbBoolean)
         .maybeSingle();
 

@@ -99,10 +99,12 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
       try {
         const osbBoolean = osbStatus === "İÇİ";
         
+        
         console.log('Fetching alt_bolge for:', {
           province: selectedProvince,
           district: selectedDistrict,
           osb_status: osbBoolean
+          bolge: 
         });
 
         // First, let's check what data exists in the table for debugging
@@ -110,6 +112,8 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           .from('sgk_durations')
           .select('province, district, osb_status, alt_bolge')
           .eq('province', selectedProvince);
+          .eq('district', selectedDistrict)
+          .eq('osb_status', osbBoolean);
         
         console.log('All matching province data:', allData);
         console.log('Debug error:', debugError);
