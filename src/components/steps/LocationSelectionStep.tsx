@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -89,18 +90,20 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
   useEffect(() => {
     const fetchAltBolge = async () => {
-      if (!selectedProvince || !selectedDistrict) {
+      if (!selectedProvince || !selectedDistrict || !osbStatus) {
         setAltBolge('');
         return;
       }
 
       try {
-        // Get alt_bolge from location_support table instead of sgk_durations
+        const osbBoolean = osbStatus === "İÇİ";
+        
         const { data, error } = await supabase
-          .from('location_support')
+          .from('sgk_durations')
           .select('alt_bolge')
-          .eq('il', selectedProvince)
-          .eq('ilce', selectedDistrict)
+          .eq('province', selectedProvince)
+          .eq('district', selectedDistrict)
+          .eq('osb_status', osbBoolean)
           .maybeSingle();
 
         if (error) {
@@ -118,7 +121,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     };
 
     fetchAltBolge();
-  }, [selectedProvince, selectedDistrict]);
+  }, [selectedProvince, selectedDistrict, osbStatus]);
 
   const handleProvinceChange = (province: string) => {
     // Reset district and OSB status when province changes
