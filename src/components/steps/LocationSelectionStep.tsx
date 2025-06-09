@@ -99,7 +99,6 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
       try {
         const osbBoolean = osbStatus === "İÇİ";
         
-        
         console.log('Fetching alt_bolge for:', {
           province: selectedProvince,
           district: selectedDistrict,
@@ -123,7 +122,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           .select('alt_bolge')
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
-          .ep('osb_status', osbBoolean);
+          .eq('osb_status', osbBoolean);
 
         console.log('Query result:', { data, error });
 
