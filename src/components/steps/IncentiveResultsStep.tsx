@@ -118,7 +118,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         .select('alt_bolge')
         .eq('province', province)
         .eq('district', district)
-        .is('osb_status', osbBoolean)
+        .eq('osb_status', osbBoolean)
         .maybeSingle();
 
       if (error) {
