@@ -105,15 +105,28 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           osb_status: osbBoolean
         });
 
-        // Try with exact case-sensitive matching first
+        // First, let's see what data exists in the table
+        const { data: allData, error: allError } = await supabase
+          .from('sgk_durations')
+          .select('*')
+          .limit(10);
+
+        console.log('Sample data from sgk_durations table:', { allData, allError });
+
+        // Now try to find matching records
         const { data, error } = await supabase
           .from('sgk_durations')
-          .select('alt_bolge')
+          .select('alt_bolge, province, district, osb_status')
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
           .eq('osb_status', osbBoolean);
 
         console.log('Alt bolge query result:', { data, error });
+        console.log('Query parameters used:', {
+          province: selectedProvince,
+          district: selectedDistrict,
+          osb_status: osbBoolean
+        });
 
         if (error) {
           console.error('Error fetching alt bolge:', error);
@@ -126,24 +139,33 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           console.log('Setting alt bolge to:', altBolgeText);
           setAltBolge(altBolgeText);
         } else {
-          // If no exact match, try case-insensitive matching
-          console.log('No exact match found, trying case-insensitive search...');
+          // Try partial matching to see if there are similar records
+          console.log('No exact match found, checking for similar records...');
           
-          const { data: fallbackData, error: fallbackError } = await supabase
+          const { data: similarData, error: similarError } = await supabase
             .from('sgk_durations')
-            .select('alt_bolge')
-            .ilike('province', selectedProvince)
-            .ilike('district', selectedDistrict)
+            .select('*')
+            .ilike('province', `%${selectedProvince}%`)
+            .ilike('district', `%${selectedDistrict}%`);
+
+          console.log('Similar records found:', { similarData, similarError });
+
+          // Also try with trimmed values in case there are whitespace issues
+          const { data: trimmedData, error: trimmedError } = await supabase
+            .from('sgk_durations')
+            .select('alt_bolge, province, district, osb_status')
+            .eq('province', selectedProvince.trim())
+            .eq('district', selectedDistrict.trim())
             .eq('osb_status', osbBoolean);
 
-          console.log('Fallback query result:', { fallbackData, fallbackError });
+          console.log('Trimmed query result:', { trimmedData, trimmedError });
 
-          if (fallbackData && fallbackData.length > 0 && fallbackData[0].alt_bolge !== null) {
-            const altBolgeText = `${fallbackData[0].alt_bolge}. Alt Bölge`;
-            console.log('Setting alt bolge from fallback to:', altBolgeText);
+          if (trimmedData && trimmedData.length > 0 && trimmedData[0].alt_bolge !== null) {
+            const altBolgeText = `${trimmedData[0].alt_bolge}. Alt Bölge`;
+            console.log('Setting alt bolge from trimmed query to:', altBolgeText);
             setAltBolge(altBolgeText);
           } else {
-            console.log('No alt bolge data found in fallback either');
+            console.log('No alt bolge data found in any query variant');
             setAltBolge('');
           }
         }
