@@ -89,20 +89,18 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
   useEffect(() => {
     const fetchAltBolge = async () => {
-      if (!selectedProvince || !selectedDistrict || !osbStatus) {
+      if (!selectedProvince || !selectedDistrict) {
         setAltBolge('');
         return;
       }
 
       try {
-        const osbBoolean = osbStatus === "İÇİ";
-        
+        // Get alt_bolge from location_support table instead of sgk_durations
         const { data, error } = await supabase
-          .from('sgk_durations')
+          .from('location_support')
           .select('alt_bolge')
-          .eq('province', selectedProvince)
-          .eq('district', selectedDistrict)
-          .eq('osb_status', osbBoolean)
+          .eq('il', selectedProvince)
+          .eq('ilce', selectedDistrict)
           .maybeSingle();
 
         if (error) {
@@ -120,7 +118,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     };
 
     fetchAltBolge();
-  }, [selectedProvince, selectedDistrict, osbStatus]);
+  }, [selectedProvince, selectedDistrict]);
 
   const handleProvinceChange = (province: string) => {
     // Reset district and OSB status when province changes
@@ -225,15 +223,18 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
       {selectedProvince && (
         <div className="p-3 bg-muted rounded-lg">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary">{getProvinceRegion(selectedProvince)}. Bölge</Badge>
             <span className="text-sm text-muted-foreground">
               <strong>{selectedProvince}</strong> ili
             </span>
+            {selectedDistrict && (
+              <span className="text-sm text-muted-foreground">
+                - <strong>{selectedDistrict}</strong> ilçesi
+              </span>
+            )}
             {altBolge && (
-              <>
-                <Badge variant="outline">{altBolge}</Badge>
-              </>
+              <Badge variant="outline">{altBolge}</Badge>
             )}
           </div>
         </div>
