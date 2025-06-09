@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -124,18 +123,20 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   }, [selectedProvince, selectedDistrict, osbStatus]);
 
   const handleProvinceChange = (province: string) => {
+    // Reset district and OSB status when province changes
     onLocationUpdate({
       province,
       district: '',
-      osbStatus,
+      osbStatus: null,
     });
   };
 
   const handleDistrictChange = (district: string) => {
+    // Reset OSB status when district changes to ensure fresh calculation
     onLocationUpdate({
       province: selectedProvince,
       district,
-      osbStatus,
+      osbStatus: null,
     });
   };
 
