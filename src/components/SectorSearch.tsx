@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { SectorData } from '@/types/incentive';
-import { SectorSearchData } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,26 +14,54 @@ interface SectorSearchProps {
   selectedSector: SectorData | null;
 }
 
+// Define the actual type returned by Supabase query
+interface SupabaseSectorData {
+  id: number;
+  nace_kodu: string;
+  sektor: string;
+  hedef_yatirim: string | boolean;
+  oncelikli_yatirim: string | boolean;
+  yuksek_teknoloji: string | boolean;
+  orta_yuksek_teknoloji: string | boolean;
+  sartlar: string | null;
+  bolge_1: number | null;
+  bolge_2: number | null;
+  bolge_3: number | null;
+  bolge_4: number | null;
+  bolge_5: number | null;
+  bolge_6: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSector }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SectorData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const convertToSectorData = (dbSector: SectorSearchData): SectorData => {
+  const convertBooleanValue = (value: string | boolean): "Evet" | "Hayır" => {
+    if (typeof value === 'boolean') {
+      return value ? "Evet" : "Hayır";
+    }
+    // Handle string values (for backward compatibility)
+    return value === 'Evet' || value === 'true' ? "Evet" : "Hayır";
+  };
+
+  const convertToSectorData = (dbSector: SupabaseSectorData): SectorData => {
     return {
       nace_kodu: dbSector.nace_kodu,
       sektor: dbSector.sektor,
-      hedef_yatirim: dbSector.hedef_yatirim ? "Evet" : "Hayır",
-      oncelikli_yatirim: dbSector.oncelikli_yatirim ? "Evet" : "Hayır",
-      yuksek_teknoloji: dbSector.yuksek_teknoloji ? "Evet" : "Hayır",
-      orta_yuksek_teknoloji: dbSector.orta_yuksek_teknoloji ? "Evet" : "Hayır",
+      hedef_yatirim: convertBooleanValue(dbSector.hedef_yatirim),
+      oncelikli_yatirim: convertBooleanValue(dbSector.oncelikli_yatirim),
+      yuksek_teknoloji: convertBooleanValue(dbSector.yuksek_teknoloji),
+      orta_yuksek_teknoloji: convertBooleanValue(dbSector.orta_yuksek_teknoloji),
       sartlar: dbSector.sartlar || '',
-      "1. Bolge": dbSector.bolge_1,
-      "2. Bolge": dbSector.bolge_2,
-      "3. Bolge": dbSector.bolge_3,
-      "4. Bolge": dbSector.bolge_4,
-      "5. Bolge": dbSector.bolge_5,
-      "6. Bolge": dbSector.bolge_6
+      "1. Bolge": dbSector.bolge_1 || 0,
+      "2. Bolge": dbSector.bolge_2 || 0,
+      "3. Bolge": dbSector.bolge_3 || 0,
+      "4. Bolge": dbSector.bolge_4 || 0,
+      "5. Bolge": dbSector.bolge_5 || 0,
+      "6. Bolge": dbSector.bolge_6 || 0
     };
   };
 
