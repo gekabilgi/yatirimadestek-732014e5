@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,8 @@ import SectorSearch from './SectorSearch';
 import LocationSelection from './LocationSelection';
 import IncentiveResults from './IncentiveResults';
 import { SectorData, WizardData, IncentiveResult, LocationData } from '@/types/incentive';
-import { getProvinceRegion } from '@/utils/provinceRegionMap';
+import { LocationSupport } from '@/types/database';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 const IncentiveWizard: React.FC = () => {
@@ -53,6 +53,47 @@ const IncentiveWizard: React.FC = () => {
                            wizardData.selectedDistrict && 
                            wizardData.osbStatus;
 
+  const getProvinceRegion = async (provinceName: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase
+        .from('province_region_map')
+        .select('region_number')
+        .eq('province_name', provinceName)
+        .single();
+
+      if (error) {
+        console.error('Error fetching province region:', error);
+        return 1; // Default fallback
+      }
+
+      return data?.region_number || 1;
+    } catch (error) {
+      console.error('Error fetching province region:', error);
+      return 1;
+    }
+  };
+
+  const getLocationSupport = async (province: string, district: string): Promise<LocationSupport | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('location_support')
+        .select('*')
+        .eq('il', province)
+        .eq('ilce', district)
+        .single();
+
+      if (error) {
+        console.error('Error fetching location support:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching location support:', error);
+      return null;
+    }
+  };
+
   const calculateIncentives = async () => {
     if (!canProceedToStep3 || !wizardData.selectedSector) {
       toast({
@@ -66,28 +107,28 @@ const IncentiveWizard: React.FC = () => {
     setIsCalculating(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const region = getProvinceRegion(wizardData.selectedProvince);
+      const region = await getProvinceRegion(wizardData.selectedProvince);
       const minInvestment = wizardData.selectedSector[`${region}. Bolge` as keyof SectorData] as number;
       
-      // Mock location data - in real implementation, fetch from database
+      // Get location support data from database
+      const locationSupportData = await getLocationSupport(wizardData.selectedProvince, wizardData.selectedDistrict);
+      
+      // Create mock location data if no data found in database
       const mockLocationData: LocationData = {
         il: wizardData.selectedProvince,
         ilce: wizardData.selectedDistrict,
         alt_bolge: `${region}. Alt Bölge`,
-        kdv_istisnasi: true,
-        gumruk_muafiyeti: true,
-        oncelikli_vergi_indirimi_yko: "%40",
-        oncelikli_faiz_karpayi_do: "%5",
-        oncelikli_faiz_karpayi_ust_limit_tutari: "1.500.000 TL",
-        oncelikli_faiz_karpayi_syt_orani: "%10",
-        hedef_vergi_indirimi_yko: "%50",
-        hedef_faiz_karpayi_do: "%7",
-        hedef_faiz_karpayi_ust_limit_tutari: "2.000.000 TL",
-        hedef_faiz_karpayi_syt_orani: "%15",
-        sgk_destek_suresi: "6 yıl"
+        kdv_istisnasi: locationSupportData?.kdv_istisnasi || true,
+        gumruk_muafiyeti: locationSupportData?.gumruk_muafiyeti || true,
+        oncelikli_vergi_indirimi_yko: locationSupportData?.oncelikli_vergi_indirimi_yko || "%40",
+        oncelikli_faiz_karpayi_do: locationSupportData?.oncelikli_faiz_karpayi_do || "%5",
+        oncelikli_faiz_karpayi_ust_limit_tutari: locationSupportData?.oncelikli_faiz_karpayi_ust_limit_tutari || "1.500.000 TL",
+        oncelikli_faiz_karpayi_syt_orani: locationSupportData?.oncelikli_faiz_karpayi_syt_orani || "%10",
+        hedef_vergi_indirimi_yko: locationSupportData?.hedef_vergi_indirimi_yko || "%50",
+        hedef_faiz_karpayi_do: locationSupportData?.hedef_faiz_karpayi_do || "%7",
+        hedef_faiz_karpayi_ust_limit_tutari: locationSupportData?.hedef_faiz_karpayi_ust_limit_tutari || "2.000.000 TL",
+        hedef_faiz_karpayi_syt_orani: locationSupportData?.hedef_faiz_karpayi_syt_orani || "%15",
+        sgk_destek_suresi: locationSupportData?.sgk_destek_suresi || "6 yıl"
       };
 
       const result: IncentiveResult = {

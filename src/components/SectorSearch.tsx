@@ -6,96 +6,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { SectorData } from '@/types/incentive';
+import { SectorSearchData } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SectorSearchProps {
   onSectorSelect: (sector: SectorData) => void;
   selectedSector: SectorData | null;
 }
 
-// Mock sector_search data - this should be replaced with actual database data
-const SECTOR_SEARCH_DATA: SectorData[] = [
-  {
-    nace_kodu: "25.11",
-    sektor: "Metal yapı ve yapı elemanları imalatı",
-    hedef_yatirim: "Evet",
-    oncelikli_yatirim: "Hayır",
-    yuksek_teknoloji: "Hayır",
-    orta_yuksek_teknoloji: "Evet",
-    sartlar: "Minimum 1 milyon TL yatırım",
-    "1. Bolge": 1000000,
-    "2. Bolge": 750000,
-    "3. Bolge": 500000,
-    "4. Bolge": 250000,
-    "5. Bolge": 100000,
-    "6. Bolge": 50000
-  },
-  {
-    nace_kodu: "26.12",
-    sektor: "Elektronik devre kartları imalatı",
-    hedef_yatirim: "Evet",
-    oncelikli_yatirim: "Evet",
-    yuksek_teknoloji: "Evet",
-    orta_yuksek_teknoloji: "Hayır",
-    sartlar: "Ar-Ge departmanı zorunlu",
-    "1. Bolge": 2000000,
-    "2. Bolge": 1500000,
-    "3. Bolge": 1000000,
-    "4. Bolge": 500000,
-    "5. Bolge": 250000,
-    "6. Bolge": 100000
-  },
-  {
-    nace_kodu: "28.11",
-    sektor: "Motor ve türbin imalatı",
-    hedef_yatirim: "Evet",
-    oncelikli_yatirim: "Evet",
-    yuksek_teknoloji: "Hayır",
-    orta_yuksek_teknoloji: "Evet",
-    sartlar: "ISO 9001 sertifikası gerekli",
-    "1. Bolge": 1500000,
-    "2. Bolge": 1000000,
-    "3. Bolge": 750000,
-    "4. Bolge": 400000,
-    "5. Bolge": 200000,
-    "6. Bolge": 100000
-  },
-  {
-    nace_kodu: "20.13",
-    sektor: "Plastik hammadde imalatı",
-    hedef_yatirim: "Hayır",
-    oncelikli_yatirim: "Hayır",
-    yuksek_teknoloji: "Hayır",
-    orta_yuksek_teknoloji: "Hayır",
-    sartlar: "Çevre izni zorunlu",
-    "1. Bolge": 500000,
-    "2. Bolge": 400000,
-    "3. Bolge": 300000,
-    "4. Bolge": 200000,
-    "5. Bolge": 100000,
-    "6. Bolge": 50000
-  },
-  {
-    nace_kodu: "26.30",
-    sektor: "İletişim ekipmanları imalatı",
-    hedef_yatirim: "Evet",
-    oncelikli_yatirim: "Evet",
-    yuksek_teknoloji: "Evet",
-    orta_yuksek_teknoloji: "Hayır",
-    sartlar: "Yazılım geliştirme merkezi gerekli",
-    "1. Bolge": 3000000,
-    "2. Bolge": 2000000,
-    "3. Bolge": 1500000,
-    "4. Bolge": 750000,
-    "5. Bolge": 400000,
-    "6. Bolge": 200000
-  }
-];
-
 const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSector }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SectorData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const convertToSectorData = (dbSector: SectorSearchData): SectorData => {
+    return {
+      nace_kodu: dbSector.nace_kodu,
+      sektor: dbSector.sektor,
+      hedef_yatirim: dbSector.hedef_yatirim,
+      oncelikli_yatirim: dbSector.oncelikli_yatirim,
+      yuksek_teknoloji: dbSector.yuksek_teknoloji,
+      orta_yuksek_teknoloji: dbSector.orta_yuksek_teknoloji,
+      sartlar: dbSector.sartlar || '',
+      "1. Bolge": dbSector.bolge_1,
+      "2. Bolge": dbSector.bolge_2,
+      "3. Bolge": dbSector.bolge_3,
+      "4. Bolge": dbSector.bolge_4,
+      "5. Bolge": dbSector.bolge_5,
+      "6. Bolge": dbSector.bolge_6
+    };
+  };
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -109,20 +50,27 @@ const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSec
 
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       const searchTermLower = searchTerm.toLowerCase().trim();
       
-      // Filter sectors based on NACE code or sector name
-      const filtered = SECTOR_SEARCH_DATA.filter(sector => 
-        sector.nace_kodu.toLowerCase().includes(searchTermLower) ||
-        sector.sektor.toLowerCase().includes(searchTermLower)
-      );
+      const { data, error } = await supabase
+        .from('sector_search')
+        .select('*')
+        .or(`nace_kodu.ilike.%${searchTermLower}%,sektor.ilike.%${searchTermLower}%`);
 
-      setSearchResults(filtered);
+      if (error) {
+        console.error('Search error:', error);
+        toast({
+          title: "Hata",
+          description: "Arama sırasında bir hata oluştu.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const convertedResults = data?.map(convertToSectorData) || [];
+      setSearchResults(convertedResults);
       
-      if (filtered.length === 0) {
+      if (convertedResults.length === 0) {
         toast({
           title: "Sonuç Bulunamadı",
           description: "Arama kriterlerinize uygun sektör bulunamadı.",
@@ -131,7 +79,7 @@ const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSec
       } else {
         toast({
           title: "Arama Tamamlandı",
-          description: `${filtered.length} sektör bulundu.`,
+          description: `${convertedResults.length} sektör bulundu.`,
         });
       }
     } catch (error) {

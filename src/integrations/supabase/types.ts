@@ -9,300 +9,165 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      incentive_programs: {
+      location_support: {
         Row: {
-          available_supports: string[] | null
+          alt_bolge: string | null
           created_at: string | null
-          duration_years: number | null
-          id: string
-          incentive_type_id: number | null
-          investment_subject_id: number | null
-          is_active: boolean | null
-          machine_price_threshold: number | null
-          max_amount: number | null
-          max_employees: number | null
-          min_investment_threshold: number | null
-          rate: number
-          region_id: number | null
-          regional_variations: Json | null
-          sector_id: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          available_supports?: string[] | null
-          created_at?: string | null
-          duration_years?: number | null
-          id?: string
-          incentive_type_id?: number | null
-          investment_subject_id?: number | null
-          is_active?: boolean | null
-          machine_price_threshold?: number | null
-          max_amount?: number | null
-          max_employees?: number | null
-          min_investment_threshold?: number | null
-          rate: number
-          region_id?: number | null
-          regional_variations?: Json | null
-          sector_id?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          available_supports?: string[] | null
-          created_at?: string | null
-          duration_years?: number | null
-          id?: string
-          incentive_type_id?: number | null
-          investment_subject_id?: number | null
-          is_active?: boolean | null
-          machine_price_threshold?: number | null
-          max_amount?: number | null
-          max_employees?: number | null
-          min_investment_threshold?: number | null
-          rate?: number
-          region_id?: number | null
-          regional_variations?: Json | null
-          sector_id?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "incentive_programs_incentive_type_id_fkey"
-            columns: ["incentive_type_id"]
-            isOneToOne: false
-            referencedRelation: "incentive_types"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "incentive_programs_investment_subject_id_fkey"
-            columns: ["investment_subject_id"]
-            isOneToOne: false
-            referencedRelation: "investment_subjects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "incentive_programs_region_id_fkey"
-            columns: ["region_id"]
-            isOneToOne: false
-            referencedRelation: "regions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "incentive_programs_sector_id_fkey"
-            columns: ["sector_id"]
-            isOneToOne: false
-            referencedRelation: "sectors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      incentive_types: {
-        Row: {
-          created_at: string | null
-          description: string | null
+          gumruk_muafiyeti: boolean | null
+          hedef_faiz_karpayi_do: string | null
+          hedef_faiz_karpayi_syt_orani: string | null
+          hedef_faiz_karpayi_ust_limit_tutari: string | null
+          hedef_vergi_indirimi_yko: string | null
           id: number
-          name: string
-          type: string
+          il: string
+          ilce: string
+          kdv_istisnasi: boolean | null
+          oncelikli_faiz_karpayi_do: string | null
+          oncelikli_faiz_karpayi_syt_orani: string | null
+          oncelikli_faiz_karpayi_ust_limit_tutari: string | null
+          oncelikli_vergi_indirimi_yko: string | null
+          sgk_destek_suresi: string | null
           updated_at: string | null
         }
         Insert: {
+          alt_bolge?: string | null
           created_at?: string | null
-          description?: string | null
+          gumruk_muafiyeti?: boolean | null
+          hedef_faiz_karpayi_do?: string | null
+          hedef_faiz_karpayi_syt_orani?: string | null
+          hedef_faiz_karpayi_ust_limit_tutari?: string | null
+          hedef_vergi_indirimi_yko?: string | null
           id?: number
-          name: string
-          type: string
+          il: string
+          ilce: string
+          kdv_istisnasi?: boolean | null
+          oncelikli_faiz_karpayi_do?: string | null
+          oncelikli_faiz_karpayi_syt_orani?: string | null
+          oncelikli_faiz_karpayi_ust_limit_tutari?: string | null
+          oncelikli_vergi_indirimi_yko?: string | null
+          sgk_destek_suresi?: string | null
           updated_at?: string | null
         }
         Update: {
+          alt_bolge?: string | null
           created_at?: string | null
-          description?: string | null
+          gumruk_muafiyeti?: boolean | null
+          hedef_faiz_karpayi_do?: string | null
+          hedef_faiz_karpayi_syt_orani?: string | null
+          hedef_faiz_karpayi_ust_limit_tutari?: string | null
+          hedef_vergi_indirimi_yko?: string | null
           id?: number
-          name?: string
-          type?: string
+          il?: string
+          ilce?: string
+          kdv_istisnasi?: boolean | null
+          oncelikli_faiz_karpayi_do?: string | null
+          oncelikli_faiz_karpayi_syt_orani?: string | null
+          oncelikli_faiz_karpayi_ust_limit_tutari?: string | null
+          oncelikli_vergi_indirimi_yko?: string | null
+          sgk_destek_suresi?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
-      investment_subjects: {
+      province_region_map: {
         Row: {
           created_at: string | null
-          description: string | null
           id: number
-          name: string
+          province_name: string
+          region_number: number
         }
         Insert: {
           created_at?: string | null
-          description?: string | null
           id?: number
-          name: string
+          province_name: string
+          region_number: number
         }
         Update: {
           created_at?: string | null
-          description?: string | null
           id?: number
-          name?: string
+          province_name?: string
+          region_number?: number
         }
         Relationships: []
       }
-      nace_codes: {
+      sector_search: {
         Row: {
-          code: string
+          bolge_1: number | null
+          bolge_2: number | null
+          bolge_3: number | null
+          bolge_4: number | null
+          bolge_5: number | null
+          bolge_6: number | null
           created_at: string | null
-          description: string
+          hedef_yatirim: string | null
           id: number
-          is_priority: boolean | null
-          sector_id: number | null
+          nace_kodu: string
+          oncelikli_yatirim: string | null
+          orta_yuksek_teknoloji: string | null
+          sartlar: string | null
+          sektor: string
           updated_at: string | null
+          yuksek_teknoloji: string | null
         }
         Insert: {
-          code: string
+          bolge_1?: number | null
+          bolge_2?: number | null
+          bolge_3?: number | null
+          bolge_4?: number | null
+          bolge_5?: number | null
+          bolge_6?: number | null
           created_at?: string | null
-          description: string
+          hedef_yatirim?: string | null
           id?: number
-          is_priority?: boolean | null
-          sector_id?: number | null
+          nace_kodu: string
+          oncelikli_yatirim?: string | null
+          orta_yuksek_teknoloji?: string | null
+          sartlar?: string | null
+          sektor: string
           updated_at?: string | null
+          yuksek_teknoloji?: string | null
         }
         Update: {
-          code?: string
+          bolge_1?: number | null
+          bolge_2?: number | null
+          bolge_3?: number | null
+          bolge_4?: number | null
+          bolge_5?: number | null
+          bolge_6?: number | null
           created_at?: string | null
-          description?: string
+          hedef_yatirim?: string | null
           id?: number
-          is_priority?: boolean | null
-          sector_id?: number | null
+          nace_kodu?: string
+          oncelikli_yatirim?: string | null
+          orta_yuksek_teknoloji?: string | null
+          sartlar?: string | null
+          sektor?: string
           updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nace_codes_sector_id_fkey"
-            columns: ["sector_id"]
-            isOneToOne: false
-            referencedRelation: "sectors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      province_investment_thresholds: {
-        Row: {
-          created_at: string | null
-          id: string
-          investment_subject_id: number | null
-          min_investment_amount: number
-          province_id: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          investment_subject_id?: number | null
-          min_investment_amount: number
-          province_id?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          investment_subject_id?: number | null
-          min_investment_amount?: number
-          province_id?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "province_investment_thresholds_investment_subject_id_fkey"
-            columns: ["investment_subject_id"]
-            isOneToOne: false
-            referencedRelation: "investment_subjects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "province_investment_thresholds_province_id_fkey"
-            columns: ["province_id"]
-            isOneToOne: false
-            referencedRelation: "provinces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      provinces: {
-        Row: {
-          created_at: string | null
-          id: number
-          name: string
-          region_id: number
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          name: string
-          region_id: number
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          name?: string
-          region_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_provinces_region"
-            columns: ["region_id"]
-            isOneToOne: false
-            referencedRelation: "regions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      regions: {
-        Row: {
-          created_at: string | null
-          id: number
-          level: string
-          multiplier: number
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          level: string
-          multiplier?: number
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          level?: string
-          multiplier?: number
-          name?: string
-          updated_at?: string | null
+          yuksek_teknoloji?: string | null
         }
         Relationships: []
       }
-      sectors: {
+      sgk_durations: {
         Row: {
           created_at: string | null
           description: string | null
+          duration_years: number
           id: number
-          is_priority: boolean | null
-          name: string
-          updated_at: string | null
+          region_number: number
         }
         Insert: {
           created_at?: string | null
           description?: string | null
+          duration_years: number
           id?: number
-          is_priority?: boolean | null
-          name: string
-          updated_at?: string | null
+          region_number: number
         }
         Update: {
           created_at?: string | null
           description?: string | null
+          duration_years?: number
           id?: number
-          is_priority?: boolean | null
-          name?: string
-          updated_at?: string | null
+          region_number?: number
         }
         Relationships: []
       }

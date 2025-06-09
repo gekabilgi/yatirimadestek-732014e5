@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { MapPin } from 'lucide-react';
-import { PROVINCE_REGION_MAP } from '@/utils/provinceRegionMap';
+import { supabase } from '@/integrations/supabase/client';
+import { ProvinceRegionMap } from '@/types/database';
 
 interface LocationSelectionProps {
   selectedProvince: string;
@@ -24,19 +25,42 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
   onDistrictChange,
   onOsbStatusChange,
 }) => {
+  const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
   const [districts, setDistricts] = useState<string[]>([]);
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
 
-  const provinces = Object.keys(PROVINCE_REGION_MAP).sort();
-
-  // Mock districts data - in real implementation, fetch from database
+  // Mock districts data - in real implementation, this could also come from database
   const mockDistricts: Record<string, string[]> = {
     "İstanbul": ["Bahçelievler", "Beşiktaş", "Beyoğlu", "Fatih", "Kadıköy", "Şişli", "Üsküdar"],
     "Ankara": ["Altındağ", "Çankaya", "Etimesgut", "Keçiören", "Mamak", "Sincan", "Yenimahalle"],
     "İzmir": ["Balçova", "Bayraklı", "Bornova", "Buca", "Çiğli", "Gaziemir", "Konak"],
     "Bursa": ["Gemlik", "Gürsu", "İnegöl", "Karacabey", "Mudanya", "Nilüfer", "Osmangazi"],
     "Kocaeli": ["Başiskele", "Çayırova", "Darıca", "Dilovası", "Gebze", "Gölcük", "İzmit"],
-    // Add more as needed
   };
+
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('province_region_map')
+          .select('*')
+          .order('province_name');
+
+        if (error) {
+          console.error('Error fetching provinces:', error);
+          return;
+        }
+
+        setProvinces(data || []);
+      } catch (error) {
+        console.error('Error fetching provinces:', error);
+      } finally {
+        setIsLoadingProvinces(false);
+      }
+    };
+
+    fetchProvinces();
+  }, []);
 
   useEffect(() => {
     if (selectedProvince) {
@@ -55,6 +79,11 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
     onDistrictChange(''); // Reset district when province changes
   };
 
+  const getProvinceRegion = (provinceName: string): number => {
+    const province = provinces.find(p => p.province_name === provinceName);
+    return province?.region_number || 1;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -66,14 +95,14 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="province">İl</Label>
-          <Select value={selectedProvince} onValueChange={handleProvinceChange}>
+          <Select value={selectedProvince} onValueChange={handleProvinceChange} disabled={isLoadingProvinces}>
             <SelectTrigger>
-              <SelectValue placeholder="İl seçiniz..." />
+              <SelectValue placeholder={isLoadingProvinces ? "Yükleniyor..." : "İl seçiniz..."} />
             </SelectTrigger>
             <SelectContent>
               {provinces.map((province) => (
-                <SelectItem key={province} value={province}>
-                  {province} ({PROVINCE_REGION_MAP[province]}. Bölge)
+                <SelectItem key={province.id} value={province.province_name}>
+                  {province.province_name} ({province.region_number}. Bölge)
                 </SelectItem>
               ))}
             </SelectContent>
@@ -131,7 +160,7 @@ const LocationSelection: React.FC<LocationSelectionProps> = ({
         {selectedProvince && (
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>{selectedProvince}</strong> ili <strong>{PROVINCE_REGION_MAP[selectedProvince]}. Bölge</strong> kategorisindedir.
+              <strong>{selectedProvince}</strong> ili <strong>{getProvinceRegion(selectedProvince)}. Bölge</strong> kategorisindedir.
             </p>
           </div>
         )}
