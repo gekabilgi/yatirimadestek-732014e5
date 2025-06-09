@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, CheckCircle, Info } from 'lucide-react';
+import { Search, CheckCircle, Info, Target, Star, Zap, Cpu } from 'lucide-react';
 import { SectorSearchData } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -138,22 +138,26 @@ const IncentiveEligibilitySearch: React.FC = () => {
                         
                         <div className="flex gap-2 flex-wrap">
                           {result.hedef_yatirim && (
-                            <Badge className="bg-blue-600 text-white hover:bg-blue-700">
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 flex items-center gap-1">
+                              <Target className="h-3 w-3" />
                               Hedef Yatırım
                             </Badge>
                           )}
                           {result.oncelikli_yatirim && (
-                            <Badge className="bg-green-600 text-white hover:bg-green-700">
+                            <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200 flex items-center gap-1">
+                              <Star className="h-3 w-3" />
                               Öncelikli Yatırım
                             </Badge>
                           )}
                           {result.yuksek_teknoloji && (
-                            <Badge className="bg-orange-600 text-white hover:bg-orange-700">
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 flex items-center gap-1">
+                              <Zap className="h-3 w-3" />
                               Yüksek Teknoloji
                             </Badge>
                           )}
                           {result.orta_yuksek_teknoloji && (
-                            <Badge className="bg-purple-600 text-white hover:bg-purple-700">
+                            <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 flex items-center gap-1">
+                              <Cpu className="h-3 w-3" />
                               Orta-Yüksek Teknoloji
                             </Badge>
                           )}

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
+import { Search, Target, Star, Zap, Cpu } from 'lucide-react';
 import { SectorData } from '@/types/incentive';
 import { SectorSearchData } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
@@ -141,22 +141,26 @@ const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSec
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {selectedSector.hedef_yatirim === "Evet" && (
-                      <Badge className="bg-blue-600 text-white hover:bg-blue-700">
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 flex items-center gap-1">
+                        <Target className="h-3 w-3" />
                         Hedef Yatırım
                       </Badge>
                     )}
                     {selectedSector.oncelikli_yatirim === "Evet" && (
-                      <Badge className="bg-green-600 text-white hover:bg-green-700">
+                      <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200 flex items-center gap-1">
+                        <Star className="h-3 w-3" />
                         Öncelikli Yatırım
                       </Badge>
                     )}
                     {selectedSector.yuksek_teknoloji === "Evet" && (
-                      <Badge className="bg-orange-600 text-white hover:bg-orange-700">
+                      <Badge className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 flex items-center gap-1">
+                        <Zap className="h-3 w-3" />
                         Yüksek Teknoloji
                       </Badge>
                     )}
                     {selectedSector.orta_yuksek_teknoloji === "Evet" && (
-                      <Badge className="bg-purple-600 text-white hover:bg-purple-700">
+                      <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 flex items-center gap-1">
+                        <Cpu className="h-3 w-3" />
                         Orta-Yüksek Teknoloji
                       </Badge>
                     )}
@@ -192,22 +196,26 @@ const SectorSearch: React.FC<SectorSearchProps> = ({ onSectorSelect, selectedSec
                       </div>
                       <div className="flex gap-2 flex-wrap">
                         {sector.hedef_yatirim === "Evet" && (
-                          <Badge className="bg-blue-600 text-white hover:bg-blue-700 text-xs">
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 text-xs flex items-center gap-1">
+                            <Target className="h-2.5 w-2.5" />
                             Hedef
                           </Badge>
                         )}
                         {sector.oncelikli_yatirim === "Evet" && (
-                          <Badge className="bg-green-600 text-white hover:bg-green-700 text-xs">
+                          <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200 text-xs flex items-center gap-1">
+                            <Star className="h-2.5 w-2.5" />
                             Öncelikli
                           </Badge>
                         )}
                         {sector.yuksek_teknoloji === "Evet" && (
-                          <Badge className="bg-orange-600 text-white hover:bg-orange-700 text-xs">
+                          <Badge className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 text-xs flex items-center gap-1">
+                            <Zap className="h-2.5 w-2.5" />
                             Yüksek Tek.
                           </Badge>
                         )}
                         {sector.orta_yuksek_teknoloji === "Evet" && (
-                          <Badge className="bg-purple-600 text-white hover:bg-purple-700 text-xs">
+                          <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 text-xs flex items-center gap-1">
+                            <Cpu className="h-2.5 w-2.5" />
                             Orta-Yüksek Tek.
                           </Badge>
                         )}

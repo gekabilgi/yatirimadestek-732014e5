@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, TrendingUp, MapPin, Building } from 'lucide-react';
+import { CheckCircle, XCircle, TrendingUp, MapPin, Building, Target, Star, Zap, Cpu } from 'lucide-react';
 import { IncentiveResult } from '@/types/incentive';
 
 interface IncentiveResultsProps {
@@ -45,22 +45,26 @@ const IncentiveResults: React.FC<IncentiveResultsProps> = ({ result }) => {
             </div>
             <div className="flex flex-wrap gap-2">
               {result.sector.isTarget && (
-                <Badge className="bg-blue-600 text-white hover:bg-blue-700">
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 flex items-center gap-1">
+                  <Target className="h-3 w-3" />
                   Hedef Yatırım
                 </Badge>
               )}
               {result.sector.isPriority && (
-                <Badge className="bg-green-600 text-white hover:bg-green-700">
+                <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200 flex items-center gap-1">
+                  <Star className="h-3 w-3" />
                   Öncelikli Yatırım
                 </Badge>
               )}
               {result.sector.isHighTech && (
-                <Badge className="bg-orange-600 text-white hover:bg-orange-700">
+                <Badge className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 flex items-center gap-1">
+                  <Zap className="h-3 w-3" />
                   Yüksek Teknoloji
                 </Badge>
               )}
               {result.sector.isMidHighTech && (
-                <Badge className="bg-purple-600 text-white hover:bg-purple-700">
+                <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 flex items-center gap-1">
+                  <Cpu className="h-3 w-3" />
                   Orta-Yüksek Teknoloji
                 </Badge>
               )}
