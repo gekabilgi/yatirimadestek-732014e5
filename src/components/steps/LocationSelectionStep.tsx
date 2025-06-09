@@ -27,7 +27,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   const [districts, setDistricts] = useState<string[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
-  const [altBolge, setAltBolge] = useState<string>('');
+  const [altBolge, setAltBolge] = useState<string[]>([]);
   const [isLoadingAltBolge, setIsLoadingAltBolge] = useState(false);
 
   useEffect(() => {
