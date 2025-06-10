@@ -102,7 +102,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         return `${data.sgk_duration} yıl`;
       }
 
-      return "";
+      return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
     } catch (error) {
       console.error('Error fetching SGK duration:', error);
       return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
@@ -123,17 +123,17 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
 
       if (error) {
         console.error('Error fetching alt bolge:', error);
-        return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
+        return "";
       }
 
       if (data && data.alt_bolge) {
         return `${data.alt_bolge}. Alt Bölge`;
       }
 
-      return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
+      return "";
     } catch (error) {
       console.error('Error fetching alt bolge:', error);
-      return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
+      return "";
     }
   };
 
