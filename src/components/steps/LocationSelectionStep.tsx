@@ -98,7 +98,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
       setIsLoadingAltBolge(true);
       try {
-        const osbBoolean = osbStatus === "İÇİ" | "DIŞI" | null;
+        const osbBoolean = osbStatus === "İÇİ";
         
         console.log('Fetching alt_bolge for:', {
           province: selectedProvince,
