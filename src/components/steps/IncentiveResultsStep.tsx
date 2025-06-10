@@ -95,7 +95,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
 
       if (error) {
         console.error('Error fetching SGK duration:', error);
-        return "";
+        return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
       }
 
       if (data?.sgk_duration) {
@@ -105,7 +105,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       return "";
     } catch (error) {
       console.error('Error fetching SGK duration:', error);
-      return "";
+      return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
     }
   };
 
@@ -123,17 +123,17 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
 
       if (error) {
         console.error('Error fetching alt bolge:', error);
-        return "";
+        return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
       }
 
       if (data && data.alt_bolge) {
         return `${data.alt_bolge}. Alt Bölge`;
       }
 
-      return "";
+      return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
     } catch (error) {
       console.error('Error fetching alt bolge:', error);
-      return "";
+      return "1. Bölgede OSB/EB Dışı yatırımlarda SGK desteği uygulanmamaktadır";
     }
   };
 
