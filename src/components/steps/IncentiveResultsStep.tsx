@@ -103,12 +103,25 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     yPos = 45;
     doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
     
-    // Sector title with NACE code badge
+    // Sector title - check text width to avoid overlap
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(convertTurkishChars(incentiveResult.sector.name), leftMargin, yPos);
+    const sectorName = convertTurkishChars(incentiveResult.sector.name);
+    const sectorNameWidth = doc.getTextWidth(sectorName);
     
-    // NACE code badge
+    // Calculate available space for sector name (leave space for NACE badge)
+    const maxSectorNameWidth = contentWidth - 45; // 45mm for NACE badge and margin
+    
+    if (sectorNameWidth > maxSectorNameWidth) {
+      // Split long sector names into multiple lines
+      const sectorLines = doc.splitTextToSize(sectorName, maxSectorNameWidth);
+      doc.text(sectorLines, leftMargin, yPos);
+      yPos += (sectorLines.length - 1) * 5; // Adjust yPos based on number of lines
+    } else {
+      doc.text(sectorName, leftMargin, yPos);
+    }
+    
+    // NACE code badge - positioned on the right with proper spacing
     doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
     doc.roundedRect(pageWidth - rightMargin - 35, yPos - 6, 30, 8, 2, 2, 'F');
     doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
@@ -736,3 +749,5 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
 };
 
 export default IncentiveResultsStep;
+
+}
