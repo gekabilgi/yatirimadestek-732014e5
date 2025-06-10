@@ -561,6 +561,12 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     }
   };
 
+  const refreshSearch = () => {
+    // Clear all search data and reset to initial state
+    setIncentiveResult(null);
+    window.location.reload();
+  };
+
   useEffect(() => {
     if (queryData.selectedSector && queryData.selectedProvince && queryData.selectedDistrict && queryData.osbStatus && !incentiveResult) {
       calculateIncentives();
@@ -733,9 +739,9 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
           )}
 
           <div className="flex justify-center gap-4">
-            <Button onClick={calculateIncentives} disabled={isCalculating}>
+            <Button onClick={refreshSearch} disabled={isCalculating}>
               <Calculator className="h-4 w-4 mr-2" />
-              Yeniden Hesapla
+              Yeni Arama
             </Button>
             <Button onClick={generatePDF} variant="outline">
               <Download className="h-4 w-4 mr-2" />
