@@ -113,6 +113,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
           .eq('osb_status', osbBoolean);
+          .maybeSingle();
         
         console.log('All matching province data:', allData);
         console.log('Debug error:', debugError);
@@ -124,6 +125,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
           .eq('osb_status', osbBoolean);
+          .maybeSingle();
 
         console.log('Query result:', { data, error });
 
