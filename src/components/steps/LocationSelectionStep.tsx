@@ -106,17 +106,24 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           osb_status: osbBoolean
         });
 
-       
-        const { data, error } = await supabase
+        // First, let's check what data exists in the table for debugging
+        const { data: allData, error: debugError } = await supabase
           .from('sgk_durations')
-          .select('alt_bolge');
+          .select('province, district, osb_status, alt_bolge')
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
           .eq('osb_status', osbBoolean);
-          //.select('osb_status')
-          //.eq('province', selectedProvince)
-          //.eq('district', selectedDistrict);
-          //.eq('osb_status', osbBoolean);
+        
+        console.log('All matching province data:', allData);
+        console.log('Debug error:', debugError);
+
+        // Now try the exact query
+        const { data, error } = await supabase
+          .from('sgk_durations')
+          .select('alt_bolge')
+          .eq('province', selectedProvince)
+          .ilike('district', selectedDistrict)
+          .eq('osb_status', osbBoolean);
 
         console.log('Query result:', { data, error });
 
