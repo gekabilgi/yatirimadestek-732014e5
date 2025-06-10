@@ -121,9 +121,10 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         const { data, error } = await supabase
           .from('sgk_durations')
           .select('alt_bolge')
+          .select('osb_status')
           .eq('province', selectedProvince)
-          .ilike('district', selectedDistrict)
-          .eq('osb_status', osbStatus === "İÇİ");
+          .ilike('district', selectedDistrict);
+          //.eq('osb_status', osbStatus === "İÇİ");
 
         console.log('Query result:', { data, error });
 
