@@ -736,5 +736,3 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
 };
 
 export default IncentiveResultsStep;
-
-</edits_to_apply>
