@@ -120,10 +120,10 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         // Now try the exact query
         const { data, error } = await supabase
           .from('sgk_durations')
-          //.select('alt_bolge')
-          .select('osb_status')
-          .eq('province', selectedProvince)
-          .eq('district', selectedDistrict);
+          .select('*')
+          //.select('osb_status')
+          //.eq('province', selectedProvince)
+          //.eq('district', selectedDistrict);
           //.eq('osb_status', osbStatus === "İÇİ");
 
         console.log('Query result:', { data, error });
