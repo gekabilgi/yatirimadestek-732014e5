@@ -90,22 +90,22 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         .select('sgk_duration')
         .eq('province', province)
         .eq('district', district)
-        .is('osb_status', osbBoolean)
+        .eq('osb_status', osbBoolean)
         .maybeSingle();
 
       if (error) {
         console.error('Error fetching SGK duration:', error);
-        return "6 yıl";
+        return "";
       }
 
       if (data?.sgk_duration) {
         return `${data.sgk_duration} yıl`;
       }
 
-      return "6 yıl";
+      return "";
     } catch (error) {
       console.error('Error fetching SGK duration:', error);
-      return "6 yıl";
+      return "";
     }
   };
 
