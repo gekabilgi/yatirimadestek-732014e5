@@ -1,15 +1,16 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calculator, Target, Star, Zap, Cpu, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { UnifiedQueryData } from '@/components/UnifiedIncentiveQuery';
 import { IncentiveResult } from '@/types/incentive';
 import { LocationSupport } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
 
 interface IncentiveResultsStepProps {
   queryData: UnifiedQueryData;
@@ -38,6 +39,156 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return value;
     return `${numValue.toLocaleString('tr-TR')} TL`;
+  };
+
+  // PDF generation function
+  const generatePDF = () => {
+    if (!incentiveResult) return;
+
+    const doc = new jsPDF();
+    
+    // Set font to support Turkish characters
+    doc.setFont('helvetica');
+    
+    // Title
+    doc.setFontSize(20);
+    doc.text('Tesvik Sonuclari', 20, 30);
+    
+    // Date
+    doc.setFontSize(10);
+    doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR')}`, 20, 40);
+    
+    let yPosition = 60;
+    
+    // Sector Information
+    doc.setFontSize(14);
+    doc.text('Sektor Bilgileri', 20, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.text(`Sektor: ${incentiveResult.sector.name}`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`NACE Kodu: ${incentiveResult.sector.nace_code}`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`Minimum Yatirim Tutari: ${incentiveResult.sector.minInvestment?.toLocaleString('tr-TR')} TL`, 25, yPosition);
+    yPosition += 15;
+    
+    // Location Information
+    doc.setFontSize(14);
+    doc.text('Lokasyon Bilgileri', 20, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.text(`Il: ${incentiveResult.location.province}`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`Ilce: ${incentiveResult.location.district}`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`Bolge: ${incentiveResult.location.region}. Bolge`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`OSB Durumu: ${incentiveResult.location.osb_status}`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`SGK Destek Suresi: ${incentiveResult.location.sgk_duration}`, 25, yPosition);
+    yPosition += 8;
+    
+    if (incentiveResult.location.subregion) {
+      doc.text(`Alt Bolge: ${incentiveResult.location.subregion}`, 25, yPosition);
+      yPosition += 8;
+    }
+    yPosition += 10;
+    
+    // Investment Types
+    doc.setFontSize(14);
+    doc.text('Yatirim Turu', 20, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    const types = [];
+    if (incentiveResult.sector.isTarget) types.push('Hedef Yatirim');
+    if (incentiveResult.sector.isPriority) types.push('Oncelikli Yatirim');
+    if (incentiveResult.sector.isHighTech) types.push('Yuksek Teknoloji');
+    if (incentiveResult.sector.isMidHighTech) types.push('Orta-Yuksek Teknoloji');
+    
+    doc.text(`Yatirim Turleri: ${types.join(', ') || 'Genel Yatirim'}`, 25, yPosition);
+    yPosition += 15;
+    
+    // General Supports
+    doc.setFontSize(14);
+    doc.text('Genel Destekler', 20, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.text(`KDV Istisnasi: ${incentiveResult.supports.vat_exemption ? 'Evet' : 'Hayir'}`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`Gumruk Muafiyeti: ${incentiveResult.supports.customs_exemption ? 'Evet' : 'Hayir'}`, 25, yPosition);
+    yPosition += 15;
+    
+    // Target Investment Supports
+    if (incentiveResult.sector.isTarget) {
+      doc.setFontSize(14);
+      doc.text('Hedef Yatirim Destekleri', 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      if (incentiveResult.supports.target_tax_discount !== "N/A") {
+        doc.text(`Vergi Indirim Destegi YKO: ${formatPercentage(incentiveResult.supports.target_tax_discount)}`, 25, yPosition);
+        yPosition += 8;
+      }
+      if (incentiveResult.supports.target_interest_support !== "N/A") {
+        doc.text(`Faiz/Kar Payi Destegi Orani: ${formatPercentage(incentiveResult.supports.target_interest_support)}`, 25, yPosition);
+        yPosition += 8;
+      }
+      if (incentiveResult.supports.target_cap !== "N/A") {
+        doc.text(`Faiz/Kar Payi Destegi Ust Limit: ${formatCurrency(incentiveResult.supports.target_cap)}`, 25, yPosition);
+        yPosition += 8;
+      }
+      yPosition += 10;
+    }
+    
+    // Priority Investment Supports
+    if (incentiveResult.sector.isPriority) {
+      doc.setFontSize(14);
+      doc.text('Oncelikli Yatirim Destekleri', 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      if (incentiveResult.supports.priority_tax_discount !== "N/A") {
+        doc.text(`Vergi Indirim Destegi YKO: ${formatPercentage(incentiveResult.supports.priority_tax_discount)}`, 25, yPosition);
+        yPosition += 8;
+      }
+      if (incentiveResult.supports.priority_interest_support !== "N/A") {
+        doc.text(`Faiz/Kar Payi Destegi Orani: ${formatPercentage(incentiveResult.supports.priority_interest_support)}`, 25, yPosition);
+        yPosition += 8;
+      }
+      if (incentiveResult.supports.priority_cap !== "N/A") {
+        doc.text(`Faiz/Kar Payi Destegi Ust Limit: ${formatCurrency(incentiveResult.supports.priority_cap)}`, 25, yPosition);
+        yPosition += 8;
+      }
+      if (incentiveResult.supports.priority_cap_ratio !== "N/A") {
+        doc.text(`Sabit Yatirim Tutari Orani Siniri: ${formatPercentage(incentiveResult.supports.priority_cap_ratio)}`, 25, yPosition);
+        yPosition += 8;
+      }
+    }
+    
+    // Conditions
+    if (incentiveResult.sector.conditions) {
+      yPosition += 10;
+      doc.setFontSize(14);
+      doc.text('Ozel Sartlar ve Kosullar', 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      const lines = doc.splitTextToSize(incentiveResult.sector.conditions, 160);
+      doc.text(lines, 25, yPosition);
+    }
+    
+    // Save the PDF
+    const fileName = `tesvik-sonuclari-${incentiveResult.sector.nace_code}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+    
+    toast({
+      title: "PDF İndirildi",
+      description: "Teşvik sonuçları PDF olarak indirildi.",
+    });
   };
 
   const getProvinceRegion = async (provinceName: string): Promise<number> => {
@@ -377,10 +528,14 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
             </div>
           )}
 
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4">
             <Button onClick={calculateIncentives} disabled={isCalculating}>
               <Calculator className="h-4 w-4 mr-2" />
               Yeniden Hesapla
+            </Button>
+            <Button onClick={generatePDF} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              PDF İndir
             </Button>
           </div>
         </CardContent>

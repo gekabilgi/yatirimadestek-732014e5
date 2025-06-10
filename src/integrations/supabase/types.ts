@@ -323,6 +323,33 @@ export type Database = {
         }
         Relationships: []
       }
+      sgk: {
+        Row: {
+          alt_bolge: number | null
+          bolge: number | null
+          district: string | null
+          osb_status: boolean | null
+          province: string | null
+          sgk_duration: number | null
+        }
+        Insert: {
+          alt_bolge?: number | null
+          bolge?: number | null
+          district?: string | null
+          osb_status?: boolean | null
+          province?: string | null
+          sgk_duration?: number | null
+        }
+        Update: {
+          alt_bolge?: number | null
+          bolge?: number | null
+          district?: string | null
+          osb_status?: boolean | null
+          province?: string | null
+          sgk_duration?: number | null
+        }
+        Relationships: []
+      }
       sgk_durations: {
         Row: {
           alt_bolge: number | null
