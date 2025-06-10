@@ -112,8 +112,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           .select('province, district, osb_status, alt_bolge')
           .eq('province', selectedProvince)
           .eq('district', selectedDistrict)
-          .eq('osb_status', osbBoolean)
-          .maybeSingle();
+          .eq('osb_status', osbBoolean);
         
         console.log('All matching province data:', allData);
         console.log('Debug error:', debugError);
@@ -123,9 +122,8 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           .from('sgk_durations')
           .select('alt_bolge')
           .eq('province', selectedProvince)
-          .eq('district', selectedDistrict)
-          .eq('osb_status', osbBoolean)
-          .maybeSingle();
+          .ilike('district', selectedDistrict)
+          .eq('osb_status', osbStatus === "İÇİ");
 
         console.log('Query result:', { data, error });
 
