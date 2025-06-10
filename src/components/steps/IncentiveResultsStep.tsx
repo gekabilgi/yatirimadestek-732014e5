@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,160 +41,209 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     return `${numValue.toLocaleString('tr-TR')} TL`;
   };
 
-  // Enhanced PDF generation function with Turkish UTF-8 support
+  // Enhanced PDF generation function
   const generatePDF = () => {
     if (!incentiveResult) return;
 
     const doc = new jsPDF('p', 'mm', 'a4');
     
-    // Add Turkish character support
+    // Use helvetica font for better Turkish character support
     doc.setFont('helvetica');
     
-    // Helper function to convert Turkish characters for proper display
-    const turkishText = (text: string): string => {
-      return text
-        .replace(/ğ/g, 'g')
-        .replace(/Ğ/g, 'G')
-        .replace(/ü/g, 'u')
-        .replace(/Ü/g, 'U')
-        .replace(/ş/g, 's')
-        .replace(/Ş/g, 'S')
-        .replace(/ı/g, 'i')
-        .replace(/İ/g, 'I')
-        .replace(/ö/g, 'o')
-        .replace(/Ö/g, 'O')
-        .replace(/ç/g, 'c')
-        .replace(/Ç/g, 'C');
-    };
-    
-    // Colors for better design
-    const primaryBlue = [41, 128, 185];
-    const lightGray = [236, 240, 241];
-    const darkGray = [52, 73, 94];
-    const green = [39, 174, 96];
+    const primaryBlue = [52, 152, 219];
+    const lightGray = [245, 245, 245];
+    const darkGray = [44, 62, 80];
+    const green = [46, 204, 113];
     const orange = [230, 126, 34];
+    const purple = [155, 89, 182];
     
-    let yPos = 20;
+    let yPos = 15;
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const leftMargin = 15;
+    const rightMargin = 15;
+    const contentWidth = pageWidth - leftMargin - rightMargin;
     
-    // Header with blue background
+    // Header with gradient effect
     doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-    doc.rect(0, 0, 210, 40, 'F');
+    doc.rect(0, 0, pageWidth, 35, 'F');
     
     // Title
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text(turkishText('TESVIK SONUCLARI RAPORU'), 20, 25);
+    doc.text('TESVİK SONUÇLARI RAPORU', leftMargin, 20);
     
     // Date
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
     const currentDate = new Date().toLocaleDateString('tr-TR');
-    doc.text(turkishText(`Tarih: ${currentDate}`), 150, 32);
+    doc.text(`Tarih: ${currentDate}`, pageWidth - rightMargin - 40, 28);
     
-    yPos = 50;
+    yPos = 45;
     doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
     
-    // Section: Sector Information
-    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-    doc.rect(15, yPos, 180, 8, 'F');
+    // Sector title with NACE code badge
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
+    doc.text(incentiveResult.sector.name, leftMargin, yPos);
+    
+    // NACE code badge
+    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+    doc.roundedRect(pageWidth - rightMargin - 35, yPos - 6, 30, 8, 2, 2, 'F');
     doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
-    doc.text(turkishText('1. SEKTOR BILGILERI'), 20, yPos + 5);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(incentiveResult.sector.nace_code, pageWidth - rightMargin - 30, yPos - 1);
+    
     yPos += 15;
     
-    doc.setFontSize(11);
+    // Investment type badges
+    let badgeX = leftMargin;
+    const badgeY = yPos;
+    const badgeHeight = 6;
+    const badgeSpacing = 5;
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    
+    if (incentiveResult.sector.isTarget) {
+      doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+      doc.roundedRect(badgeX, badgeY, 30, badgeHeight, 2, 2, 'F');
+      doc.text('Hedef Yatırım', badgeX + 2, badgeY + 4);
+      badgeX += 35;
+    }
+    
+    if (incentiveResult.sector.isPriority) {
+      doc.setFillColor(green[0], green[1], green[2]);
+      doc.roundedRect(badgeX, badgeY, 35, badgeHeight, 2, 2, 'F');
+      doc.text('Öncelikli Yatırım', badgeX + 2, badgeY + 4);
+      badgeX += 40;
+    }
+    
+    if (incentiveResult.sector.isHighTech) {
+      doc.setFillColor(orange[0], orange[1], orange[2]);
+      doc.roundedRect(badgeX, badgeY, 35, badgeHeight, 2, 2, 'F');
+      doc.text('Yüksek Teknoloji', badgeX + 2, badgeY + 4);
+      badgeX += 40;
+    }
+    
+    if (incentiveResult.sector.isMidHighTech) {
+      doc.setFillColor(purple[0], purple[1], purple[2]);
+      doc.roundedRect(badgeX, badgeY, 45, badgeHeight, 2, 2, 'F');
+      doc.text('Orta-Yüksek Teknoloji', badgeX + 2, badgeY + 4);
+    }
+    
+    yPos += 20;
+    doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+    
+    // Location and minimum investment info in grid
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(turkishText(`Sektor Adi: ${incentiveResult.sector.name}`), 20, yPos);
-    yPos += 7;
-    doc.text(turkishText(`NACE Kodu: ${incentiveResult.sector.nace_code}`), 20, yPos);
-    yPos += 7;
-    doc.text(turkishText(`Minimum Yatirim Tutari: ${incentiveResult.sector.minInvestment?.toLocaleString('tr-TR')} TL`), 20, yPos);
-    yPos += 15;
     
-    // Investment Types with colored badges
-    if (incentiveResult.sector.isTarget || incentiveResult.sector.isPriority || 
-        incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) {
-      
-      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-      doc.rect(15, yPos, 180, 8, 'F');
-      doc.setFontSize(14);
+    // Left column
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lokasyon:', leftMargin, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${incentiveResult.location.province} / ${incentiveResult.location.district}`, leftMargin + 25, yPos);
+    
+    // Right column
+    doc.setFont('helvetica', 'bold');
+    doc.text('Minimum Yatırım Tutarı:', leftMargin + 100, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${incentiveResult.sector.minInvestment?.toLocaleString('tr-TR')} TL`, leftMargin + 150, yPos);
+    
+    yPos += 8;
+    
+    // Bölge info
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bölge:', leftMargin, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${incentiveResult.location.region}. Bölge`, leftMargin + 25, yPos);
+    
+    // SGK info
+    doc.setFont('helvetica', 'bold');
+    doc.text('SGK Destek Süresi:', leftMargin + 100, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(incentiveResult.location.sgk_duration, leftMargin + 150, yPos);
+    
+    yPos += 10;
+    
+    // Alt Bölge if exists
+    if (incentiveResult.location.subregion) {
       doc.setFont('helvetica', 'bold');
-      doc.text(turkishText('2. YATIRIM TURU'), 20, yPos + 5);
-      yPos += 15;
-      
-      const types = [];
-      if (incentiveResult.sector.isTarget) types.push({ text: 'Hedef Yatirim', color: primaryBlue });
-      if (incentiveResult.sector.isPriority) types.push({ text: 'Oncelikli Yatirim', color: green });
-      if (incentiveResult.sector.isHighTech) types.push({ text: 'Yuksek Teknoloji', color: orange });
-      if (incentiveResult.sector.isMidHighTech) types.push({ text: 'Orta-Yuksek Teknoloji', color: [155, 89, 182] });
-      
-      types.forEach((type, index) => {
-        doc.setFillColor(type.color[0], type.color[1], type.color[2]);
-        doc.roundedRect(20, yPos - 2, 50, 6, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(turkishText(type.text), 22, yPos + 2);
-        yPos += 10;
-      });
-      
-      doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+      doc.text('Alt Bölge:', leftMargin, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(incentiveResult.location.subregion, leftMargin + 25, yPos);
       yPos += 10;
     }
     
-    // Location Information
+    // Genel Destekler section
+    yPos += 5;
     doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-    doc.rect(15, yPos, 180, 8, 'F');
-    doc.setFontSize(14);
+    doc.rect(leftMargin, yPos, contentWidth, 20, 'F');
+    
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(turkishText('3. LOKASYON BILGILERI'), 20, yPos + 5);
+    doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+    doc.text('Genel Destekler', leftMargin + 5, yPos + 7);
+    
+    // KDV and Gümrük icons
+    const checkColor = [46, 204, 113];
+    const crossColor = [231, 76, 60];
+    
     yPos += 15;
-    
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(turkishText(`Il: ${incentiveResult.location.province}`), 20, yPos);
-    doc.text(turkishText(`Ilce: ${incentiveResult.location.district}`), 100, yPos);
-    yPos += 7;
-    doc.text(turkishText(`Bolge: ${incentiveResult.location.region}. Bolge`), 20, yPos);
-    doc.text(turkishText(`OSB Durumu: ${incentiveResult.location.osb_status}`), 100, yPos);
-    yPos += 7;
     
-    if (incentiveResult.location.subregion) {
-      doc.text(turkishText(`Alt Bolge: ${incentiveResult.location.subregion}`), 20, yPos);
-      yPos += 7;
+    // KDV İstisnası
+    doc.text('KDV İstisnası', leftMargin + 5, yPos);
+    if (incentiveResult.supports.vat_exemption) {
+      doc.setTextColor(checkColor[0], checkColor[1], checkColor[2]);
+      doc.text('✓ EVET', leftMargin + 50, yPos);
+    } else {
+      doc.setTextColor(crossColor[0], crossColor[1], crossColor[2]);
+      doc.text('✗ HAYIR', leftMargin + 50, yPos);
     }
     
-    doc.text(turkishText(`SGK Destek Suresi: ${incentiveResult.location.sgk_duration}`), 20, yPos);
-    yPos += 15;
+    doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
     
-    // General Supports
+    // Gümrük Muafiyeti
+    doc.text('Gümrük Muafiyeti', leftMargin + 100, yPos);
+    if (incentiveResult.supports.customs_exemption) {
+      doc.setTextColor(checkColor[0], checkColor[1], checkColor[2]);
+      doc.text('✓ EVET', leftMargin + 150, yPos);
+    } else {
+      doc.setTextColor(crossColor[0], crossColor[1], crossColor[2]);
+      doc.text('✗ HAYIR', leftMargin + 150, yPos);
+    }
+    
+    yPos += 20;
+    doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+    
+    // Yatırım Türü Destekleri section
     doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-    doc.rect(15, yPos, 180, 8, 'F');
-    doc.setFontSize(14);
+    doc.rect(leftMargin, yPos, contentWidth, 8, 'F');
+    
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(turkishText('4. GENEL DESTEKLER'), 20, yPos + 5);
+    doc.text('Yatırım Türü Destekleri', leftMargin + 5, yPos + 5);
+    
     yPos += 15;
     
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    const vatStatus = incentiveResult.supports.vat_exemption ? 'EVET' : 'HAYIR';
-    const customsStatus = incentiveResult.supports.customs_exemption ? 'EVET' : 'HAYIR';
-    
-    doc.text(turkishText(`KDV Istisnasi: ${vatStatus}`), 20, yPos);
-    doc.text(turkishText(`Gumruk Muafiyeti: ${customsStatus}`), 100, yPos);
-    yPos += 15;
-    
-    // Target Investment Supports
+    // Hedef Yatırım Destekleri
     if (incentiveResult.sector.isTarget) {
-      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-      doc.rect(15, yPos, 180, 8, 'F');
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(turkishText('5. HEDEF YATIRIM DESTEKLERI'), 20, yPos + 5);
-      yPos += 15;
-      
+      doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+      doc.rect(leftMargin, yPos, contentWidth, 6, 'F');
+      doc.setTextColor(255, 255, 255);
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Hedef Yatırım Destekleri', leftMargin + 5, yPos + 4);
+      
+      yPos += 10;
+      doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       
       const targetTaxDiscount = incentiveResult.supports.target_tax_discount !== "N/A" ? 
@@ -205,24 +253,26 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       const targetCap = incentiveResult.supports.target_cap !== "N/A" ? 
         formatCurrency(incentiveResult.supports.target_cap) : "Uygulanmaz";
       
-      doc.text(turkishText(`Vergi Indirim Destegi YKO: ${targetTaxDiscount}`), 20, yPos);
-      yPos += 6;
-      doc.text(turkishText(`Faiz/Kar Payi Destegi Orani: ${targetInterestSupport}`), 20, yPos);
-      yPos += 6;
-      doc.text(turkishText(`Faiz/Kar Payi Destegi Ust Limit: ${targetCap}`), 20, yPos);
-      yPos += 15;
+      doc.text(`Vergi İndirim Desteği Yatırıma Katkı Oranı: ${targetTaxDiscount}`, leftMargin + 5, yPos);
+      yPos += 5;
+      doc.text(`Faiz/Kar Payı Desteği Oranı: ${targetInterestSupport}`, leftMargin + 5, yPos);
+      yPos += 5;
+      doc.text(`Faiz/Kar Payı Desteği Üst Limit Tutarı: ${targetCap}`, leftMargin + 5, yPos);
+      yPos += 10;
     }
     
-    // Priority Investment Supports
+    // Öncelikli Yatırım Destekleri
     if (incentiveResult.sector.isPriority) {
-      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-      doc.rect(15, yPos, 180, 8, 'F');
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(turkishText('6. ONCELIKLI YATIRIM DESTEKLERI'), 20, yPos + 5);
-      yPos += 15;
-      
+      doc.setFillColor(green[0], green[1], green[2]);
+      doc.rect(leftMargin, yPos, contentWidth, 6, 'F');
+      doc.setTextColor(255, 255, 255);
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Öncelikli Yatırım Destekleri', leftMargin + 5, yPos + 4);
+      
+      yPos += 10;
+      doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       
       const priorityTaxDiscount = incentiveResult.supports.priority_tax_discount !== "N/A" ? 
@@ -231,44 +281,81 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
         formatPercentage(incentiveResult.supports.priority_interest_support) : "Uygulanmaz";
       const priorityCap = incentiveResult.supports.priority_cap !== "N/A" ? 
         formatCurrency(incentiveResult.supports.priority_cap) : "Uygulanmaz";
-      const priorityCapRatio = incentiveResult.supports.priority_cap_ratio !== "N/A" ? 
-        formatPercentage(incentiveResult.supports.priority_cap_ratio) : "Uygulanmaz";
       
-      doc.text(turkishText(`Vergi Indirim Destegi YKO: ${priorityTaxDiscount}`), 20, yPos);
-      yPos += 6;
-      doc.text(turkishText(`Faiz/Kar Payi Destegi Orani: ${priorityInterestSupport}`), 20, yPos);
-      yPos += 6;
-      doc.text(turkishText(`Faiz/Kar Payi Destegi Ust Limit: ${priorityCap}`), 20, yPos);
-      yPos += 6;
-      doc.text(turkishText(`Sabit Yatirim Tutari Orani Siniri: ${priorityCapRatio}`), 20, yPos);
-      yPos += 15;
+      doc.text(`Vergi İndirim Desteği Yatırıma Katkı Oranı: ${priorityTaxDiscount}`, leftMargin + 5, yPos);
+      yPos += 5;
+      doc.text(`Faiz/Kar Payı Desteği Oranı: ${priorityInterestSupport}`, leftMargin + 5, yPos);
+      yPos += 5;
+      doc.text(`Faiz/Kar Payı Desteği Üst Limit Tutarı: ${priorityCap}`, leftMargin + 5, yPos);
+      yPos += 10;
     }
     
-    // Special Conditions
-    if (incentiveResult.sector.conditions && yPos < 250) {
-      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-      doc.rect(15, yPos, 180, 8, 'F');
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(turkishText('7. OZEL SARTLAR'), 20, yPos + 5);
-      yPos += 15;
+    // Important Warning section
+    if (((incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A") || 
+         (incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A"))) {
       
+      doc.setFillColor(255, 243, 205);
+      doc.rect(leftMargin, yPos, contentWidth, 15, 'F');
+      
+      doc.setFillColor(255, 193, 7);
+      doc.rect(leftMargin, yPos, 3, 15, 'F');
+      
+      doc.setTextColor(133, 100, 4);
       doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('⚠ Önemli Uyarı:', leftMargin + 8, yPos + 6);
+      
       doc.setFont('helvetica', 'normal');
-      const conditionLines = doc.splitTextToSize(turkishText(incentiveResult.sector.conditions), 170);
-      doc.text(conditionLines, 20, yPos);
-      yPos += conditionLines.length * 4;
+      const ratioText = incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" ? 
+        formatPercentage(incentiveResult.supports.target_cap_ratio) :
+        incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A" ?
+        formatPercentage(incentiveResult.supports.priority_cap_ratio) : "%10";
+      
+      doc.text(`Faiz/Kar Payı Desteği toplam sabit yatırım tutarının ${ratioText}'unu geçemez.`, leftMargin + 8, yPos + 11);
+      
+      yPos += 20;
+    }
+    
+    // Special Conditions section
+    if (incentiveResult.sector.conditions && yPos < 240) {
+      doc.setFillColor(252, 248, 227);
+      doc.rect(leftMargin, yPos, contentWidth, 8, 'F');
+      
+      doc.setTextColor(133, 77, 14);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Özel Şartlar ve Koşullar:', leftMargin + 5, yPos + 5);
+      
+      yPos += 12;
+      
+      doc.setTextColor(120, 53, 15);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      
+      // Split long text into multiple lines
+      const conditionLines = doc.splitTextToSize(incentiveResult.sector.conditions, contentWidth - 10);
+      
+      // Check if we need a new page
+      if (yPos + (conditionLines.length * 4) > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.text(conditionLines, leftMargin + 5, yPos);
+      yPos += conditionLines.length * 4 + 10;
     }
     
     // Footer
+    const footerY = pageHeight - 25;
     doc.setFillColor(darkGray[0], darkGray[1], darkGray[2]);
-    doc.rect(0, 270, 210, 27, 'F');
+    doc.rect(0, footerY, pageWidth, 25, 'F');
+    
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text(turkishText('Bu rapor sistem tarafindan otomatik olarak olusturulmustur.'), 20, 280);
-    doc.text(turkishText(`Olusturma Tarihi: ${new Date().toLocaleString('tr-TR')}`), 20, 287);
-    doc.text(turkishText('Detayli bilgi icin ilgili kurumlara basvurunuz.'), 20, 294);
+    doc.text('Bu rapor sistem tarafından otomatik olarak oluşturulmuştur.', leftMargin, footerY + 8);
+    doc.text(`Oluşturma Tarihi: ${new Date().toLocaleString('tr-TR')}`, leftMargin, footerY + 14);
+    doc.text('Detaylı bilgi için ilgili kurumlara başvurunuz.', leftMargin, footerY + 20);
     
     // Save the PDF
     const fileName = `tesvik-raporu-${incentiveResult.sector.nace_code}-${new Date().toISOString().split('T')[0]}.pdf`;
