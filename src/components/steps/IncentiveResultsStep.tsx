@@ -41,145 +41,241 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     return `${numValue.toLocaleString('tr-TR')} TL`;
   };
 
-  // PDF generation function
+  // Enhanced PDF generation function with professional design
   const generatePDF = () => {
     if (!incentiveResult) return;
 
     const doc = new jsPDF();
     
-    // Set font to support Turkish characters
-    doc.setFont('helvetica');
+    // Colors
+    const primaryColor = [52, 152, 219]; // Blue
+    const secondaryColor = [149, 165, 166]; // Gray
+    const successColor = [46, 204, 113]; // Green
+    const warningColor = [241, 196, 15]; // Yellow
+    const textColor = [44, 62, 80]; // Dark Blue Gray
     
-    // Title
-    doc.setFontSize(20);
-    doc.text('Tesvik Sonuclari', 20, 30);
+    // Helper function to add colored rectangle background
+    const addColoredBackground = (x: number, y: number, width: number, height: number, color: number[]) => {
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.rect(x, y, width, height, 'F');
+    };
+    
+    // Helper function to add section header
+    const addSectionHeader = (title: string, y: number, color: number[] = primaryColor) => {
+      addColoredBackground(20, y - 2, 170, 8, color);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 22, y + 3);
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      return y + 15;
+    };
+    
+    // Header with logo area and title
+    addColoredBackground(0, 0, 210, 30, primaryColor);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TESVIK SONUCLARI', 20, 20);
     
     // Date
     doc.setFontSize(10);
-    doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR')}`, 20, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR')}`, 140, 20);
     
-    let yPosition = 60;
+    let yPosition = 45;
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     
-    // Sector Information
-    doc.setFontSize(14);
-    doc.text('Sektor Bilgileri', 20, yPosition);
-    yPosition += 10;
+    // Sector Information Section
+    yPosition = addSectionHeader('SEKTOR BILGILERI', yPosition);
     
-    doc.setFontSize(10);
-    doc.text(`Sektor: ${incentiveResult.sector.name}`, 25, yPosition);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sektor:', 25, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(incentiveResult.sector.name, 50, yPosition);
     yPosition += 8;
-    doc.text(`NACE Kodu: ${incentiveResult.sector.nace_code}`, 25, yPosition);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('NACE Kodu:', 25, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(incentiveResult.sector.nace_code, 60, yPosition);
     yPosition += 8;
-    doc.text(`Minimum Yatirim Tutari: ${incentiveResult.sector.minInvestment?.toLocaleString('tr-TR')} TL`, 25, yPosition);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Minimum Yatirim Tutari:', 25, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${incentiveResult.sector.minInvestment?.toLocaleString('tr-TR')} TL`, 85, yPosition);
     yPosition += 15;
     
-    // Location Information
-    doc.setFontSize(14);
-    doc.text('Lokasyon Bilgileri', 20, yPosition);
-    yPosition += 10;
+    // Location Information Section
+    yPosition = addSectionHeader('LOKASYON BILGILERI', yPosition);
     
-    doc.setFontSize(10);
-    doc.text(`Il: ${incentiveResult.location.province}`, 25, yPosition);
+    // Two column layout for location info
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Il:', 25, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(incentiveResult.location.province, 35, yPosition);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ilce:', 100, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(incentiveResult.location.district, 115, yPosition);
     yPosition += 8;
-    doc.text(`Ilce: ${incentiveResult.location.district}`, 25, yPosition);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bolge:', 25, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${incentiveResult.location.region}. Bolge`, 45, yPosition);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('OSB Durumu:', 100, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(incentiveResult.location.osb_status, 130, yPosition);
     yPosition += 8;
-    doc.text(`Bolge: ${incentiveResult.location.region}. Bolge`, 25, yPosition);
-    yPosition += 8;
-    doc.text(`OSB Durumu: ${incentiveResult.location.osb_status}`, 25, yPosition);
-    yPosition += 8;
-    doc.text(`SGK Destek Suresi: ${incentiveResult.location.sgk_duration}`, 25, yPosition);
-    yPosition += 8;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('SGK Destek Suresi:', 25, yPosition);
+    doc.setFont('helvetica', 'normal');
+    const sgkText = doc.splitTextToSize(incentiveResult.location.sgk_duration, 100);
+    doc.text(sgkText, 70, yPosition);
+    yPosition += sgkText.length * 6;
     
     if (incentiveResult.location.subregion) {
-      doc.text(`Alt Bolge: ${incentiveResult.location.subregion}`, 25, yPosition);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Alt Bolge:', 25, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text(incentiveResult.location.subregion, 55, yPosition);
       yPosition += 8;
     }
     yPosition += 10;
     
-    // Investment Types
-    doc.setFontSize(14);
-    doc.text('Yatirim Turu', 20, yPosition);
-    yPosition += 10;
+    // Investment Types Section with badges
+    yPosition = addSectionHeader('YATIRIM TURU', yPosition, successColor);
     
-    doc.setFontSize(10);
     const types = [];
     if (incentiveResult.sector.isTarget) types.push('Hedef Yatirim');
     if (incentiveResult.sector.isPriority) types.push('Oncelikli Yatirim');
     if (incentiveResult.sector.isHighTech) types.push('Yuksek Teknoloji');
     if (incentiveResult.sector.isMidHighTech) types.push('Orta-Yuksek Teknoloji');
     
-    doc.text(`Yatirim Turleri: ${types.join(', ') || 'Genel Yatirim'}`, 25, yPosition);
-    yPosition += 15;
+    if (types.length > 0) {
+      let xPos = 25;
+      types.forEach((type, index) => {
+        // Create badge-like appearance
+        const textWidth = doc.getTextWidth(type) + 6;
+        addColoredBackground(xPos, yPosition - 3, textWidth, 7, successColor);
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(type, xPos + 3, yPosition + 1);
+        xPos += textWidth + 5;
+        
+        // If badges would overflow, move to next line
+        if (xPos > 160) {
+          xPos = 25;
+          yPosition += 10;
+        }
+      });
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      yPosition += 15;
+    } else {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Genel Yatirim', 25, yPosition);
+      yPosition += 15;
+    }
     
-    // General Supports
-    doc.setFontSize(14);
-    doc.text('Genel Destekler', 20, yPosition);
+    // General Supports Section
+    yPosition = addSectionHeader('GENEL DESTEKLER', yPosition, warningColor);
+    
+    // Create table-like structure
+    const supports = [
+      ['KDV Istisnasi', incentiveResult.supports.vat_exemption ? 'Evet' : 'Hayir'],
+      ['Gumruk Muafiyeti', incentiveResult.supports.customs_exemption ? 'Evet' : 'Hayir']
+    ];
+    
+    supports.forEach(([label, value]) => {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label + ':', 25, yPosition);
+      
+      // Color code the response
+      if (value === 'Evet') {
+        doc.setTextColor(successColor[0], successColor[1], successColor[2]);
+      } else {
+        doc.setTextColor(220, 53, 69); // Red
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.text(value, 80, yPosition);
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      yPosition += 8;
+    });
     yPosition += 10;
-    
-    doc.setFontSize(10);
-    doc.text(`KDV Istisnasi: ${incentiveResult.supports.vat_exemption ? 'Evet' : 'Hayir'}`, 25, yPosition);
-    yPosition += 8;
-    doc.text(`Gumruk Muafiyeti: ${incentiveResult.supports.customs_exemption ? 'Evet' : 'Hayir'}`, 25, yPosition);
-    yPosition += 15;
     
     // Target Investment Supports
     if (incentiveResult.sector.isTarget) {
-      doc.setFontSize(14);
-      doc.text('Hedef Yatirim Destekleri', 20, yPosition);
-      yPosition += 10;
+      yPosition = addSectionHeader('HEDEF YATIRIM DESTEKLERI', yPosition, [52, 152, 219]);
       
-      doc.setFontSize(10);
-      if (incentiveResult.supports.target_tax_discount !== "N/A") {
-        doc.text(`Vergi Indirim Destegi YKO: ${formatPercentage(incentiveResult.supports.target_tax_discount)}`, 25, yPosition);
-        yPosition += 8;
-      }
-      if (incentiveResult.supports.target_interest_support !== "N/A") {
-        doc.text(`Faiz/Kar Payi Destegi Orani: ${formatPercentage(incentiveResult.supports.target_interest_support)}`, 25, yPosition);
-        yPosition += 8;
-      }
-      if (incentiveResult.supports.target_cap !== "N/A") {
-        doc.text(`Faiz/Kar Payi Destegi Ust Limit: ${formatCurrency(incentiveResult.supports.target_cap)}`, 25, yPosition);
-        yPosition += 8;
-      }
-      yPosition += 10;
+      const targetSupports = [
+        ['Vergi Indirim Destegi YKO', incentiveResult.supports.target_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.target_tax_discount) : "N/A"],
+        ['Faiz/Kar Payi Destegi Orani', incentiveResult.supports.target_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.target_interest_support) : "N/A"],
+        ['Faiz/Kar Payi Destegi Ust Limit', incentiveResult.supports.target_cap !== "N/A" ? formatCurrency(incentiveResult.supports.target_cap) : "N/A"]
+      ];
+      
+      targetSupports.forEach(([label, value]) => {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label + ':', 25, yPosition);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, 25, yPosition + 5);
+        yPosition += 12;
+      });
+      yPosition += 5;
     }
     
     // Priority Investment Supports
     if (incentiveResult.sector.isPriority) {
-      doc.setFontSize(14);
-      doc.text('Oncelikli Yatirim Destekleri', 20, yPosition);
-      yPosition += 10;
+      yPosition = addSectionHeader('ONCELIKLI YATIRIM DESTEKLERI', yPosition, [46, 204, 113]);
       
-      doc.setFontSize(10);
-      if (incentiveResult.supports.priority_tax_discount !== "N/A") {
-        doc.text(`Vergi Indirim Destegi YKO: ${formatPercentage(incentiveResult.supports.priority_tax_discount)}`, 25, yPosition);
-        yPosition += 8;
-      }
-      if (incentiveResult.supports.priority_interest_support !== "N/A") {
-        doc.text(`Faiz/Kar Payi Destegi Orani: ${formatPercentage(incentiveResult.supports.priority_interest_support)}`, 25, yPosition);
-        yPosition += 8;
-      }
-      if (incentiveResult.supports.priority_cap !== "N/A") {
-        doc.text(`Faiz/Kar Payi Destegi Ust Limit: ${formatCurrency(incentiveResult.supports.priority_cap)}`, 25, yPosition);
-        yPosition += 8;
-      }
-      if (incentiveResult.supports.priority_cap_ratio !== "N/A") {
-        doc.text(`Sabit Yatirim Tutari Orani Siniri: ${formatPercentage(incentiveResult.supports.priority_cap_ratio)}`, 25, yPosition);
-        yPosition += 8;
-      }
+      const prioritySupports = [
+        ['Vergi Indirim Destegi YKO', incentiveResult.supports.priority_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.priority_tax_discount) : "N/A"],
+        ['Faiz/Kar Payi Destegi Orani', incentiveResult.supports.priority_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.priority_interest_support) : "N/A"],
+        ['Faiz/Kar Payi Destegi Ust Limit', incentiveResult.supports.priority_cap !== "N/A" ? formatCurrency(incentiveResult.supports.priority_cap) : "N/A"],
+        ['Sabit Yatirim Tutari Orani Siniri', incentiveResult.supports.priority_cap_ratio !== "N/A" ? formatPercentage(incentiveResult.supports.priority_cap_ratio) : "N/A"]
+      ];
+      
+      prioritySupports.forEach(([label, value]) => {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label + ':', 25, yPosition);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, 25, yPosition + 5);
+        yPosition += 12;
+      });
+      yPosition += 5;
     }
     
-    // Conditions
-    if (incentiveResult.sector.conditions) {
-      yPosition += 10;
-      doc.setFontSize(14);
-      doc.text('Ozel Sartlar ve Kosullar', 20, yPosition);
-      yPosition += 10;
+    // Special Conditions
+    if (incentiveResult.sector.conditions && yPosition < 250) {
+      yPosition = addSectionHeader('OZEL SARTLAR VE KOSULLAR', yPosition, [231, 76, 60]);
       
-      doc.setFontSize(10);
-      const lines = doc.splitTextToSize(incentiveResult.sector.conditions, 160);
-      doc.text(lines, 25, yPosition);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      const conditionLines = doc.splitTextToSize(incentiveResult.sector.conditions, 160);
+      doc.text(conditionLines, 25, yPosition);
+      yPosition += conditionLines.length * 5;
     }
+    
+    // Footer
+    const footerY = 280;
+    addColoredBackground(0, footerY, 210, 17, secondaryColor);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Bu belge sistem tarafindan otomatik olarak olusturulmustur.', 20, footerY + 6);
+    doc.text(`Olusturma Tarihi: ${new Date().toLocaleString('tr-TR')}`, 20, footerY + 12);
     
     // Save the PDF
     const fileName = `tesvik-sonuclari-${incentiveResult.sector.nace_code}-${new Date().toISOString().split('T')[0]}.pdf`;
@@ -187,7 +283,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     
     toast({
       title: "PDF İndirildi",
-      description: "Teşvik sonuçları PDF olarak indirildi.",
+      description: "Teşvik sonuçları profesyonel PDF formatında indirildi.",
     });
   };
 
