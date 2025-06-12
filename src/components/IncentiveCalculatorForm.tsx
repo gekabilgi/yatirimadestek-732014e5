@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calculator } from 'lucide-react';
 import { IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
+import { supabase } from '@/integrations/supabase/client';
+import { ProvinceRegionMap } from '@/types/database';
 
 interface IncentiveCalculatorFormProps {
   onCalculate: (inputs: IncentiveCalculatorInputs) => void;
@@ -29,6 +32,9 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     minimumFixedInvestment: 500000
   });
 
+  const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
+
   // Calculate total fixed investment automatically
   const totalFixedInvestment = useMemo(() => {
     return formData.landCost + formData.constructionCost + formData.importedMachineryCost + 
@@ -36,18 +42,29 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
   }, [formData.landCost, formData.constructionCost, formData.importedMachineryCost, 
       formData.domesticMachineryCost, formData.otherExpenses]);
 
-  const provinces = [
-    'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep',
-    'Mersin', 'Diyarbakır', 'Kayseri', 'Eskişehir', 'Urfa', 'Malatya', 'Erzurum',
-    'Van', 'Batman', 'Elazığ', 'Sivas', 'Manisa', 'Kahramanmaraş', 'Zonguldak',
-    'Trabzon', 'Balıkesir', 'Sakarya', 'Afyon', 'Kütahya', 'Muğla', 'Tekirdağ',
-    'Aydın', 'Denizli', 'Kocaeli', 'Hatay', 'Samsun', 'Adapazarı', 'Ordu',
-    'Çorum', 'Isparta', 'Uşak', 'Düzce', 'Osmaniye', 'Aksaray', 'Çanakkale',
-    'Kırıkkale', 'Nevşehir', 'Niğde', 'Yozgat', 'Kırşehir', 'Karaman', 'Bolu',
-    'Kastamonu', 'Sinop', 'Amasya', 'Giresun', 'Artvin', 'Rize', 'Gümüşhane',
-    'Bayburt', 'Erzincan', 'Tunceli', 'Bingöl', 'Muş', 'Bitlis', 'Siirt',
-    'Şırnak', 'Mardin', 'Kilis', 'Iğdır', 'Ağrı', 'Kars', 'Ardahan'
-  ];
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('province_region_map')
+          .select('*')
+          .order('province_name');
+
+        if (error) {
+          console.error('Error fetching provinces:', error);
+          return;
+        }
+
+        setProvinces(data || []);
+      } catch (error) {
+        console.error('Error fetching provinces:', error);
+      } finally {
+        setIsLoadingProvinces(false);
+      }
+    };
+
+    fetchProvinces();
+  }, []);
 
   const handleInputChange = (field: keyof IncentiveCalculatorInputs, value: string | number) => {
     setFormData(prev => ({
@@ -88,14 +105,15 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           <Select 
             value={formData.province} 
             onValueChange={(value) => handleInputChange('province', value)}
+            disabled={isLoadingProvinces}
           >
             <SelectTrigger>
-              <SelectValue placeholder="İl seçin" />
+              <SelectValue placeholder={isLoadingProvinces ? "Yükleniyor..." : "İl seçin"} />
             </SelectTrigger>
             <SelectContent>
               {provinces.map((province) => (
-                <SelectItem key={province} value={province}>
-                  {province}
+                <SelectItem key={province.id} value={province.province_name}>
+                  {province.province_name} ({province.region_number}. Bölge)
                 </SelectItem>
               ))}
             </SelectContent>
@@ -211,17 +229,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             </span>
           </div>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="minimumFixedInvestment">Minimum Sabit Yatırım Tutarı (TL)</Label>
-        <Input
-          id="minimumFixedInvestment"
-          type="number"
-          min="0"
-          value={formData.minimumFixedInvestment}
-          onChange={(e) => handleInputChange('minimumFixedInvestment', parseFloat(e.target.value) || 0)}
-        />
       </div>
 
       <div className="flex justify-center">
