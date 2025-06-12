@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +28,13 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     supportPreference: 'Interest/Profit Share Support',
     minimumFixedInvestment: 500000
   });
+
+  // Calculate total fixed investment automatically
+  const totalFixedInvestment = useMemo(() => {
+    return formData.landCost + formData.constructionCost + formData.importedMachineryCost + 
+           formData.domesticMachineryCost + formData.otherExpenses;
+  }, [formData.landCost, formData.constructionCost, formData.importedMachineryCost, 
+      formData.domesticMachineryCost, formData.otherExpenses]);
 
   const provinces = [
     'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep',
@@ -193,6 +199,16 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               value={formData.bankInterestRate}
               onChange={(e) => handleInputChange('bankInterestRate', parseFloat(e.target.value) || 0)}
             />
+          </div>
+        </div>
+
+        {/* Total Fixed Investment Display */}
+        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex justify-between items-center">
+            <Label className="text-base font-semibold text-blue-900">Toplam Sabit Yatırım Tutarı:</Label>
+            <span className="text-lg font-bold text-blue-900">
+              {totalFixedInvestment.toLocaleString('tr-TR')} TL
+            </span>
           </div>
         </div>
       </div>
