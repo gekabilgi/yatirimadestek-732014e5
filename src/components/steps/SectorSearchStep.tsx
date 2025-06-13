@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,9 +24,12 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    // Clear previous search results when user starts typing
+    // Clear previous search results and selected sector when user starts typing
     if (searchResults.length > 0) {
       setSearchResults([]);
+    }
+    if (selectedSector) {
+      onSectorSelect(null as any);
     }
   };
 
