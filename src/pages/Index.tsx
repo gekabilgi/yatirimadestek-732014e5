@@ -21,7 +21,7 @@ const Index = () => {
         <div className="mb-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-center"></CardTitle>
+              <CardTitle className="text-center">Modül Seçimi</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -44,7 +44,7 @@ const Index = () => {
                   Türkiye Yüzyılı Teşvikleri Hesaplama
                 </Button>
               </div>
-              <div className="w-full">
+              <div className="w-full mt-4">
           {activeModule === 'query' && (
             <div>
               <div className="flex items-center gap-2 mb-4 justify-center">
