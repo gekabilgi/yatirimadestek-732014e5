@@ -12,7 +12,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-background py-12 sm:py-16">
+    <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-background py-8 sm:py-14">
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
       <div className="container relative">
         <div className="mx-auto max-w-4xl text-center">
@@ -28,7 +28,7 @@ const HeroSection = () => {
             <span className="text-primary"> Hesaplayın</span>
           </h1>
           
-          <p className="mt-2 text-lg leading-8 text-muted-foreground">
+          <p className="mt-1 text-lg leading-8 text-muted-foreground">
             Türkiye'nin yatırım teşvik sistemi kapsamında sektör bazlı teşvik oranlarını sorgulayın, 
             Türkiye Yüzyılı teşviklerini hesaplayın ve yatırım planlarınızı optimize edin.
           </p>
