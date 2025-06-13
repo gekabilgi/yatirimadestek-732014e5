@@ -95,8 +95,8 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Technology Initiative">Teknoloji Hamlesi</SelectItem>
-              <SelectItem value="Local Development Initiative">Yerel Kalkınma  Hamlesi</SelectItem>
-              <SelectItem value="Strategic Initiative">Stratejik Hamlesi</SelectItem>
+              <SelectItem value="Local Development Initiative">Yerel Kalkınma Hamlesi</SelectItem>
+              <SelectItem value="Strategic Initiative">Stratejik Hamle</SelectItem>
             </SelectContent>
           </Select>
         </div>
