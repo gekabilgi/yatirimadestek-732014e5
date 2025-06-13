@@ -29,7 +29,8 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     otherExpenses: 0,
     bankInterestRate: 15,
     supportPreference: 'Interest/Profit Share Support',
-    minimumFixedInvestment: 500000
+    loanAmount: 0,
+    loanTermMonths: 60
   });
 
   const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
@@ -205,19 +206,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               onChange={(e) => handleInputChange('otherExpenses', parseFloat(e.target.value) || 0)}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bankInterestRate">Banka Faiz Oranı (%)</Label>
-            <Input
-              id="bankInterestRate"
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={formData.bankInterestRate}
-              onChange={(e) => handleInputChange('bankInterestRate', parseFloat(e.target.value) || 0)}
-            />
-          </div>
         </div>
 
         {/* Total Fixed Investment Display */}
@@ -230,6 +218,49 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           </div>
         </div>
       </div>
+
+      {/* Loan Parameters - Only show if Interest/Profit Share Support is selected */}
+      {formData.supportPreference === 'Interest/Profit Share Support' && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Kredi Bilgileri</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="loanAmount">Kredi Tutarı (TL)</Label>
+              <Input
+                id="loanAmount"
+                type="number"
+                min="0"
+                value={formData.loanAmount}
+                onChange={(e) => handleInputChange('loanAmount', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bankInterestRate">Banka Faiz Oranı (%)</Label>
+              <Input
+                id="bankInterestRate"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={formData.bankInterestRate}
+                onChange={(e) => handleInputChange('bankInterestRate', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="loanTermMonths">Kredi Vadesi (Ay)</Label>
+              <Input
+                id="loanTermMonths"
+                type="number"
+                min="1"
+                value={formData.loanTermMonths}
+                onChange={(e) => handleInputChange('loanTermMonths', parseInt(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-center">
         <Button 

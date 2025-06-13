@@ -10,7 +10,8 @@ export interface IncentiveCalculatorInputs {
   otherExpenses: number;
   bankInterestRate: number;
   supportPreference: 'Interest/Profit Share Support' | 'Machinery Support';
-  minimumFixedInvestment: number;
+  loanAmount: number;
+  loanTermMonths: number;
 }
 
 export interface IncentiveCalculatorResults {
