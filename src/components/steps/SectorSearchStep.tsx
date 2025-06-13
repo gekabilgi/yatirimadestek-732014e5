@@ -22,6 +22,15 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
   const [searchResults, setSearchResults] = useState<SectorSearchData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    // Clear previous search results when user starts typing
+    if (searchResults.length > 0) {
+      setSearchResults([]);
+    }
+  };
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
       toast({
@@ -94,7 +103,7 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
         <Input
           placeholder="NACE kodu veya sektör adı girin... (örn: 13.10.01, Tekstil)"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleInputChange}
           onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
           className="flex-1"
         />
