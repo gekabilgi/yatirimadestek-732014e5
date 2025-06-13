@@ -16,11 +16,11 @@ const Index = () => {
       <Header />
       <HeroSection />
       
-      <div className="container mx-auto py-8" id="features-section">
+      <div className="container mx-auto py-4" id="features-section">
         {/* Module Selection */}
-        <div className="mb-6">
+        <div className="mb-4">
           <Card>
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-2">
               <CardTitle className="text-center">Modül Seçimi</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
