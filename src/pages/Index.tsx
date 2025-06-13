@@ -53,7 +53,7 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-2 mb-6 justify-center">
                 <Search className="h-5 w-5" />
-                <h2 className="text-xl font-semibold">Teşvik Sorgusu</h2>
+                <h2 className="text-xl font-semibold">Yüksek Teknoloji, Orta-Yüksek Teknoloji, Hedef Sektörler, Öncelikli Sektörler Teşvik Sorgusu</h2>
               </div>
               <UnifiedIncentiveQuery />
             </div>
