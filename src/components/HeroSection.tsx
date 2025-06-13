@@ -13,7 +13,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-background py-8 sm:py-14">
+    <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-background py-4 sm:py-6">
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
       <div className="container relative">
         <div className="mx-auto max-w-4xl text-center">
