@@ -44,7 +44,7 @@ const Index = () => {
                   Türkiye Yüzyılı Teşvikleri Hesaplama
                 </Button>
               </div>
-              <div className="w-full mt-4">
+              <div className="w-full mt-8">
           {activeModule === 'query' && (
             <div>
               <div className="flex items-center gap-2 mb-4 justify-center">
