@@ -27,7 +27,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     importedMachineryCost: 0,
     domesticMachineryCost: 0,
     otherExpenses: 0,
-    bankInterestRate: 15,
+    bankInterestRate: 45,
     supportPreference: 'Interest/Profit Share Support',
     loanAmount: 0,
     loanTermMonths: 60
