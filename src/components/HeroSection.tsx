@@ -34,13 +34,7 @@ const HeroSection = () => {
           </p>
           
           <div className="mt-6 flex items-center justify-center gap-x-6">
-            <Button size="lg" onClick={scrollToFeatures} className="group">
-              Başlayın
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-            <Button variant="outline" size="lg">
-              Daha Fazla Bilgi
-            </Button>
+            
           </div>
         </div>
       </div>
