@@ -20,7 +20,9 @@ const Index = () => {
         {/* Module Selection */}
         <div className="mb-4">
           <Card>
-            
+            <CardHeader className="pb-2">
+              <CardTitle className="text-center"></CardTitle>
+            </CardHeader>
             <CardContent className="pt-0">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
@@ -42,11 +44,7 @@ const Index = () => {
                   Türkiye Yüzyılı Teşvikleri Hesaplama
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="w-full mt-4">
+              <div className="w-full">
           {activeModule === 'query' && (
             <div>
               <div className="flex items-center gap-2 mb-4 justify-center">
@@ -70,6 +68,11 @@ const Index = () => {
             </div>
           )}
         </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        
       </div>
     </div>
   );
