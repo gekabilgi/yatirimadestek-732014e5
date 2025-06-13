@@ -32,10 +32,7 @@ const HeroSection = () => {
             Türkiye'nin yatırım teşvik sistemi kapsamında sektör bazlı teşvik oranlarını sorgulayın, 
             Türkiye Yüzyılı teşviklerini hesaplayın ve yatırım planlarınızı optimize edin.
           </p>
-          
-          <div className="mt-6 flex items-center justify-center gap-x-6">
-            
-          </div>
+         
         </div>
       </div>
     </section>
