@@ -33,6 +33,28 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
     }
   };
 
+  // Function to normalize NACE code by removing dots
+  const normalizeNaceCode = (code: string): string => {
+    return code.replace(/\./g, '');
+  };
+
+  // Function to add dots to NACE code for proper formatting
+  const formatNaceCode = (code: string): string => {
+    const normalized = normalizeNaceCode(code);
+    
+    // Format based on length
+    if (normalized.length >= 5) {
+      // Format as XX.XX.XX
+      return `${normalized.slice(0, 2)}.${normalized.slice(2, 4)}.${normalized.slice(4)}`;
+    } else if (normalized.length >= 3) {
+      // Format as XX.XX
+      return `${normalized.slice(0, 2)}.${normalized.slice(2)}`;
+    } else {
+      // Keep as is if less than 3 characters
+      return normalized;
+    }
+  };
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
       toast({
@@ -47,11 +69,24 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
     try {
       const searchTermLower = searchTerm.toLowerCase().trim();
       
-      const { data, error } = await supabase
-        .from('sector_search')
-        .select('*')
-        .or(`nace_kodu.ilike.%${searchTermLower}%,sektor.ilike.%${searchTermLower}%`)
-        .order('sektor');
+      // Check if the search term looks like a NACE code (contains numbers)
+      const isNaceSearch = /\d/.test(searchTermLower);
+      
+      let query = supabase.from('sector_search').select('*');
+      
+      if (isNaceSearch) {
+        // For NACE code search, handle both dotted and non-dotted formats
+        const normalizedSearch = normalizeNaceCode(searchTermLower);
+        const formattedSearch = formatNaceCode(searchTermLower);
+        
+        // Search for both the original term, normalized term, and formatted term
+        query = query.or(`nace_kodu.ilike.%${searchTermLower}%,nace_kodu.ilike.%${normalizedSearch}%,nace_kodu.ilike.%${formattedSearch}%`);
+      } else {
+        // For sector name search
+        query = query.ilike('sektor', `%${searchTermLower}%`);
+      }
+      
+      const { data, error } = await query.order('sektor');
 
       if (error) {
         console.error('Search error:', error);
@@ -103,7 +138,7 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
     <div className="space-y-4">
       <div className="flex gap-2">
         <Input
-          placeholder="NACE kodu veya sektör adı girin... (örn: 13.10.01, Tekstil)"
+          placeholder="NACE kodu veya sektör adı girin... (örn: 13.10.01, 131001, 13.1, 131, Tekstil)"
           value={searchTerm}
           onChange={handleInputChange}
           onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
