@@ -55,10 +55,11 @@ const Index = () => {
                 <Search className="h-5 w-5" />
                 <h2 className="text-xl font-semibold">Yüksek Teknoloji, Orta-Yüksek Teknoloji, Hedef Sektörler, Öncelikli Sektörler Teşvik Sorgusu</h2>
               </div>
-              <UnifiedIncentiveQuery />
               
-              {/* Feature Cards Section - wrapped in Card component */}
-              <div className="mt-8 mb-6">
+              <div className="max-w-6xl mx-auto space-y-6">
+                <UnifiedIncentiveQuery />
+                
+                {/* Feature Cards Section - matching UnifiedIncentiveQuery container width */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-center">Özellikler</CardTitle>
