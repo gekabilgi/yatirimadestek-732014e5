@@ -21,7 +21,7 @@ const Index = () => {
         <div className="mb-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-center">Modül Seçimi</CardTitle>
+              <CardTitle className="text-center"></CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
