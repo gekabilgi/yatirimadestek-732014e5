@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Search, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Header from '@/components/Header';
+import HeroSection from '@/components/HeroSection';
 import UnifiedIncentiveQuery from '@/components/UnifiedIncentiveQuery';
 import IncentiveTypeCalculator from '@/components/IncentiveTypeCalculator';
 
@@ -11,26 +13,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-2">Yatırım Teşvik Sistemi</h1>
-          <p className="text-muted-foreground">
-            9903 Sayılı Kararnameye göre yatırım teşviklerinizi sorgulayın ve hesaplayın
-          </p>
-        </div>
-
+      <Header />
+      <HeroSection />
+      
+      <div className="container mx-auto py-16" id="features-section">
         {/* Module Selection */}
-        <div className="mb-6">
+        <div className="mb-8">
           <Card>
             <CardHeader>
-              <CardTitle>Modül Seçimi</CardTitle>
+              <CardTitle className="text-center">Modül Seçimi</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   variant={activeModule === 'query' ? 'default' : 'outline'}
                   onClick={() => setActiveModule('query')}
                   className="flex items-center gap-2"
+                  size="lg"
                 >
                   <Search className="h-4 w-4" />
                   Sektör Bazlı Teşvik Sorgusu
@@ -39,6 +38,7 @@ const Index = () => {
                   variant={activeModule === 'calculator' ? 'default' : 'outline'}
                   onClick={() => setActiveModule('calculator')}
                   className="flex items-center gap-2"
+                  size="lg"
                 >
                   <Calculator className="h-4 w-4" />
                   Türkiye Yüzyılı Teşvikleri Hesaplama
