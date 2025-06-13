@@ -16,14 +16,14 @@ const Index = () => {
       <Header />
       <HeroSection />
       
-      <div className="container mx-auto py-16" id="features-section">
+      <div className="container mx-auto py-8" id="features-section">
         {/* Module Selection */}
-        <div className="mb-8">
+        <div className="mb-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-4">
               <CardTitle className="text-center">Modül Seçimi</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   variant={activeModule === 'query' ? 'default' : 'outline'}
@@ -51,7 +51,7 @@ const Index = () => {
         <div className="w-full">
           {activeModule === 'query' && (
             <div>
-              <div className="flex items-center gap-2 mb-6 justify-center">
+              <div className="flex items-center gap-2 mb-4 justify-center">
                 <Search className="h-5 w-5" />
                 <h2 className="text-xl font-semibold">Yüksek Teknoloji, Orta-Yüksek Teknoloji, Hedef Sektörler, Öncelikli Sektörler Teşvik Sorgusu</h2>
               </div>
@@ -61,7 +61,7 @@ const Index = () => {
 
           {activeModule === 'calculator' && (
             <div>
-              <div className="flex items-center gap-2 mb-6 justify-center">
+              <div className="flex items-center gap-2 mb-4 justify-center">
                 <Calculator className="h-5 w-5" />
                 <h2 className="text-xl font-semibold">Teknoloji Hamlesi, Yerel Kalkınma Hamlesi ve Stratejik Hamle Kapsamında Teşvik Hesaplama</h2>
               </div>
