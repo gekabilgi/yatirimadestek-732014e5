@@ -42,8 +42,8 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
 
   // Calculate SGK Employer Premium Support
   const sgkEmployerPremiumSupport = isRegion6
-    ? 144 * SGK_EMPLOYER_PREMIUM_RATE * 1.0 * inputs.numberOfEmployees
-    : 96 * (SGK_EMPLOYER_PREMIUM_RATE / 2) * 0.5 * inputs.numberOfEmployees;
+    ? 144 * SGK_EMPLOYER_PREMIUM_RATE * inputs.numberOfEmployees
+    : 96 * (SGK_EMPLOYER_PREMIUM_RATE / 2) * inputs.numberOfEmployees;
 
   // Calculate SGK Employee Premium Support (only for Region 6)
   const sgkEmployeePremiumSupport = isRegion6
