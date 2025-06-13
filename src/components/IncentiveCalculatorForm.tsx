@@ -1,10 +1,10 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calculator } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calculator, AlertCircle } from 'lucide-react';
 import { IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { ProvinceRegionMap } from '@/types/database';
@@ -35,6 +35,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 
   const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
+  const [showEmployeeAlert, setShowEmployeeAlert] = useState(false);
 
   // Calculate total fixed investment automatically
   const totalFixedInvestment = useMemo(() => {
@@ -72,6 +73,16 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
       ...prev,
       [field]: value
     }));
+
+    // Show alert if numberOfEmployees is entered but still 0 or invalid
+    if (field === 'numberOfEmployees') {
+      const numValue = typeof value === 'string' ? parseInt(value) : value;
+      if (numValue <= 0) {
+        setShowEmployeeAlert(true);
+      } else {
+        setShowEmployeeAlert(false);
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -130,6 +141,14 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             value={formData.numberOfEmployees}
             onChange={(e) => handleInputChange('numberOfEmployees', parseInt(e.target.value) || 0)}
           />
+          {showEmployeeAlert && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Çalışan sayısı 0'dan büyük olmalıdır. Lütfen geçerli bir sayı girin.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <div className="space-y-2">
