@@ -25,7 +25,7 @@ const Header = () => {
           <a className="mr-6 flex items-center space-x-2" href="/">
             <Calculator className="h-6 w-6" />
             <span className="hidden font-bold sm:inline-block">
-              Yatırım Teşvik Sistemi
+              9903 | Yeni Yatırım Teşvik Sistemi
             </span>
           </a>
         </div>
