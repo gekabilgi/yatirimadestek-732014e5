@@ -77,7 +77,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     // Show alert if numberOfEmployees is entered but still 0 or invalid
     if (field === 'numberOfEmployees') {
       const numValue = typeof value === 'string' ? parseInt(value) : value;
-      if (numValue <= 0) {
+      if (numValue <= 0 || isNaN(numValue)) {
         setShowEmployeeAlert(true);
       } else {
         setShowEmployeeAlert(false);
@@ -89,6 +89,9 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     e.preventDefault();
     onCalculate(formData);
   };
+
+  // Show alert if numberOfEmployees field is invalid (including when skipped/empty)
+  const shouldShowEmployeeAlert = formData.numberOfEmployees <= 0 || showEmployeeAlert;
 
   const isFormValid = formData.province && formData.numberOfEmployees > 0;
 
@@ -141,7 +144,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             value={formData.numberOfEmployees}
             onChange={(e) => handleInputChange('numberOfEmployees', parseInt(e.target.value) || 0)}
           />
-          {showEmployeeAlert && (
+          {shouldShowEmployeeAlert && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
