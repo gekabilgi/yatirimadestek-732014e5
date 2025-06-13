@@ -30,7 +30,7 @@ const IncentiveTypeCalculator: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Teşvik Türü Bazlı Destek Hesaplayıcısı</CardTitle>
+          <CardTitle>Türkiye Yüzyılı Teşvikleri Hesaplama</CardTitle>
         </CardHeader>
         <CardContent>
           <IncentiveCalculatorForm 

@@ -41,7 +41,7 @@ const Index = () => {
                   className="flex items-center gap-2"
                 >
                   <Calculator className="h-4 w-4" />
-                  Teşvik Türü Bazlı Hesaplayıcı
+                  Türkiye Yüzyılı Teşvikleri Hesaplama
                 </Button>
               </div>
             </CardContent>
