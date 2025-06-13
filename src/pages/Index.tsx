@@ -17,7 +17,38 @@ const Index = () => {
       <HeroSection />
       
       <div className="container mx-auto py-4" id="features-section">
-        {/* Colored Cards Feature Grid (moved from HeroSection) */}
+        {/* Module Selection */}
+        <div className="mb-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-center">Modül Seçimi</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  variant={activeModule === 'calculator' ? 'default' : 'outline'}
+                  onClick={() => setActiveModule('calculator')}
+                  className="flex items-center gap-2"
+                  size="lg"
+                >
+                  <Calculator className="h-4 w-4" />
+                  Türkiye Yüzyılı Teşvikleri Hesaplama
+                </Button>
+                <Button
+                  variant={activeModule === 'query' ? 'default' : 'outline'}
+                  onClick={() => setActiveModule('query')}
+                  className="flex items-center gap-2"
+                  size="lg"
+                >
+                  <Search className="h-4 w-4" />
+                  Sektör Bazlı Teşvik Sorgusu
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Colored Cards Feature Grid */}
         <div className="mb-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/20">
@@ -62,37 +93,6 @@ const Index = () => {
               </CardContent>
             </Card>
           </div>
-        </div>
-
-        {/* Module Selection (moved to bottom) */}
-        <div className="mb-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-center">Modül Seçimi</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  variant={activeModule === 'calculator' ? 'default' : 'outline'}
-                  onClick={() => setActiveModule('calculator')}
-                  className="flex items-center gap-2"
-                  size="lg"
-                >
-                  <Calculator className="h-4 w-4" />
-                  Türkiye Yüzyılı Teşvikleri Hesaplama
-                </Button>
-                <Button
-                  variant={activeModule === 'query' ? 'default' : 'outline'}
-                  onClick={() => setActiveModule('query')}
-                  className="flex items-center gap-2"
-                  size="lg"
-                >
-                  <Search className="h-4 w-4" />
-                  Sektör Bazlı Teşvik Sorgusu
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
         
         <div className="w-full">
