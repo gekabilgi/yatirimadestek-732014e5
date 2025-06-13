@@ -63,7 +63,7 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-2 mb-6 justify-center">
                 <Calculator className="h-5 w-5" />
-                <h2 className="text-xl font-semibold">Teknoloji Hamlesi, Yerel Kalkınma Hamlesi ve Stratejik Hamle Kapsamında Teşvik HesaplamA</h2>
+                <h2 className="text-xl font-semibold">Teknoloji Hamlesi, Yerel Kalkınma Hamlesi ve Stratejik Hamle Kapsamında Teşvik Hesaplama</h2>
               </div>
               <IncentiveTypeCalculator />
             </div>
