@@ -26,15 +26,6 @@ const Index = () => {
             <CardContent className="pt-0">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
-                  variant={activeModule === 'query' ? 'default' : 'outline'}
-                  onClick={() => setActiveModule('query')}
-                  className="flex items-center gap-2"
-                  size="lg"
-                >
-                  <Search className="h-4 w-4" />
-                  Sektör Bazlı Teşvik Sorgusu
-                </Button>
-                <Button
                   variant={activeModule === 'calculator' ? 'default' : 'outline'}
                   onClick={() => setActiveModule('calculator')}
                   className="flex items-center gap-2"
@@ -42,6 +33,15 @@ const Index = () => {
                 >
                   <Calculator className="h-4 w-4" />
                   Türkiye Yüzyılı Teşvikleri Hesaplama
+                </Button>
+                <Button
+                  variant={activeModule === 'query' ? 'default' : 'outline'}
+                  onClick={() => setActiveModule('query')}
+                  className="flex items-center gap-2"
+                  size="lg"
+                >
+                  <Search className="h-4 w-4" />
+                  Sektör Bazlı Teşvik Sorgusu
                 </Button>
               </div>
             </CardContent>
