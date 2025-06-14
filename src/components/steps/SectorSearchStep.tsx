@@ -75,12 +75,11 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
       let query = supabase.from('sector_search').select('*');
       
       if (isNaceSearch) {
-        // For NACE code search, handle both dotted and non-dotted formats
-        const normalizedSearch = normalizeNaceCode(searchTermLower);
+        // For NACE code search, format the search term and search for codes starting with it
         const formattedSearch = formatNaceCode(searchTermLower);
         
-        // Search for both the original term, normalized term, and formatted term
-        query = query.or(`nace_kodu.ilike.%${searchTermLower}%,nace_kodu.ilike.%${normalizedSearch}%,nace_kodu.ilike.%${formattedSearch}%`);
+        // Search for NACE codes that start with the formatted search term
+        query = query.ilike('nace_kodu', `${formattedSearch}%`);
       } else {
         // For sector name search
         query = query.ilike('sektor', `%${searchTermLower}%`);
