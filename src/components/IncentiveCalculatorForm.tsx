@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 
   const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
-  const [showEmployeeAlert, setShowEmployeeAlert] = useState(false);
+  const [employeeFieldTouched, setEmployeeFieldTouched] = useState(false);
 
   // Calculate total fixed investment automatically
   const totalFixedInvestment = useMemo(() => {
@@ -73,16 +74,16 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
       ...prev,
       [field]: value
     }));
+  };
 
-    // Show alert if numberOfEmployees is entered but still 0 or invalid
-    if (field === 'numberOfEmployees') {
-      const numValue = typeof value === 'string' ? parseInt(value) : value;
-      if (numValue <= 0 || isNaN(numValue)) {
-        setShowEmployeeAlert(true);
-      } else {
-        setShowEmployeeAlert(false);
-      }
-    }
+  const handleEmployeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 0;
+    setEmployeeFieldTouched(true);
+    handleInputChange('numberOfEmployees', value);
+  };
+
+  const handleEmployeeBlur = () => {
+    setEmployeeFieldTouched(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,8 +91,8 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     onCalculate(formData);
   };
 
-  // Show alert if numberOfEmployees field is invalid (including when skipped/empty)
-  const shouldShowEmployeeAlert = formData.numberOfEmployees <= 0 || showEmployeeAlert;
+  // Only show alert if field has been touched and value is invalid
+  const shouldShowEmployeeAlert = employeeFieldTouched && formData.numberOfEmployees <= 0;
 
   const isFormValid = formData.province && formData.numberOfEmployees > 0;
 
@@ -142,7 +143,8 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             type="number"
             min="0"
             value={formData.numberOfEmployees}
-            onChange={(e) => handleInputChange('numberOfEmployees', parseInt(e.target.value) || 0)}
+            onChange={handleEmployeeChange}
+            onBlur={handleEmployeeBlur}
           />
           {shouldShowEmployeeAlert && (
             <Alert variant="destructive">
