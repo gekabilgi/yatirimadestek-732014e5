@@ -41,7 +41,7 @@ const HeroSection = () => {
                     <h3 className="font-semibold">Sektör Sorgusu</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Yüksek teknoloji, orta-yüksek teknoloji ve öncelikli sektörlerde geçerli teşvik oranlarını sorgulayın
+                   Hedef, Öncelikli (Yüksek teknoloji ve  Orta-Yüksek teknoloji) sektörlerde geçerli destekleri görün.
                   </p>
                 </CardContent>
               </Card>
