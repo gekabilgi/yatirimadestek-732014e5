@@ -718,17 +718,21 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
             </Card>
           </div>
 
-          {/* Warning about Faiz/Kar Payı limit */}
+          {/* Warning about Faiz/Kar Payı limit with yellow background */}
           {((incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A") || 
             (incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A")) && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının{" "}
-                {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && 
-                  formatPercentage(incentiveResult.supports.target_cap_ratio)}'unu geçemez.
-              </AlertDescription>
-            </Alert>
+            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-sm text-yellow-800">
+                    <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının{" "}
+                    {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && 
+                      formatPercentage(incentiveResult.supports.target_cap_ratio)}'unu geçemez.
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
 
           {incentiveResult.sector.conditions && (
