@@ -17,15 +17,10 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
       <div className="container relative">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-muted-foreground ring-1 ring-border/10 hover:ring-border/20">
-              9903 Sayılı Karar{' '}
-              <span className="font-semibold text-primary"></span>
-            </div>
-          </div>
+          
           
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Yeni Yatırım Teşvik
+           9903 Yatırım Teşvik
             <span className="text-primary"> Sistemi</span>
           </h1>
           
