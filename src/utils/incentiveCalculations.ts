@@ -61,8 +61,16 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
   const totalMachineryCost = inputs.importedMachineryCost + inputs.domesticMachineryCost;
   const machinerySupportCalculated = totalMachineryCost * 0.25;
   const machinerySupportLimit = totalFixedInvestment * 0.15;
+  let cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
+  
+  if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
+    cappedMachinerySupport = Math.min(cappedMachinerySupport, 240000000);
+  } else if (inputs.incentiveType === 'Strategic Initiative') {
+    cappedMachinerySupport = Math.min(cappedMachinerySupport, 180000000);
+  }
+  
   const machinerySupportAmount = inputs.supportPreference === 'Machinery Support' 
-    ? Math.min(machinerySupportCalculated, machinerySupportLimit)
+    ? cappedMachinerySupport 
     : 0;
 
   // Calculate Interest/Profit Share Support
