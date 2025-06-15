@@ -39,6 +39,9 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
     }
   };
 
+  // Calculate total machinery cost
+  const totalMachineryCost = inputs.importedMachineryCost + inputs.domesticMachineryCost;
+
   if (!results.isEligible) {
     return (
       <Card>
@@ -78,10 +81,14 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
       <CardContent className="space-y-6">
         {/* Summary */}
         <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Toplam Sabit Yatırım Tutarı:</span>
               <div className="font-semibold text-lg">{formatCurrency(results.totalFixedInvestment)}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Toplam Makine Maliyeti:</span>
+              <div className="font-semibold text-lg">{formatCurrency(totalMachineryCost)}</div>
             </div>
             <div>
               <span className="text-muted-foreground">KDV ve Gümrük Muafiyeti:</span>
