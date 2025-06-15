@@ -1,4 +1,3 @@
-
 import { IncentiveCalculatorInputs, IncentiveCalculatorResults } from '@/types/incentiveCalculator';
 
 const SGK_EMPLOYER_PREMIUM_RATE = 4355.92;
@@ -110,12 +109,17 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
     );
   }
 
-  // Calculate Investment Contribution
+  // Calculate Investment Contribution with different rates based on incentive type
   const supportAmount = inputs.supportPreference === 'Machinery Support' 
     ? machinerySupportAmount 
     : interestProfitShareSupportAmount;
   
-  const taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount) * 0.50;
+  let taxReductionInvestmentContribution: number;
+  if (inputs.incentiveType === 'Strategic Initiative') {
+    taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount) * 0.40;
+  } else {
+    taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount) * 0.50;
+  }
 
   return {
     totalFixedInvestment,
