@@ -8,6 +8,7 @@ import { calculateIncentives } from '@/utils/incentiveCalculations';
 
 const IncentiveTypeCalculator: React.FC = () => {
   const [calculationResults, setCalculationResults] = useState<IIncentiveCalculatorResults | null>(null);
+  const [calculationInputs, setCalculationInputs] = useState<IncentiveCalculatorInputs | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
   const handleCalculate = async (inputs: IncentiveCalculatorInputs) => {
@@ -15,6 +16,7 @@ const IncentiveTypeCalculator: React.FC = () => {
     try {
       const results = calculateIncentives(inputs);
       setCalculationResults(results);
+      setCalculationInputs(inputs);
     } catch (error) {
       console.error('Calculation error:', error);
     } finally {
@@ -24,6 +26,7 @@ const IncentiveTypeCalculator: React.FC = () => {
 
   const handleReset = () => {
     setCalculationResults(null);
+    setCalculationInputs(null);
   };
 
   return (
@@ -40,9 +43,10 @@ const IncentiveTypeCalculator: React.FC = () => {
         </CardContent>
       </Card>
 
-      {calculationResults && (
+      {calculationResults && calculationInputs && (
         <IncentiveCalculatorResults 
           results={calculationResults}
+          inputs={calculationInputs}
           onReset={handleReset}
         />
       )}

@@ -5,19 +5,38 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertTriangle, Calculator, Download } from 'lucide-react';
-import { IncentiveCalculatorResults as IIncentiveCalculatorResults } from '@/types/incentiveCalculator';
+import { IncentiveCalculatorResults as IIncentiveCalculatorResults, IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
 
 interface IncentiveCalculatorResultsProps {
   results: IIncentiveCalculatorResults;
+  inputs: IncentiveCalculatorInputs;
   onReset: () => void;
 }
 
 export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProps> = ({
   results,
+  inputs,
   onReset
 }) => {
   const formatCurrency = (amount: number): string => {
     return `${amount.toLocaleString('tr-TR')} TL`;
+  };
+
+  const getSupportPreferenceText = (preference: string): string => {
+    return preference === 'Interest/Profit Share Support' ? 'Faiz/Kar Payı Desteği' : 'Makine Desteği';
+  };
+
+  const getIncentiveTypeText = (type: string): string => {
+    switch (type) {
+      case 'Technology Initiative':
+        return 'Teknoloji Hamlesi';
+      case 'Local Development Initiative':
+        return 'Yerel Kalkınma Hamlesi';
+      case 'Strategic Initiative':
+        return 'Stratejik Hamle';
+      default:
+        return type;
+    }
   };
 
   if (!results.isEligible) {
@@ -67,6 +86,29 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
             <div>
               <span className="text-muted-foreground">KDV ve Gümrük Muafiyeti:</span>
               <Badge className="ml-2 bg-green-500 text-white">{results.vatCustomsExemption}</Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Input Summary */}
+        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="font-semibold mb-3">Seçilen Bilgiler</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Teşvik Türü:</span>
+              <div className="font-medium">{getIncentiveTypeText(inputs.incentiveType)}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Yatırım İli:</span>
+              <div className="font-medium">{inputs.province}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Çalışan Sayısı:</span>
+              <div className="font-medium">{inputs.numberOfEmployees} kişi</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Destek Tercihi:</span>
+              <div className="font-medium">{getSupportPreferenceText(inputs.supportPreference)}</div>
             </div>
           </div>
         </div>

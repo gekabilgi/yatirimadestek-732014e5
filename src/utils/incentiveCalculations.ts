@@ -1,3 +1,4 @@
+
 import { IncentiveCalculatorInputs, IncentiveCalculatorResults } from '@/types/incentiveCalculator';
 
 const SGK_EMPLOYER_PREMIUM_RATE = 4355.92;
@@ -57,17 +58,27 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
     ? 120 * SGK_EMPLOYEE_PREMIUM_RATE * inputs.numberOfEmployees
     : 0;
 
-  // Calculate Machinery Support
+  // Calculate Machinery Support with new logic
   const totalMachineryCost = inputs.importedMachineryCost + inputs.domesticMachineryCost;
   const machinerySupportCalculated = totalMachineryCost * 0.25;
   const machinerySupportLimit = totalFixedInvestment * 0.15;
   let cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
   
+  // Apply caps based on incentive type
+  let monetaryCap = 0;
+  let investmentCapPercentage = 0;
+  
   if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
-    cappedMachinerySupport = Math.min(cappedMachinerySupport, 240000000);
+    monetaryCap = 240000000; // 240 million TL
+    investmentCapPercentage = 0.20; // 20% of total fixed investment
   } else if (inputs.incentiveType === 'Strategic Initiative') {
-    cappedMachinerySupport = Math.min(cappedMachinerySupport, 180000000);
+    monetaryCap = 180000000; // 180 million TL
+    investmentCapPercentage = 0.15; // 15% of total fixed investment
   }
+  
+  // Apply the investment cap percentage
+  const investmentCap = totalFixedInvestment * investmentCapPercentage;
+  cappedMachinerySupport = Math.min(cappedMachinerySupport, investmentCap, monetaryCap);
   
   const machinerySupportAmount = inputs.supportPreference === 'Machinery Support' 
     ? cappedMachinerySupport 
