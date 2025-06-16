@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,19 +36,6 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
         return 'Stratejik Hamle';
       default:
         return type;
-    }
-  };
-
-  const getSectorCategoryText = (category: string): string => {
-    switch (category) {
-      case 'Target Sector':
-        return 'Hedef Sektör';
-      case 'Other Sector':
-        return 'Diğer Sektör';
-      case 'Both':
-        return 'Her İkisi';
-      default:
-        return category;
     }
   };
 
@@ -136,10 +124,6 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
             <div>
               <span className="text-muted-foreground">Çalışan Sayısı:</span>
               <div className="font-medium">{inputs.numberOfEmployees} kişi</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Sektör Kategorisi:</span>
-              <div className="font-medium">{getSectorCategoryText(inputs.sectorCategory)}</div>
             </div>
             <div>
               <span className="text-muted-foreground">Destek Tercihi:</span>
