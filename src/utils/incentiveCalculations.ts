@@ -1,3 +1,4 @@
+
 import { IncentiveCalculatorInputs, IncentiveCalculatorResults } from '@/types/incentiveCalculator';
 
 const SGK_EMPLOYER_PREMIUM_RATE = 4355.92;
@@ -99,57 +100,48 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
     ? cappedMachinerySupport 
     : 0;
 
-  // Calculate Interest/Profit Share Support with new business rule
+  // Calculate Interest/Profit Share Support - no sector restrictions since sectorCategory is removed
   let interestProfitShareSupportAmount = 0;
   if (inputs.supportPreference === 'Interest/Profit Share Support') {
-    // Check sector and region restrictions
-    const isTargetSector = inputs.sectorCategory === 'Target Sector' || inputs.sectorCategory === 'Both';
-    const isRegionRestricted = [1, 2, 3].includes(provinceRegion);
+    // Calculate support rate based on incentive type
+    let supportRate = 0;
+    let maxReductionCap = 0;
+    let monetaryCap = 0;
+    let investmentCapPercentage = 0;
     
-    if (isTargetSector && isRegionRestricted) {
-      interestProfitShareSupportAmount = 0;
-      warningMessages.push('Hedef sektörler için Faiz/Kar Payı Desteği 1., 2. ve 3. bölgelerde uygulanmamaktadır.');
-    } else {
-      // Calculate support rate based on incentive type
-      let supportRate = 0;
-      let maxReductionCap = 0;
-      let monetaryCap = 0;
-      let investmentCapPercentage = 0;
-      
-      if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
-        supportRate = Math.min(inputs.bankInterestRate * 0.40, 20); // Cap at 20%
-        maxReductionCap = 20; // 20% maximum
-        monetaryCap = 240000000; // 240 million TL
-        investmentCapPercentage = 0.20; // 20% of total fixed investment
-      } else if (inputs.incentiveType === 'Strategic Initiative') {
-        supportRate = Math.min(inputs.bankInterestRate * 0.30, 15); // Cap at 15%
-        maxReductionCap = 15; // 15% maximum
-        monetaryCap = 180000000; // 180 million TL
-        investmentCapPercentage = 0.15; // 15% of total fixed investment
-      }
-
-      // Calculate total interest amount using loan formula
-      const monthlyRate = (inputs.bankInterestRate / 100) / 12;
-      const loanTermMonths = inputs.loanTermMonths;
-      
-      // Monthly payment calculation: PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
-      const monthlyPayment = inputs.loanAmount * 
-        (monthlyRate * Math.pow(1 + monthlyRate, loanTermMonths)) / 
-        (Math.pow(1 + monthlyRate, loanTermMonths) - 1);
-      
-      // Total interest = (Monthly Payment * Term) - Loan Amount
-      const totalInterest = (monthlyPayment * loanTermMonths) - inputs.loanAmount;
-      
-      // Preliminary support amount
-      const preliminarySupportAmount = totalInterest * (supportRate / 100);
-      
-      // Apply caps
-      const investmentCap = totalFixedInvestment * investmentCapPercentage;
-      interestProfitShareSupportAmount = Math.min(
-        Math.min(preliminarySupportAmount, monetaryCap),
-        investmentCap
-      );
+    if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
+      supportRate = Math.min(inputs.bankInterestRate * 0.40, 20); // Cap at 20%
+      maxReductionCap = 20; // 20% maximum
+      monetaryCap = 240000000; // 240 million TL
+      investmentCapPercentage = 0.20; // 20% of total fixed investment
+    } else if (inputs.incentiveType === 'Strategic Initiative') {
+      supportRate = Math.min(inputs.bankInterestRate * 0.30, 15); // Cap at 15%
+      maxReductionCap = 15; // 15% maximum
+      monetaryCap = 180000000; // 180 million TL
+      investmentCapPercentage = 0.15; // 15% of total fixed investment
     }
+
+    // Calculate total interest amount using loan formula
+    const monthlyRate = (inputs.bankInterestRate / 100) / 12;
+    const loanTermMonths = inputs.loanTermMonths;
+    
+    // Monthly payment calculation: PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
+    const monthlyPayment = inputs.loanAmount * 
+      (monthlyRate * Math.pow(1 + monthlyRate, loanTermMonths)) / 
+      (Math.pow(1 + monthlyRate, loanTermMonths) - 1);
+    
+    // Total interest = (Monthly Payment * Term) - Loan Amount
+    const totalInterest = (monthlyPayment * loanTermMonths) - inputs.loanAmount;
+    
+    // Preliminary support amount
+    const preliminarySupportAmount = totalInterest * (supportRate / 100);
+    
+    // Apply caps
+    const investmentCap = totalFixedInvestment * investmentCapPercentage;
+    interestProfitShareSupportAmount = Math.min(
+      Math.min(preliminarySupportAmount, monetaryCap),
+      investmentCap
+    );
   }
 
   // Calculate Investment Contribution with different rates based on incentive type
