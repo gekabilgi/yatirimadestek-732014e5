@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +39,49 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return value;
     return `${numValue.toLocaleString('tr-TR')} TL`;
+  };
+
+  // Helper function to get support values based on business rules
+  const getSupportValues = (incentiveResult: IncentiveResult) => {
+    const region = incentiveResult.location.region;
+    const isTarget = incentiveResult.sector.isTarget;
+    const isPriority = incentiveResult.sector.isPriority;
+    const isHighTech = incentiveResult.sector.isHighTech;
+    const isMidHighTech = incentiveResult.sector.isMidHighTech;
+    
+    // Check if it's a combination (hedef + any other type)
+    const isCombination = isTarget && (isPriority || isHighTech || isMidHighTech);
+    
+    let targetSupports = {
+      taxDiscount: "20", // Always 20% for target investments
+      interestSupport: "N/A",
+      cap: "N/A"
+    };
+    
+    let prioritySupports = {
+      taxDiscount: "20", // Always 20%
+      interestSupport: "25", // Always 25%
+      cap: "24000000" // Always 24M TL
+    };
+
+    // Apply business rules for target supports
+    if (isTarget) {
+      if ([1, 2, 3].includes(region)) {
+        // Regions 1, 2, 3: No interest/profit share support for target
+        targetSupports.interestSupport = "N/A";
+        targetSupports.cap = "N/A";
+      } else if ([4, 5, 6].includes(region)) {
+        // Regions 4, 5, 6: Interest/profit share support available
+        targetSupports.interestSupport = "25";
+        targetSupports.cap = "12000000";
+      }
+    }
+
+    return {
+      target: targetSupports,
+      priority: prioritySupports,
+      isCombination
+    };
   };
 
   // Helper function to convert Turkish characters for PDF
@@ -252,6 +294,9 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     yPos += 20;
     doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
     
+    // Get support values based on business rules
+    const supportValues = getSupportValues(incentiveResult);
+    
     // Investment Type Supports section
     doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
     doc.rect(leftMargin, yPos, contentWidth, 8, 'F');
@@ -276,12 +321,11 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       
-      const targetTaxDiscount = incentiveResult.supports.target_tax_discount !== "N/A" ? 
-        formatPercentage(incentiveResult.supports.target_tax_discount) : "Uygulanmaz";
-      const targetInterestSupport = incentiveResult.supports.target_interest_support !== "N/A" ? 
-        formatPercentage(incentiveResult.supports.target_interest_support) : "Uygulanmaz";
-      const targetCap = incentiveResult.supports.target_cap !== "N/A" ? 
-        formatCurrency(incentiveResult.supports.target_cap) : "Uygulanmaz";
+      const targetTaxDiscount = formatPercentage(supportValues.target.taxDiscount);
+      const targetInterestSupport = supportValues.target.interestSupport !== "N/A" ? 
+        formatPercentage(supportValues.target.interestSupport) : "Uygulanmaz";
+      const targetCap = supportValues.target.cap !== "N/A" ? 
+        formatCurrency(supportValues.target.cap) : "Uygulanmaz";
       
       doc.text(convertTurkishChars(`Vergi Indirim Destegi Yatirim Katki Orani: ${targetTaxDiscount}`), leftMargin + 5, yPos);
       yPos += 5;
@@ -291,26 +335,29 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       yPos += 10;
     }
     
-    // Priority Investment Supports
-    if (incentiveResult.sector.isPriority) {
+    // Priority/High-Tech Investment Supports (if applicable)
+    if (incentiveResult.sector.isPriority || incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) {
       doc.setFillColor(green[0], green[1], green[2]);
       doc.rect(leftMargin, yPos, contentWidth, 6, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text(convertTurkishChars('Oncelikli Yatirim Destekleri'), leftMargin + 5, yPos + 4);
+      
+      let sectionTitle = 'Oncelikli Yatirim Destekleri';
+      if (incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) {
+        sectionTitle = 'Oncelikli ve Yuksek/Orta-Yuksek Teknoloji Yatirim Destekleri';
+      }
+      
+      doc.text(convertTurkishChars(sectionTitle), leftMargin + 5, yPos + 4);
       
       yPos += 10;
       doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       
-      const priorityTaxDiscount = incentiveResult.supports.priority_tax_discount !== "N/A" ? 
-        formatPercentage(incentiveResult.supports.priority_tax_discount) : "Uygulanmaz";
-      const priorityInterestSupport = incentiveResult.supports.priority_interest_support !== "N/A" ? 
-        formatPercentage(incentiveResult.supports.priority_interest_support) : "Uygulanmaz";
-      const priorityCap = incentiveResult.supports.priority_cap !== "N/A" ? 
-        formatCurrency(incentiveResult.supports.priority_cap) : "Uygulanmaz";
+      const priorityTaxDiscount = formatPercentage(supportValues.priority.taxDiscount);
+      const priorityInterestSupport = formatPercentage(supportValues.priority.interestSupport);
+      const priorityCap = formatCurrency(supportValues.priority.cap);
       
       doc.text(convertTurkishChars(`Vergi Indirim Destegi Yatirim Katki Orani: ${priorityTaxDiscount}`), leftMargin + 5, yPos);
       yPos += 5;
@@ -320,10 +367,8 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       yPos += 10;
     }
     
-    // Important Warning section
-    if (((incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A") || 
-         (incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A"))) {
-      
+    // Important Warning section (only if applicable)
+    if (incentiveResult.sector.isTarget && [4, 5, 6].includes(incentiveResult.location.region)) {
       doc.setFillColor(255, 243, 205);
       doc.rect(leftMargin, yPos, contentWidth, 15, 'F');
       
@@ -336,12 +381,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       doc.text(convertTurkishChars('⚠ Onemli Uyari:'), leftMargin + 8, yPos + 6);
       
       doc.setFont('helvetica', 'normal');
-      const ratioText = incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" ? 
-        formatPercentage(incentiveResult.supports.target_cap_ratio) :
-        incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A" ?
-        formatPercentage(incentiveResult.supports.priority_cap_ratio) : "%10";
-      
-      doc.text(convertTurkishChars(`Faiz/Kar Payi Destegi toplam sabit yatirim tutarinin ${ratioText}'unu gecemez.`), leftMargin + 8, yPos + 11);
+      doc.text(convertTurkishChars(`Faiz/Kar Payi Destegi toplam sabit yatirim tutarinin %10'unu gecemez.`), leftMargin + 8, yPos + 11);
       
       yPos += 20;
     }
@@ -591,8 +631,8 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     return null;
   }
 
-  // Check if Target Sector in restricted regions for Interest/Profit Share Support warning
-  const isTargetSectorInRestrictedRegion = incentiveResult.sector.isTarget && [1, 2, 3].includes(incentiveResult.location.region);
+  // Get support values based on business rules
+  const supportValues = getSupportValues(incentiveResult);
 
   return (
     <div className="space-y-6">
@@ -665,7 +705,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
           </div>
 
           {/* Target Sector Interest/Profit Share Support Warning */}
-          {isTargetSectorInRestrictedRegion && (
+          {incentiveResult.sector.isTarget && [1, 2, 3].includes(incentiveResult.location.region) && (
             <Alert className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
@@ -711,32 +751,37 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                   <div className="space-y-2">
                     <h5 className="font-medium text-sm text-blue-600">Hedef Yatırım Destekleri</h5>
                     <div className="text-xs space-y-1">
-                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {incentiveResult.supports.target_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.target_tax_discount) : "N/A"}</div>
+                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: %{supportValues.target.taxDiscount}</div>
                       <div>
                         Faiz/Kar Payı Desteği Oranı: {
-                          isTargetSectorInRestrictedRegion 
+                          supportValues.target.interestSupport === "N/A" 
                             ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
-                            : (incentiveResult.supports.target_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.target_interest_support) : "N/A")
+                            : `%${supportValues.target.interestSupport}`
                         }
                       </div>
                       <div>
                         Faiz/Kar Payı Desteği Üst Limit Tutarı: {
-                          isTargetSectorInRestrictedRegion 
+                          supportValues.target.cap === "N/A" 
                             ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
-                            : (incentiveResult.supports.target_cap !== "N/A" ? formatCurrency(incentiveResult.supports.target_cap) : "N/A")
+                            : formatCurrency(supportValues.target.cap)
                         }
                       </div>
                     </div>
                   </div>
                 )}
                 
-                {incentiveResult.sector.isPriority && (
+                {(incentiveResult.sector.isPriority || incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) && (
                   <div className="space-y-2">
-                    <h5 className="font-medium text-sm text-green-600">Öncelikli Yatırım Destekleri</h5>
+                    <h5 className="font-medium text-sm text-green-600">
+                      {incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech 
+                        ? "Öncelikli ve Yüksek/Orta-Yüksek Teknoloji Yatırım Destekleri"
+                        : "Öncelikli Yatırım Destekleri"
+                      }
+                    </h5>
                     <div className="text-xs space-y-1">
-                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {incentiveResult.supports.priority_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.priority_tax_discount) : "N/A"}</div>
-                      <div>Faiz/Kar Payı Desteği Oranı: {incentiveResult.supports.priority_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.priority_interest_support) : "N/A"}</div>
-                      <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {incentiveResult.supports.priority_cap !== "N/A" ? formatCurrency(incentiveResult.supports.priority_cap) : "N/A"}</div>
+                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: %{supportValues.priority.taxDiscount}</div>
+                      <div>Faiz/Kar Payı Desteği Oranı: %{supportValues.priority.interestSupport}</div>
+                      <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {formatCurrency(supportValues.priority.cap)}</div>
                     </div>
                   </div>
                 )}
@@ -744,19 +789,14 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
             </Card>
           </div>
 
-          {/* Warning about Faiz/Kar Payı limit with yellow background */}
-          {((incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && !isTargetSectorInRestrictedRegion) || 
-            (incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A")) && (
+          {/* Warning about Faiz/Kar Payı limit with yellow background - only for target sectors in regions 4,5,6 */}
+          {incentiveResult.sector.isTarget && [4, 5, 6].includes(incentiveResult.location.region) && (
             <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
                 <div>
                   <p className="text-sm text-yellow-800">
-                    <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının{" "}
-                    {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && !isTargetSectorInRestrictedRegion && 
-                      formatPercentage(incentiveResult.supports.target_cap_ratio)}
-                    {incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A" && 
-                      formatPercentage(incentiveResult.supports.priority_cap_ratio)}'unu geçemez.
+                    <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının %10'unu geçemez.
                   </p>
                 </div>
               </div>
