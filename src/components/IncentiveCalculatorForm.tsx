@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +30,8 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     bankInterestRate: 45,
     supportPreference: 'Interest/Profit Share Support',
     loanAmount: 0,
-    loanTermMonths: 60
+    loanTermMonths: 60,
+    sectorCategory: 'Other Sector'
   });
 
   const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
@@ -154,6 +154,23 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               </AlertDescription>
             </Alert>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sectorCategory">Sektör Kategorisi</Label>
+          <Select 
+            value={formData.sectorCategory} 
+            onValueChange={(value) => handleInputChange('sectorCategory', value as any)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sektör kategorisi seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Target Sector">Hedef Sektör</SelectItem>
+              <SelectItem value="Other Sector">Diğer Sektör</SelectItem>
+              <SelectItem value="Both">Her İkisi</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">

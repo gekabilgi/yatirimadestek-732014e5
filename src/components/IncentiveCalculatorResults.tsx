@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,19 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
         return 'Stratejik Hamle';
       default:
         return type;
+    }
+  };
+
+  const getSectorCategoryText = (category: string): string => {
+    switch (category) {
+      case 'Target Sector':
+        return 'Hedef Sektör';
+      case 'Other Sector':
+        return 'Diğer Sektör';
+      case 'Both':
+        return 'Her İkisi';
+      default:
+        return category;
     }
   };
 
@@ -79,6 +91,18 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Warning Messages */}
+        {results.warningMessages && results.warningMessages.length > 0 && (
+          <div className="space-y-2">
+            {results.warningMessages.map((warning, index) => (
+              <Alert key={index} variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{warning}</AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        )}
+
         {/* Summary */}
         <div className="p-4 bg-green-50 rounded-lg border border-green-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -112,6 +136,10 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
             <div>
               <span className="text-muted-foreground">Çalışan Sayısı:</span>
               <div className="font-medium">{inputs.numberOfEmployees} kişi</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Sektör Kategorisi:</span>
+              <div className="font-medium">{getSectorCategoryText(inputs.sectorCategory)}</div>
             </div>
             <div>
               <span className="text-muted-foreground">Destek Tercihi:</span>

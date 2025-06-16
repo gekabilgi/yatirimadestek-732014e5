@@ -12,6 +12,7 @@ export interface IncentiveCalculatorInputs {
   supportPreference: 'Interest/Profit Share Support' | 'Machinery Support';
   loanAmount: number;
   loanTermMonths: number;
+  sectorCategory: 'Target Sector' | 'Other Sector' | 'Both';
 }
 
 export interface IncentiveCalculatorResults {
@@ -24,6 +25,7 @@ export interface IncentiveCalculatorResults {
   vatCustomsExemption: string;
   isEligible: boolean;
   validationErrors: string[];
+  warningMessages?: string[];
 }
 
 export interface AdminParameters {
