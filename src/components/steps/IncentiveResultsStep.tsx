@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -590,6 +591,9 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     return null;
   }
 
+  // Check if Target Sector in restricted regions for Interest/Profit Share Support warning
+  const isTargetSectorInRestrictedRegion = incentiveResult.sector.isTarget && [1, 2, 3].includes(incentiveResult.location.region);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -660,6 +664,16 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
             </div>
           </div>
 
+          {/* Target Sector Interest/Profit Share Support Warning */}
+          {isTargetSectorInRestrictedRegion && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <strong>Önemli Bilgi:</strong> Hedef sektörler için Faiz/Kar Payı Desteği 1., 2. ve 3. bölgelerde uygulanmamaktadır.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Support Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* General Supports */}
@@ -698,8 +712,20 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                     <h5 className="font-medium text-sm text-blue-600">Hedef Yatırım Destekleri</h5>
                     <div className="text-xs space-y-1">
                       <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {incentiveResult.supports.target_tax_discount !== "N/A" ? formatPercentage(incentiveResult.supports.target_tax_discount) : "N/A"}</div>
-                      <div>Faiz/Kar Payı Desteği Oranı: {incentiveResult.supports.target_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.target_interest_support) : "N/A"}</div>
-                      <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {incentiveResult.supports.target_cap !== "N/A" ? formatCurrency(incentiveResult.supports.target_cap) : "N/A"}</div>
+                      <div>
+                        Faiz/Kar Payı Desteği Oranı: {
+                          isTargetSectorInRestrictedRegion 
+                            ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
+                            : (incentiveResult.supports.target_interest_support !== "N/A" ? formatPercentage(incentiveResult.supports.target_interest_support) : "N/A")
+                        }
+                      </div>
+                      <div>
+                        Faiz/Kar Payı Desteği Üst Limit Tutarı: {
+                          isTargetSectorInRestrictedRegion 
+                            ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
+                            : (incentiveResult.supports.target_cap !== "N/A" ? formatCurrency(incentiveResult.supports.target_cap) : "N/A")
+                        }
+                      </div>
                     </div>
                   </div>
                 )}
@@ -719,7 +745,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
           </div>
 
           {/* Warning about Faiz/Kar Payı limit with yellow background */}
-          {((incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A") || 
+          {((incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && !isTargetSectorInRestrictedRegion) || 
             (incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A")) && (
             <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <div className="flex items-start gap-2">
@@ -727,8 +753,10 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                 <div>
                   <p className="text-sm text-yellow-800">
                     <strong>Önemli Uyarı:</strong> Faiz/Kar Payı Desteği toplam sabit yatırım tutarının{" "}
-                    {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && 
-                      formatPercentage(incentiveResult.supports.target_cap_ratio)}'unu geçemez.
+                    {incentiveResult.sector.isTarget && incentiveResult.supports.target_cap_ratio !== "N/A" && !isTargetSectorInRestrictedRegion && 
+                      formatPercentage(incentiveResult.supports.target_cap_ratio)}
+                    {incentiveResult.sector.isPriority && incentiveResult.supports.priority_cap_ratio !== "N/A" && 
+                      formatPercentage(incentiveResult.supports.priority_cap_ratio)}'unu geçemez.
                   </p>
                 </div>
               </div>
