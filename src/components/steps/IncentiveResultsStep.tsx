@@ -27,11 +27,11 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
   isCalculating,
   setIsCalculating,
 }) => {
-  // Helper function to format percentage
+  // Helper function to format percentage - fixed to not multiply by 100
   const formatPercentage = (value: string): string => {
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return value;
-    return `%${(numValue * 100).toFixed(0)}`;
+    return `%${numValue.toFixed(0)}`;
   };
 
   // Helper function to format currency
@@ -361,9 +361,9 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       
       doc.text(convertTurkishChars(`Vergi Indirim Destegi Yatirim Katki Orani: ${priorityTaxDiscount}`), leftMargin + 5, yPos);
       yPos += 5;
-      doc.text(convertTurkishChars(`Faiz/Kar Payi Destegi Orani: ${priorityInterestSupport}`), leftMargin + 5, yPos);
+      doc.text(convertTurkishChars(`Faiz/Kar Payı Destegi Orani: ${priorityInterestSupport}`), leftMargin + 5, yPos);
       yPos += 5;
-      doc.text(convertTurkishChars(`Faiz/Kar Payi Destegi Ust Limit Tutari: ${priorityCap}`), leftMargin + 5, yPos);
+      doc.text(convertTurkishChars(`Faiz/Kar Payı Destegi Ust Limit Tutari: ${priorityCap}`), leftMargin + 5, yPos);
       yPos += 10;
     }
     
@@ -751,12 +751,12 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                   <div className="space-y-2">
                     <h5 className="font-medium text-sm text-blue-600">Hedef Yatırım Destekleri</h5>
                     <div className="text-xs space-y-1">
-                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: %{supportValues.target.taxDiscount}</div>
+                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.target.taxDiscount)}</div>
                       <div>
                         Faiz/Kar Payı Desteği Oranı: {
                           supportValues.target.interestSupport === "N/A" 
                             ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
-                            : `%${supportValues.target.interestSupport}`
+                            : formatPercentage(supportValues.target.interestSupport)
                         }
                       </div>
                       <div>
@@ -779,8 +779,8 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                       }
                     </h5>
                     <div className="text-xs space-y-1">
-                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: %{supportValues.priority.taxDiscount}</div>
-                      <div>Faiz/Kar Payı Desteği Oranı: %{supportValues.priority.interestSupport}</div>
+                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.priority.taxDiscount)}</div>
+                      <div>Faiz/Kar Payı Desteği Oranı: {formatPercentage(supportValues.priority.interestSupport)}</div>
                       <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {formatCurrency(supportValues.priority.cap)}</div>
                     </div>
                   </div>
