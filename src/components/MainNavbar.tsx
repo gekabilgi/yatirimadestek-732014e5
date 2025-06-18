@@ -16,7 +16,7 @@ const MainNavbar = () => {
 
   const navItems = [
     { name: 'Ana Sayfa', href: '/' },
-    { name: 'Teşvik Araçları', href: '/incentive-tools' },
+    { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
     { name: 'Destek Arama', href: '/searchsupport' },
   ];
 
