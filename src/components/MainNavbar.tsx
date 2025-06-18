@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Menu, X, Calculator, User, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,7 @@ const MainNavbar = () => {
 
   const navItems = [
     { name: 'Ana Sayfa', href: '/' },
-    { name: 'Sektör Sorgusu', href: '/#features-section' },
-    { name: 'Teşvik Hesaplama', href: '/#features-section' },
+    { name: 'Teşvik Araçları', href: '/incentive-tools' },
     { name: 'Destek Arama', href: '/searchsupport' },
   ];
 

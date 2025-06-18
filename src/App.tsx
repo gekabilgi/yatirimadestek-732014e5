@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import Index from "./pages/Index";
+import IncentiveTools from "./pages/IncentiveTools";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
@@ -35,6 +36,7 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/incentive-tools" element={<IncentiveTools />} />
               <Route path="/searchsupport" element={<SearchSupport />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={
