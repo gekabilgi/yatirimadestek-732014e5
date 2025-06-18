@@ -4,7 +4,6 @@ import { Search, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MainNavbar from '@/components/MainNavbar';
-import AppInfoCards from '@/components/AppInfoCards';
 import UnifiedIncentiveQuery from '@/components/UnifiedIncentiveQuery';
 import IncentiveTypeCalculator from '@/components/IncentiveTypeCalculator';
 
@@ -27,9 +26,6 @@ const IncentiveTools = () => {
           </p>
         </div>
       </section>
-
-      {/* How to Use Section */}
-      <AppInfoCards />
       
       {/* Incentive Tools Section */}
       <div className="container mx-auto py-8">
