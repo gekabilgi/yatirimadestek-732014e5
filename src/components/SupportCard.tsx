@@ -95,14 +95,14 @@ export const SupportCard = ({ program }: SupportCardProps) => {
           
           <CollapsibleContent className="space-y-4 mt-4">
             <div className="border-t pt-4">
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-gray-500 mb-4 gap-3">
                 <span>Güncellenme: {formatDate(program.updated_at)}</span>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleFeedback}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleFeedback} className="w-full sm:w-auto">
                     <MessageSquare className="w-4 h-4 mr-1" />
                     Geri Bildirim
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleShare}>
+                  <Button variant="outline" size="sm" onClick={handleShare} className="w-full sm:w-auto">
                     <Share2 className="w-4 h-4 mr-1" />
                     Paylaş
                   </Button>
