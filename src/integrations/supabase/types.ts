@@ -38,6 +38,41 @@ export type Database = {
           },
         ]
       }
+      file_attachments: {
+        Row: {
+          display_order: number
+          file_url: string
+          filename: string
+          id: string
+          support_program_id: string | null
+          uploaded_at: string | null
+        }
+        Insert: {
+          display_order?: number
+          file_url: string
+          filename: string
+          id?: string
+          support_program_id?: string | null
+          uploaded_at?: string | null
+        }
+        Update: {
+          display_order?: number
+          file_url?: string
+          filename?: string
+          id?: string
+          support_program_id?: string | null
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_attachments_support_program_id_fkey"
+            columns: ["support_program_id"]
+            isOneToOne: false
+            referencedRelation: "support_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incentive_supports: {
         Row: {
           created_at: string | null
@@ -109,6 +144,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      institutions: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
       }
       location_support: {
         Row: {
@@ -376,6 +429,133 @@ export type Database = {
           sgk_duration?: number | null
         }
         Relationships: []
+      }
+      support_program_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          support_program_id: string | null
+          tag_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          support_program_id?: string | null
+          tag_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          support_program_id?: string | null
+          tag_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_program_tags_support_program_id_fkey"
+            columns: ["support_program_id"]
+            isOneToOne: false
+            referencedRelation: "support_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_program_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_programs: {
+        Row: {
+          application_deadline: string | null
+          contact_info: string | null
+          created_at: string | null
+          description: string
+          eligibility_criteria: string | null
+          id: string
+          institution_id: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_deadline?: string | null
+          contact_info?: string | null
+          created_at?: string | null
+          description: string
+          eligibility_criteria?: string | null
+          id?: string
+          institution_id?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_deadline?: string | null
+          contact_info?: string | null
+          created_at?: string | null
+          description?: string
+          eligibility_criteria?: string | null
+          id?: string
+          institution_id?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_programs_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tag_categories: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          category_id: number | null
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          category_id?: number | null
+          created_at?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          category_id?: number | null
+          created_at?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tags_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "tag_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
