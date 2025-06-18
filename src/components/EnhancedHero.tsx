@@ -9,7 +9,7 @@ const EnhancedHero = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/searchsupport');
+    navigate('/incentive-tools');
   };
 
   const stats = [
