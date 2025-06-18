@@ -3,13 +3,13 @@ import React from 'react';
 import { ArrowRight, Search, Calculator, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 
 const EnhancedHero = () => {
-  const scrollToFeatures = () => {
-    const featuresSection = document.getElementById('features-section');
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: 'smooth' });
-    }
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/searchsupport');
   };
 
   const stats = [
@@ -50,7 +50,7 @@ const EnhancedHero = () => {
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               size="lg" 
-              onClick={scrollToFeatures}
+              onClick={handleGetStarted}
               className="bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg"
             >
               Hemen Başlayın
