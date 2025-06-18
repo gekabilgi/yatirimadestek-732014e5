@@ -34,9 +34,9 @@ const EnhancedHero = () => {
 
           {/* Main Heading */}
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl lg:text-7xl">
-            9903 Yatırım Teşvik
+            Yatırımlarda Devlet
             <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-              {" "}Sistemi
+              {" "}Destekleri
             </span>
           </h1>
 
