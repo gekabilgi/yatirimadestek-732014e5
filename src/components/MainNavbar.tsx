@@ -1,0 +1,134 @@
+
+import React, { useState } from 'react';
+import { Menu, X, Calculator, User, LogOut, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+
+const MainNavbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // This would come from your auth context
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  const handleAuthAction = () => {
+    if (isAuthenticated) {
+      // Handle logout
+      setIsAuthenticated(false);
+      console.log('Logout clicked');
+    } else {
+      // Handle login - navigate to admin
+      console.log('Login clicked');
+    }
+  };
+
+  const navItems = [
+    { name: 'Ana Sayfa', href: '/' },
+    { name: 'Sektör Sorgusu', href: '/#features-section' },
+    { name: 'Teşvik Hesaplama', href: '/#features-section' },
+    { name: 'Destek Arama', href: '/searchsupport' },
+  ];
+
+  return (
+    <nav className="bg-white border-b shadow-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center space-x-2">
+              <Calculator className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold text-gray-900">9903 | YTS</span>
+            </Link>
+          </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="text-gray-700 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Link to="/admin">
+                  <Button variant="outline" size="sm">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={handleAuthAction}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Çıkış Yap
+                </Button>
+              </div>
+            ) : (
+              <Link to="/admin">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Admin Girişi
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <Button variant="ghost" size="sm" onClick={toggleMenu}>
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-gray-700 hover:text-primary block px-3 py-2 text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              <div className="pt-4 border-t">
+                {isAuthenticated ? (
+                  <div className="space-y-2">
+                    <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Admin Panel
+                      </Button>
+                    </Link>
+                    <Button variant="outline" size="sm" onClick={handleAuthAction} className="w-full justify-start">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Çıkış Yap
+                    </Button>
+                  </div>
+                ) : (
+                  <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full justify-start">
+                      <User className="h-4 w-4 mr-2" />
+                      Admin Girişi
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+export default MainNavbar;
