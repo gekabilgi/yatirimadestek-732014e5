@@ -5,6 +5,7 @@ import { SupportList } from '@/components/SupportList';
 import { SearchFilters, SupportProgram } from '@/types/support';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import MainNavbar from '@/components/MainNavbar';
 
 const SearchSupport = () => {
   const [programs, setPrograms] = useState<SupportProgram[]>([]);
@@ -119,6 +120,7 @@ const SearchSupport = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <MainNavbar />
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">
