@@ -30,7 +30,7 @@ const MainNavbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <Calculator className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-gray-900">9903 | YTS</span>
+              <span className="text-xl font-bold text-gray-900">Yatırım Destek</span>
             </Link>
           </div>
 
