@@ -141,18 +141,18 @@ export const SupportCard = ({ program }: SupportCardProps) => {
                 <div className="mb-4">
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center">
                     <FileText className="w-4 h-4 mr-2" />
-                    İlgili Belgeler
+                    İlgili Belgeler ({program.files.length})
                   </h4>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {program.files.map((file) => {
                       const FileIcon = getFileIcon(file.filename);
                       const iconColor = getFileIconColor(file.filename);
                       
                       return (
-                        <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-2 flex-1">
-                            <FileIcon className={`w-4 h-4 ${iconColor}`} />
-                            <span className="text-sm text-gray-700">
+                        <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <FileIcon className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                            <span className="text-xs text-gray-700 truncate" title={file.filename}>
                               {file.filename}
                             </span>
                           </div>
@@ -160,10 +160,9 @@ export const SupportCard = ({ program }: SupportCardProps) => {
                             href={file.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                            className="flex items-center text-blue-600 hover:text-blue-800 text-xs ml-2 flex-shrink-0"
                           >
-                            <Download className="w-4 h-4 mr-1" />
-                            İndir
+                            <Download className="w-3 h-3" />
                           </a>
                         </div>
                       );
