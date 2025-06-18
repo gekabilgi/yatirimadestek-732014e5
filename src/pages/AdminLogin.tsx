@@ -14,7 +14,6 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const { signIn, user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -25,47 +24,8 @@ const AdminLogin = () => {
     }
   }, [user, isAdmin, loading, navigate]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const redirectUrl = `${window.location.origin}/admin/login`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl
-        }
-      });
-      
-      if (error) {
-        toast.error(error.message || 'Sign up failed');
-      } else {
-        toast.success('Account created successfully! Please check your email to verify your account, then contact an administrator to grant admin privileges.');
-        setIsSignUp(false);
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isSignUp) {
-      return handleSignUp(e);
-    }
     
     if (!email || !password) {
       toast.error('Please fill in all fields');
@@ -118,14 +78,9 @@ const AdminLogin = () => {
                 <Lock className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl text-center">
-              {isSignUp ? 'Admin Sign Up' : 'Admin Login'}
-            </CardTitle>
+            <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
             <p className="text-sm text-center text-gray-600">
-              {isSignUp 
-                ? 'Create an account (admin privileges will be granted separately)'
-                : 'Enter your credentials to access the admin dashboard'
-              }
+              Enter your credentials to access the admin dashboard
             </p>
           </CardHeader>
           <CardContent>
@@ -168,26 +123,19 @@ const AdminLogin = () => {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {isSignUp ? 'Creating account...' : 'Signing in...'}
+                    Signing in...
                   </>
                 ) : (
-                  isSignUp ? 'Create Account' : 'Sign In'
+                  'Sign In'
                 )}
               </Button>
             </form>
             
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-primary hover:underline"
-                disabled={isLoading}
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign in' 
-                  : 'Need an account? Sign up'
-                }
-              </button>
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Admin accounts must be created manually by a system administrator. 
+                Contact your system administrator to request admin access.
+              </p>
             </div>
           </CardContent>
         </Card>
