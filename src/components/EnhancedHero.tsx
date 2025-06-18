@@ -13,7 +13,7 @@ const EnhancedHero = () => {
   };
 
   const stats = [
-    { label: "Aktif Teşvik Programı", value: "150+" },
+    { label: "Aktif Destek Çağrısı", value: "150+" },
     { label: "Desteklenen Sektör", value: "1.000+" },
     { label: "Hesaplama Yapıldı", value: "1.500+" },
   ];
