@@ -24,7 +24,7 @@ const IncentiveTools = () => {
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Yeni teşvik sisteminde size uygun destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
+            Teşvik araçlarını kullanarak yeni teşvik sisteminde size uygun olabilecek destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
           </p>
         </div>
       </section>
