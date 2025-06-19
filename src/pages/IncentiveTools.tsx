@@ -26,7 +26,7 @@ const IncentiveTools = () => {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Teşvik araçlarını kullanarak yeni teşvik sisteminde size uygun olabilecek destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
           </p>
-        </div
+        </div>
         <div className="mb-6 mt-6">
             <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
               <span className="mr-2 h-2 w-2 rounded-full bg-green-500"></span>
