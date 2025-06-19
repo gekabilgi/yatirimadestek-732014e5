@@ -24,8 +24,7 @@ const IncentiveTools = () => {
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Yeni teşvik sisteminde size uygun destekleri bulun, teşvik tutarlarını hesaplayın ve 
-            yatırım kararlarınızı en doğru verilerle optimize edin.
+            Yeni teşvik sisteminde size uygun destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
           </p>
         </div>
       </section>
@@ -37,7 +36,7 @@ const IncentiveTools = () => {
             <CardHeader className="pb-4">
               <CardTitle className="text-center text-2xl">Teşvik Araçları</CardTitle>
               <p className="text-center text-gray-600">
-                İhtiyacınıza uygun modülü seçerek işlemlerinizi gerçekleştirin
+                İhtiyacınıza uygun modülü seçerek işlemlerinizi gerçekleştirebilirsiniz.
               </p>
             </CardHeader>
             <CardContent className="pt-0">
