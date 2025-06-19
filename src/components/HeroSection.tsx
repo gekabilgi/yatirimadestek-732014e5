@@ -19,9 +19,11 @@ const HeroSection = () => {
         <div className="mx-auto max-w-4xl text-center">
           
           
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-           9903 Yatırım Teşvik
-            <span className="text-primary"> Sistemi</span>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            9903 Yatırım Teşvik
+            <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
+              {" "}Sistemi
+            </span>
           </h1>
           
           {/* Colored Cards Section */}
