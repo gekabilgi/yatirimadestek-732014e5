@@ -17,8 +17,11 @@ const IncentiveTools = () => {
       {/* Page Header */}
       <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-12">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Teşvik Araçları
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            9903 Yatırım Teşvik
+            <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
+              {" "}Sistemi
+            </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Yeni teşvik sisteminde size uygun destekleri bulun, teşvik tutarlarını hesaplayın ve 
