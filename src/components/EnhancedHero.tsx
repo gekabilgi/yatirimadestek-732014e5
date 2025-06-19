@@ -9,7 +9,11 @@ const EnhancedHero = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/incentive-tools');
+    navigate('/searchsupport');
+  };
+
+  const handleMevzuatIncele = () => {
+    window.open('https://sanayi.gov.tr/mevzuat/diger/mc0403018201', '_blank');
   };
 
   const stats = [
@@ -59,6 +63,7 @@ const EnhancedHero = () => {
             <Button 
               variant="outline" 
               size="lg"
+              onClick={handleMevzuatIncele}
               className="px-8 py-3 text-lg"
             >
               <FileDown className="mr-2 h-5 w-5" />
