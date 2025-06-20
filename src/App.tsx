@@ -12,6 +12,7 @@ import IncentiveTools from "./pages/IncentiveTools";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import QAManagement from "./pages/QAManagement";
 import ProgramDetails from "./pages/ProgramDetails";
 import NotFound from "./pages/NotFound";
 import SearchSupport from "./pages/SearchSupport";
@@ -47,6 +48,11 @@ const App = () => {
               <Route path="/admin/analytics" element={
                 <ProtectedAdminRoute>
                   <AdminAnalytics />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/qa-management" element={
+                <ProtectedAdminRoute>
+                  <QAManagement />
                 </ProtectedAdminRoute>
               } />
               <Route path="/program/:id" element={<ProgramDetails />} />

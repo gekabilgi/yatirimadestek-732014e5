@@ -343,6 +343,68 @@ export type Database = {
         }
         Relationships: []
       }
+      qna_admin_emails: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
+      qna_audit_trail: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          notes: string | null
+          soru_cevap_id: string
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          soru_cevap_id: string
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          soru_cevap_id?: string
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qna_audit_trail_soru_cevap_id_fkey"
+            columns: ["soru_cevap_id"]
+            isOneToOne: false
+            referencedRelation: "soru_cevap"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sector_search: {
         Row: {
           bolge_1: number | null
@@ -451,6 +513,72 @@ export type Database = {
           osb_status?: boolean | null
           province?: string | null
           sgk_duration?: number | null
+        }
+        Relationships: []
+      }
+      soru_cevap: {
+        Row: {
+          admin_notes: string | null
+          answer: string | null
+          answer_date: string | null
+          answered: boolean
+          answered_by_user_id: string | null
+          approved_by_admin_id: string | null
+          category: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          province: string
+          question: string
+          return_status:
+            | Database["public"]["Enums"]["return_status_enum"]
+            | null
+          sent_to_user: boolean
+          sent_to_ydo: boolean
+        }
+        Insert: {
+          admin_notes?: string | null
+          answer?: string | null
+          answer_date?: string | null
+          answered?: boolean
+          answered_by_user_id?: string | null
+          approved_by_admin_id?: string | null
+          category?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          province: string
+          question: string
+          return_status?:
+            | Database["public"]["Enums"]["return_status_enum"]
+            | null
+          sent_to_user?: boolean
+          sent_to_ydo?: boolean
+        }
+        Update: {
+          admin_notes?: string | null
+          answer?: string | null
+          answer_date?: string | null
+          answered?: boolean
+          answered_by_user_id?: string | null
+          approved_by_admin_id?: string | null
+          category?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          province?: string
+          question?: string
+          return_status?:
+            | Database["public"]["Enums"]["return_status_enum"]
+            | null
+          sent_to_user?: boolean
+          sent_to_ydo?: boolean
         }
         Relationships: []
       }
@@ -581,6 +709,33 @@ export type Database = {
           },
         ]
       }
+      ydo_users: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          province: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          province: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          province?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -590,8 +745,18 @@ export type Database = {
         Args: { user_id?: string }
         Returns: boolean
       }
+      log_qna_audit: {
+        Args: {
+          p_soru_cevap_id: string
+          p_action: string
+          p_user_role?: string
+          p_notes?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
+      return_status_enum: "returned" | "corrected"
       user_role: "admin" | "user"
     }
     CompositeTypes: {
@@ -708,6 +873,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      return_status_enum: ["returned", "corrected"],
       user_role: ["admin", "user"],
     },
   },
