@@ -13,6 +13,7 @@ import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
+import AdminEmailManagement from "./pages/AdminEmailManagement";
 import ProgramDetails from "./pages/ProgramDetails";
 import NotFound from "./pages/NotFound";
 import SearchSupport from "./pages/SearchSupport";
@@ -53,6 +54,11 @@ const App = () => {
               <Route path="/admin/qa-management" element={
                 <ProtectedAdminRoute>
                   <QAManagement />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/email-management" element={
+                <ProtectedAdminRoute>
+                  <AdminEmailManagement />
                 </ProtectedAdminRoute>
               } />
               <Route path="/program/:id" element={<ProgramDetails />} />

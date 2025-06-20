@@ -1,8 +1,7 @@
-
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, BarChart3, Settings, Users, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, BarChart3, Settings, Users, MessageSquare, Mail } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -23,6 +22,12 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       href: '/admin/qa-management',
       icon: MessageSquare,
       active: location.pathname === '/admin/qa-management'
+    },
+    {
+      title: 'Email Management',
+      href: '/admin/email-management',
+      icon: Mail,
+      active: location.pathname === '/admin/email-management'
     },
     {
       title: 'Analytics',
