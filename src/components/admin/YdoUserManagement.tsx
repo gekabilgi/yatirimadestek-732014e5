@@ -80,11 +80,9 @@ const YdoUserManagement = () => {
         if (error) throw error;
         toast.success('YDO kullanıcısı güncellendi.');
       } else {
-        // Generate a UUID for user_id since we don't have actual auth user association
         const { error } = await supabase
           .from('ydo_users')
           .insert({
-            user_id: crypto.randomUUID(), // Generate a temporary UUID
             email: formData.email,
             full_name: formData.full_name,
             province: formData.province
