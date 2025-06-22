@@ -23,20 +23,31 @@ const YdoSecureAccess = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log('YdoSecureAccess component mounted');
+    console.log('User agent:', navigator.userAgent);
+    console.log('Screen dimensions:', window.screen.width, 'x', window.screen.height);
+    
     const token = searchParams.get('token');
+    console.log('Token from URL:', token ? 'present' : 'missing');
+    
     if (!token) {
+      console.error('No token provided in URL');
       toast.error('Access token is required');
       navigate('/');
       return;
     }
 
     const payload = verifyYdoToken(token);
+    console.log('Token verification result:', payload);
+    
     if (!payload) {
+      console.error('Token verification failed');
       toast.error('Invalid or expired access token');
       navigate('/');
       return;
     }
 
+    console.log('Token verified successfully for province:', payload.province);
     setTokenData(payload);
     loadQuestions(payload.province);
   }, [searchParams, navigate]);
@@ -44,6 +55,7 @@ const YdoSecureAccess = () => {
   const loadQuestions = async (province: string) => {
     try {
       console.log('Loading questions for province:', province);
+      console.log('Making Supabase query...');
       
       const { data, error } = await supabase
         .from('soru_cevap')
@@ -51,12 +63,15 @@ const YdoSecureAccess = () => {
         .eq('province', province)
         .order('created_at', { ascending: false });
 
+      console.log('Supabase query completed');
+      console.log('Error:', error);
+      console.log('Data received:', data);
+      console.log('Number of questions:', data?.length || 0);
+
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase error details:', error);
         throw error;
       }
-      
-      console.log('Raw data from Supabase:', data);
       
       // Cast answer_status to the correct type
       const typedData = (data || []).map(item => ({
@@ -64,13 +79,16 @@ const YdoSecureAccess = () => {
         answer_status: item.answer_status as Question['answer_status']
       }));
       
-      console.log('Typed data:', typedData);
+      console.log('Processed questions:', typedData);
+      console.log('Setting questions state...');
       
       setQuestions(typedData);
+      console.log('Questions state updated');
     } catch (error) {
       console.error('Error loading questions:', error);
       toast.error('Failed to load questions');
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
@@ -171,7 +189,10 @@ const YdoSecureAccess = () => {
     return question.answer_status === 'unanswered' || question.answer_status === 'returned';
   };
 
+  console.log('Rendering component - loading:', loading, 'questions count:', questions.length);
+
   if (loading) {
+    console.log('Showing loading state');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -298,6 +319,8 @@ const YdoSecureAccess = () => {
     );
   }
 
+  console.log('Rendering main questions list view');
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto">
@@ -314,19 +337,20 @@ const YdoSecureAccess = () => {
             {questions.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">Henüz soru bulunmamaktadır.</p>
+                <p className="text-sm text-gray-400 mt-2">Province: {tokenData?.province}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Soru</TableHead>
-                      <TableHead>Ad Soyad</TableHead>
-                      <TableHead>E-posta</TableHead>
-                      <TableHead>Tarih</TableHead>
-                      <TableHead>Durum</TableHead>
-                      <TableHead>Yanıt Tarihi</TableHead>
-                      <TableHead>İşlemler</TableHead>
+                      <TableHead className="min-w-[200px]">Soru</TableHead>
+                      <TableHead className="min-w-[150px]">Ad Soyad</TableHead>
+                      <TableHead className="min-w-[200px]">E-posta</TableHead>
+                      <TableHead className="min-w-[120px]">Tarih</TableHead>
+                      <TableHead className="min-w-[100px]">Durum</TableHead>
+                      <TableHead className="min-w-[120px]">Yanıt Tarihi</TableHead>
+                      <TableHead className="min-w-[120px]">İşlemler</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -340,10 +364,10 @@ const YdoSecureAccess = () => {
                           </div>
                         </TableCell>
                         <TableCell>{question.full_name}</TableCell>
-                        <TableCell>{question.email}</TableCell>
-                        <TableCell>{formatDate(question.created_at)}</TableCell>
+                        <TableCell className="break-all">{question.email}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(question.created_at)}</TableCell>
                         <TableCell>{getStatusBadge(question)}</TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {question.answer_date ? formatDate(question.answer_date) : '-'}
                         </TableCell>
                         <TableCell>
