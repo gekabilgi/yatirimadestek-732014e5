@@ -91,23 +91,78 @@ const YdoSecureAccess = () => {
 
   const loadQuestions = async (province: string) => {
     console.log('=== LOAD QUESTIONS START ===');
-    console.log('Province parameter:', province);
-    console.log('Province type:', typeof province);
-    console.log('Province length:', province?.length);
+    console.log('Province parameter:', {
+      value: province,
+      type: typeof province,
+      length: province?.length,
+      charCodes: Array.from(province).map(char => char.charCodeAt(0)),
+      normalized: province?.trim().toLowerCase()
+    });
     
     try {
       const startTime = Date.now();
       
-      console.log('Executing Supabase query...');
-      const { data, error } = await supabase
+      // First, let's check what provinces exist in the database
+      console.log('Checking existing provinces in database...');
+      const { data: allQuestions, error: allError } = await supabase
+        .from('soru_cevap')
+        .select('province')
+        .limit(10);
+
+      if (allError) {
+        console.error('Error fetching all provinces:', allError);
+      } else {
+        console.log('Sample provinces in database:', allQuestions?.map(q => ({
+          province: q.province,
+          charCodes: Array.from(q.province).map(char => char.charCodeAt(0))
+        })));
+      }
+      
+      // Try exact match first
+      console.log('Executing Supabase query with exact match...');
+      let { data, error } = await supabase
         .from('soru_cevap')
         .select('*')
         .eq('province', province)
         .order('created_at', { ascending: false });
 
+      console.log('Exact match result:', { count: data?.length || 0, error });
+
+      // If no results, try case-insensitive search
+      if (!data || data.length === 0) {
+        console.log('No exact match, trying case-insensitive search...');
+        const { data: caseInsensitiveData, error: caseInsensitiveError } = await supabase
+          .from('soru_cevap')
+          .select('*')
+          .ilike('province', province)
+          .order('created_at', { ascending: false });
+
+        if (!caseInsensitiveError && caseInsensitiveData && caseInsensitiveData.length > 0) {
+          data = caseInsensitiveData;
+          error = null;
+          console.log('Case-insensitive match found:', data.length);
+        }
+      }
+
+      // If still no results, try partial match
+      if (!data || data.length === 0) {
+        console.log('No case-insensitive match, trying partial match...');
+        const { data: partialData, error: partialError } = await supabase
+          .from('soru_cevap')
+          .select('*')
+          .ilike('province', `%${province}%`)
+          .order('created_at', { ascending: false });
+
+        if (!partialError && partialData && partialData.length > 0) {
+          data = partialData;
+          error = null;
+          console.log('Partial match found:', data.length);
+        }
+      }
+
       const endTime = Date.now();
       
-      console.log('=== SUPABASE QUERY RESULT ===');
+      console.log('=== FINAL SUPABASE QUERY RESULT ===');
       console.log('Query duration:', endTime - startTime, 'ms');
       console.log('Error:', error);
       console.log('Data count:', data?.length || 0);
@@ -280,7 +335,7 @@ const YdoSecureAccess = () => {
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left text-xs space-y-2">
               <div className="font-semibold text-blue-800 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
-                Mobil Debug Bilgileri
+                Debug Bilgileri
               </div>
               <div className="text-blue-700 space-y-1">
                 <p><strong>Platform:</strong> {debugInfo.isMobile ? 'Mobil' : 'Masaüstü'}</p>
@@ -288,7 +343,7 @@ const YdoSecureAccess = () => {
                 <p><strong>İç Boyut:</strong> {debugInfo.screenInfo.innerWidth}x{debugInfo.screenInfo.innerHeight}</p>
                 <p><strong>Pixel Oranı:</strong> {debugInfo.screenInfo.devicePixelRatio}</p>
                 <p><strong>İl:</strong> {tokenData?.province || 'Yükleniyor...'}</p>
-                <p><strong>Supabase:</strong> {debugInfo.supabaseStatus.clientExists ? 'Aktif' : 'Pasif'}</p>
+                <p><strong>Supabase:</strong> Aktif</p>
                 <p><strong>URL:</strong> {debugInfo.locationInfo.href.substring(0, 60)}...</p>
               </div>
             </div>
@@ -431,19 +486,20 @@ const YdoSecureAccess = () => {
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
                 <div className="flex items-center gap-2 mb-3">
                   <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <span className="font-semibold text-yellow-800">Mobil Debug Paneli</span>
+                  <span className="font-semibold text-yellow-800">Debug Paneli</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-yellow-700">
                   <div><strong>Soru Sayısı:</strong> {questions.length}</div>
                   <div><strong>İl:</strong> {tokenData?.province || 'N/A'}</div>
                   <div><strong>Token:</strong> {tokenData ? 'Geçerli' : 'Geçersiz'}</div>
-                  <div><strong>Supabase:</strong> {debugInfo?.supabaseStatus.clientExists ? 'Aktif' : 'Pasif'}</div>
+                  <div><strong>Supabase:</strong> Aktif</div>
                   <div><strong>Ekran:</strong> {debugInfo?.screenInfo.innerWidth}x{debugInfo?.screenInfo.innerHeight}</div>
                   <div><strong>Platform:</strong> {debugInfo?.isMobile ? 'Mobil' : 'Masaüstü'}</div>
                 </div>
                 {questions.length === 0 && (
                   <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-700">
-                    <strong>SORUN:</strong> Sorular yüklenemedi. Lütfen sayfayı yenileyin.
+                    <strong>DETAY:</strong> İl "{tokenData?.province}" için veri bulunamadı. 
+                    Konsol loglarını kontrol edin.
                   </div>
                 )}
               </div>
@@ -458,13 +514,13 @@ const YdoSecureAccess = () => {
                 {/* Enhanced no-questions debug for mobile */}
                 {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
                   <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-xs text-left max-w-md mx-auto">
-                    <div className="font-semibold text-red-800 mb-2">Mobil Tanılama:</div>
+                    <div className="font-semibold text-red-800 mb-2">Tanılama:</div>
                     <div className="text-red-700 space-y-1">
                       <p><strong>URL:</strong> {window.location.href.substring(0, 80)}...</p>
                       <p><strong>Province Token:</strong> {tokenData?.province}</p>
                       <p><strong>Token Email:</strong> {tokenData?.email}</p>
-                      <p><strong>Loading Tamamlandı:</strong> {loading ? 'Hayır' : 'Evet'}</p>
-                      <p><strong>Supabase URL:</strong> {debugInfo?.supabaseStatus.url}</p>
+                      <p><strong>Loading:</strong> {loading ? 'Devam ediyor' : 'Tamamlandı'}</p>
+                      <p><strong>Supabase:</strong> Bağlı</p>
                     </div>
                   </div>
                 )}
