@@ -24,75 +24,81 @@ const YdoSecureAccess = () => {
   const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
-    // Enhanced mobile debugging
+    console.log('=== COMPONENT MOUNT ===');
+    
+    // Enhanced debugging for mobile
     const debugData = {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       isMobile: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent),
-      screenSize: {
+      screenInfo: {
         width: window.screen.width,
         height: window.screen.height,
         innerWidth: window.innerWidth,
-        innerHeight: window.innerHeight
+        innerHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio || 1
       },
-      location: {
+      locationInfo: {
         href: window.location.href,
         pathname: window.location.pathname,
-        search: window.location.search
+        search: window.location.search,
+        hash: window.location.hash
+      },
+      supabaseStatus: {
+        clientExists: !!supabase,
+        url: supabase?.supabaseUrl?.substring(0, 30) + '...' || 'unknown'
       }
     };
     
     setDebugInfo(debugData);
-    console.log('YdoSecureAccess Debug Info:', debugData);
+    console.log('Mobile Debug Data:', debugData);
     
+    // Token extraction and verification
     const token = searchParams.get('token');
-    console.log('Token extraction:', {
+    console.log('=== TOKEN EXTRACTION ===');
+    console.log('Raw token from URL:', {
       hasToken: !!token,
       tokenLength: token?.length || 0,
-      searchParamsString: window.location.search,
-      allSearchParams: Object.fromEntries(searchParams.entries())
+      searchParams: window.location.search,
+      allParams: Object.fromEntries(searchParams.entries())
     });
     
     if (!token) {
-      console.error('No token provided in URL');
-      console.log('Current URL breakdown:', {
-        fullUrl: window.location.href,
-        search: window.location.search,
-        hash: window.location.hash
-      });
-      
+      console.error('No token found in URL parameters');
       toast.error('Erişim anahtarı gerekli');
       setTimeout(() => navigate('/'), 2000);
       return;
     }
 
-    console.log('Attempting token verification...');
+    console.log('=== STARTING TOKEN VERIFICATION ===');
     const payload = verifyYdoToken(token);
-    console.log('Token verification completed:', {
-      success: !!payload,
-      payload: payload
-    });
     
     if (!payload) {
-      console.error('Token verification failed');
+      console.error('Token verification failed - payload is null');
       toast.error('Geçersiz veya süresi dolmuş erişim anahtarı');
       setTimeout(() => navigate('/'), 2000);
       return;
     }
 
-    console.log('Token verified successfully, loading questions...');
+    console.log('=== TOKEN VERIFIED SUCCESSFULLY ===');
+    console.log('Setting token data:', payload);
     setTokenData(payload);
+    
+    // Load questions with the verified province
+    console.log('=== LOADING QUESTIONS FOR PROVINCE ===', payload.province);
     loadQuestions(payload.province);
   }, [searchParams, navigate]);
 
   const loadQuestions = async (province: string) => {
+    console.log('=== LOAD QUESTIONS START ===');
+    console.log('Province parameter:', province);
+    console.log('Province type:', typeof province);
+    console.log('Province length:', province?.length);
+    
     try {
-      console.log('=== LOADING QUESTIONS ===');
-      console.log('Province:', province);
-      console.log('Supabase client status:', !!supabase);
-      
       const startTime = Date.now();
       
+      console.log('Executing Supabase query...');
       const { data, error } = await supabase
         .from('soru_cevap')
         .select('*')
@@ -100,44 +106,63 @@ const YdoSecureAccess = () => {
         .order('created_at', { ascending: false });
 
       const endTime = Date.now();
-      console.log('Query completed in:', endTime - startTime, 'ms');
-      console.log('Query result:', {
-        error: error,
-        dataCount: data?.length || 0,
-        data: data
-      });
+      
+      console.log('=== SUPABASE QUERY RESULT ===');
+      console.log('Query duration:', endTime - startTime, 'ms');
+      console.log('Error:', error);
+      console.log('Data count:', data?.length || 0);
+      console.log('Raw data sample:', data?.slice(0, 2));
 
       if (error) {
-        console.error('Supabase query error:', error);
+        console.error('Supabase query error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
       
-      // Cast answer_status to the correct type
+      // Type the data correctly
       const typedData = (data || []).map(item => ({
         ...item,
         answer_status: item.answer_status as Question['answer_status']
       }));
       
-      console.log('Setting questions state with:', typedData.length, 'questions');
+      console.log('=== SETTING QUESTIONS STATE ===');
+      console.log('Typed data count:', typedData.length);
+      console.log('Questions preview:', typedData.map(q => ({
+        id: q.id,
+        question_preview: q.question.substring(0, 50),
+        status: q.answer_status,
+        province: q.province
+      })));
+      
       setQuestions(typedData);
       
-      // Additional mobile-specific logging
+      // Mobile-specific success logging
       if (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
-        console.log('MOBILE DEBUG - Questions loaded:', {
+        console.log('=== MOBILE SUCCESS ===');
+        console.log('Mobile questions loaded successfully:', {
           count: typedData.length,
-          questions: typedData.map(q => ({
-            id: q.id,
-            question: q.question.substring(0, 50),
-            status: q.answer_status
-          }))
+          province: province,
+          firstQuestion: typedData[0] ? {
+            id: typedData[0].id,
+            preview: typedData[0].question.substring(0, 30)
+          } : null
         });
       }
       
     } catch (error) {
-      console.error('Error loading questions:', error);
+      console.error('=== LOAD QUESTIONS ERROR ===');
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       toast.error('Sorular yüklenirken hata oluştu');
     } finally {
-      console.log('Setting loading to false');
+      console.log('=== SETTING LOADING FALSE ===');
       setLoading(false);
     }
   };
@@ -238,21 +263,34 @@ const YdoSecureAccess = () => {
     return question.answer_status === 'unanswered' || question.answer_status === 'returned';
   };
 
-  console.log('Rendering component - loading:', loading, 'questions count:', questions.length);
+  console.log('=== RENDER ===');
+  console.log('Loading state:', loading);
+  console.log('Questions count:', questions.length);
+  console.log('Token data:', tokenData);
 
   if (loading) {
-    console.log('Rendering loading state');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md w-full">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Sorular yükleniyor...</p>
+          
+          {/* Enhanced mobile debug panel */}
           {debugInfo && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg text-left text-xs">
-              <p className="font-semibold mb-2">Debug Bilgileri:</p>
-              <p>Platform: {debugInfo.isMobile ? 'Mobil' : 'Masaüstü'}</p>
-              <p>Ekran: {debugInfo.screenSize.width}x{debugInfo.screenSize.height}</p>
-              <p>İl: {tokenData?.province || 'Yükleniyor...'}</p>
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left text-xs space-y-2">
+              <div className="font-semibold text-blue-800 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Mobil Debug Bilgileri
+              </div>
+              <div className="text-blue-700 space-y-1">
+                <p><strong>Platform:</strong> {debugInfo.isMobile ? 'Mobil' : 'Masaüstü'}</p>
+                <p><strong>Ekran:</strong> {debugInfo.screenInfo.width}x{debugInfo.screenInfo.height}</p>
+                <p><strong>İç Boyut:</strong> {debugInfo.screenInfo.innerWidth}x{debugInfo.screenInfo.innerHeight}</p>
+                <p><strong>Pixel Oranı:</strong> {debugInfo.screenInfo.devicePixelRatio}</p>
+                <p><strong>İl:</strong> {tokenData?.province || 'Yükleniyor...'}</p>
+                <p><strong>Supabase:</strong> {debugInfo.supabaseStatus.clientExists ? 'Aktif' : 'Pasif'}</p>
+                <p><strong>URL:</strong> {debugInfo.locationInfo.href.substring(0, 60)}...</p>
+              </div>
             </div>
           )}
         </div>
@@ -376,8 +414,6 @@ const YdoSecureAccess = () => {
     );
   }
 
-  console.log('Rendering main questions list view for mobile check');
-
   return (
     <div className="min-h-screen bg-gray-50 p-2 sm:p-4">
       <div className="max-w-6xl mx-auto">
@@ -390,56 +426,70 @@ const YdoSecureAccess = () => {
               {tokenData?.province} ili için gelen sorular ve yanıtlama işlemleri
             </p>
             
-            {/* Mobile Debug Panel */}
+            {/* Enhanced Mobile Debug Panel */}
             {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
-              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
+                <div className="flex items-center gap-2 mb-3">
                   <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <span className="font-semibold text-yellow-800">Mobil Debug</span>
+                  <span className="font-semibold text-yellow-800">Mobil Debug Paneli</span>
                 </div>
-                <div className="space-y-1 text-yellow-700">
-                  <p>Soru Sayısı: {questions.length}</p>
-                  <p>Platform: {debugInfo?.isMobile ? 'Mobil' : 'Masaüstü'}</p>
-                  <p>Ekran: {debugInfo?.screenSize.innerWidth}x{debugInfo?.screenSize.innerHeight}</p>
-                  <p>Token: {tokenData ? 'Geçerli' : 'Geçersiz'}</p>
+                <div className="grid grid-cols-2 gap-2 text-yellow-700">
+                  <div><strong>Soru Sayısı:</strong> {questions.length}</div>
+                  <div><strong>İl:</strong> {tokenData?.province || 'N/A'}</div>
+                  <div><strong>Token:</strong> {tokenData ? 'Geçerli' : 'Geçersiz'}</div>
+                  <div><strong>Supabase:</strong> {debugInfo?.supabaseStatus.clientExists ? 'Aktif' : 'Pasif'}</div>
+                  <div><strong>Ekran:</strong> {debugInfo?.screenInfo.innerWidth}x{debugInfo?.screenInfo.innerHeight}</div>
+                  <div><strong>Platform:</strong> {debugInfo?.isMobile ? 'Mobil' : 'Masaüstü'}</div>
                 </div>
+                {questions.length === 0 && (
+                  <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-700">
+                    <strong>SORUN:</strong> Sorular yüklenemedi. Lütfen sayfayı yenileyin.
+                  </div>
+                )}
               </div>
             )}
           </CardHeader>
           <CardContent>
             {questions.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">Henüz soru bulunmamaktadır.</p>
-                <p className="text-sm text-gray-400 mt-2">İl: {tokenData?.province}</p>
+                <p className="text-gray-500 text-lg mb-2">Henüz soru bulunmamaktadır.</p>
+                <p className="text-sm text-gray-400">İl: {tokenData?.province}</p>
+                
+                {/* Enhanced no-questions debug for mobile */}
                 {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-left">
-                    <p className="font-semibold mb-2">Mobil Tanılama:</p>
-                    <p>URL: {window.location.href.substring(0, 100)}...</p>
-                    <p>Supabase Bağlantısı: {supabase ? 'Aktif' : 'Pasif'}</p>
+                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-xs text-left max-w-md mx-auto">
+                    <div className="font-semibold text-red-800 mb-2">Mobil Tanılama:</div>
+                    <div className="text-red-700 space-y-1">
+                      <p><strong>URL:</strong> {window.location.href.substring(0, 80)}...</p>
+                      <p><strong>Province Token:</strong> {tokenData?.province}</p>
+                      <p><strong>Token Email:</strong> {tokenData?.email}</p>
+                      <p><strong>Loading Tamamlandı:</strong> {loading ? 'Hayır' : 'Evet'}</p>
+                      <p><strong>Supabase URL:</strong> {debugInfo?.supabaseStatus.url}</p>
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Mobile-first card layout for small screens */}
+                {/* Mobile-first card layout */}
                 <div className="block sm:hidden space-y-4">
                   {questions.map((question) => (
-                    <Card key={question.id} className="border border-gray-200">
+                    <Card key={question.id} className="border border-gray-200 shadow-sm">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div>
                             <div className="flex items-start justify-between gap-2 mb-2">
-                              <h3 className="font-medium text-sm">{question.full_name}</h3>
+                              <h3 className="font-medium text-sm text-gray-900">{question.full_name}</h3>
                               {getStatusBadge(question)}
                             </div>
-                            <p className="text-xs text-gray-600 mb-2">{question.email}</p>
+                            <p className="text-xs text-gray-600 mb-1">{question.email}</p>
                             <p className="text-xs text-gray-500">
                               {formatDate(question.created_at)}
                             </p>
                           </div>
                           
-                          <div className="bg-gray-50 p-3 rounded text-sm">
-                            <p className="line-clamp-3">
+                          <div className="bg-gray-50 p-3 rounded border">
+                            <p className="text-sm line-clamp-3">
                               {question.question.length > 150
                                 ? `${question.question.substring(0, 150)}...`
                                 : question.question}
@@ -452,14 +502,14 @@ const YdoSecureAccess = () => {
                             </p>
                           )}
                           
-                          <div className="pt-2">
+                          <div className="pt-2 border-t border-gray-100">
                             {canEditAnswer(question) ? (
                               <Button
                                 size="sm"
                                 onClick={() => handleAnswerQuestion(question)}
                                 className="w-full"
                               >
-                                <Edit className="h-4 w-4 mr-1" />
+                                <Edit className="h-4 w-4 mr-2" />
                                 {question.answer_status === 'returned' ? 'Düzelt' : 'Yanıtla'}
                               </Button>
                             ) : (
@@ -469,7 +519,7 @@ const YdoSecureAccess = () => {
                                 onClick={() => handleViewQuestion(question)}
                                 className="w-full"
                               >
-                                <Eye className="h-4 w-4 mr-1" />
+                                <Eye className="h-4 w-4 mr-2" />
                                 Görüntüle
                               </Button>
                             )}
