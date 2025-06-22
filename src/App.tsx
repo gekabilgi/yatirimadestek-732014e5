@@ -17,6 +17,7 @@ import AdminEmailManagement from "./pages/AdminEmailManagement";
 import ProgramDetails from "./pages/ProgramDetails";
 import NotFound from "./pages/NotFound";
 import SearchSupport from "./pages/SearchSupport";
+import YdoSecureAccess from "./pages/YdoSecureAccess";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/incentive-tools" element={<IncentiveTools />} />
               <Route path="/searchsupport" element={<SearchSupport />} />
+              <Route path="/ydo/secure-access" element={<YdoSecureAccess />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={
                 <ProtectedAdminRoute>

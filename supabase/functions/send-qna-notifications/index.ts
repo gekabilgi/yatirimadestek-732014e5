@@ -20,6 +20,19 @@ interface EmailData {
   sender: { email: string; name: string };
 }
 
+// Simple token generation for YDO access
+const generateYdoToken = (email: string, province: string): string => {
+  const payload = {
+    email,
+    province,
+    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+    iat: Math.floor(Date.now() / 1000)
+  };
+  
+  // Simple base64 encoding (in production, use proper JWT with server-side signing)
+  return btoa(JSON.stringify(payload));
+};
+
 const sendBrevoEmail = async (emailData: EmailData) => {
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -154,15 +167,48 @@ const sendNewQuestionNotifications = async (questionData: any) => {
     console.error('Error fetching admin emails:', adminError);
   }
 
-  // Combine recipients
-  const recipients = [
-    ...(ydoUsers || []).map(user => ({ email: user.email, name: user.full_name })),
-    ...(adminEmails || []).map(admin => ({ email: admin.email, name: admin.full_name }))
-  ];
+  // Send secure access links to YDO users
+  if (ydoUsers && ydoUsers.length > 0) {
+    for (const ydoUser of ydoUsers) {
+      const token = generateYdoToken(ydoUser.email, questionData.province);
+      const secureAccessUrl = `${supabaseUrl.replace('https://', 'https://').replace('.supabase.co', '.lovable.app')}/ydo/secure-access?token=${token}`;
+      
+      const ydoEmailData: EmailData = {
+        to: [{ email: ydoUser.email, name: ydoUser.full_name }],
+        subject: `Yeni Soru: ${questionData.province} - Güvenli Erişim`,
+        htmlContent: `
+          <h2>Yeni Soru Geldi - ${questionData.province}</h2>
+          <p>Merhaba ${ydoUser.full_name},</p>
+          <p>${questionData.province} ili için yeni bir soru gelmiştir. Aşağıdaki güvenli bağlantıdan sorulara erişebilir ve yanıtlayabilirsiniz:</p>
+          
+          <div style="margin: 20px 0; text-align: center;">
+            <a href="${secureAccessUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Güvenli Erişim - Soruları Yanıtla
+            </a>
+          </div>
+          
+          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <h3>Soru Özeti:</h3>
+            <p><strong>Gönderen:</strong> ${questionData.full_name}</p>
+            <p><strong>E-posta:</strong> ${questionData.email}</p>
+            <p><strong>Soru:</strong> ${questionData.question.substring(0, 200)}${questionData.question.length > 200 ? '...' : ''}</p>
+          </div>
+          
+          <p><small>Bu bağlantı 24 saat geçerlidir. Güvenlik nedeniyle bağlantıyı başkalarıyla paylaşmayınız.</small></p>
+          <p>Saygılarımızla,<br>TeşvikSor Ekibi</p>
+        `,
+        sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
+      };
 
-  if (recipients.length > 0) {
-    const emailData: EmailData = {
-      to: recipients,
+      await sendBrevoEmail(ydoEmailData);
+    }
+    console.log('Secure access notifications sent to', ydoUsers.length, 'YDO users');
+  }
+
+  // Send regular notifications to admins
+  if (adminEmails && adminEmails.length > 0) {
+    const adminEmailData: EmailData = {
+      to: adminEmails.map(admin => ({ email: admin.email, name: admin.full_name })),
       subject: `Yeni Soru: ${questionData.province} - ${questionData.full_name}`,
       htmlContent: `
         <h2>Yeni Soru Geldi</h2>
@@ -175,13 +221,13 @@ const sendNewQuestionNotifications = async (questionData: any) => {
           ${questionData.question.replace(/\n/g, '<br>')}
         </div>
         <p><strong>Gönderilme Tarihi:</strong> ${new Date(questionData.created_at || new Date()).toLocaleString('tr-TR')}</p>
-        <p><a href="${supabaseUrl.replace('https://', 'https://app.')}/admin/qa-management" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Soruyu Yanıtla</a></p>
+        <p><a href="${supabaseUrl.replace('https://', 'https://').replace('.supabase.co', '.lovable.app')}/admin/qa-management" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Admin Paneli</a></p>
       `,
       sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
     };
 
-    await sendBrevoEmail(emailData);
-    console.log('New question notification sent to', recipients.length, 'recipients');
+    await sendBrevoEmail(adminEmailData);
+    console.log('Admin notification sent to', adminEmails.length, 'admins');
   }
 };
 
