@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Eye, Edit, Send } from 'lucide-react';
+import { ArrowLeft, Eye, Edit, Send, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { verifyYdoToken, type YdoTokenPayload } from '@/utils/tokenUtils';
 import { toast } from 'sonner';
@@ -21,41 +21,77 @@ const YdoSecureAccess = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
-    console.log('YdoSecureAccess component mounted');
-    console.log('User agent:', navigator.userAgent);
-    console.log('Screen dimensions:', window.screen.width, 'x', window.screen.height);
+    // Enhanced mobile debugging
+    const debugData = {
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      isMobile: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent),
+      screenSize: {
+        width: window.screen.width,
+        height: window.screen.height,
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight
+      },
+      location: {
+        href: window.location.href,
+        pathname: window.location.pathname,
+        search: window.location.search
+      }
+    };
+    
+    setDebugInfo(debugData);
+    console.log('YdoSecureAccess Debug Info:', debugData);
     
     const token = searchParams.get('token');
-    console.log('Token from URL:', token ? 'present' : 'missing');
+    console.log('Token extraction:', {
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      searchParamsString: window.location.search,
+      allSearchParams: Object.fromEntries(searchParams.entries())
+    });
     
     if (!token) {
       console.error('No token provided in URL');
-      toast.error('Access token is required');
-      navigate('/');
+      console.log('Current URL breakdown:', {
+        fullUrl: window.location.href,
+        search: window.location.search,
+        hash: window.location.hash
+      });
+      
+      toast.error('Erişim anahtarı gerekli');
+      setTimeout(() => navigate('/'), 2000);
       return;
     }
 
+    console.log('Attempting token verification...');
     const payload = verifyYdoToken(token);
-    console.log('Token verification result:', payload);
+    console.log('Token verification completed:', {
+      success: !!payload,
+      payload: payload
+    });
     
     if (!payload) {
       console.error('Token verification failed');
-      toast.error('Invalid or expired access token');
-      navigate('/');
+      toast.error('Geçersiz veya süresi dolmuş erişim anahtarı');
+      setTimeout(() => navigate('/'), 2000);
       return;
     }
 
-    console.log('Token verified successfully for province:', payload.province);
+    console.log('Token verified successfully, loading questions...');
     setTokenData(payload);
     loadQuestions(payload.province);
   }, [searchParams, navigate]);
 
   const loadQuestions = async (province: string) => {
     try {
-      console.log('Loading questions for province:', province);
-      console.log('Making Supabase query...');
+      console.log('=== LOADING QUESTIONS ===');
+      console.log('Province:', province);
+      console.log('Supabase client status:', !!supabase);
+      
+      const startTime = Date.now();
       
       const { data, error } = await supabase
         .from('soru_cevap')
@@ -63,13 +99,16 @@ const YdoSecureAccess = () => {
         .eq('province', province)
         .order('created_at', { ascending: false });
 
-      console.log('Supabase query completed');
-      console.log('Error:', error);
-      console.log('Data received:', data);
-      console.log('Number of questions:', data?.length || 0);
+      const endTime = Date.now();
+      console.log('Query completed in:', endTime - startTime, 'ms');
+      console.log('Query result:', {
+        error: error,
+        dataCount: data?.length || 0,
+        data: data
+      });
 
       if (error) {
-        console.error('Supabase error details:', error);
+        console.error('Supabase query error:', error);
         throw error;
       }
       
@@ -79,14 +118,24 @@ const YdoSecureAccess = () => {
         answer_status: item.answer_status as Question['answer_status']
       }));
       
-      console.log('Processed questions:', typedData);
-      console.log('Setting questions state...');
-      
+      console.log('Setting questions state with:', typedData.length, 'questions');
       setQuestions(typedData);
-      console.log('Questions state updated');
+      
+      // Additional mobile-specific logging
+      if (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
+        console.log('MOBILE DEBUG - Questions loaded:', {
+          count: typedData.length,
+          questions: typedData.map(q => ({
+            id: q.id,
+            question: q.question.substring(0, 50),
+            status: q.answer_status
+          }))
+        });
+      }
+      
     } catch (error) {
       console.error('Error loading questions:', error);
-      toast.error('Failed to load questions');
+      toast.error('Sorular yüklenirken hata oluştu');
     } finally {
       console.log('Setting loading to false');
       setLoading(false);
@@ -192,12 +241,20 @@ const YdoSecureAccess = () => {
   console.log('Rendering component - loading:', loading, 'questions count:', questions.length);
 
   if (loading) {
-    console.log('Showing loading state');
+    console.log('Rendering loading state');
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md w-full">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Sorular yükleniyor...</p>
+          {debugInfo && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg text-left text-xs">
+              <p className="font-semibold mb-2">Debug Bilgileri:</p>
+              <p>Platform: {debugInfo.isMobile ? 'Mobil' : 'Masaüstü'}</p>
+              <p>Ekran: {debugInfo.screenSize.width}x{debugInfo.screenSize.height}</p>
+              <p>İl: {tokenData?.province || 'Yükleniyor...'}</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -319,81 +376,168 @@ const YdoSecureAccess = () => {
     );
   }
 
-  console.log('Rendering main questions list view');
+  console.log('Rendering main questions list view for mobile check');
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4">
       <div className="max-w-6xl mx-auto">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg sm:text-2xl">
               YDO Soru Yanıtlama Paneli - {tokenData?.province}
             </CardTitle>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               {tokenData?.province} ili için gelen sorular ve yanıtlama işlemleri
             </p>
+            
+            {/* Mobile Debug Panel */}
+            {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
+              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <span className="font-semibold text-yellow-800">Mobil Debug</span>
+                </div>
+                <div className="space-y-1 text-yellow-700">
+                  <p>Soru Sayısı: {questions.length}</p>
+                  <p>Platform: {debugInfo?.isMobile ? 'Mobil' : 'Masaüstü'}</p>
+                  <p>Ekran: {debugInfo?.screenSize.innerWidth}x{debugInfo?.screenSize.innerHeight}</p>
+                  <p>Token: {tokenData ? 'Geçerli' : 'Geçersiz'}</p>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {questions.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">Henüz soru bulunmamaktadır.</p>
-                <p className="text-sm text-gray-400 mt-2">Province: {tokenData?.province}</p>
+                <p className="text-sm text-gray-400 mt-2">İl: {tokenData?.province}</p>
+                {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-left">
+                    <p className="font-semibold mb-2">Mobil Tanılama:</p>
+                    <p>URL: {window.location.href.substring(0, 100)}...</p>
+                    <p>Supabase Bağlantısı: {supabase ? 'Aktif' : 'Pasif'}</p>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[200px]">Soru</TableHead>
-                      <TableHead className="min-w-[150px]">Ad Soyad</TableHead>
-                      <TableHead className="min-w-[200px]">E-posta</TableHead>
-                      <TableHead className="min-w-[120px]">Tarih</TableHead>
-                      <TableHead className="min-w-[100px]">Durum</TableHead>
-                      <TableHead className="min-w-[120px]">Yanıt Tarihi</TableHead>
-                      <TableHead className="min-w-[120px]">İşlemler</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {questions.map((question) => (
-                      <TableRow key={question.id}>
-                        <TableCell className="max-w-xs">
-                          <div className="truncate" title={question.question}>
-                            {question.question.length > 100
-                              ? `${question.question.substring(0, 100)}...`
-                              : question.question}
+              <div className="space-y-4">
+                {/* Mobile-first card layout for small screens */}
+                <div className="block sm:hidden space-y-4">
+                  {questions.map((question) => (
+                    <Card key={question.id} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h3 className="font-medium text-sm">{question.full_name}</h3>
+                              {getStatusBadge(question)}
+                            </div>
+                            <p className="text-xs text-gray-600 mb-2">{question.email}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatDate(question.created_at)}
+                            </p>
                           </div>
-                        </TableCell>
-                        <TableCell>{question.full_name}</TableCell>
-                        <TableCell className="break-all">{question.email}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(question.created_at)}</TableCell>
-                        <TableCell>{getStatusBadge(question)}</TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {question.answer_date ? formatDate(question.answer_date) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {canEditAnswer(question) ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleAnswerQuestion(question)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              {question.answer_status === 'returned' ? 'Düzelt' : 'Yanıtla'}
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewQuestion(question)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Görüntüle
-                            </Button>
+                          
+                          <div className="bg-gray-50 p-3 rounded text-sm">
+                            <p className="line-clamp-3">
+                              {question.question.length > 150
+                                ? `${question.question.substring(0, 150)}...`
+                                : question.question}
+                            </p>
+                          </div>
+                          
+                          {question.answer_date && (
+                            <p className="text-xs text-gray-500">
+                              Yanıt Tarihi: {formatDate(question.answer_date)}
+                            </p>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          
+                          <div className="pt-2">
+                            {canEditAnswer(question) ? (
+                              <Button
+                                size="sm"
+                                onClick={() => handleAnswerQuestion(question)}
+                                className="w-full"
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                {question.answer_status === 'returned' ? 'Düzelt' : 'Yanıtla'}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewQuestion(question)}
+                                className="w-full"
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Görüntüle
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Desktop table layout */}
+                <div className="hidden sm:block">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[200px]">Soru</TableHead>
+                          <TableHead className="min-w-[150px]">Ad Soyad</TableHead>
+                          <TableHead className="min-w-[200px]">E-posta</TableHead>
+                          <TableHead className="min-w-[120px]">Tarih</TableHead>
+                          <TableHead className="min-w-[100px]">Durum</TableHead>
+                          <TableHead className="min-w-[120px]">Yanıt Tarihi</TableHead>
+                          <TableHead className="min-w-[120px]">İşlemler</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {questions.map((question) => (
+                          <TableRow key={question.id}>
+                            <TableCell className="max-w-xs">
+                              <div className="truncate" title={question.question}>
+                                {question.question.length > 100
+                                  ? `${question.question.substring(0, 100)}...`
+                                  : question.question}
+                              </div>
+                            </TableCell>
+                            <TableCell>{question.full_name}</TableCell>
+                            <TableCell className="break-all">{question.email}</TableCell>
+                            <TableCell className="whitespace-nowrap">{formatDate(question.created_at)}</TableCell>
+                            <TableCell>{getStatusBadge(question)}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {question.answer_date ? formatDate(question.answer_date) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {canEditAnswer(question) ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleAnswerQuestion(question)}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  {question.answer_status === 'returned' ? 'Düzelt' : 'Yanıtla'}
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewQuestion(question)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Görüntüle
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
