@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Eye, Edit, Send, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Eye, Edit, Send, AlertCircle, Smartphone, Monitor } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { verifyYdoToken, type YdoTokenPayload } from '@/utils/tokenUtils';
 import { toast } from 'sonner';
@@ -21,258 +21,131 @@ const YdoSecureAccess = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
-    console.log('=== COMPONENT MOUNT ===');
+    console.log('🚀 MOBILE YDO ACCESS - COMPONENT MOUNT');
     
-    // Enhanced debugging for mobile
-    const debugData = {
-      timestamp: new Date().toISOString(),
+    const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
+    console.log('📱 Device detection:', {
+      isMobile,
       userAgent: navigator.userAgent,
-      isMobile: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent),
-      screenInfo: {
-        width: window.screen.width,
-        height: window.screen.height,
-        innerWidth: window.innerWidth,
-        innerHeight: window.innerHeight,
-        devicePixelRatio: window.devicePixelRatio || 1
-      },
-      locationInfo: {
-        href: window.location.href,
-        pathname: window.location.pathname,
-        search: window.location.search,
-        hash: window.location.hash
-      },
-      supabaseStatus: {
-        clientExists: !!supabase,
-        url: 'https://zyxiznikuvpwmopraauj.supabase.co'
-      }
-    };
+      screenWidth: window.screen.width,
+      windowWidth: window.innerWidth
+    });
     
-    setDebugInfo(debugData);
-    console.log('Mobile Debug Data:', debugData);
-    
-    // Token extraction and verification
     const token = searchParams.get('token');
-    console.log('=== TOKEN EXTRACTION ===');
-    console.log('Raw token from URL:', {
+    console.log('🔑 Token extraction:', {
       hasToken: !!token,
       tokenLength: token?.length || 0,
-      searchParams: window.location.search,
-      allParams: Object.fromEntries(searchParams.entries())
+      urlSearch: window.location.search
     });
     
     if (!token) {
-      console.error('No token found in URL parameters');
+      console.error('❌ No token in URL');
       toast.error('Erişim anahtarı gerekli');
       setTimeout(() => navigate('/'), 2000);
       return;
     }
 
-    console.log('=== STARTING TOKEN VERIFICATION ===');
+    console.log('🔐 Starting token verification...');
     const payload = verifyYdoToken(token);
     
     if (!payload) {
-      console.error('Token verification failed - payload is null');
+      console.error('❌ Token verification failed');
       toast.error('Geçersiz veya süresi dolmuş erişim anahtarı');
       setTimeout(() => navigate('/'), 2000);
       return;
     }
 
-    console.log('=== TOKEN VERIFIED SUCCESSFULLY ===');
-    console.log('Setting token data:', payload);
+    console.log('✅ Token verified, loading questions for:', payload.province);
     setTokenData(payload);
-    
-    // Load questions with the verified province
-    console.log('=== LOADING QUESTIONS FOR PROVINCE ===', payload.province);
-    loadQuestions(payload.province);
+    loadQuestions(payload.province, isMobile);
   }, [searchParams, navigate]);
 
-  const loadQuestions = async (province: string) => {
-    console.log('=== LOAD QUESTIONS START ===');
-    console.log('Province parameter:', {
+  const loadQuestions = async (province: string, isMobile: boolean = false) => {
+    console.log('📊 LOADING QUESTIONS - MOBILE VERSION');
+    console.log('🎯 Target province:', {
       value: province,
-      type: typeof province,
-      length: province?.length,
-      charCodes: Array.from(province).map(char => char.charCodeAt(0)),
-      normalized: province?.trim().toLowerCase()
+      length: province.length,
+      normalized: province.trim(),
+      isMobile
     });
     
     try {
-      const startTime = Date.now();
-      
-      // First, let's check what provinces exist in the database
-      console.log('=== CHECKING ALL PROVINCES IN DATABASE ===');
-      const { data: allQuestions, error: allError } = await supabase
+      // Mobile-optimized query strategy
+      console.log('🔍 Strategy 1: Direct exact match');
+      const { data: directData, error: directError } = await supabase
+        .from('soru_cevap')
+        .select('*')
+        .eq('province', province)
+        .order('created_at', { ascending: false });
+
+      console.log('📈 Direct query result:', {
+        success: !directError,
+        count: directData?.length || 0,
+        error: directError?.message
+      });
+
+      if (!directError && directData && directData.length > 0) {
+        console.log('✅ Found questions with direct match');
+        const typedData = directData.map(item => ({
+          ...item,
+          answer_status: item.answer_status as Question['answer_status']
+        }));
+        setQuestions(typedData);
+        toast.success(`${typedData.length} soru yüklendi`);
+        setLoading(false);
+        return;
+      }
+
+      // Strategy 2: Case insensitive for mobile
+      console.log('🔍 Strategy 2: Case insensitive search');
+      const { data: caseData, error: caseError } = await supabase
+        .from('soru_cevap')
+        .select('*')
+        .ilike('province', province)
+        .order('created_at', { ascending: false });
+
+      console.log('📈 Case insensitive result:', {
+        success: !caseError,
+        count: caseData?.length || 0
+      });
+
+      if (!caseError && caseData && caseData.length > 0) {
+        console.log('✅ Found questions with case insensitive match');
+        const typedData = caseData.map(item => ({
+          ...item,
+          answer_status: item.answer_status as Question['answer_status']
+        }));
+        setQuestions(typedData);
+        toast.success(`${typedData.length} soru yüklendi`);
+        setLoading(false);
+        return;
+      }
+
+      // Strategy 3: Debug all provinces in DB
+      console.log('🔍 Strategy 3: Debug - checking all provinces');
+      const { data: allData, error: allError } = await supabase
         .from('soru_cevap')
         .select('province, id, question')
-        .limit(20);
+        .limit(10);
 
-      if (allError) {
-        console.error('Error fetching sample data:', allError);
-      } else {
-        console.log('ALL PROVINCES IN DATABASE:', allQuestions?.map(q => ({
+      if (!allError && allData) {
+        console.log('🗂️ All provinces in DB:', allData.map(q => ({
           province: q.province,
-          id: q.id,
-          charCodes: Array.from(q.province).map(char => char.charCodeAt(0))
+          matches: q.province === province,
+          length: q.province.length
         })));
-        
-        // Check for exact matches
-        const exactMatches = allQuestions?.filter(q => q.province === province) || [];
-        console.log('EXACT MATCHES FOUND:', exactMatches.length);
-      }
-      
-      // Try multiple query strategies with better error handling
-      let finalData: any[] = [];
-      let querySuccess = false;
-      
-      // Strategy 1: Explicit exact match
-      console.log('=== STRATEGY 1: EXACT MATCH ===');
-      try {
-        const { data: exactData, error: exactError } = await supabase
-          .from('soru_cevap')
-          .select('*')
-          .eq('province', province)
-          .order('created_at', { ascending: false });
-
-        console.log('Exact match query result:', { 
-          count: exactData?.length || 0, 
-          error: exactError,
-          sample: exactData?.slice(0, 2) 
-        });
-
-        if (!exactError && exactData && exactData.length > 0) {
-          finalData = exactData;
-          querySuccess = true;
-          console.log('SUCCESS: Exact match found');
-        }
-      } catch (err) {
-        console.error('Exact match query failed:', err);
       }
 
-      // Strategy 2: Case-insensitive search
-      if (!querySuccess) {
-        console.log('=== STRATEGY 2: CASE INSENSITIVE ===');
-        try {
-          const { data: iLikeData, error: iLikeError } = await supabase
-            .from('soru_cevap')
-            .select('*')
-            .ilike('province', province)
-            .order('created_at', { ascending: false });
-
-          console.log('Case-insensitive query result:', { 
-            count: iLikeData?.length || 0, 
-            error: iLikeError 
-          });
-
-          if (!iLikeError && iLikeData && iLikeData.length > 0) {
-            finalData = iLikeData;
-            querySuccess = true;
-            console.log('SUCCESS: Case-insensitive match found');
-          }
-        } catch (err) {
-          console.error('Case-insensitive query failed:', err);
-        }
-      }
-
-      // Strategy 3: Partial match
-      if (!querySuccess) {
-        console.log('=== STRATEGY 3: PARTIAL MATCH ===');
-        try {
-          const { data: partialData, error: partialError } = await supabase
-            .from('soru_cevap')
-            .select('*')
-            .ilike('province', `%${province}%`)
-            .order('created_at', { ascending: false });
-
-          console.log('Partial match query result:', { 
-            count: partialData?.length || 0, 
-            error: partialError 
-          });
-
-          if (!partialError && partialData && partialData.length > 0) {
-            finalData = partialData;
-            querySuccess = true;
-            console.log('SUCCESS: Partial match found');
-          }
-        } catch (err) {
-          console.error('Partial match query failed:', err);
-        }
-      }
-
-      // Strategy 4: Get ALL data and filter manually (last resort)
-      if (!querySuccess) {
-        console.log('=== STRATEGY 4: MANUAL FILTER (LAST RESORT) ===');
-        try {
-          const { data: allData, error: allDataError } = await supabase
-            .from('soru_cevap')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-          if (!allDataError && allData) {
-            console.log('Got all data, filtering manually. Total records:', allData.length);
-            
-            // Try different comparison methods
-            const manualFiltered = allData.filter(item => {
-              const itemProvince = item.province;
-              return itemProvince === province || 
-                     itemProvince.toLowerCase() === province.toLowerCase() ||
-                     itemProvince.includes(province) ||
-                     province.includes(itemProvince);
-            });
-            
-            console.log('Manual filter result:', manualFiltered.length);
-            
-            if (manualFiltered.length > 0) {
-              finalData = manualFiltered;
-              querySuccess = true;
-              console.log('SUCCESS: Manual filtering found matches');
-            }
-          }
-        } catch (err) {
-          console.error('Manual filter query failed:', err);
-        }
-      }
-
-      const endTime = Date.now();
-      
-      console.log('=== FINAL QUERY RESULT ===');
-      console.log('Query duration:', endTime - startTime, 'ms');
-      console.log('Query success:', querySuccess);
-      console.log('Final data count:', finalData.length);
-      console.log('Final data sample:', finalData.slice(0, 2));
-
-      // Type the data correctly
-      const typedData = finalData.map(item => ({
-        ...item,
-        answer_status: item.answer_status as Question['answer_status']
-      }));
-      
-      console.log('=== SETTING QUESTIONS STATE ===');
-      console.log('Setting questions count:', typedData.length);
-      
-      setQuestions(typedData);
-      
-      // Final success/failure logging
-      if (typedData.length > 0) {
-        console.log('✅ SUCCESS: Questions loaded for mobile');
-        toast.success(`${typedData.length} soru yüklendi`);
-      } else {
-        console.log('❌ NO QUESTIONS FOUND after all strategies');
-        toast.error('Bu il için soru bulunamadı');
-      }
+      console.log('❌ No questions found after all strategies');
+      setQuestions([]);
+      toast.error('Bu il için soru bulunamadı');
       
     } catch (error) {
-      console.error('=== LOAD QUESTIONS CRITICAL ERROR ===');
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
+      console.error('💥 Critical error in loadQuestions:', error);
       toast.error('Sorular yüklenirken hata oluştu');
     } finally {
-      console.log('=== SETTING LOADING FALSE ===');
       setLoading(false);
     }
   };
@@ -296,25 +169,22 @@ const YdoSecureAccess = () => {
     setSubmitting(true);
 
     try {
-      // Determine the new status based on current status
       const newStatus = selectedQuestion.answer_status === 'returned' ? 'corrected' : 'answered';
 
-      // Update the question with the answer
       const { error: updateError } = await supabase
         .from('soru_cevap')
         .update({
           answer: answer.trim(),
           answered: true,
           answer_date: new Date().toISOString(),
-          answered_by_user_id: null, // YDO user doesn't have user_id in this flow
+          answered_by_user_id: null,
           answer_status: newStatus,
-          admin_sent: false // Reset admin_sent when answer is updated
+          admin_sent: false
         })
         .eq('id', selectedQuestion.id);
 
       if (updateError) throw updateError;
 
-      // Send notification that answer was provided/corrected
       const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
           type: newStatus === 'corrected' ? 'answer_corrected' : 'answer_provided',
@@ -338,9 +208,8 @@ const YdoSecureAccess = () => {
       setSelectedQuestion(null);
       setAnswer('');
       
-      // Reload questions to reflect changes
       if (tokenData) {
-        loadQuestions(tokenData.province);
+        loadQuestions(tokenData.province, /Mobile|Android|iPhone|iPad/.test(navigator.userAgent));
       }
     } catch (error) {
       console.error('Error submitting answer:', error);
@@ -373,7 +242,9 @@ const YdoSecureAccess = () => {
     return question.answer_status === 'unanswered' || question.answer_status === 'returned';
   };
 
-  console.log('=== RENDER ===');
+  const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
+
+  console.log('🚀 RENDER');
   console.log('Loading state:', loading);
   console.log('Questions count:', questions.length);
   console.log('Token data:', tokenData);
@@ -385,21 +256,19 @@ const YdoSecureAccess = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Sorular yükleniyor...</p>
           
-          {/* Enhanced mobile debug panel */}
-          {debugInfo && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left text-xs space-y-2">
-              <div className="font-semibold text-blue-800 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Debug Bilgileri
+          {/* Enhanced mobile diagnostic panel */}
+          {isMobile && (
+            <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg text-left text-xs">
+              <div className="flex items-center gap-2 mb-3">
+                <Smartphone className="h-4 w-4 text-blue-600" />
+                <span className="font-bold text-blue-800">Mobil Tanı Paneli</span>
               </div>
-              <div className="text-blue-700 space-y-1">
-                <p><strong>Platform:</strong> {debugInfo.isMobile ? 'Mobil' : 'Masaüstü'}</p>
-                <p><strong>Ekran:</strong> {debugInfo.screenInfo.width}x{debugInfo.screenInfo.height}</p>
-                <p><strong>İç Boyut:</strong> {debugInfo.screenInfo.innerWidth}x{debugInfo.screenInfo.innerHeight}</p>
-                <p><strong>Pixel Oranı:</strong> {debugInfo.screenInfo.devicePixelRatio}</p>
-                <p><strong>İl:</strong> {tokenData?.province || 'Yükleniyor...'}</p>
-                <p><strong>Supabase:</strong> Aktif</p>
-                <p><strong>URL:</strong> {debugInfo.locationInfo.href.substring(0, 60)}...</p>
+              <div className="space-y-2 text-blue-700">
+                <p><strong>Cihaz:</strong> {navigator.userAgent.includes('iPhone') ? 'iPhone' : navigator.userAgent.includes('Android') ? 'Android' : 'Mobil'}</p>
+                <p><strong>Ekran:</strong> {window.screen.width}x{window.screen.height}</p>
+                <p><strong>İl:</strong> {tokenData?.province || 'Bekleniyor...'}</p>
+                <p><strong>Token:</strong> {tokenData ? '✅ Geçerli' : '⏳ Kontrol ediliyor'}</p>
+                <p><strong>Durum:</strong> Soru listesi yükleniyor</p>
               </div>
             </div>
           )}
@@ -529,34 +398,40 @@ const YdoSecureAccess = () => {
       <div className="max-w-6xl mx-auto">
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg sm:text-2xl">
+            <CardTitle className="text-lg sm:text-2xl flex items-center gap-2">
+              {isMobile ? <Smartphone className="h-5 w-5" /> : <Monitor className="h-5 w-5" />}
               YDO Soru Yanıtlama Paneli - {tokenData?.province}
             </CardTitle>
             <p className="text-sm sm:text-base text-gray-600">
               {tokenData?.province} ili için gelen sorular ve yanıtlama işlemleri
             </p>
             
-            {/* Critical Mobile Debug Panel */}
-            {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
+            {/* Critical Mobile Status Panel */}
+            {isMobile && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <span className="font-semibold text-yellow-800">Kritik Debug Paneli</span>
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                  <span className="font-bold text-blue-800">Mobil Durum Paneli</span>
                 </div>
-                <div className="grid grid-cols-1 gap-2 text-yellow-700">
-                  <div><strong>✅ Token İli:</strong> "{tokenData?.province}" (Uzunluk: {tokenData?.province?.length})</div>
-                  <div><strong>📊 Bulunan Soru:</strong> {questions.length}</div>
-                  <div><strong>🔍 Supabase Bağlantı:</strong> {supabase ? 'Aktif' : 'Pasif'}</div>
-                  <div><strong>📱 Platform:</strong> {debugInfo?.isMobile ? 'Mobil' : 'Masaüstü'}</div>
-                  <div><strong>🕒 Yükleme:</strong> {loading ? 'Devam Ediyor' : 'Tamamlandı'}</div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1">
+                    <div className="text-blue-700"><strong>🎯 İl:</strong> "{tokenData?.province}"</div>
+                    <div className="text-blue-700"><strong>📊 Soru Sayısı:</strong> {questions.length}</div>
+                    <div className="text-blue-700"><strong>🔐 Token:</strong> {tokenData ? '✅ Geçerli' : '❌ Geçersiz'}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-blue-700"><strong>📱 Platform:</strong> Mobil</div>
+                    <div className="text-blue-700"><strong>🔄 Yüklenme:</strong> {loading ? '⏳' : '✅'}</div>
+                    <div className="text-blue-700"><strong>🌐 Bağlantı:</strong> Aktif</div>
+                  </div>
                 </div>
                 
-                <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
-                  <strong>🚨 HATA DURUMU:</strong> 
-                  {questions.length === 0 && !loading && (
-                    <div>Soru bulunamadı! Konsol loglarını kontrol edin. İl adı veritabanındaki ile tam olarak eşleşmiyor olabilir.</div>
-                  )}
-                </div>
+                {questions.length === 0 && !loading && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
+                    <strong>⚠️ SORUN TESPİTİ:</strong> Mobil cihazda soru listesi yüklenemedi. 
+                    Konsol loglarını kontrol edin ve masaüstü versiyonla karşılaştırın.
+                  </div>
+                )}
               </div>
             )}
           </CardHeader>
@@ -566,18 +441,16 @@ const YdoSecureAccess = () => {
                 <p className="text-gray-500 text-lg mb-2">Henüz soru bulunmamaktadır.</p>
                 <p className="text-sm text-gray-400">İl: {tokenData?.province}</p>
                 
-                {/* Critical mobile no-questions debug */}
-                {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
-                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-xs text-left max-w-md mx-auto">
-                    <div className="font-semibold text-red-800 mb-2">🔍 Detaylı Tanı:</div>
-                    <div className="text-red-700 space-y-1">
-                      <p><strong>URL Parametresi:</strong> {window.location.search}</p>
-                      <p><strong>Token İl Değeri:</strong> "{tokenData?.province}"</p>
-                      <p><strong>Karakter Kodları:</strong> {tokenData?.province ? Array.from(tokenData.province).map(c => c.charCodeAt(0)).join(',') : 'N/A'}</p>
-                      <p><strong>Token Email:</strong> {tokenData?.email}</p>
-                      <p><strong>Loading Durumu:</strong> {loading ? 'Yükleniyor' : 'Tamamlandı'}</p>
-                      <p><strong>Supabase URL:</strong> https://zyxiznikuvpwmopraauj.supabase.co</p>
-                      <p><strong>Tarayıcı:</strong> {navigator.userAgent.substring(0, 50)}...</p>
+                {/* Enhanced mobile troubleshooting */}
+                {isMobile && (
+                  <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-left max-w-md mx-auto">
+                    <div className="font-semibold text-yellow-800 mb-2">🔧 Mobil Troubleshooting:</div>
+                    <div className="text-yellow-700 space-y-1">
+                      <p>1. Konsol loglarını açın (Chrome DevTools)</p>
+                      <p>2. "📊 LOADING QUESTIONS" logunu arayın</p>
+                      <p>3. Province değerinin doğru olduğunu kontrol edin</p>
+                      <p>4. Supabase sorgu sonuçlarını kontrol edin</p>
+                      <p>5. Masaüstü versiyonla karışlaştırın</p>
                     </div>
                   </div>
                 )}
