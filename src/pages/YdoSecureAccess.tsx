@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,14 +43,30 @@ const YdoSecureAccess = () => {
 
   const loadQuestions = async (province: string) => {
     try {
+      console.log('Loading questions for province:', province);
+      
       const { data, error } = await supabase
         .from('soru_cevap')
         .select('*')
         .eq('province', province)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setQuestions(data || []);
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Raw data from Supabase:', data);
+      
+      // Cast answer_status to the correct type
+      const typedData = (data || []).map(item => ({
+        ...item,
+        answer_status: item.answer_status as Question['answer_status']
+      }));
+      
+      console.log('Typed data:', typedData);
+      
+      setQuestions(typedData);
     } catch (error) {
       console.error('Error loading questions:', error);
       toast.error('Failed to load questions');
@@ -269,7 +284,7 @@ const YdoSecureAccess = () => {
               )}
 
               {!canEdit && selectedQuestion.answer_date && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounde-lg p-4">
                   <p className="text-sm text-blue-700">
                     Bu soru {formatDate(selectedQuestion.answer_date)} tarihinde yanıtlanmıştır.
                     {selectedQuestion.answer_status === 'approved' && ' Yanıt onaylanmış ve kullanıcıya gönderilmiştir.'}
