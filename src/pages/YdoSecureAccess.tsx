@@ -46,7 +46,7 @@ const YdoSecureAccess = () => {
       },
       supabaseStatus: {
         clientExists: !!supabase,
-        url: supabase?.supabaseUrl?.substring(0, 30) + '...' || 'unknown'
+        url: 'https://zyxiznikuvpwmopraauj.supabase.co'
       }
     };
     
