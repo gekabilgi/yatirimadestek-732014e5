@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -142,43 +141,59 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (type === 'answer_returned') {
-      // Send return notification to YDO user
+      // Send return notification to YDO users of that province, not to the question asker
       const baseUrl = getBaseUrl();
-      const token = generateYdoToken(questionData.email, questionData.province);
-      const secureAccessUrl = `${baseUrl}/ydo/secure-access?token=${token}`;
+      
+      // Get YDO users for the province where the question was asked
+      const { data: ydoUsers, error: ydoError } = await supabase
+        .from('ydo_users')
+        .select('email, full_name')
+        .eq('province', questionData.province);
 
-      const emailData: EmailData = {
-        to: [{ email: questionData.email, name: questionData.full_name }],
-        subject: `Yanıt İade Edildi - ${questionData.province} - TeşvikSor`,
-        htmlContent: `
-          <h2>Yanıtınız İade Edildi</h2>
-          <p>Merhaba,</p>
-          <p>Vermiş olduğunuz yanıt admin tarafından iade edilmiştir:</p>
-          
-          <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #ffc107;">
-            <h3>İade Sebebi:</h3>
-            <p>${questionData.return_reason}</p>
-          </div>
+      if (ydoError) {
+        console.error('Error fetching YDO users:', ydoError);
+        throw ydoError;
+      }
 
-          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
-            <h3>Soru:</h3>
-            <p>${questionData.question.substring(0, 200)}${questionData.question.length > 200 ? '...' : ''}</p>
-          </div>
-          
-          <div style="margin: 20px 0; text-align: center;">
-            <a href="${secureAccessUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Yanıtı Düzelt
-            </a>
-          </div>
-          
-          <p><small>Bu bağlantı 24 saat geçerlidir.</small></p>
-          <p>Saygılarımızla,<br>TeşvikSor Ekibi</p>
-        `,
-        sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
-      };
+      if (ydoUsers && ydoUsers.length > 0) {
+        for (const ydoUser of ydoUsers) {
+          const token = generateYdoToken(ydoUser.email, questionData.province);
+          const secureAccessUrl = `${baseUrl}/ydo/secure-access?token=${token}`;
 
-      await sendBrevoEmail(emailData);
-      console.log('Return notification sent to YDO user:', questionData.email);
+          const emailData: EmailData = {
+            to: [{ email: ydoUser.email, name: ydoUser.full_name }],
+            subject: `Yanıt İade Edildi - ${questionData.province} - TeşvikSor`,
+            htmlContent: `
+              <h2>Yanıtınız İade Edildi</h2>
+              <p>Merhaba ${ydoUser.full_name},</p>
+              <p>Vermiş olduğunuz yanıt admin tarafından iade edilmiştir:</p>
+              
+              <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #ffc107;">
+                <h3>İade Sebebi:</h3>
+                <p>${questionData.return_reason}</p>
+              </div>
+
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                <h3>Soru:</h3>
+                <p>${questionData.question.substring(0, 200)}${questionData.question.length > 200 ? '...' : ''}</p>
+              </div>
+              
+              <div style="margin: 20px 0; text-align: center;">
+                <a href="${secureAccessUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                  Yanıtı Düzelt
+                </a>
+              </div>
+              
+              <p><small>Bu bağlantı 24 saat geçerlidir.</small></p>
+              <p>Saygılarımızla,<br>TeşvikSor Ekibi</p>
+            `,
+            sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
+          };
+
+          await sendBrevoEmail(emailData);
+        }
+        console.log('Return notification sent to', ydoUsers.length, 'YDO users for province:', questionData.province);
+      }
     }
 
     if (type === 'answer_provided' || type === 'answer_corrected') {

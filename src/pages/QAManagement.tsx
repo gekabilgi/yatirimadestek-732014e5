@@ -110,11 +110,14 @@ const QAManagement = () => {
 
       if (updateError) throw updateError;
 
-      // Send notification that answer was returned
+      // Send notification that answer was returned - passing the full question data
       const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
           type: 'answer_returned',
-          questionId: selectedQuestion.id
+          questionData: {
+            ...selectedQuestion,
+            return_reason: returnReason.trim()
+          }
         }
       });
 
