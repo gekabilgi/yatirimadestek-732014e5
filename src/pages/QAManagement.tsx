@@ -105,6 +105,9 @@ const QAManagement = () => {
 
   const handleApproveAndSend = async (questionId: string, userEmail: string) => {
     try {
+      const question = questions.find(q => q.id === questionId);
+      if (!question) return;
+
       const { error } = await supabase
         .from('soru_cevap')
         .update({
@@ -114,6 +117,26 @@ const QAManagement = () => {
         .eq('id', questionId);
 
       if (error) throw error;
+
+      // Send email notification to user
+      try {
+        await supabase.functions.invoke('send-qna-notifications', {
+          body: {
+            type: 'answer_sent',
+            questionId: questionId,
+            questionData: {
+              full_name: question.full_name,
+              email: question.email,
+              question: question.question,
+              answer: question.answer
+            }
+          }
+        });
+        console.log('Answer email sent to user');
+      } catch (emailError) {
+        console.error('Error sending answer email:', emailError);
+        // Don't fail the approval if email fails
+      }
 
       // Log audit trail
       await supabase.rpc('log_qna_audit', {
@@ -321,7 +344,7 @@ const QAManagement = () => {
                                 value={adminNotes}
                                 onChange={(e) => setAdminNotes(e.target.value)}
                                 rows={4}
-                                placeholder="İade sebebini açıklayınız..."
+                                placeholder="İ ade sebebini açıklayınız..."
                               />
                             </div>
                             <Button onClick={() => handleReturn(question.id)}>

@@ -56,7 +56,7 @@ const SoruSorModal = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('soru_cevap')
         .insert([{
           full_name: formData.fullName,
@@ -64,9 +64,33 @@ const SoruSorModal = () => {
           phone: formData.phone || null,
           province: formData.province,
           question: formData.question
-        }]);
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Send email notifications
+      try {
+        await supabase.functions.invoke('send-qna-notifications', {
+          body: {
+            type: 'new_question',
+            questionId: data.id,
+            questionData: {
+              full_name: formData.fullName,
+              email: formData.email,
+              phone: formData.phone,
+              province: formData.province,
+              question: formData.question,
+              created_at: data.created_at
+            }
+          }
+        });
+        console.log('Email notifications sent');
+      } catch (emailError) {
+        console.error('Error sending email notifications:', emailError);
+        // Don't fail the whole process if email fails
+      }
 
       toast.success('Sorunuz başarıyla gönderildi. En kısa sürede yanıtlanacaktır.');
       setFormData({
