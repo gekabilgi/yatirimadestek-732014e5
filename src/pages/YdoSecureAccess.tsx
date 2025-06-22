@@ -103,113 +103,168 @@ const YdoSecureAccess = () => {
       const startTime = Date.now();
       
       // First, let's check what provinces exist in the database
-      console.log('Checking existing provinces in database...');
+      console.log('=== CHECKING ALL PROVINCES IN DATABASE ===');
       const { data: allQuestions, error: allError } = await supabase
         .from('soru_cevap')
-        .select('province')
-        .limit(10);
+        .select('province, id, question')
+        .limit(20);
 
       if (allError) {
-        console.error('Error fetching all provinces:', allError);
+        console.error('Error fetching sample data:', allError);
       } else {
-        console.log('Sample provinces in database:', allQuestions?.map(q => ({
+        console.log('ALL PROVINCES IN DATABASE:', allQuestions?.map(q => ({
           province: q.province,
+          id: q.id,
           charCodes: Array.from(q.province).map(char => char.charCodeAt(0))
         })));
+        
+        // Check for exact matches
+        const exactMatches = allQuestions?.filter(q => q.province === province) || [];
+        console.log('EXACT MATCHES FOUND:', exactMatches.length);
       }
       
-      // Try exact match first
-      console.log('Executing Supabase query with exact match...');
-      let { data, error } = await supabase
-        .from('soru_cevap')
-        .select('*')
-        .eq('province', province)
-        .order('created_at', { ascending: false });
-
-      console.log('Exact match result:', { count: data?.length || 0, error });
-
-      // If no results, try case-insensitive search
-      if (!data || data.length === 0) {
-        console.log('No exact match, trying case-insensitive search...');
-        const { data: caseInsensitiveData, error: caseInsensitiveError } = await supabase
+      // Try multiple query strategies with better error handling
+      let finalData: any[] = [];
+      let querySuccess = false;
+      
+      // Strategy 1: Explicit exact match
+      console.log('=== STRATEGY 1: EXACT MATCH ===');
+      try {
+        const { data: exactData, error: exactError } = await supabase
           .from('soru_cevap')
           .select('*')
-          .ilike('province', province)
+          .eq('province', province)
           .order('created_at', { ascending: false });
 
-        if (!caseInsensitiveError && caseInsensitiveData && caseInsensitiveData.length > 0) {
-          data = caseInsensitiveData;
-          error = null;
-          console.log('Case-insensitive match found:', data.length);
+        console.log('Exact match query result:', { 
+          count: exactData?.length || 0, 
+          error: exactError,
+          sample: exactData?.slice(0, 2) 
+        });
+
+        if (!exactError && exactData && exactData.length > 0) {
+          finalData = exactData;
+          querySuccess = true;
+          console.log('SUCCESS: Exact match found');
+        }
+      } catch (err) {
+        console.error('Exact match query failed:', err);
+      }
+
+      // Strategy 2: Case-insensitive search
+      if (!querySuccess) {
+        console.log('=== STRATEGY 2: CASE INSENSITIVE ===');
+        try {
+          const { data: iLikeData, error: iLikeError } = await supabase
+            .from('soru_cevap')
+            .select('*')
+            .ilike('province', province)
+            .order('created_at', { ascending: false });
+
+          console.log('Case-insensitive query result:', { 
+            count: iLikeData?.length || 0, 
+            error: iLikeError 
+          });
+
+          if (!iLikeError && iLikeData && iLikeData.length > 0) {
+            finalData = iLikeData;
+            querySuccess = true;
+            console.log('SUCCESS: Case-insensitive match found');
+          }
+        } catch (err) {
+          console.error('Case-insensitive query failed:', err);
         }
       }
 
-      // If still no results, try partial match
-      if (!data || data.length === 0) {
-        console.log('No case-insensitive match, trying partial match...');
-        const { data: partialData, error: partialError } = await supabase
-          .from('soru_cevap')
-          .select('*')
-          .ilike('province', `%${province}%`)
-          .order('created_at', { ascending: false });
+      // Strategy 3: Partial match
+      if (!querySuccess) {
+        console.log('=== STRATEGY 3: PARTIAL MATCH ===');
+        try {
+          const { data: partialData, error: partialError } = await supabase
+            .from('soru_cevap')
+            .select('*')
+            .ilike('province', `%${province}%`)
+            .order('created_at', { ascending: false });
 
-        if (!partialError && partialData && partialData.length > 0) {
-          data = partialData;
-          error = null;
-          console.log('Partial match found:', data.length);
+          console.log('Partial match query result:', { 
+            count: partialData?.length || 0, 
+            error: partialError 
+          });
+
+          if (!partialError && partialData && partialData.length > 0) {
+            finalData = partialData;
+            querySuccess = true;
+            console.log('SUCCESS: Partial match found');
+          }
+        } catch (err) {
+          console.error('Partial match query failed:', err);
+        }
+      }
+
+      // Strategy 4: Get ALL data and filter manually (last resort)
+      if (!querySuccess) {
+        console.log('=== STRATEGY 4: MANUAL FILTER (LAST RESORT) ===');
+        try {
+          const { data: allData, error: allDataError } = await supabase
+            .from('soru_cevap')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!allDataError && allData) {
+            console.log('Got all data, filtering manually. Total records:', allData.length);
+            
+            // Try different comparison methods
+            const manualFiltered = allData.filter(item => {
+              const itemProvince = item.province;
+              return itemProvince === province || 
+                     itemProvince.toLowerCase() === province.toLowerCase() ||
+                     itemProvince.includes(province) ||
+                     province.includes(itemProvince);
+            });
+            
+            console.log('Manual filter result:', manualFiltered.length);
+            
+            if (manualFiltered.length > 0) {
+              finalData = manualFiltered;
+              querySuccess = true;
+              console.log('SUCCESS: Manual filtering found matches');
+            }
+          }
+        } catch (err) {
+          console.error('Manual filter query failed:', err);
         }
       }
 
       const endTime = Date.now();
       
-      console.log('=== FINAL SUPABASE QUERY RESULT ===');
+      console.log('=== FINAL QUERY RESULT ===');
       console.log('Query duration:', endTime - startTime, 'ms');
-      console.log('Error:', error);
-      console.log('Data count:', data?.length || 0);
-      console.log('Raw data sample:', data?.slice(0, 2));
+      console.log('Query success:', querySuccess);
+      console.log('Final data count:', finalData.length);
+      console.log('Final data sample:', finalData.slice(0, 2));
 
-      if (error) {
-        console.error('Supabase query error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw error;
-      }
-      
       // Type the data correctly
-      const typedData = (data || []).map(item => ({
+      const typedData = finalData.map(item => ({
         ...item,
         answer_status: item.answer_status as Question['answer_status']
       }));
       
       console.log('=== SETTING QUESTIONS STATE ===');
-      console.log('Typed data count:', typedData.length);
-      console.log('Questions preview:', typedData.map(q => ({
-        id: q.id,
-        question_preview: q.question.substring(0, 50),
-        status: q.answer_status,
-        province: q.province
-      })));
+      console.log('Setting questions count:', typedData.length);
       
       setQuestions(typedData);
       
-      // Mobile-specific success logging
-      if (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
-        console.log('=== MOBILE SUCCESS ===');
-        console.log('Mobile questions loaded successfully:', {
-          count: typedData.length,
-          province: province,
-          firstQuestion: typedData[0] ? {
-            id: typedData[0].id,
-            preview: typedData[0].question.substring(0, 30)
-          } : null
-        });
+      // Final success/failure logging
+      if (typedData.length > 0) {
+        console.log('✅ SUCCESS: Questions loaded for mobile');
+        toast.success(`${typedData.length} soru yüklendi`);
+      } else {
+        console.log('❌ NO QUESTIONS FOUND after all strategies');
+        toast.error('Bu il için soru bulunamadı');
       }
       
     } catch (error) {
-      console.error('=== LOAD QUESTIONS ERROR ===');
+      console.error('=== LOAD QUESTIONS CRITICAL ERROR ===');
       console.error('Error details:', {
         name: error.name,
         message: error.message,
@@ -481,27 +536,27 @@ const YdoSecureAccess = () => {
               {tokenData?.province} ili için gelen sorular ve yanıtlama işlemleri
             </p>
             
-            {/* Enhanced Mobile Debug Panel */}
+            {/* Critical Mobile Debug Panel */}
             {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
                 <div className="flex items-center gap-2 mb-3">
                   <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <span className="font-semibold text-yellow-800">Debug Paneli</span>
+                  <span className="font-semibold text-yellow-800">Kritik Debug Paneli</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-yellow-700">
-                  <div><strong>Soru Sayısı:</strong> {questions.length}</div>
-                  <div><strong>İl:</strong> {tokenData?.province || 'N/A'}</div>
-                  <div><strong>Token:</strong> {tokenData ? 'Geçerli' : 'Geçersiz'}</div>
-                  <div><strong>Supabase:</strong> Aktif</div>
-                  <div><strong>Ekran:</strong> {debugInfo?.screenInfo.innerWidth}x{debugInfo?.screenInfo.innerHeight}</div>
-                  <div><strong>Platform:</strong> {debugInfo?.isMobile ? 'Mobil' : 'Masaüstü'}</div>
+                <div className="grid grid-cols-1 gap-2 text-yellow-700">
+                  <div><strong>✅ Token İli:</strong> "{tokenData?.province}" (Uzunluk: {tokenData?.province?.length})</div>
+                  <div><strong>📊 Bulunan Soru:</strong> {questions.length}</div>
+                  <div><strong>🔍 Supabase Bağlantı:</strong> {supabase ? 'Aktif' : 'Pasif'}</div>
+                  <div><strong>📱 Platform:</strong> {debugInfo?.isMobile ? 'Mobil' : 'Masaüstü'}</div>
+                  <div><strong>🕒 Yükleme:</strong> {loading ? 'Devam Ediyor' : 'Tamamlandı'}</div>
                 </div>
-                {questions.length === 0 && (
-                  <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-700">
-                    <strong>DETAY:</strong> İl "{tokenData?.province}" için veri bulunamadı. 
-                    Konsol loglarını kontrol edin.
-                  </div>
-                )}
+                
+                <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
+                  <strong>🚨 HATA DURUMU:</strong> 
+                  {questions.length === 0 && !loading && (
+                    <div>Soru bulunamadı! Konsol loglarını kontrol edin. İl adı veritabanındaki ile tam olarak eşleşmiyor olabilir.</div>
+                  )}
+                </div>
               </div>
             )}
           </CardHeader>
@@ -511,16 +566,18 @@ const YdoSecureAccess = () => {
                 <p className="text-gray-500 text-lg mb-2">Henüz soru bulunmamaktadır.</p>
                 <p className="text-sm text-gray-400">İl: {tokenData?.province}</p>
                 
-                {/* Enhanced no-questions debug for mobile */}
+                {/* Critical mobile no-questions debug */}
                 {/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) && (
                   <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-xs text-left max-w-md mx-auto">
-                    <div className="font-semibold text-red-800 mb-2">Tanılama:</div>
+                    <div className="font-semibold text-red-800 mb-2">🔍 Detaylı Tanı:</div>
                     <div className="text-red-700 space-y-1">
-                      <p><strong>URL:</strong> {window.location.href.substring(0, 80)}...</p>
-                      <p><strong>Province Token:</strong> {tokenData?.province}</p>
+                      <p><strong>URL Parametresi:</strong> {window.location.search}</p>
+                      <p><strong>Token İl Değeri:</strong> "{tokenData?.province}"</p>
+                      <p><strong>Karakter Kodları:</strong> {tokenData?.province ? Array.from(tokenData.province).map(c => c.charCodeAt(0)).join(',') : 'N/A'}</p>
                       <p><strong>Token Email:</strong> {tokenData?.email}</p>
-                      <p><strong>Loading:</strong> {loading ? 'Devam ediyor' : 'Tamamlandı'}</p>
-                      <p><strong>Supabase:</strong> Bağlı</p>
+                      <p><strong>Loading Durumu:</strong> {loading ? 'Yükleniyor' : 'Tamamlandı'}</p>
+                      <p><strong>Supabase URL:</strong> https://zyxiznikuvpwmopraauj.supabase.co</p>
+                      <p><strong>Tarayıcı:</strong> {navigator.userAgent.substring(0, 50)}...</p>
                     </div>
                   </div>
                 )}
