@@ -18,6 +18,7 @@ import ProgramDetails from "./pages/ProgramDetails";
 import NotFound from "./pages/NotFound";
 import SearchSupport from "./pages/SearchSupport";
 import YdoSecureAccess from "./pages/YdoSecureAccess";
+import QNA from "./pages/QNA";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/incentive-tools" element={<IncentiveTools />} />
+              <Route path="/qna" element={<QNA />} />
               <Route path="/searchsupport" element={<SearchSupport />} />
               <Route path="/ydo/secure-access" element={<YdoSecureAccess />} />
               <Route path="/admin/login" element={<AdminLogin />} />

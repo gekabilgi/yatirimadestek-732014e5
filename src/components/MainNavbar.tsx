@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Menu, X, Calculator, User, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ const MainNavbar = () => {
   const navItems = [
     { name: 'Ana Sayfa', href: '/' },
     { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
+    { name: 'Soru & Cevap', href: '/qna' },
     { name: 'Destek Arama', href: '/searchsupport' },
   ];
 
