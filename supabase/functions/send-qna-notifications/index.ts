@@ -20,6 +20,19 @@ interface EmailData {
   sender: { email: string; name: string };
 }
 
+// Get the base URL for the application
+const getBaseUrl = (): string => {
+  // Check if we're in production by looking at the request origin or environment
+  const isProduction = supabaseUrl.includes('zyxiznikuvpwmopraauj');
+  
+  if (isProduction) {
+    return 'https://tesviksor.com';
+  }
+  
+  // For development/preview, use the lovable preview URL
+  return 'https://efd7e70c-3a69-4fb9-a26d-55aefb24b4b1.lovable.app';
+};
+
 // Simple token generation for YDO access
 const generateYdoToken = (email: string, province: string): string => {
   const payload = {
@@ -147,6 +160,8 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 const sendNewQuestionNotifications = async (questionData: any) => {
+  const baseUrl = getBaseUrl();
+  
   // Get YDO users for the province
   const { data: ydoUsers, error: ydoError } = await supabase
     .from('ydo_users')
@@ -171,7 +186,7 @@ const sendNewQuestionNotifications = async (questionData: any) => {
   if (ydoUsers && ydoUsers.length > 0) {
     for (const ydoUser of ydoUsers) {
       const token = generateYdoToken(ydoUser.email, questionData.province);
-      const secureAccessUrl = `${supabaseUrl.replace('https://', 'https://').replace('.supabase.co', '.lovable.app')}/ydo/secure-access?token=${token}`;
+      const secureAccessUrl = `${baseUrl}/ydo/secure-access?token=${token}`;
       
       const ydoEmailData: EmailData = {
         to: [{ email: ydoUser.email, name: ydoUser.full_name }],
@@ -207,6 +222,8 @@ const sendNewQuestionNotifications = async (questionData: any) => {
 
   // Send regular notifications to admins
   if (adminEmails && adminEmails.length > 0) {
+    const adminPanelUrl = `${baseUrl}/admin/qa-management`;
+    
     const adminEmailData: EmailData = {
       to: adminEmails.map(admin => ({ email: admin.email, name: admin.full_name })),
       subject: `Yeni Soru: ${questionData.province} - ${questionData.full_name}`,
@@ -221,7 +238,12 @@ const sendNewQuestionNotifications = async (questionData: any) => {
           ${questionData.question.replace(/\n/g, '<br>')}
         </div>
         <p><strong>Gönderilme Tarihi:</strong> ${new Date(questionData.created_at || new Date()).toLocaleString('tr-TR')}</p>
-        <p><a href="${supabaseUrl.replace('https://', 'https://').replace('.supabase.co', '.lovable.app')}/admin/qa-management" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Admin Paneli</a></p>
+        
+        <div style="margin: 20px 0; text-align: center;">
+          <a href="${adminPanelUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Admin Paneli - Soru Yönetimi
+          </a>
+        </div>
       `,
       sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
     };
