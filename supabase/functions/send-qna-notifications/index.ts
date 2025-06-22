@@ -49,56 +49,39 @@ const handler = async (req: Request): Promise<Response> => {
     const { type, questionId, questionData } = await req.json();
     console.log('Processing notification:', { type, questionId });
 
+    if (type === 'submit_question') {
+      // Insert the question using service role to bypass RLS
+      const { data, error } = await supabase
+        .from('soru_cevap')
+        .insert([{
+          full_name: questionData.full_name,
+          email: questionData.email,
+          phone: questionData.phone,
+          province: questionData.province,
+          question: questionData.question
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error inserting question:', error);
+        throw error;
+      }
+
+      // Send notifications for the new question
+      await sendNewQuestionNotifications(data);
+
+      return new Response(
+        JSON.stringify({ success: true, question: data }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     if (type === 'new_question') {
-      // Get YDO users for the province
-      const { data: ydoUsers, error: ydoError } = await supabase
-        .from('ydo_users')
-        .select('email, full_name')
-        .eq('province', questionData.province);
-
-      if (ydoError) {
-        console.error('Error fetching YDO users:', ydoError);
-      }
-
-      // Get admin emails
-      const { data: adminEmails, error: adminError } = await supabase
-        .from('qna_admin_emails')
-        .select('email, full_name')
-        .eq('is_active', true);
-
-      if (adminError) {
-        console.error('Error fetching admin emails:', adminError);
-      }
-
-      // Combine recipients
-      const recipients = [
-        ...(ydoUsers || []).map(user => ({ email: user.email, name: user.full_name })),
-        ...(adminEmails || []).map(admin => ({ email: admin.email, name: admin.full_name }))
-      ];
-
-      if (recipients.length > 0) {
-        const emailData: EmailData = {
-          to: recipients,
-          subject: `Yeni Soru: ${questionData.province} - ${questionData.full_name}`,
-          htmlContent: `
-            <h2>Yeni Soru Geldi</h2>
-            <p><strong>Gönderen:</strong> ${questionData.full_name}</p>
-            <p><strong>E-posta:</strong> ${questionData.email}</p>
-            <p><strong>Telefon:</strong> ${questionData.phone || 'Belirtilmemiş'}</p>
-            <p><strong>İl:</strong> ${questionData.province}</p>
-            <p><strong>Soru:</strong></p>
-            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
-              ${questionData.question.replace(/\n/g, '<br>')}
-            </div>
-            <p><strong>Gönderilme Tarihi:</strong> ${new Date(questionData.created_at).toLocaleString('tr-TR')}</p>
-            <p><a href="${supabaseUrl.replace('https://', 'https://app.')}/admin/qa-management" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Soruyu Yanıtla</a></p>
-          `,
-          sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
-        };
-
-        await sendBrevoEmail(emailData);
-        console.log('New question notification sent to', recipients.length, 'recipients');
-      }
+      await sendNewQuestionNotifications(questionData);
     }
 
     if (type === 'answer_sent') {
@@ -147,6 +130,58 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
+  }
+};
+
+const sendNewQuestionNotifications = async (questionData: any) => {
+  // Get YDO users for the province
+  const { data: ydoUsers, error: ydoError } = await supabase
+    .from('ydo_users')
+    .select('email, full_name')
+    .eq('province', questionData.province);
+
+  if (ydoError) {
+    console.error('Error fetching YDO users:', ydoError);
+  }
+
+  // Get admin emails
+  const { data: adminEmails, error: adminError } = await supabase
+    .from('qna_admin_emails')
+    .select('email, full_name')
+    .eq('is_active', true);
+
+  if (adminError) {
+    console.error('Error fetching admin emails:', adminError);
+  }
+
+  // Combine recipients
+  const recipients = [
+    ...(ydoUsers || []).map(user => ({ email: user.email, name: user.full_name })),
+    ...(adminEmails || []).map(admin => ({ email: admin.email, name: admin.full_name }))
+  ];
+
+  if (recipients.length > 0) {
+    const emailData: EmailData = {
+      to: recipients,
+      subject: `Yeni Soru: ${questionData.province} - ${questionData.full_name}`,
+      htmlContent: `
+        <h2>Yeni Soru Geldi</h2>
+        <p><strong>Gönderen:</strong> ${questionData.full_name}</p>
+        <p><strong>E-posta:</strong> ${questionData.email}</p>
+        <p><strong>Telefon:</strong> ${questionData.phone || 'Belirtilmemiş'}</p>
+        <p><strong>İl:</strong> ${questionData.province}</p>
+        <p><strong>Soru:</strong></p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+          ${questionData.question.replace(/\n/g, '<br>')}
+        </div>
+        <p><strong>Gönderilme Tarihi:</strong> ${new Date(questionData.created_at || new Date()).toLocaleString('tr-TR')}</p>
+        <p><a href="${supabaseUrl.replace('https://', 'https://app.')}/admin/qa-management" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Soruyu Yanıtla</a></p>
+      `,
+      sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
+    };
+
+    await sendBrevoEmail(emailData);
+    console.log('New question notification sent to', recipients.length, 'recipients');
   }
 };
 
