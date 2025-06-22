@@ -8,29 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MessageSquare, Eye, Reply, RotateCcw, Send, Clock } from 'lucide-react';
+import { MessageSquare, Eye, Reply, RotateCcw, Send, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import MainNavbar from '@/components/MainNavbar';
-
-interface Question {
-  id: string;
-  category: string | null;
-  question: string;
-  answer: string | null;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  province: string;
-  created_at: string;
-  answered: boolean;
-  answer_date: string | null;
-  sent_to_ydo: boolean;
-  sent_to_user: boolean;
-  return_status: 'returned' | 'corrected' | null;
-  admin_notes: string | null;
-}
+import type { Question } from '@/types/qna';
 
 const QAManagement = () => {
   const { user, isAdmin } = useAuth();
@@ -38,7 +21,7 @@ const QAManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answerText, setAnswerText] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
+  const [returnReason, setReturnReason] = useState('');
   const [category, setCategory] = useState('');
 
   useEffect(() => {
@@ -78,7 +61,8 @@ const QAManagement = () => {
           answered: true,
           answer_date: new Date().toISOString(),
           answered_by_user_id: user?.id,
-          category: category || null
+          category: category || null,
+          answer_status: 'answered'
         })
         .eq('id', questionId);
 
@@ -103,6 +87,63 @@ const QAManagement = () => {
     }
   };
 
+  const handleReturnAnswer = async (questionId: string) => {
+    if (!returnReason.trim()) {
+      toast.error('Lütfen iade sebebini giriniz.');
+      return;
+    }
+
+    try {
+      const question = questions.find(q => q.id === questionId);
+      if (!question) return;
+
+      const { error } = await supabase
+        .from('soru_cevap')
+        .update({
+          answer_status: 'returned',
+          return_reason: returnReason,
+          return_date: new Date().toISOString(),
+          admin_sent: false
+        })
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      // Send return notification to YDO user
+      try {
+        await supabase.functions.invoke('send-qna-notifications', {
+          body: {
+            type: 'answer_returned',
+            questionId: questionId,
+            questionData: {
+              ...question,
+              return_reason: returnReason
+            }
+          }
+        });
+        console.log('Return notification sent to YDO user');
+      } catch (emailError) {
+        console.error('Error sending return notification:', emailError);
+      }
+
+      // Log audit trail
+      await supabase.rpc('log_qna_audit', {
+        p_soru_cevap_id: questionId,
+        p_action: 'returned_to_ydo',
+        p_user_role: 'admin',
+        p_notes: returnReason
+      });
+
+      toast.success('Yanıt YDO kullanıcısına iade edildi.');
+      fetchQuestions();
+      setSelectedQuestion(null);
+      setReturnReason('');
+    } catch (error) {
+      console.error('Error returning answer:', error);
+      toast.error('Yanıt iade edilirken hata oluştu.');
+    }
+  };
+
   const handleApproveAndSend = async (questionId: string, userEmail: string) => {
     try {
       const question = questions.find(q => q.id === questionId);
@@ -112,6 +153,8 @@ const QAManagement = () => {
         .from('soru_cevap')
         .update({
           sent_to_user: true,
+          admin_sent: true,
+          answer_status: 'approved',
           approved_by_admin_id: user?.id
         })
         .eq('id', questionId);
@@ -135,74 +178,53 @@ const QAManagement = () => {
         console.log('Answer email sent to user');
       } catch (emailError) {
         console.error('Error sending answer email:', emailError);
-        // Don't fail the approval if email fails
       }
 
       // Log audit trail
       await supabase.rpc('log_qna_audit', {
         p_soru_cevap_id: questionId,
-        p_action: 'sent_to_user',
+        p_action: 'approved_and_sent',
         p_user_role: 'admin',
         p_notes: `Answer approved and sent to user: ${userEmail}`
       });
 
-      toast.success('Yanıt kullanıcıya gönderildi.');
+      toast.success('Yanıt onaylandı ve kullanıcıya gönderildi.');
       fetchQuestions();
     } catch (error) {
-      console.error('Error sending answer:', error);
-      toast.error('Yanıt gönderilirken hata oluştu.');
-    }
-  };
-
-  const handleReturn = async (questionId: string) => {
-    if (!adminNotes.trim()) {
-      toast.error('Lütfen iade notunu giriniz.');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('soru_cevap')
-        .update({
-          return_status: 'returned',
-          admin_notes: adminNotes
-        })
-        .eq('id', questionId);
-
-      if (error) throw error;
-
-      // Log audit trail
-      await supabase.rpc('log_qna_audit', {
-        p_soru_cevap_id: questionId,
-        p_action: 'returned',
-        p_user_role: 'admin',
-        p_notes: adminNotes
-      });
-
-      toast.success('Soru iade edildi.');
-      fetchQuestions();
-      setSelectedQuestion(null);
-      setAdminNotes('');
-    } catch (error) {
-      console.error('Error returning question:', error);
-      toast.error('Soru iade edilirken hata oluştu.');
+      console.error('Error approving and sending answer:', error);
+      toast.error('Yanıt onaylanırken hata oluştu.');
     }
   };
 
   const getStatusBadge = (question: Question) => {
-    if (question.sent_to_user) {
-      return <Badge className="bg-green-100 text-green-800">Gönderildi</Badge>;
+    switch (question.answer_status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Onaylandı</Badge>;
+      case 'returned':
+        return <Badge className="bg-red-100 text-red-800"><AlertTriangle className="h-3 w-3 mr-1" />İade Edildi</Badge>;
+      case 'corrected':
+        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />Düzeltildi</Badge>;
+      case 'answered':
+        return <Badge className="bg-blue-100 text-blue-800"><Reply className="h-3 w-3 mr-1" />Yanıtlandı</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800"><MessageSquare className="h-3 w-3 mr-1" />Beklemede</Badge>;
     }
-    if (question.return_status === 'returned') {
-      return <Badge className="bg-red-100 text-red-800">İade Edildi</Badge>;
-    }
-    if (question.return_status === 'corrected') {
-      return <Badge className="bg-yellow-100 text-yellow-800">Düzeltildi</Badge>;
-    }
-    if (question.answered) {
-      return <Badge className="bg-blue-100 text-blue-800">Yanıtlandı</Badge>;
-    }
-    return <Badge className="bg-gray-100 text-gray-800">Beklemede</Badge>;
+  };
+
+  const canEditAnswer = (question: Question) => {
+    return !question.admin_sent && question.answer_status !== 'approved';
+  };
+
+  const canReturnAnswer = (question: Question) => {
+    return question.answer_status === 'answered' || question.answer_status === 'corrected';
+  };
+
+  const canApproveAnswer = (question: Question) => {
+    return (question.answer_status === 'answered' || question.answer_status === 'corrected') && !question.admin_sent;
+  };
+
+  const isFinalized = (question: Question) => {
+    return question.answer_status === 'approved' || question.admin_sent;
   };
 
   if (loading) {
@@ -255,70 +277,28 @@ const QAManagement = () => {
                     </div>
                   )}
 
-                  {question.admin_notes && (
+                  {question.return_reason && (
                     <div>
-                      <h4 className="font-semibold mb-2">Admin Notları:</h4>
-                      <p className="text-gray-700 bg-yellow-50 p-3 rounded-lg">{question.admin_notes}</p>
+                      <h4 className="font-semibold mb-2">İade Sebebi:</h4>
+                      <p className="text-gray-700 bg-red-50 p-3 rounded-lg">{question.return_reason}</p>
+                      {question.return_date && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          İade Tarihi: {new Date(question.return_date).toLocaleString('tr-TR')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {isFinalized(question) && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-sm text-green-700 font-medium">
+                        ✅ Bu yanıt onaylanmış ve kullanıcıya gönderilmiştir. Artık düzenlenemez.
+                      </p>
                     </div>
                   )}
 
                   <div className="flex gap-2 pt-4">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedQuestion(question);
-                            setAnswerText(question.answer || '');
-                            setCategory(question.category || '');
-                          }}
-                        >
-                          <Reply className="h-4 w-4 mr-1" />
-                          {question.answered ? 'Yanıtı Düzenle' : 'Yanıtla'}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Soruya Yanıt Ver</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label>Kategori</Label>
-                            <Input
-                              value={category}
-                              onChange={(e) => setCategory(e.target.value)}
-                              placeholder="Kategori giriniz"
-                            />
-                          </div>
-                          <div>
-                            <Label>Yanıt</Label>
-                            <Textarea
-                              value={answerText}
-                              onChange={(e) => setAnswerText(e.target.value)}
-                              rows={6}
-                              placeholder="Yanıtınızı yazınız..."
-                            />
-                          </div>
-                          <Button onClick={() => handleAnswer(question.id)}>
-                            <Send className="h-4 w-4 mr-1" />
-                            Yanıtı Kaydet
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    {question.answered && !question.sent_to_user && isAdmin && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleApproveAndSend(question.id, question.email)}
-                      >
-                        <Send className="h-4 w-4 mr-1" />
-                        Onayla ve Gönder
-                      </Button>
-                    )}
-
-                    {isAdmin && (
+                    {canEditAnswer(question) && (
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button
@@ -326,28 +306,85 @@ const QAManagement = () => {
                             size="sm"
                             onClick={() => {
                               setSelectedQuestion(question);
-                              setAdminNotes(question.admin_notes || '');
+                              setAnswerText(question.answer || '');
+                              setCategory(question.category || '');
+                            }}
+                          >
+                            <Reply className="h-4 w-4 mr-1" />
+                            {question.answer ? 'Yanıtı Düzenle' : 'Yanıtla'}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Soruya Yanıt Ver</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Kategori</Label>
+                              <Input
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                placeholder="Kategori giriniz"
+                              />
+                            </div>
+                            <div>
+                              <Label>Yanıt</Label>
+                              <Textarea
+                                value={answerText}
+                                onChange={(e) => setAnswerText(e.target.value)}
+                                rows={6}
+                                placeholder="Yanıtınızı yazınız..."
+                              />
+                            </div>
+                            <Button onClick={() => handleAnswer(question.id)}>
+                              <Send className="h-4 w-4 mr-1" />
+                              Yanıtı Kaydet
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+
+                    {canApproveAnswer(question) && isAdmin && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveAndSend(question.id, question.email)}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Onayla ve Gönder
+                      </Button>
+                    )}
+
+                    {canReturnAnswer(question) && isAdmin && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedQuestion(question);
+                              setReturnReason('');
                             }}
                           >
                             <RotateCcw className="h-4 w-4 mr-1" />
-                            İade Et
+                            YDO'ya İade Et
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Soruyu İade Et</DialogTitle>
+                            <DialogTitle>Yanıtı YDO'ya İade Et</DialogTitle>
                           </DialogHeader>
                           <div className="space-y-4">
                             <div>
-                              <Label>İade Notu</Label>
+                              <Label>İade Sebebi</Label>
                               <Textarea
-                                value={adminNotes}
-                                onChange={(e) => setAdminNotes(e.target.value)}
+                                value={returnReason}
+                                onChange={(e) => setReturnReason(e.target.value)}
                                 rows={4}
-                                placeholder="İ ade sebebini açıklayınız..."
+                                placeholder="İade sebebini açıklayınız..."
                               />
                             </div>
-                            <Button onClick={() => handleReturn(question.id)}>
+                            <Button onClick={() => handleReturnAnswer(question.id)}>
                               <RotateCcw className="h-4 w-4 mr-1" />
                               İade Et
                             </Button>

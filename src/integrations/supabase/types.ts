@@ -519,8 +519,10 @@ export type Database = {
       soru_cevap: {
         Row: {
           admin_notes: string | null
+          admin_sent: boolean | null
           answer: string | null
           answer_date: string | null
+          answer_status: string | null
           answered: boolean
           answered_by_user_id: string | null
           approved_by_admin_id: string | null
@@ -532,6 +534,8 @@ export type Database = {
           phone: string | null
           province: string
           question: string
+          return_date: string | null
+          return_reason: string | null
           return_status:
             | Database["public"]["Enums"]["return_status_enum"]
             | null
@@ -540,8 +544,10 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          admin_sent?: boolean | null
           answer?: string | null
           answer_date?: string | null
+          answer_status?: string | null
           answered?: boolean
           answered_by_user_id?: string | null
           approved_by_admin_id?: string | null
@@ -553,6 +559,8 @@ export type Database = {
           phone?: string | null
           province: string
           question: string
+          return_date?: string | null
+          return_reason?: string | null
           return_status?:
             | Database["public"]["Enums"]["return_status_enum"]
             | null
@@ -561,8 +569,10 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          admin_sent?: boolean | null
           answer?: string | null
           answer_date?: string | null
+          answer_status?: string | null
           answered?: boolean
           answered_by_user_id?: string | null
           approved_by_admin_id?: string | null
@@ -574,6 +584,8 @@ export type Database = {
           phone?: string | null
           province?: string
           question?: string
+          return_date?: string | null
+          return_reason?: string | null
           return_status?:
             | Database["public"]["Enums"]["return_status_enum"]
             | null

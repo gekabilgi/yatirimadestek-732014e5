@@ -84,7 +84,8 @@ const handler = async (req: Request): Promise<Response> => {
           email: questionData.email,
           phone: questionData.phone,
           province: questionData.province,
-          question: questionData.question
+          question: questionData.question,
+          answer_status: 'unanswered'
         }])
         .select()
         .single();
@@ -138,6 +139,100 @@ const handler = async (req: Request): Promise<Response> => {
 
       await sendBrevoEmail(emailData);
       console.log('Answer notification sent to user:', questionData.email);
+    }
+
+    if (type === 'answer_returned') {
+      // Send return notification to YDO user
+      const baseUrl = getBaseUrl();
+      const token = generateYdoToken(questionData.email, questionData.province);
+      const secureAccessUrl = `${baseUrl}/ydo/secure-access?token=${token}`;
+
+      const emailData: EmailData = {
+        to: [{ email: questionData.email, name: questionData.full_name }],
+        subject: `Yanıt İade Edildi - ${questionData.province} - TeşvikSor`,
+        htmlContent: `
+          <h2>Yanıtınız İade Edildi</h2>
+          <p>Merhaba,</p>
+          <p>Vermiş olduğunuz yanıt admin tarafından iade edilmiştir:</p>
+          
+          <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #ffc107;">
+            <h3>İade Sebebi:</h3>
+            <p>${questionData.return_reason}</p>
+          </div>
+
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <h3>Soru:</h3>
+            <p>${questionData.question.substring(0, 200)}${questionData.question.length > 200 ? '...' : ''}</p>
+          </div>
+          
+          <div style="margin: 20px 0; text-align: center;">
+            <a href="${secureAccessUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Yanıtı Düzelt
+            </a>
+          </div>
+          
+          <p><small>Bu bağlantı 24 saat geçerlidir.</small></p>
+          <p>Saygılarımızla,<br>TeşvikSor Ekibi</p>
+        `,
+        sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
+      };
+
+      await sendBrevoEmail(emailData);
+      console.log('Return notification sent to YDO user:', questionData.email);
+    }
+
+    if (type === 'answer_provided' || type === 'answer_corrected') {
+      // Send notification to admins when YDO provides/corrects an answer
+      const baseUrl = getBaseUrl();
+      const adminPanelUrl = `${baseUrl}/admin/qa-management`;
+
+      // Get admin emails
+      const { data: adminEmails, error: adminError } = await supabase
+        .from('qna_admin_emails')
+        .select('email, full_name')
+        .eq('is_active', true);
+
+      if (adminError) {
+        console.error('Error fetching admin emails:', adminError);
+      }
+
+      if (adminEmails && adminEmails.length > 0) {
+        const isCorrection = type === 'answer_corrected';
+        const subject = `${isCorrection ? 'Yanıt Düzeltildi' : 'Yeni Yanıt'}: ${questionData.province} - TeşvikSor`;
+        
+        const adminEmailData: EmailData = {
+          to: adminEmails.map(admin => ({ email: admin.email, name: admin.full_name })),
+          subject: subject,
+          htmlContent: `
+            <h2>${isCorrection ? 'Yanıt Düzeltildi' : 'Yeni Yanıt Geldi'}</h2>
+            <p><strong>Soru Sahibi:</strong> ${questionData.full_name}</p>
+            <p><strong>E-posta:</strong> ${questionData.email}</p>
+            <p><strong>İl:</strong> ${questionData.province}</p>
+            
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <h3>Soru:</h3>
+              <p>${questionData.question.substring(0, 200)}${questionData.question.length > 200 ? '...' : ''}</p>
+            </div>
+
+            <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <h3>${isCorrection ? 'Düzeltilmiş Yanıt' : 'Yanıt'}:</h3>
+              <p>${questionData.answer.substring(0, 300)}${questionData.answer.length > 300 ? '...' : ''}</p>
+            </div>
+            
+            <div style="margin: 20px 0; text-align: center;">
+              <a href="${adminPanelUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Admin Paneli - Yanıtı İncele
+              </a>
+            </div>
+
+            <p>${isCorrection ? 'Yanıt düzeltilmiştir ve onayınızı beklemektedir.' : 'Yanıt onayınızı beklemektedir.'}</p>
+          `,
+          sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
+        };
+
+        await sendBrevoEmail(adminEmailData);
+        console.log(`${isCorrection ? 'Correction' : 'Answer'} notification sent to`, adminEmails.length, 'admins');
+      }
     }
 
     return new Response(

@@ -79,6 +79,9 @@ const YdoSecureAccess = () => {
     setSubmitting(true);
 
     try {
+      // Determine the new status based on current status
+      const newStatus = selectedQuestion.answer_status === 'returned' ? 'corrected' : 'answered';
+
       // Update the question with the answer
       const { error: updateError } = await supabase
         .from('soru_cevap')
@@ -86,19 +89,22 @@ const YdoSecureAccess = () => {
           answer: answer.trim(),
           answered: true,
           answer_date: new Date().toISOString(),
-          answered_by_user_id: null // YDO user doesn't have user_id in this flow
+          answered_by_user_id: null, // YDO user doesn't have user_id in this flow
+          answer_status: newStatus,
+          admin_sent: false // Reset admin_sent when answer is updated
         })
         .eq('id', selectedQuestion.id);
 
       if (updateError) throw updateError;
 
-      // Send notification that answer was provided
+      // Send notification that answer was provided/corrected
       const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
-          type: 'answer_sent',
+          type: newStatus === 'corrected' ? 'answer_corrected' : 'answer_provided',
           questionData: {
             ...selectedQuestion,
-            answer: answer.trim()
+            answer: answer.trim(),
+            answer_status: newStatus
           }
         }
       });
@@ -107,7 +113,11 @@ const YdoSecureAccess = () => {
         console.error('Error sending notification:', notificationError);
       }
 
-      toast.success('Answer submitted successfully');
+      const successMessage = newStatus === 'corrected' 
+        ? 'Düzeltilmiş yanıt başarıyla gönderildi'
+        : 'Yanıt başarıyla gönderildi';
+      
+      toast.success(successMessage);
       setSelectedQuestion(null);
       setAnswer('');
       
@@ -127,6 +137,25 @@ const YdoSecureAccess = () => {
     return new Date(dateString).toLocaleString('tr-TR');
   };
 
+  const getStatusBadge = (question: Question) => {
+    switch (question.answer_status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800">Onaylandı</Badge>;
+      case 'returned':
+        return <Badge className="bg-red-100 text-red-800">İade Edildi</Badge>;
+      case 'corrected':
+        return <Badge className="bg-yellow-100 text-yellow-800">Düzeltildi</Badge>;
+      case 'answered':
+        return <Badge className="bg-blue-100 text-blue-800">Yanıtlandı</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Bekliyor</Badge>;
+    }
+  };
+
+  const canEditAnswer = (question: Question) => {
+    return question.answer_status === 'unanswered' || question.answer_status === 'returned';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -139,6 +168,9 @@ const YdoSecureAccess = () => {
   }
 
   if (selectedQuestion) {
+    const isReturned = selectedQuestion.answer_status === 'returned';
+    const canEdit = canEditAnswer(selectedQuestion);
+
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-4xl mx-auto">
@@ -155,8 +187,9 @@ const YdoSecureAccess = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">
-                {selectedQuestion.answered ? 'Yanıtı Görüntüle' : 'Soruyu Yanıtla'}
+              <CardTitle className="text-xl flex items-center gap-2">
+                {canEdit ? 'Soruyu Yanıtla' : 'Yanıtı Görüntüle'}
+                {getStatusBadge(selectedQuestion)}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -189,9 +222,21 @@ const YdoSecureAccess = () => {
                 </div>
               </div>
 
+              {isReturned && selectedQuestion.return_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-800 mb-2">İade Sebebi:</h4>
+                  <p className="text-red-700">{selectedQuestion.return_reason}</p>
+                  {selectedQuestion.return_date && (
+                    <p className="text-sm text-red-600 mt-1">
+                      İade Tarihi: {formatDate(selectedQuestion.return_date)}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="answer" className="text-sm font-medium">
-                  Yanıt {!selectedQuestion.answered && '*'}
+                  Yanıt {canEdit && '*'}
                 </Label>
                 <Textarea
                   id="answer"
@@ -200,11 +245,11 @@ const YdoSecureAccess = () => {
                   placeholder="Sorunun yanıtını buraya yazınız..."
                   rows={8}
                   className="mt-2"
-                  disabled={selectedQuestion.answered}
+                  disabled={!canEdit}
                 />
               </div>
 
-              {!selectedQuestion.answered && (
+              {canEdit && (
                 <div className="flex gap-4">
                   <Button
                     onClick={handleSubmitAnswer}
@@ -216,17 +261,18 @@ const YdoSecureAccess = () => {
                     ) : (
                       <>
                         <Send className="mr-2 h-4 w-4" />
-                        Yanıtı Gönder
+                        {isReturned ? 'Düzeltilmiş Yanıtı Gönder' : 'Yanıtı Gönder'}
                       </>
                     )}
                   </Button>
                 </div>
               )}
 
-              {selectedQuestion.answered && selectedQuestion.answer_date && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-700">
+              {!canEdit && selectedQuestion.answer_date && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-700">
                     Bu soru {formatDate(selectedQuestion.answer_date)} tarihinde yanıtlanmıştır.
+                    {selectedQuestion.answer_status === 'approved' && ' Yanıt onaylanmış ve kullanıcıya gönderilmiştir.'}
                   </p>
                 </div>
               )}
@@ -281,16 +327,20 @@ const YdoSecureAccess = () => {
                         <TableCell>{question.full_name}</TableCell>
                         <TableCell>{question.email}</TableCell>
                         <TableCell>{formatDate(question.created_at)}</TableCell>
-                        <TableCell>
-                          <Badge variant={question.answered ? 'default' : 'secondary'}>
-                            {question.answered ? 'Yanıtlandı' : 'Bekliyor'}
-                          </Badge>
-                        </TableCell>
+                        <TableCell>{getStatusBadge(question)}</TableCell>
                         <TableCell>
                           {question.answer_date ? formatDate(question.answer_date) : '-'}
                         </TableCell>
                         <TableCell>
-                          {question.answered ? (
+                          {canEditAnswer(question) ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleAnswerQuestion(question)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              {question.answer_status === 'returned' ? 'Düzelt' : 'Yanıtla'}
+                            </Button>
+                          ) : (
                             <Button
                               variant="outline"
                               size="sm"
@@ -298,14 +348,6 @@ const YdoSecureAccess = () => {
                             >
                               <Eye className="h-4 w-4 mr-1" />
                               Görüntüle
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => handleAnswerQuestion(question)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Yanıtla
                             </Button>
                           )}
                         </TableCell>

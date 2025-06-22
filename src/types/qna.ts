@@ -1,4 +1,3 @@
-
 export interface Question {
   id: string;
   category: string | null;
@@ -17,6 +16,10 @@ export interface Question {
   admin_notes: string | null;
   answered_by_user_id: string | null;
   approved_by_admin_id: string | null;
+  answer_status: 'unanswered' | 'answered' | 'returned' | 'corrected' | 'approved';
+  return_reason: string | null;
+  admin_sent: boolean;
+  return_date: string | null;
 }
 
 export interface YdoUser {
