@@ -21,6 +21,7 @@ const YdoSecureAccess = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
     console.log('🚀 MOBILE YDO ACCESS - COMPONENT MOUNT');
@@ -37,7 +38,8 @@ const YdoSecureAccess = () => {
     console.log('🔑 Token extraction:', {
       hasToken: !!token,
       tokenLength: token?.length || 0,
-      urlSearch: window.location.search
+      urlSearch: window.location.search,
+      fullUrl: window.location.href
     });
     
     if (!token) {
@@ -63,84 +65,226 @@ const YdoSecureAccess = () => {
   }, [searchParams, navigate]);
 
   const loadQuestions = async (province: string, isMobile: boolean = false) => {
-    console.log('📊 LOADING QUESTIONS - MOBILE VERSION');
-    console.log('🎯 Target province:', {
-      value: province,
-      length: province.length,
-      normalized: province.trim(),
-      isMobile
+    console.log('🔍 ===========================================');
+    console.log('📊 LOADING QUESTIONS - DETAILED MOBILE DEBUG');
+    console.log('🔍 ===========================================');
+    
+    const debugData: any = {
+      startTime: Date.now(),
+      province,
+      isMobile,
+      userAgent: navigator.userAgent,
+      queries: []
+    };
+    
+    console.log('🎯 Query parameters:', {
+      targetProvince: province,
+      provinceType: typeof province,
+      provinceLength: province?.length,
+      provinceBytes: new TextEncoder().encode(province).length,
+      isMobile,
+      timestamp: new Date().toISOString()
     });
     
     try {
-      console.log('🔍 Strategy 1: Direct exact match');
-      const { data: directData, error: directError } = await supabase
+      // Strategy 1: Direct exact match with detailed logging
+      console.log('🔍 STRATEGY 1: Direct exact match');
+      console.log('🔧 Query details:', {
+        table: 'soru_cevap',
+        filter: `province = "${province}"`,
+        exactMatch: true
+      });
+      
+      const directStart = Date.now();
+      const { data: directData, error: directError, count: directCount } = await supabase
         .from('soru_cevap')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('province', province)
         .order('created_at', { ascending: false });
 
-      console.log('📈 Direct query result:', {
+      const directDuration = Date.now() - directStart;
+      console.log('📈 Strategy 1 result:', {
         success: !directError,
         count: directData?.length || 0,
+        totalCount: directCount,
+        duration: `${directDuration}ms`,
+        error: directError?.message,
+        hasData: !!directData,
+        firstRowSample: directData?.[0] ? {
+          id: directData[0].id,
+          province: `"${directData[0].province}"`,
+          provinceMatch: directData[0].province === province
+        } : null
+      });
+
+      debugData.queries.push({
+        strategy: 'direct',
+        success: !directError,
+        count: directData?.length || 0,
+        duration: directDuration,
         error: directError?.message
       });
 
       if (!directError && directData && directData.length > 0) {
-        console.log('✅ Found questions with direct match');
+        console.log('✅ SUCCESS: Found questions with direct match');
         const typedData = directData.map(item => ({
           ...item,
           answer_status: item.answer_status as Question['answer_status']
         }));
         setQuestions(typedData);
+        setDebugInfo(debugData);
         toast.success(`${typedData.length} soru yüklendi`);
         setLoading(false);
         return;
       }
 
-      console.log('🔍 Strategy 2: Case insensitive search');
-      const { data: caseData, error: caseError } = await supabase
+      // Strategy 2: Case insensitive with detailed logging
+      console.log('🔍 STRATEGY 2: Case insensitive search');
+      console.log('🔧 Query details:', {
+        table: 'soru_cevap',
+        filter: `province ILIKE "%${province}%"`,
+        caseInsensitive: true
+      });
+
+      const caseStart = Date.now();
+      const { data: caseData, error: caseError, count: caseCount } = await supabase
         .from('soru_cevap')
-        .select('*')
+        .select('*', { count: 'exact' })
         .ilike('province', province)
         .order('created_at', { ascending: false });
 
-      console.log('📈 Case insensitive result:', {
+      const caseDuration = Date.now() - caseStart;
+      console.log('📈 Strategy 2 result:', {
         success: !caseError,
-        count: caseData?.length || 0
+        count: caseData?.length || 0,
+        totalCount: caseCount,
+        duration: `${caseDuration}ms`,
+        error: caseError?.message,
+        hasData: !!caseData,
+        firstRowSample: caseData?.[0] ? {
+          id: caseData[0].id,
+          province: `"${caseData[0].province}"`,
+        } : null
+      });
+
+      debugData.queries.push({
+        strategy: 'case_insensitive',
+        success: !caseError,
+        count: caseData?.length || 0,
+        duration: caseDuration,
+        error: caseError?.message
       });
 
       if (!caseError && caseData && caseData.length > 0) {
-        console.log('✅ Found questions with case insensitive match');
+        console.log('✅ SUCCESS: Found questions with case insensitive match');
         const typedData = caseData.map(item => ({
           ...item,
           answer_status: item.answer_status as Question['answer_status']
         }));
         setQuestions(typedData);
+        setDebugInfo(debugData);
         toast.success(`${typedData.length} soru yüklendi`);
         setLoading(false);
         return;
       }
 
-      console.log('🔍 Strategy 3: Debug - checking all provinces');
+      // Strategy 3: Debug - check all provinces and exact matches
+      console.log('🔍 STRATEGY 3: Full database inspection');
+      const debugStart = Date.now();
       const { data: allData, error: allError } = await supabase
         .from('soru_cevap')
-        .select('province, id, question')
-        .limit(10);
+        .select('province, id, question, created_at')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      const debugDuration = Date.now() - debugStart;
+      console.log('📈 Strategy 3 result:', {
+        success: !allError,
+        totalRows: allData?.length || 0,
+        duration: `${debugDuration}ms`,
+        error: allError?.message
+      });
 
       if (!allError && allData) {
-        console.log('🗂️ All provinces in DB:', allData.map(q => ({
-          province: q.province,
-          matches: q.province === province,
-          length: q.province.length
-        })));
+        console.log('🗂️ DATABASE INSPECTION RESULTS:');
+        const uniqueProvinces = [...new Set(allData.map(q => q.province))];
+        console.log('🏛️ All unique provinces in DB:', uniqueProvinces);
+        
+        console.log('🔍 Province comparison analysis:');
+        uniqueProvinces.forEach(dbProvince => {
+          const exactMatch = dbProvince === province;
+          const caseMatch = dbProvince.toLowerCase() === province.toLowerCase();
+          console.log(`  - "${dbProvince}" vs "${province}": exact=${exactMatch}, case=${caseMatch}, length=${dbProvince.length}vs${province.length}`);
+        });
+
+        debugData.allProvinces = uniqueProvinces;
+        debugData.targetProvince = province;
+        
+        // Check for any rows that might match
+        const potentialMatches = allData.filter(q => 
+          q.province.toLowerCase().includes(province.toLowerCase()) ||
+          province.toLowerCase().includes(q.province.toLowerCase())
+        );
+        console.log('🎯 Potential matches found:', potentialMatches.length);
+        if (potentialMatches.length > 0) {
+          console.log('🎯 Potential matches:', potentialMatches.map(m => ({
+            id: m.id,
+            province: `"${m.province}"`,
+            question: m.question.substring(0, 50) + '...'
+          })));
+        }
       }
 
-      console.log('❌ No questions found after all strategies');
+      // Final attempt: Raw SQL with LIKE
+      console.log('🔍 STRATEGY 4: Contains search');
+      const containsStart = Date.now();
+      const { data: containsData, error: containsError } = await supabase
+        .from('soru_cevap')
+        .select('*')
+        .ilike('province', `%${province}%`)
+        .order('created_at', { ascending: false });
+
+      const containsDuration = Date.now() - containsStart;
+      console.log('📈 Strategy 4 result:', {
+        success: !containsError,
+        count: containsData?.length || 0,
+        duration: `${containsDuration}ms`,
+        error: containsError?.message
+      });
+
+      debugData.queries.push({
+        strategy: 'contains',
+        success: !containsError,
+        count: containsData?.length || 0,
+        duration: containsDuration,
+        error: containsError?.message
+      });
+
+      if (!containsError && containsData && containsData.length > 0) {
+        console.log('✅ SUCCESS: Found questions with contains search');
+        const typedData = containsData.map(item => ({
+          ...item,
+          answer_status: item.answer_status as Question['answer_status']
+        }));
+        setQuestions(typedData);
+        setDebugInfo(debugData);
+        toast.success(`${typedData.length} soru yüklendi`);
+        setLoading(false);
+        return;
+      }
+
+      debugData.totalDuration = Date.now() - debugData.startTime;
+      setDebugInfo(debugData);
+
+      console.log('❌ NO QUESTIONS FOUND - All strategies exhausted');
+      console.log('📊 Final debug summary:', debugData);
       setQuestions([]);
       toast.error('Bu il için soru bulunamadı');
       
     } catch (error) {
-      console.error('💥 Critical error in loadQuestions:', error);
+      console.error('💥 CRITICAL ERROR in loadQuestions:', error);
+      debugData.criticalError = error;
+      setDebugInfo(debugData);
       toast.error('Sorular yüklenirken hata oluştu');
     } finally {
       setLoading(false);
@@ -257,14 +401,14 @@ const YdoSecureAccess = () => {
             <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg text-left text-xs">
               <div className="flex items-center gap-2 mb-3">
                 <Smartphone className="h-4 w-4 text-blue-600" />
-                <span className="font-bold text-blue-800">Mobil Tanı Paneli</span>
+                <span className="font-bold text-blue-800">Mobil Debug Paneli</span>
               </div>
               <div className="space-y-2 text-blue-700">
                 <p><strong>Cihaz:</strong> {navigator.userAgent.includes('iPhone') ? 'iPhone' : navigator.userAgent.includes('Android') ? 'Android' : 'Mobil'}</p>
                 <p><strong>Ekran:</strong> {window.screen.width}x{window.screen.height}</p>
                 <p><strong>İl:</strong> {tokenData?.province || 'Bekleniyor...'}</p>
                 <p><strong>Token:</strong> {tokenData ? '✅ Geçerli' : '⏳ Kontrol ediliyor'}</p>
-                <p><strong>Durum:</strong> Soru listesi yükleniyor</p>
+                <p><strong>Durum:</strong> Veritabanı sorgulanıyor...</p>
               </div>
             </div>
           )}
@@ -406,22 +550,43 @@ const YdoSecureAccess = () => {
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <AlertCircle className="h-5 w-5 text-blue-600" />
-                  <span className="font-bold text-blue-800">Mobil Durum</span>
+                  <span className="font-bold text-blue-800">Mobil Debug Sonuçları</span>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-1">
-                    <div className="text-blue-700"><strong>🎯 İl:</strong> "{tokenData?.province}"</div>
-                    <div className="text-blue-700"><strong>📊 Soru:</strong> {questions.length}</div>
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  <div className="text-blue-700">
+                    <strong>🎯 Aranan İl:</strong> "{tokenData?.province}" (uzunluk: {tokenData?.province?.length})
                   </div>
-                  <div className="space-y-1">
-                    <div className="text-blue-700"><strong>🔐 Token:</strong> {tokenData ? '✅' : '❌'}</div>
-                    <div className="text-blue-700"><strong>📱 Mobil:</strong> ✅</div>
+                  <div className="text-blue-700">
+                    <strong>📊 Bulunan Soru:</strong> {questions.length}
                   </div>
+                  <div className="text-blue-700">
+                    <strong>🔐 Token Durumu:</strong> {tokenData ? '✅ Geçerli' : '❌ Geçersiz'}
+                  </div>
+                  <div className="text-blue-700">
+                    <strong>📱 Tarayıcı:</strong> {navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Diğer'}
+                  </div>
+                  
+                  {debugInfo && (
+                    <div className="mt-3 p-3 bg-white border border-blue-200 rounded text-xs">
+                      <div className="font-semibold text-blue-800 mb-2">🔧 Sorgu Detayları:</div>
+                      {debugInfo.queries?.map((query: any, index: number) => (
+                        <div key={index} className="text-blue-700 mb-1">
+                          <strong>{query.strategy}:</strong> {query.success ? `✅ ${query.count} sonuç` : `❌ ${query.error}`} ({query.duration}ms)
+                        </div>
+                      ))}
+                      {debugInfo.allProvinces && (
+                        <div className="mt-2">
+                          <div className="font-semibold text-blue-800">DB'deki İller:</div>
+                          <div className="text-blue-600 text-xs">{debugInfo.allProvinces.slice(0, 5).join(', ')}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 {questions.length === 0 && !loading && (
                   <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
-                    <strong>⚠️ SORUN:</strong> Soru listesi yüklenemedi. Konsol loglarını kontrol edin.
+                    <strong>⚠️ SORUN:</strong> Hiçbir sorgu sonuç döndürmedi. Yukarıdaki sorgu detaylarını kontrol edin.
                   </div>
                 )}
               </div>
@@ -434,17 +599,17 @@ const YdoSecureAccess = () => {
                   <AlertCircle className="w-12 h-12 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Soru Bulunamadı</h3>
-                <p className="text-gray-500 mb-1">İl: {tokenData?.province}</p>
+                <p className="text-gray-500 mb-1">İl: "{tokenData?.province}"</p>
                 <p className="text-sm text-gray-400">Henüz bu il için soru gelmemiş olabilir.</p>
                 
-                {isMobile && (
+                {isMobile && debugInfo && (
                   <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-left max-w-md mx-auto">
-                    <div className="font-semibold text-yellow-800 mb-2">🔧 Mobil Debug:</div>
+                    <div className="font-semibold text-yellow-800 mb-2">🔧 Detaylı Debug:</div>
                     <div className="text-yellow-700 space-y-1">
-                      <p>1. Chrome DevTools'u açın</p>
-                      <p>2. Console'da "📊 LOADING QUESTIONS" arayın</p>
-                      <p>3. Province değerini kontrol edin</p>
-                      <p>4. Masaüstü ile karşılaştırın</p>
+                      <p><strong>Toplam Sorgu:</strong> {debugInfo.queries?.length || 0}</p>
+                      <p><strong>Toplam Süre:</strong> {debugInfo.totalDuration}ms</p>
+                      <p><strong>DB'de İl Sayısı:</strong> {debugInfo.allProvinces?.length || 'Bilinmiyor'}</p>
+                      <p>Chrome DevTools console'da tam detayları görün</p>
                     </div>
                   </div>
                 )}
