@@ -24,23 +24,91 @@ const YdoSecureAccess = () => {
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [mobileDebugLogs, setMobileDebugLogs] = useState<string[]>([]);
   const [showDetailedDebug, setShowDetailedDebug] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'testing' | 'success' | 'failed' | 'unknown'>('unknown');
+  const [detailedError, setDetailedError] = useState<string>('');
 
   // Mobile debugging helper
   const addMobileLog = (message: string, type: 'info' | 'error' | 'success' | 'warning' = 'info') => {
     const timestamp = new Date().toLocaleTimeString();
     const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
-    setMobileDebugLogs(prev => [...prev.slice(-20), logEntry]); // Keep last 20 logs
+    setMobileDebugLogs(prev => [...prev.slice(-25), logEntry]); // Keep last 25 logs
     console.log(`📱 MOBILE DEBUG: ${logEntry}`);
+  };
+
+  // Enhanced connection testing
+  const testDatabaseConnection = async () => {
+    addMobileLog('🔍 Starting comprehensive connection test...', 'info');
+    setConnectionStatus('testing');
+    
+    try {
+      // Test 1: Basic client info
+      addMobileLog(`Supabase URL: ${supabase.supabaseUrl}`, 'info');
+      addMobileLog(`Auth URL: ${supabase.auth.url}`, 'info');
+      
+      // Test 2: Simple query with timeout
+      addMobileLog('Test 2: Simple count query with timeout...', 'info');
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout after 10s')), 10000)
+      );
+      
+      const queryPromise = supabase
+        .from('soru_cevap')
+        .select('count(*)', { count: 'exact' })
+        .limit(1);
+      
+      const { data: countResult, error: countError, count } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as any;
+      
+      if (countError) {
+        addMobileLog(`Count query error: ${JSON.stringify(countError)}`, 'error');
+        setDetailedError(`Count query failed: ${countError.message} (Code: ${countError.code}, Details: ${countError.details})`);
+        setConnectionStatus('failed');
+        return false;
+      }
+      
+      addMobileLog(`Count query success: ${count} total records`, 'success');
+      
+      // Test 3: Auth status check
+      addMobileLog('Test 3: Checking auth status...', 'info');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        addMobileLog(`Session error: ${sessionError.message}`, 'warning');
+      } else {
+        addMobileLog(`Session status: ${session ? 'Active' : 'None'}`, 'info');
+      }
+      
+      // Test 4: Network info
+      addMobileLog('Test 4: Network diagnostics...', 'info');
+      addMobileLog(`Connection type: ${(navigator as any)?.connection?.effectiveType || 'Unknown'}`, 'info');
+      addMobileLog(`Downlink: ${(navigator as any)?.connection?.downlink || 'Unknown'} Mbps`, 'info');
+      addMobileLog(`RTT: ${(navigator as any)?.connection?.rtt || 'Unknown'} ms`, 'info');
+      
+      setConnectionStatus('success');
+      addMobileLog('✅ All connection tests passed', 'success');
+      return true;
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
+      addMobileLog(`Connection test failed: ${errorMessage}`, 'error');
+      setDetailedError(errorMessage);
+      setConnectionStatus('failed');
+      return false;
+    }
   };
 
   useEffect(() => {
     const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
     
-    addMobileLog(`Component mounted - Device: ${isMobile ? 'Mobile' : 'Desktop'}`, 'info');
+    addMobileLog(`=== YDO SECURE ACCESS INIT ===`, 'info');
+    addMobileLog(`Device: ${isMobile ? 'Mobile' : 'Desktop'}`, 'info');
     addMobileLog(`Screen: ${window.screen.width}x${window.screen.height}`, 'info');
     addMobileLog(`Window: ${window.innerWidth}x${window.innerHeight}`, 'info');
-    addMobileLog(`User Agent: ${navigator.userAgent.substring(0, 50)}...`, 'info');
+    addMobileLog(`User Agent: ${navigator.userAgent}`, 'info');
     addMobileLog(`Current URL: ${window.location.href}`, 'info');
+    addMobileLog(`Local time: ${new Date().toLocaleString()}`, 'info');
     
     // URL Analysis
     const fullUrl = window.location.href;
@@ -78,14 +146,23 @@ const YdoSecureAccess = () => {
     addMobileLog(`Token expiry: ${new Date(payload.exp * 1000).toLocaleString()}`, 'info');
     
     setTokenData(payload);
-    loadQuestions(payload.province, isMobile);
+    
+    // Start connection test and then load questions
+    testDatabaseConnection().then((connectionOk) => {
+      if (connectionOk) {
+        loadQuestions(payload.province, isMobile);
+      } else {
+        addMobileLog('Skipping question load due to connection failure', 'error');
+        setLoading(false);
+      }
+    });
   }, [searchParams, navigate]);
 
   const loadQuestions = async (province: string, isMobile: boolean = false) => {
     addMobileLog('=== STARTING QUESTION LOAD ===', 'info');
     addMobileLog(`Target province: "${province}"`, 'info');
     addMobileLog(`Province type: ${typeof province}`, 'info');
-    addMobileLog(`Province encoded length: ${new TextEncoder().encode(province).length}`, 'info');
+    addMobileLog(`Province char codes: [${Array.from(province).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
     
     const debugData: any = {
       startTime: Date.now(),
@@ -93,29 +170,16 @@ const YdoSecureAccess = () => {
       isMobile,
       userAgent: navigator.userAgent,
       queries: [],
-      networkStatus: navigator.onLine ? 'Online' : 'Offline'
+      networkStatus: navigator.onLine ? 'Online' : 'Offline',
+      connectionTest: connectionStatus
     };
     
-    addMobileLog(`Network status: ${debugData.networkStatus}`, debugData.networkStatus === 'Online' ? 'success' : 'error');
-    
     try {
-      // Test basic Supabase connection first
-      addMobileLog('Testing Supabase connection...', 'info');
-      const { data: connectionTest, error: connectionError } = await supabase
-        .from('soru_cevap')
-        .select('count(*)')
-        .limit(1);
-      
-      if (connectionError) {
-        addMobileLog(`Supabase connection failed: ${connectionError.message}`, 'error');
-        throw new Error(`Database connection failed: ${connectionError.message}`);
-      } else {
-        addMobileLog('Supabase connection successful', 'success');
-      }
-
-      // Strategy 1: Direct exact match
+      // Strategy 1: Direct exact match with detailed logging
       addMobileLog('STRATEGY 1: Direct exact match', 'info');
       const directStart = Date.now();
+      
+      addMobileLog(`Executing: .eq('province', '${province}')`, 'info');
       const { data: directData, error: directError, count: directCount } = await supabase
         .from('soru_cevap')
         .select('*', { count: 'exact' })
@@ -126,7 +190,7 @@ const YdoSecureAccess = () => {
       addMobileLog(`Strategy 1 result: ${directData?.length || 0} records in ${directDuration}ms`, directError ? 'error' : 'info');
       
       if (directError) {
-        addMobileLog(`Strategy 1 error: ${directError.message}`, 'error');
+        addMobileLog(`Strategy 1 detailed error: ${JSON.stringify(directError)}`, 'error');
       }
 
       debugData.queries.push({
@@ -134,7 +198,8 @@ const YdoSecureAccess = () => {
         success: !directError,
         count: directData?.length || 0,
         duration: directDuration,
-        error: directError?.message
+        error: directError?.message,
+        errorDetails: directError
       });
 
       if (!directError && directData && directData.length > 0) {
@@ -151,10 +216,12 @@ const YdoSecureAccess = () => {
         return;
       }
 
-      // Strategy 2: Case insensitive
+      // Strategy 2: Case insensitive with detailed logging
       addMobileLog('STRATEGY 2: Case insensitive search', 'info');
       const caseStart = Date.now();
-      const { data: caseData, error: caseError, count: caseCount } = await supabase
+      
+      addMobileLog(`Executing: .ilike('province', '${province}')`, 'info');
+      const { data: caseData, error: caseError } = await supabase
         .from('soru_cevap')
         .select('*', { count: 'exact' })
         .ilike('province', province)
@@ -164,7 +231,7 @@ const YdoSecureAccess = () => {
       addMobileLog(`Strategy 2 result: ${caseData?.length || 0} records in ${caseDuration}ms`, caseError ? 'error' : 'info');
       
       if (caseError) {
-        addMobileLog(`Strategy 2 error: ${caseError.message}`, 'error');
+        addMobileLog(`Strategy 2 detailed error: ${JSON.stringify(caseError)}`, 'error');
       }
 
       debugData.queries.push({
@@ -172,7 +239,8 @@ const YdoSecureAccess = () => {
         success: !caseError,
         count: caseData?.length || 0,
         duration: caseDuration,
-        error: caseError?.message
+        error: caseError?.message,
+        errorDetails: caseError
       });
 
       if (!caseError && caseData && caseData.length > 0) {
@@ -189,75 +257,51 @@ const YdoSecureAccess = () => {
         return;
       }
 
-      // Strategy 3: Database inspection
+      // Strategy 3: Database inspection with timeout
       addMobileLog('STRATEGY 3: Database inspection', 'info');
       const debugStart = Date.now();
-      const { data: allData, error: allError } = await supabase
+      
+      const inspectionPromise = supabase
         .from('soru_cevap')
         .select('province, id, question, created_at')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
+        
+      const inspectionTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Inspection timeout')), 8000)
+      );
+      
+      const { data: allData, error: allError } = await Promise.race([
+        inspectionPromise,
+        inspectionTimeout
+      ]) as any;
 
       const debugDuration = Date.now() - debugStart;
       addMobileLog(`Strategy 3 result: ${allData?.length || 0} total records in ${debugDuration}ms`, allError ? 'error' : 'info');
 
       if (!allError && allData) {
-        const uniqueProvinces = [...new Set(allData.map(q => q.province))];
+        const uniqueProvinces = [...new Set(allData.map((q: any) => q.province))];
         addMobileLog(`Found ${uniqueProvinces.length} unique provinces in DB`, 'info');
-        addMobileLog(`Provinces: ${uniqueProvinces.slice(0, 5).join(', ')}${uniqueProvinces.length > 5 ? '...' : ''}`, 'info');
+        addMobileLog(`Sample provinces: ${uniqueProvinces.slice(0, 3).join(', ')}`, 'info');
         
-        // Check for potential matches
+        // Character-level comparison
         const exactMatches = uniqueProvinces.filter(p => p === province);
         const caseMatches = uniqueProvinces.filter(p => p.toLowerCase() === province.toLowerCase());
-        const containsMatches = uniqueProvinces.filter(p => 
-          p.toLowerCase().includes(province.toLowerCase()) ||
-          province.toLowerCase().includes(p.toLowerCase())
-        );
+        const trimMatches = uniqueProvinces.filter(p => p.trim() === province.trim());
         
-        addMobileLog(`Exact matches: ${exactMatches.length}`, exactMatches.length > 0 ? 'success' : 'warning');
-        addMobileLog(`Case matches: ${caseMatches.length}`, caseMatches.length > 0 ? 'success' : 'warning');
-        addMobileLog(`Contains matches: ${containsMatches.length}`, containsMatches.length > 0 ? 'success' : 'warning');
+        addMobileLog(`Exact matches: ${exactMatches.length}`, 'info');
+        addMobileLog(`Case matches: ${caseMatches.length}`, 'info');
+        addMobileLog(`Trim matches: ${trimMatches.length}`, 'info');
         
-        if (containsMatches.length > 0) {
-          addMobileLog(`Potential matches: ${containsMatches.join(', ')}`, 'info');
+        if (uniqueProvinces.length > 0) {
+          addMobileLog(`First province chars: [${Array.from(uniqueProvinces[0]).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
+          addMobileLog(`Target province chars: [${Array.from(province).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
         }
 
         debugData.allProvinces = uniqueProvinces;
-        debugData.targetProvince = province;
-      }
-
-      // Strategy 4: Contains search
-      addMobileLog('STRATEGY 4: Contains search', 'info');
-      const containsStart = Date.now();
-      const { data: containsData, error: containsError } = await supabase
-        .from('soru_cevap')
-        .select('*')
-        .ilike('province', `%${province}%`)
-        .order('created_at', { ascending: false });
-
-      const containsDuration = Date.now() - containsStart;
-      addMobileLog(`Strategy 4 result: ${containsData?.length || 0} records in ${containsDuration}ms`, containsError ? 'error' : 'info');
-
-      debugData.queries.push({
-        strategy: 'contains',
-        success: !containsError,
-        count: containsData?.length || 0,
-        duration: containsDuration,
-        error: containsError?.message
-      });
-
-      if (!containsError && containsData && containsData.length > 0) {
-        addMobileLog(`SUCCESS: Found ${containsData.length} questions with contains search`, 'success');
-        const typedData = containsData.map(item => ({
-          ...item,
-          answer_status: item.answer_status as Question['answer_status']
-        }));
-        setQuestions(typedData);
-        setDebugInfo(debugData);
-        toast.success(`${typedData.length} soru yüklendi`);
-        setLoading(false);
-        addMobileLog('=== QUESTION LOAD COMPLETED ===', 'success');
-        return;
+        debugData.exactMatches = exactMatches;
+        debugData.caseMatches = caseMatches;
+        debugData.trimMatches = trimMatches;
       }
 
       debugData.totalDuration = Date.now() - debugData.startTime;
@@ -270,7 +314,7 @@ const YdoSecureAccess = () => {
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      addMobileLog(`CRITICAL ERROR: ${errorMessage}`, 'error');
+      addMobileLog(`CRITICAL ERROR in loadQuestions: ${errorMessage}`, 'error');
       debugData.criticalError = error;
       setDebugInfo(debugData);
       toast.error('Sorular yüklenirken hata oluştu');
@@ -386,22 +430,45 @@ const YdoSecureAccess = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Sorular yükleniyor...</p>
           
-          {/* Enhanced Mobile Debug Panel */}
+          {/* Enhanced Mobile Debug Panel with Connection Status */}
           <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-lg text-left text-xs max-h-96 overflow-y-auto">
             <div className="flex items-center gap-2 mb-3">
               <Bug className="h-4 w-4 text-blue-600" />
               <span className="font-bold text-blue-800">Mobil Debug Konsolu</span>
             </div>
             
+            {/* Connection Status Indicator */}
+            <div className="mb-4 p-2 border-2 rounded">
+              <div className="flex items-center gap-2 mb-2">
+                <Database className="h-3 w-3" />
+                <span className="font-semibold text-blue-800">Bağlantı Durumu</span>
+              </div>
+              <div className={`text-sm ${
+                connectionStatus === 'success' ? 'text-green-600' : 
+                connectionStatus === 'failed' ? 'text-red-600' : 
+                connectionStatus === 'testing' ? 'text-yellow-600' : 'text-gray-600'
+              }`}>
+                {connectionStatus === 'testing' && '🔄 Test ediliyor...'}
+                {connectionStatus === 'success' && '✅ Bağlantı başarılı'}
+                {connectionStatus === 'failed' && '❌ Bağlantı başarısız'}
+                {connectionStatus === 'unknown' && '❓ Bilinmiyor'}
+              </div>
+              {detailedError && (
+                <div className="text-red-600 text-xs mt-1 p-1 bg-red-50 rounded">
+                  <strong>Hata:</strong> {detailedError}
+                </div>
+              )}
+            
             {/* Real-time debug logs */}
-            <div className="space-y-1 mb-4 max-h-40 overflow-y-auto bg-white p-2 rounded border">
-              {mobileDebugLogs.map((log, index) => {
+            <div className="space-y-1 mb-4 max-h-48 overflow-y-auto bg-white p-2 rounded border">
+              <div className="font-semibold text-blue-800 mb-1">🔧 Canlı Loglar:</div>
+              {mobileDebugLogs.slice(-10).map((log, index) => {
                 const logType = log.includes('ERROR') ? 'text-red-600' : 
                                log.includes('SUCCESS') ? 'text-green-600' : 
                                log.includes('WARNING') ? 'text-yellow-600' : 'text-blue-600';
                 return (
                   <div key={index} className={`text-xs ${logType} font-mono`}>
-                    {log}
+                    {log.length > 80 ? log.substring(0, 80) + '...' : log}
                   </div>
                 );
               })}
@@ -424,7 +491,7 @@ const YdoSecureAccess = () => {
                   <Globe className="h-3 w-3" />
                   <span className="font-semibold">İl</span>
                 </div>
-                <div className="text-blue-600">
+                <div className="text-blue-600 text-xs">
                   {tokenData?.province || 'Bekleniyor...'}
                 </div>
               </div>
@@ -445,7 +512,7 @@ const YdoSecureAccess = () => {
                   <span className="font-semibold">Sorgu</span>
                 </div>
                 <div className="text-blue-600">
-                  {debugInfo?.queries?.length || 0}/4
+                  {debugInfo?.queries?.length || 0}/3
                 </div>
               </div>
             </div>
@@ -454,29 +521,24 @@ const YdoSecureAccess = () => {
               variant="outline" 
               size="sm" 
               onClick={() => setShowDetailedDebug(!showDetailedDebug)}
-              className="mt-2 text-xs h-6"
+              className="mt-2 text-xs h-6 w-full"
             >
-              {showDetailedDebug ? 'Detayları Gizle' : 'Detayları Göster'}
+              {showDetailedDebug ? 'Detayları Gizle' : 'Tüm Logları Göster'}
             </Button>
 
-            {showDetailedDebug && debugInfo && (
-              <div className="mt-2 p-2 bg-white border rounded text-xs">
-                <div className="font-semibold mb-1">Sorgu Detayları:</div>
-                {debugInfo.queries?.map((query: any, index: number) => (
-                  <div key={index} className="mb-1">
-                    <span className="font-medium">{query.strategy}:</span>{' '}
-                    <span className={query.success ? 'text-green-600' : 'text-red-600'}>
-                      {query.success ? `✅ ${query.count} sonuç` : `❌ ${query.error}`}
-                    </span>{' '}
-                    <span className="text-gray-500">({query.duration}ms)</span>
-                  </div>
-                ))}
-                {debugInfo.allProvinces && (
-                  <div className="mt-2 pt-2 border-t">
-                    <div className="font-semibold">DB'deki İller ({debugInfo.allProvinces.length}):</div>
-                    <div className="text-blue-600">{debugInfo.allProvinces.slice(0, 3).join(', ')}</div>
-                  </div>
-                )}
+            {showDetailedDebug && (
+              <div className="mt-2 p-2 bg-white border rounded text-xs max-h-48 overflow-y-auto">
+                <div className="font-semibold mb-1">Tüm Debug Logları:</div>
+                {mobileDebugLogs.map((log, index) => {
+                  const logType = log.includes('ERROR') ? 'text-red-600' : 
+                                 log.includes('SUCCESS') ? 'text-green-600' : 
+                                 log.includes('WARNING') ? 'text-yellow-600' : 'text-blue-700';
+                  return (
+                    <div key={index} className={`${logType} mb-1 font-mono text-xs`}>
+                      {log}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -614,7 +676,7 @@ const YdoSecureAccess = () => {
               {tokenData?.province} ili için gelen sorular ({questions.length} adet)
             </p>
             
-            {/* Mobile Debug Results Panel */}
+            {/* Enhanced Mobile Debug Results Panel */}
             {isMobile && (
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
@@ -634,17 +696,31 @@ const YdoSecureAccess = () => {
                   <div className="text-blue-700">
                     <strong>🌐 Ağ Durumu:</strong> {navigator.onLine ? '✅ Çevrimiçi' : '❌ Çevrimdışı'}
                   </div>
+                  <div className="text-blue-700">
+                    <strong>💾 Veritabanı:</strong> {
+                      connectionStatus === 'success' ? '✅ Bağlı' : 
+                      connectionStatus === 'failed' ? '❌ Hata' : 
+                      connectionStatus === 'testing' ? '🔄 Test ediliyor' : '❓ Bilinmiyor'
+                    }
+                  </div>
+                  
+                  {/* Connection error details */}
+                  {connectionStatus === 'failed' && detailedError && (
+                    <div className="text-red-700 bg-red-50 p-2 rounded text-xs">
+                      <strong>Bağlantı Hatası:</strong> {detailedError}
+                    </div>
+                  )}
                   
                   {/* Live debug logs display */}
                   <div className="mt-3 p-3 bg-white border border-blue-200 rounded text-xs max-h-32 overflow-y-auto">
-                    <div className="font-semibold text-blue-800 mb-2">🔧 Canlı Debug Logları:</div>
-                    {mobileDebugLogs.slice(-5).map((log, index) => {
+                    <div className="font-semibold text-blue-800 mb-2">🔧 Son Debug Logları:</div>
+                    {mobileDebugLogs.slice(-8).map((log, index) => {
                       const logType = log.includes('ERROR') ? 'text-red-600' : 
                                      log.includes('SUCCESS') ? 'text-green-600' : 
                                      log.includes('WARNING') ? 'text-yellow-600' : 'text-blue-700';
                       return (
                         <div key={index} className={`${logType} mb-1 font-mono`}>
-                          {log.length > 60 ? log.substring(0, 60) + '...' : log}
+                          {log.length > 70 ? log.substring(0, 70) + '...' : log}
                         </div>
                       );
                     })}
@@ -662,15 +738,20 @@ const YdoSecureAccess = () => {
                         <div className="mt-2">
                           <div className="font-semibold text-blue-800">DB'deki İller ({debugInfo.allProvinces.length}):</div>
                           <div className="text-blue-600 text-xs">{debugInfo.allProvinces.slice(0, 5).join(', ')}</div>
+                          {debugInfo.exactMatches && (
+                            <div className="text-blue-600 text-xs mt-1">
+                              Tam eşleşme: {debugInfo.exactMatches.length}, Büyük/küçük harf: {debugInfo.caseMatches?.length || 0}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   )}
                 </div>
                 
-                {questions.length === 0 && !loading && (
+                {questions.length === 0 && !loading && connectionStatus === 'failed' && (
                   <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
-                    <strong>⚠️ SORUN:</strong> Hiçbir sorgu sonuç döndürmedi. Yukarıdaki debug loglarını kontrol edin.
+                    <strong>⚠️ SORUN:</strong> Veritabanı bağlantısı başarısız. Lütfen internet bağlantınızı kontrol edin ve sayfayı yenileyin.
                   </div>
                 )}
               </div>
@@ -682,9 +763,21 @@ const YdoSecureAccess = () => {
                 <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <AlertCircle className="w-12 h-12 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Soru Bulunamadı</h3>
-                <p className="text-gray-500 mb-1">İl: "{tokenData?.province}"</p>
-                <p className="text-sm text-gray-400">Henüz bu il için soru gelmemiş olabilir.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {connectionStatus === 'failed' ? 'Bağlantı Hatası' : 'Soru Bulunamadı'}
+                </h3>
+                <p className="text-gray-500 mb-1">
+                  {connectionStatus === 'failed' 
+                    ? 'Veritabanına bağlantı kurulamadı' 
+                    : `İl: "${tokenData?.province}"`
+                  }
+                </p>
+                <p className="text-sm text-gray-400">
+                  {connectionStatus === 'failed' 
+                    ? 'Lütfen internet bağlantınızı kontrol edin ve sayfayı yenileyin'
+                    : 'Henüz bu il için soru gelmemiş olabilir.'
+                  }
+                </p>
                 
                 {isMobile && debugInfo && (
                   <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-left max-w-md mx-auto">
