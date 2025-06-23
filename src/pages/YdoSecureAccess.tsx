@@ -748,6 +748,7 @@ const YdoSecureAccess = () => {
                 )}
               </div>
             )}
+          </CardHeader>
           <CardContent>
             {questions.length === 0 ? (
               <div className="text-center py-12">
