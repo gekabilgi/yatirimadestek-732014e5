@@ -32,22 +32,49 @@ const QnaQuestionManagement = () => {
 
   const fetchQuestions = async () => {
     try {
+      console.log('Fetching questions with filter:', filterStatus);
+      
+      // Build query with proper text handling for Turkish characters
       let query = supabase
         .from('soru_cevap')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
+      // Apply filter if not 'all' - use text comparison that handles Turkish characters properly
       if (filterStatus !== 'all') {
         query = query.eq('answer_status', filterStatus);
       }
 
-      const { data, error } = await query;
+      console.log('Executing query...');
+      const { data, error, count } = await query;
 
-      if (error) throw error;
-      setQuestions(data || []);
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+
+      console.log('Query successful. Found', count, 'records');
+      console.log('Sample data:', data?.slice(0, 2));
+      
+      // Ensure text fields are properly decoded
+      const processedData = data?.map(question => ({
+        ...question,
+        question: question.question || '',
+        answer: question.answer || '',
+        full_name: question.full_name || '',
+        email: question.email || '',
+        province: question.province || '',
+        phone: question.phone || '',
+        return_reason: question.return_reason || '',
+        admin_notes: question.admin_notes || '',
+        answer_status: question.answer_status || 'unanswered'
+      })) || [];
+
+      console.log('Processed data:', processedData.length, 'questions');
+      setQuestions(processedData);
     } catch (error) {
       console.error('Error fetching questions:', error);
-      toast.error('Sorular yüklenirken hata oluştu.');
+      toast.error('Sorular yüklenirken hata oluştu: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -60,19 +87,29 @@ const QnaQuestionManagement = () => {
     }
 
     try {
+      console.log('Saving answer for question:', selectedQuestion.id);
+      
+      const updateData = {
+        answer: answer.trim(),
+        answer_status: answerStatus,
+        answer_date: new Date().toISOString(),
+        answered: true,
+        answered_by_user_id: (await supabase.auth.getUser()).data.user?.id
+      };
+
+      console.log('Update data:', updateData);
+
       const { error } = await supabase
         .from('soru_cevap')
-        .update({
-          answer: answer,
-          answer_status: answerStatus,
-          answer_date: new Date().toISOString(),
-          answered: true,
-          answered_by_user_id: (await supabase.auth.getUser()).data.user?.id
-        })
+        .update(updateData)
         .eq('id', selectedQuestion.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating question:', error);
+        throw error;
+      }
 
+      console.log('Answer saved successfully');
       toast.success('Cevap başarıyla kaydedildi.');
       setIsAnswerDialogOpen(false);
       setAnswer('');
@@ -80,7 +117,7 @@ const QnaQuestionManagement = () => {
       fetchQuestions();
     } catch (error) {
       console.error('Error answering question:', error);
-      toast.error('Cevap kaydedilirken hata oluştu.');
+      toast.error('Cevap kaydedilirken hata oluştu: ' + (error as Error).message);
     }
   };
 
@@ -91,6 +128,8 @@ const QnaQuestionManagement = () => {
     }
 
     try {
+      console.log('Approving and sending answer for question:', question.id);
+      
       // Update status to approved
       const { error: updateError } = await supabase
         .from('soru_cevap')
@@ -101,8 +140,12 @@ const QnaQuestionManagement = () => {
         })
         .eq('id', question.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating question status:', updateError);
+        throw updateError;
+      }
 
+      console.log('Calling notification function...');
       // Send notification to user
       const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
@@ -118,13 +161,14 @@ const QnaQuestionManagement = () => {
         console.error('Notification error:', notificationError);
         toast.error('Cevap onaylandı ancak e-posta gönderilirken hata oluştu.');
       } else {
+        console.log('Notification sent successfully');
         toast.success('Cevap onaylandı ve kullanıcıya gönderildi.');
       }
 
       fetchQuestions();
     } catch (error) {
       console.error('Error approving answer:', error);
-      toast.error('Cevap onaylanırken hata oluştu.');
+      toast.error('Cevap onaylanırken hata oluştu: ' + (error as Error).message);
     }
   };
 
@@ -135,26 +179,32 @@ const QnaQuestionManagement = () => {
     }
 
     try {
+      console.log('Returning answer to YDO for question:', selectedQuestion.id);
+      
       // Update status to returned
       const { error: updateError } = await supabase
         .from('soru_cevap')
         .update({
           answer_status: 'returned',
-          return_reason: returnReason,
+          return_reason: returnReason.trim(),
           return_date: new Date().toISOString(),
           admin_sent: false
         })
         .eq('id', selectedQuestion.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating question status:', updateError);
+        throw updateError;
+      }
 
+      console.log('Sending return notification...');
       // Send notification to YDO users
       const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
           type: 'answer_returned',
           questionData: {
             ...selectedQuestion,
-            return_reason: returnReason,
+            return_reason: returnReason.trim(),
             answer_status: 'returned'
           }
         }
@@ -164,6 +214,7 @@ const QnaQuestionManagement = () => {
         console.error('Notification error:', notificationError);
         toast.error('Cevap iade edildi ancak YDO kullanıcılarına bildirim gönderilirken hata oluştu.');
       } else {
+        console.log('Return notification sent successfully');
         toast.success('Cevap YDO kullanıcılarına iade edildi.');
       }
 
@@ -173,7 +224,7 @@ const QnaQuestionManagement = () => {
       fetchQuestions();
     } catch (error) {
       console.error('Error returning answer:', error);
-      toast.error('Cevap iade edilirken hata oluştu.');
+      toast.error('Cevap iade edilirken hata oluştu: ' + (error as Error).message);
     }
   };
 
@@ -191,11 +242,13 @@ const QnaQuestionManagement = () => {
   };
 
   const openViewDialog = (question: Question) => {
+    console.log('Opening view dialog for question:', question.id);
     setSelectedQuestion(question);
     setIsViewDialogOpen(true);
   };
 
   const openAnswerDialog = (question: Question) => {
+    console.log('Opening answer dialog for question:', question.id);
     setSelectedQuestion(question);
     setAnswer(question.answer || '');
     setAnswerStatus(question.answer_status || 'answered');
@@ -203,6 +256,7 @@ const QnaQuestionManagement = () => {
   };
 
   const openReturnDialog = (question: Question) => {
+    console.log('Opening return dialog for question:', question.id);
     setSelectedQuestion(question);
     setReturnReason('');
     setIsReturnDialogOpen(true);
@@ -227,6 +281,7 @@ const QnaQuestionManagement = () => {
             </CardTitle>
             <div className="flex gap-2">
               <Select value={filterStatus} onValueChange={(value) => {
+                console.log('Filter changed to:', value);
                 setFilterStatus(value);
                 fetchQuestions();
               }}>
