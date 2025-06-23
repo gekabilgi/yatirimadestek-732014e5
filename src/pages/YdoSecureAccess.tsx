@@ -40,53 +40,18 @@ const YdoSecureAccess = () => {
     setConnectionStatus('testing');
     
     try {
-      // Test 1: Basic client info
-      addMobileLog('Supabase URL: https://zyxiznikuvpwmopraauj.supabase.co', 'info');
-      addMobileLog('Auth URL: https://zyxiznikuvpwmopraauj.supabase.co/auth/v1', 'info');
-      
-      // Test 2: Simple count query with timeout
-      addMobileLog('Test 2: Simple count query with timeout...', 'info');
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout after 10s')), 10000)
-      );
-      
-      const queryPromise = supabase
-        .from('soru_cevap')
-        .select('*', { count: 'exact', head: true })
-        .limit(1);
-      
-      const { error: countError, count } = await Promise.race([
-        queryPromise,
-        timeoutPromise
-      ]) as any;
-      
-      if (countError) {
-        addMobileLog(`Count query error: ${JSON.stringify(countError)}`, 'error');
-        setDetailedError(`Count query failed: ${countError.message} (Code: ${countError.code}, Details: ${countError.details})`);
-        setConnectionStatus('failed');
-        return false;
-      }
-      
-      addMobileLog(`Count query success: ${count} total records`, 'success');
-      
-      // Test 3: Auth status check
-      addMobileLog('Test 3: Checking auth status...', 'info');
+      // Test basic Supabase connectivity
+      addMobileLog('Testing Supabase connectivity...', 'info');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        addMobileLog(`Session error: ${sessionError.message}`, 'warning');
+        addMobileLog(`Session check error: ${sessionError.message}`, 'warning');
       } else {
-        addMobileLog(`Session status: ${session ? 'Active' : 'None'}`, 'info');
+        addMobileLog(`Session status: ${session ? 'Active' : 'None (expected for YDO)'}`, 'info');
       }
       
-      // Test 4: Network info
-      addMobileLog('Test 4: Network diagnostics...', 'info');
-      addMobileLog(`Connection type: ${(navigator as any)?.connection?.effectiveType || 'Unknown'}`, 'info');
-      addMobileLog(`Downlink: ${(navigator as any)?.connection?.downlink || 'Unknown'} Mbps`, 'info');
-      addMobileLog(`RTT: ${(navigator as any)?.connection?.rtt || 'Unknown'} ms`, 'info');
-      
       setConnectionStatus('success');
-      addMobileLog('✅ All connection tests passed', 'success');
+      addMobileLog('✅ Basic connection test passed', 'success');
       return true;
       
     } catch (error) {
@@ -147,7 +112,7 @@ const YdoSecureAccess = () => {
     // Start connection test and then load questions
     testDatabaseConnection().then((connectionOk) => {
       if (connectionOk) {
-        loadQuestions(payload.province, isMobile);
+        loadQuestions(token, isMobile);
       } else {
         addMobileLog('Skipping question load due to connection failure', 'error');
         setLoading(false);
@@ -155,169 +120,48 @@ const YdoSecureAccess = () => {
     });
   }, [searchParams, navigate]);
 
-  const loadQuestions = async (province: string, isMobile: boolean = false) => {
-    addMobileLog('=== STARTING QUESTION LOAD ===', 'info');
-    addMobileLog(`Target province: "${province}"`, 'info');
-    addMobileLog(`Province type: ${typeof province}`, 'info');
-    addMobileLog(`Province char codes: [${Array.from(province).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
+  const loadQuestions = async (token: string, isMobile: boolean = false) => {
+    addMobileLog('=== STARTING QUESTION LOAD VIA EDGE FUNCTION ===', 'info');
     
     const debugData: any = {
       startTime: Date.now(),
-      province,
       isMobile,
       userAgent: navigator.userAgent,
-      queries: [],
       networkStatus: navigator.onLine ? 'Online' : 'Offline',
       connectionTest: connectionStatus
     };
     
     try {
-      // Validate province before querying
-      if (!province || province.trim() === '') {
-        addMobileLog('❌ Province is empty or null', 'error');
-        setQuestions([]);
-        toast.error('İl bilgisi eksik');
-        setLoading(false);
-        return;
-      }
-
-      // Strategy 1: Direct exact match with detailed logging
-      addMobileLog('STRATEGY 1: Direct exact match', 'info');
-      const directStart = Date.now();
+      addMobileLog('Calling edge function to fetch questions...', 'info');
       
-      addMobileLog(`Executing: .eq('province', '${province}')`, 'info');
-      const { data: directData, error: directError } = await supabase
-        .from('soru_cevap')
-        .select('*')
-        .eq('province', province)
-        .order('created_at', { ascending: false });
-
-      const directDuration = Date.now() - directStart;
-      addMobileLog(`Strategy 1 result: ${directData?.length || 0} records in ${directDuration}ms`, directError ? 'error' : 'info');
-      
-      if (directError) {
-        addMobileLog(`Strategy 1 detailed error: ${JSON.stringify(directError)}`, 'error');
-      }
-
-      debugData.queries.push({
-        strategy: 'direct',
-        success: !directError,
-        count: directData?.length || 0,
-        duration: directDuration,
-        error: directError?.message,
-        errorDetails: directError
-      });
-
-      if (!directError && directData && directData.length > 0) {
-        addMobileLog(`SUCCESS: Found ${directData.length} questions with direct match`, 'success');
-        const typedData = directData.map(item => ({
-          ...item,
-          answer_status: item.answer_status as Question['answer_status']
-        }));
-        setQuestions(typedData);
-        setDebugInfo(debugData);
-        toast.success(`${typedData.length} soru yüklendi`);
-        setLoading(false);
-        addMobileLog('=== QUESTION LOAD COMPLETED ===', 'success');
-        return;
-      }
-
-      // Strategy 2: Case insensitive fallback
-      addMobileLog('STRATEGY 2: Case insensitive search (fallback)', 'info');
-      const caseStart = Date.now();
-      
-      addMobileLog(`Executing: .ilike('province', '${province}')`, 'info');
-      const { data: caseData, error: caseError } = await supabase
-        .from('soru_cevap')
-        .select('*')
-        .ilike('province', province)
-        .order('created_at', { ascending: false });
-
-      const caseDuration = Date.now() - caseStart;
-      addMobileLog(`Strategy 2 result: ${caseData?.length || 0} records in ${caseDuration}ms`, caseError ? 'error' : 'info');
-      
-      if (caseError) {
-        addMobileLog(`Strategy 2 detailed error: ${JSON.stringify(caseError)}`, 'error');
-      }
-
-      debugData.queries.push({
-        strategy: 'case_insensitive',
-        success: !caseError,
-        count: caseData?.length || 0,
-        duration: caseDuration,
-        error: caseError?.message,
-        errorDetails: caseError
-      });
-
-      if (!caseError && caseData && caseData.length > 0) {
-        addMobileLog(`SUCCESS: Found ${caseData.length} questions with case insensitive match`, 'success');
-        const typedData = caseData.map(item => ({
-          ...item,
-          answer_status: item.answer_status as Question['answer_status']
-        }));
-        setQuestions(typedData);
-        setDebugInfo(debugData);
-        toast.success(`${typedData.length} soru yüklendi`);
-        setLoading(false);
-        addMobileLog('=== QUESTION LOAD COMPLETED ===', 'success');
-        return;
-      }
-
-      // Strategy 3: Database inspection with timeout
-      addMobileLog('STRATEGY 3: Database inspection', 'info');
-      const debugStart = Date.now();
-      
-      const inspectionPromise = supabase
-        .from('soru_cevap')
-        .select('province, id, question, created_at')
-        .order('created_at', { ascending: false })
-        .limit(50);
-        
-      const inspectionTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Inspection timeout')), 8000)
-      );
-      
-      const { data: allData, error: allError } = await Promise.race([
-        inspectionPromise,
-        inspectionTimeout
-      ]) as any;
-
-      const debugDuration = Date.now() - debugStart;
-      addMobileLog(`Strategy 3 result: ${allData?.length || 0} total records in ${debugDuration}ms`, allError ? 'error' : 'info');
-
-      if (!allError && allData) {
-        const uniqueProvinces = [...new Set(allData.map((q: any) => q.province))];
-        addMobileLog(`Found ${uniqueProvinces.length} unique provinces in DB`, 'info');
-        addMobileLog(`Sample provinces: ${uniqueProvinces.slice(0, 3).join(', ')}`, 'info');
-        
-        // Character-level comparison
-        const exactMatches = uniqueProvinces.filter((p: string) => p === province);
-        const caseMatches = uniqueProvinces.filter((p: string) => p.toLowerCase() === province.toLowerCase());
-        const trimMatches = uniqueProvinces.filter((p: string) => p.trim() === province.trim());
-        
-        addMobileLog(`Exact matches: ${exactMatches.length}`, 'info');
-        addMobileLog(`Case matches: ${caseMatches.length}`, 'info');
-        addMobileLog(`Trim matches: ${trimMatches.length}`, 'info');
-        
-        if (uniqueProvinces.length > 0) {
-          const firstProvince = uniqueProvinces[0] as string;
-          addMobileLog(`First province chars: [${Array.from(firstProvince).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
-          addMobileLog(`Target province chars: [${Array.from(province).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
+      const { data, error } = await supabase.functions.invoke('send-qna-notifications', {
+        body: {
+          type: 'fetch_ydo_questions',
+          token: token
         }
+      });
 
-        debugData.allProvinces = uniqueProvinces;
-        debugData.exactMatches = exactMatches;
-        debugData.caseMatches = caseMatches;
-        debugData.trimMatches = trimMatches;
+      if (error) {
+        addMobileLog(`Edge function error: ${JSON.stringify(error)}`, 'error');
+        throw error;
       }
 
-      debugData.totalDuration = Date.now() - debugData.startTime;
-      setDebugInfo(debugData);
+      if (!data.success) {
+        addMobileLog(`Edge function failed: ${data.error}`, 'error');
+        throw new Error(data.error);
+      }
 
-      addMobileLog('NO QUESTIONS FOUND - All strategies exhausted', 'error');
-      addMobileLog(`Total search duration: ${debugData.totalDuration}ms`, 'info');
-      setQuestions([]);
-      toast.error('Bu il için soru bulunamadı');
+      const fetchedQuestions = data.questions || [];
+      addMobileLog(`SUCCESS: Loaded ${fetchedQuestions.length} questions via edge function`, 'success');
+      
+      const typedData = fetchedQuestions.map((item: any) => ({
+        ...item,
+        answer_status: item.answer_status as Question['answer_status']
+      }));
+      
+      setQuestions(typedData);
+      setDebugInfo(debugData);
+      toast.success(`${typedData.length} soru yüklendi`);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -325,6 +169,7 @@ const YdoSecureAccess = () => {
       debugData.criticalError = error;
       setDebugInfo(debugData);
       toast.error('Sorular yüklenirken hata oluştu');
+      setQuestions([]);
     } finally {
       setLoading(false);
       addMobileLog('=== QUESTION LOAD PROCESS ENDED ===', 'info');
@@ -342,58 +187,60 @@ const YdoSecureAccess = () => {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedQuestion || !answer.trim()) {
+    if (!selectedQuestion || !answer.trim() || !tokenData) {
       toast.error('Please provide an answer');
       return;
     }
 
     setSubmitting(true);
+    const token = searchParams.get('token');
 
     try {
-      const newStatus = selectedQuestion.answer_status === 'returned' ? 'corrected' : 'answered';
+      const isCorrection = selectedQuestion.answer_status === 'returned';
+      
+      addMobileLog(`Submitting ${isCorrection ? 'correction' : 'answer'} via edge function...`, 'info');
 
-      const { error: updateError } = await supabase
-        .from('soru_cevap')
-        .update({
-          answer: answer.trim(),
-          answered: true,
-          answer_date: new Date().toISOString(),
-          answered_by_user_id: null,
-          answer_status: newStatus,
-          admin_sent: false
-        })
-        .eq('id', selectedQuestion.id);
-
-      if (updateError) throw updateError;
-
-      const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
+      const { data, error } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
-          type: newStatus === 'corrected' ? 'answer_corrected' : 'answer_provided',
+          type: 'submit_ydo_answer',
+          token: token,
           questionData: {
-            ...selectedQuestion,
+            questionId: selectedQuestion.id,
             answer: answer.trim(),
-            answer_status: newStatus
+            isCorrection: isCorrection,
+            full_name: selectedQuestion.full_name,
+            email: selectedQuestion.email,
+            province: selectedQuestion.province,
+            question: selectedQuestion.question
           }
         }
       });
 
-      if (notificationError) {
-        console.error('Error sending notification:', notificationError);
+      if (error) {
+        addMobileLog(`Answer submission error: ${JSON.stringify(error)}`, 'error');
+        throw error;
       }
 
-      const successMessage = newStatus === 'corrected' 
+      if (!data.success) {
+        addMobileLog(`Answer submission failed: ${data.error}`, 'error');
+        throw new Error(data.error);
+      }
+
+      const successMessage = isCorrection 
         ? 'Düzeltilmiş yanıt başarıyla gönderildi'
         : 'Yanıt başarıyla gönderildi';
       
+      addMobileLog(`Answer submitted successfully: ${successMessage}`, 'success');
       toast.success(successMessage);
       setSelectedQuestion(null);
       setAnswer('');
       
-      if (tokenData) {
-        loadQuestions(tokenData.province, /Mobile|Android|iPhone|iPad/.test(navigator.userAgent));
+      if (token) {
+        loadQuestions(token, /Mobile|Android|iPhone|iPad/.test(navigator.userAgent));
       }
     } catch (error) {
       console.error('Error submitting answer:', error);
+      addMobileLog(`Error submitting answer: ${error}`, 'error');
       toast.error('Failed to submit answer');
     } finally {
       setSubmitting(false);
@@ -513,10 +360,10 @@ const YdoSecureAccess = () => {
               <div className="bg-white p-2 rounded border">
                 <div className="flex items-center gap-1">
                   <Database className="h-3 w-3" />
-                  <span className="font-semibold">Sorgu</span>
+                  <span className="font-semibold">Edge Func</span>
                 </div>
                 <div className="text-blue-600">
-                  {debugInfo?.queries?.length || 0}/3
+                  {connectionStatus === 'success' ? '✅ Hazır' : '⏳ Test'}
                 </div>
               </div>
             </div>
@@ -694,14 +541,14 @@ const YdoSecureAccess = () => {
                     <strong>📊 Bulunan Soru:</strong> {questions.length}
                   </div>
                   <div className="text-blue-700">
-                    <strong>🔐 Token Durumu:</strong> {tokenData ? '✅ Geçerli (Safe Decoder)' : '❌ Geçersiz'}
+                    <strong>🔐 Token Durumu:</strong> {tokenData ? '✅ Geçerli (Edge Function)' : '❌ Geçersiz'}
                   </div>
                   <div className="text-blue-700">
                     <strong>🌐 Ağ Durumu:</strong> {navigator.onLine ? '✅ Çevrimiçi' : '❌ Çevrimdışı'}
                   </div>
                   <div className="text-blue-700">
-                    <strong>💾 Veritabanı:</strong> {
-                      connectionStatus === 'success' ? '✅ Bağlı' : 
+                    <strong>💾 Edge Function:</strong> {
+                      connectionStatus === 'success' ? '✅ Çalışıyor' : 
                       connectionStatus === 'failed' ? '❌ Hata' : 
                       connectionStatus === 'testing' ? '🔄 Test ediliyor' : '❓ Bilinmiyor'
                     }
@@ -727,34 +574,12 @@ const YdoSecureAccess = () => {
                     })}
                   </div>
 
-                  {debugInfo && debugInfo.queries && (
-                    <div className="mt-3 p-3 bg-white border border-blue-200 rounded text-xs">
-                      <div className="font-semibold text-blue-800 mb-2">🔧 Sorgu Detayları:</div>
-                      {debugInfo.queries.map((query: any, index: number) => (
-                        <div key={index} className="text-blue-700 mb-1">
-                          <strong>{query.strategy}:</strong> {query.success ? `✅ ${query.count} sonuç` : `❌ ${query.error?.substring(0, 30)}`} ({query.duration}ms)
-                        </div>
-                      ))}
-                      {debugInfo.allProvinces && (
-                        <div className="mt-2">
-                          <div className="font-semibold text-blue-800">DB'deki İller ({debugInfo.allProvinces.length}):</div>
-                          <div className="text-blue-600 text-xs">{debugInfo.allProvinces.slice(0, 5).join(', ')}</div>
-                          {debugInfo.exactMatches && (
-                            <div className="text-blue-600 text-xs mt-1">
-                              Tam eşleşme: {debugInfo.exactMatches.length}, Büyük/küçük harf: {debugInfo.caseMatches?.length || 0}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                  {questions.length === 0 && !loading && connectionStatus === 'failed' && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
+                      <strong>⚠️ SORUN:</strong> Edge function bağlantısı başarısız. Lütfen internet bağlantınızı kontrol edin ve sayfayı yenileyin.
                     </div>
                   )}
                 </div>
-                
-                {questions.length === 0 && !loading && connectionStatus === 'failed' && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
-                    <strong>⚠️ SORUN:</strong> Veritabanı bağlantısı başarısız. Lütfen internet bağlantınızı kontrol edin ve sayfayı yenileyin.
-                  </div>
-                )}
               </div>
             )}
           </CardHeader>
@@ -769,7 +594,7 @@ const YdoSecureAccess = () => {
                 </h3>
                 <p className="text-gray-500 mb-1">
                   {connectionStatus === 'failed' 
-                    ? 'Veritabanına bağlantı kurulamadı' 
+                    ? 'Edge function\'a bağlantı kurulamadı' 
                     : `İl: "${tokenData?.province}"`
                   }
                 </p>
@@ -779,21 +604,6 @@ const YdoSecureAccess = () => {
                     : 'Henüz bu il için soru gelmemiş olabilir.'
                   }
                 </p>
-                
-                {isMobile && debugInfo && (
-                  <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-left max-w-md mx-auto">
-                    <div className="font-semibold text-yellow-800 mb-2">🔧 Detaylı Debug Özeti:</div>
-                    <div className="text-yellow-700 space-y-1">
-                      <p><strong>Toplam Sorgu:</strong> {debugInfo.queries?.length || 0}</p>
-                      <p><strong>Toplam Süre:</strong> {debugInfo.totalDuration}ms</p>
-                      <p><strong>DB'de İl Sayısı:</strong> {debugInfo.allProvinces?.length || 'Bilinmiyor'}</p>
-                      <p><strong>Ağ Durumu:</strong> {debugInfo.networkStatus}</p>
-                      <p className="text-xs text-yellow-600 mt-2">
-                        Yukarıdaki canlı debug loglarında detaylı hata mesajlarını görebilirsiniz.
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="space-y-4">

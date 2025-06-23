@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -33,6 +32,14 @@ const getBaseUrl = (): string => {
   return 'https://efd7e70c-3a69-4fb9-a26d-55aefb24b4b1.lovable.app';
 };
 
+// Enhanced mobile-compatible token generation and verification
+export interface YdoTokenPayload {
+  email: string;
+  province: string;
+  exp: number;
+  iat: number;
+}
+
 // Simple token generation for YDO access - Fixed to handle UTF-8 characters
 const generateYdoToken = (email: string, province: string): string => {
   const payload = {
@@ -49,6 +56,47 @@ const generateYdoToken = (email: string, province: string): string => {
   
   // Use Deno's built-in base64 encoding which handles UTF-8 properly
   return btoa(String.fromCharCode(...data));
+};
+
+// Safe token verification function
+const verifyYdoToken = (token: string): YdoTokenPayload | null => {
+  try {
+    // Normalize URL-safe Base64 (- → +, _ → /)
+    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+    
+    // Add padding (=) to make it a multiple of 4
+    base64 += '='.repeat((4 - base64.length % 4) % 4);
+    
+    // Decode to binary string
+    const binaryStr = atob(base64);
+    
+    // Convert to Uint8Array
+    const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
+    
+    // Use TextDecoder for safe UTF-8 decoding
+    const jsonStr = new TextDecoder('utf-8').decode(bytes);
+    
+    // Parse JSON
+    const payload = JSON.parse(jsonStr) as YdoTokenPayload;
+    
+    // Check expiration
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (payload.exp < currentTime) {
+      console.error('Token expired');
+      return null;
+    }
+    
+    // Validate required fields
+    if (!payload.email || !payload.province) {
+      console.error('Missing required fields');
+      return null;
+    }
+    
+    return payload;
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return null;
+  }
 };
 
 const sendBrevoEmail = async (emailData: EmailData) => {
@@ -77,8 +125,134 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, questionId, questionData } = await req.json();
+    const { type, questionId, questionData, token } = await req.json();
     console.log('Processing notification:', { type, questionId });
+
+    // Handle YDO question fetching
+    if (type === 'fetch_ydo_questions') {
+      if (!token) {
+        return new Response(
+          JSON.stringify({ error: 'Token required' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Verify the YDO token
+      const tokenPayload = verifyYdoToken(token);
+      if (!tokenPayload) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid or expired token' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Fetch questions for the province using service role (bypasses RLS)
+      const { data: questions, error } = await supabase
+        .from('soru_cevap')
+        .select('*')
+        .eq('province', tokenPayload.province)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching questions:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch questions' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, questions: questions || [] }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Handle YDO answer submission
+    if (type === 'submit_ydo_answer') {
+      if (!token) {
+        return new Response(
+          JSON.stringify({ error: 'Token required' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Verify the YDO token
+      const tokenPayload = verifyYdoToken(token);
+      if (!tokenPayload) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid or expired token' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      const { questionId, answer, isCorrection } = questionData;
+
+      // Update the question with the answer using service role
+      const newStatus = isCorrection ? 'corrected' : 'answered';
+      const { error: updateError } = await supabase
+        .from('soru_cevap')
+        .update({
+          answer: answer.trim(),
+          answered: true,
+          answer_date: new Date().toISOString(),
+          answer_status: newStatus,
+          admin_sent: false
+        })
+        .eq('id', questionId);
+
+      if (updateError) {
+        console.error('Error updating question:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to update question' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Send notification to admins about the answer
+      const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
+        body: {
+          type: isCorrection ? 'answer_corrected' : 'answer_provided',
+          questionData: {
+            ...questionData,
+            answer: answer.trim(),
+            answer_status: newStatus
+          }
+        }
+      });
+
+      if (notificationError) {
+        console.error('Error sending notification:', notificationError);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     if (type === 'submit_question') {
       // Insert the question using service role to bypass RLS
