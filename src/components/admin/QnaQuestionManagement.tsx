@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, MessageSquare, Calendar, User, MapPin } from 'lucide-react';
+import { Eye, Edit, MessageSquare, Calendar, User, MapPin, CheckCircle, XCircle, ArrowLeft, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Question } from '@/types/qna';
@@ -20,8 +20,10 @@ const QnaQuestionManagement = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAnswerDialogOpen, setIsAnswerDialogOpen] = useState(false);
+  const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [answer, setAnswer] = useState('');
   const [answerStatus, setAnswerStatus] = useState<string>('answered');
+  const [returnReason, setReturnReason] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
@@ -82,6 +84,99 @@ const QnaQuestionManagement = () => {
     }
   };
 
+  const handleApproveAndSend = async (question: Question) => {
+    if (!question.answer) {
+      toast.error('Onaylanacak cevap bulunmuyor.');
+      return;
+    }
+
+    try {
+      // Update status to approved
+      const { error: updateError } = await supabase
+        .from('soru_cevap')
+        .update({
+          answer_status: 'approved',
+          admin_sent: true,
+          sent_to_user: true
+        })
+        .eq('id', question.id);
+
+      if (updateError) throw updateError;
+
+      // Send notification to user
+      const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
+        body: {
+          type: 'answer_sent',
+          questionData: {
+            ...question,
+            answer_status: 'approved'
+          }
+        }
+      });
+
+      if (notificationError) {
+        console.error('Notification error:', notificationError);
+        toast.error('Cevap onaylandı ancak e-posta gönderilirken hata oluştu.');
+      } else {
+        toast.success('Cevap onaylandı ve kullanıcıya gönderildi.');
+      }
+
+      fetchQuestions();
+    } catch (error) {
+      console.error('Error approving answer:', error);
+      toast.error('Cevap onaylanırken hata oluştu.');
+    }
+  };
+
+  const handleReturnToYdo = async () => {
+    if (!selectedQuestion || !returnReason.trim()) {
+      toast.error('İade sebebi belirtilmelidir.');
+      return;
+    }
+
+    try {
+      // Update status to returned
+      const { error: updateError } = await supabase
+        .from('soru_cevap')
+        .update({
+          answer_status: 'returned',
+          return_reason: returnReason,
+          return_date: new Date().toISOString(),
+          admin_sent: false
+        })
+        .eq('id', selectedQuestion.id);
+
+      if (updateError) throw updateError;
+
+      // Send notification to YDO users
+      const { error: notificationError } = await supabase.functions.invoke('send-qna-notifications', {
+        body: {
+          type: 'answer_returned',
+          questionData: {
+            ...selectedQuestion,
+            return_reason: returnReason,
+            answer_status: 'returned'
+          }
+        }
+      });
+
+      if (notificationError) {
+        console.error('Notification error:', notificationError);
+        toast.error('Cevap iade edildi ancak YDO kullanıcılarına bildirim gönderilirken hata oluştu.');
+      } else {
+        toast.success('Cevap YDO kullanıcılarına iade edildi.');
+      }
+
+      setIsReturnDialogOpen(false);
+      setReturnReason('');
+      setSelectedQuestion(null);
+      fetchQuestions();
+    } catch (error) {
+      console.error('Error returning answer:', error);
+      toast.error('Cevap iade edilirken hata oluştu.');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusMap = {
       'unanswered': { label: 'Cevaplanmadı', variant: 'destructive' as const },
@@ -105,6 +200,12 @@ const QnaQuestionManagement = () => {
     setAnswer(question.answer || '');
     setAnswerStatus(question.answer_status || 'answered');
     setIsAnswerDialogOpen(true);
+  };
+
+  const openReturnDialog = (question: Question) => {
+    setSelectedQuestion(question);
+    setReturnReason('');
+    setIsReturnDialogOpen(true);
   };
 
   if (loading) {
@@ -200,6 +301,25 @@ const QnaQuestionManagement = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      {question.answer && (question.answer_status === 'answered' || question.answer_status === 'corrected') && (
+                        <>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleApproveAndSend(question)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openReturnDialog(question)}
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -251,6 +371,14 @@ const QnaQuestionManagement = () => {
                   <Label>Cevap</Label>
                   <div className="bg-blue-50 p-3 rounded-md mt-1">
                     {selectedQuestion.answer}
+                  </div>
+                </div>
+              )}
+              {selectedQuestion.return_reason && (
+                <div>
+                  <Label>İade Sebebi</Label>
+                  <div className="bg-red-50 p-3 rounded-md mt-1">
+                    {selectedQuestion.return_reason}
                   </div>
                 </div>
               )}
@@ -308,6 +436,51 @@ const QnaQuestionManagement = () => {
                 </Button>
                 <Button onClick={handleAnswerQuestion}>
                   Cevabı Kaydet
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Answer Dialog */}
+      <Dialog open={isReturnDialogOpen} onOpenChange={setIsReturnDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Cevabı YDO'ya İade Et</DialogTitle>
+          </DialogHeader>
+          {selectedQuestion && (
+            <div className="space-y-4">
+              <div>
+                <Label>Soru</Label>
+                <div className="bg-gray-50 p-3 rounded-md mt-1">
+                  {selectedQuestion.question}
+                </div>
+              </div>
+              {selectedQuestion.answer && (
+                <div>
+                  <Label>Mevcut Cevap</Label>
+                  <div className="bg-blue-50 p-3 rounded-md mt-1">
+                    {selectedQuestion.answer}
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label htmlFor="returnReason">İade Sebebi</Label>
+                <Textarea
+                  id="returnReason"
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  placeholder="Cevabın neden iade edildiğini açıklayın..."
+                  rows={4}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)}>
+                  İptal
+                </Button>
+                <Button variant="destructive" onClick={handleReturnToYdo}>
+                  YDO'ya İade Et
                 </Button>
               </div>
             </div>
