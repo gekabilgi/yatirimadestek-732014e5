@@ -649,7 +649,7 @@ const YdoSecureAccess = () => {
               )}
 
               {!canEdit && selectedQuestion.answer_date && (
-                <div className="bg-blue-50 border border-blue-200 rounde-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-700">
                     Bu soru {formatDate(selectedQuestion.answer_date)} tarihinde yanıtlanmıştır.
                     {selectedQuestion.answer_status === 'approved' && ' Yanıt onaylanmış ve kullanıcıya gönderilmiştir.'}
