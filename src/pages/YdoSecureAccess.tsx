@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Eye, Edit, Send, AlertCircle, Smartphone, Monitor, Clock, User, Mail, Bug, Wifi, Database, Key, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { verifyYdoToken, type YdoTokenPayload } from '@/utils/tokenUtils';
+import { verifyYdoToken, decodeTokenSafe, type YdoTokenPayload } from '@/utils/tokenUtils';
 import { toast } from 'sonner';
 import type { Question } from '@/types/qna';
 
@@ -44,7 +44,7 @@ const YdoSecureAccess = () => {
       addMobileLog('Supabase URL: https://zyxiznikuvpwmopraauj.supabase.co', 'info');
       addMobileLog('Auth URL: https://zyxiznikuvpwmopraauj.supabase.co/auth/v1', 'info');
       
-      // Test 2: Simple count query with timeout - fixed syntax
+      // Test 2: Simple count query with timeout
       addMobileLog('Test 2: Simple count query with timeout...', 'info');
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Connection timeout after 10s')), 10000)
@@ -128,7 +128,7 @@ const YdoSecureAccess = () => {
       return;
     }
 
-    addMobileLog('Starting token verification...', 'info');
+    addMobileLog('Starting token verification with safe decoder...', 'info');
     const payload = verifyYdoToken(token);
     
     if (!payload) {
@@ -172,14 +172,23 @@ const YdoSecureAccess = () => {
     };
     
     try {
+      // Validate province before querying
+      if (!province || province.trim() === '') {
+        addMobileLog('❌ Province is empty or null', 'error');
+        setQuestions([]);
+        toast.error('İl bilgisi eksik');
+        setLoading(false);
+        return;
+      }
+
       // Strategy 1: Direct exact match with detailed logging
       addMobileLog('STRATEGY 1: Direct exact match', 'info');
       const directStart = Date.now();
       
       addMobileLog(`Executing: .eq('province', '${province}')`, 'info');
-      const { data: directData, error: directError, count: directCount } = await supabase
+      const { data: directData, error: directError } = await supabase
         .from('soru_cevap')
-        .select('*', { count: 'exact' })
+        .select('*')
         .eq('province', province)
         .order('created_at', { ascending: false });
 
@@ -213,14 +222,14 @@ const YdoSecureAccess = () => {
         return;
       }
 
-      // Strategy 2: Case insensitive with detailed logging
-      addMobileLog('STRATEGY 2: Case insensitive search', 'info');
+      // Strategy 2: Case insensitive fallback
+      addMobileLog('STRATEGY 2: Case insensitive search (fallback)', 'info');
       const caseStart = Date.now();
       
       addMobileLog(`Executing: .ilike('province', '${province}')`, 'info');
       const { data: caseData, error: caseError } = await supabase
         .from('soru_cevap')
-        .select('*', { count: 'exact' })
+        .select('*')
         .ilike('province', province)
         .order('created_at', { ascending: false });
 
@@ -281,7 +290,7 @@ const YdoSecureAccess = () => {
         addMobileLog(`Found ${uniqueProvinces.length} unique provinces in DB`, 'info');
         addMobileLog(`Sample provinces: ${uniqueProvinces.slice(0, 3).join(', ')}`, 'info');
         
-        // Character-level comparison - fixed type issues
+        // Character-level comparison
         const exactMatches = uniqueProvinces.filter((p: string) => p === province);
         const caseMatches = uniqueProvinces.filter((p: string) => p.toLowerCase() === province.toLowerCase());
         const trimMatches = uniqueProvinces.filter((p: string) => p.trim() === province.trim());
@@ -685,7 +694,7 @@ const YdoSecureAccess = () => {
                     <strong>📊 Bulunan Soru:</strong> {questions.length}
                   </div>
                   <div className="text-blue-700">
-                    <strong>🔐 Token Durumu:</strong> {tokenData ? '✅ Geçerli' : '❌ Geçersiz'}
+                    <strong>🔐 Token Durumu:</strong> {tokenData ? '✅ Geçerli (Safe Decoder)' : '❌ Geçersiz'}
                   </div>
                   <div className="text-blue-700">
                     <strong>🌐 Ağ Durumu:</strong> {navigator.onLine ? '✅ Çevrimiçi' : '❌ Çevrimdışı'}

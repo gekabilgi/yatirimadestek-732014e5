@@ -8,6 +8,42 @@ export interface YdoTokenPayload {
   iat: number;
 }
 
+// Platform-agnostic Base64 decoder that works on both mobile and desktop
+export function decodeTokenSafe(token: string): YdoTokenPayload | null {
+  try {
+    // Normalize URL-safe Base64 (- → +, _ → /)
+    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+    
+    // Add padding (=) to make it a multiple of 4
+    base64 += '='.repeat((4 - base64.length % 4) % 4);
+    
+    // Decode to binary string
+    const binaryStr = atob(base64);
+    
+    // Convert to Uint8Array
+    const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
+    
+    // Use TextDecoder for safe UTF-8 decoding
+    const jsonStr = new TextDecoder('utf-8').decode(bytes);
+    
+    // Parse JSON
+    const payload = JSON.parse(jsonStr) as YdoTokenPayload;
+    
+    console.log('✅ Safe token decoding successful:', {
+      email: payload.email,
+      province: `"${payload.province}"`,
+      provinceLength: payload.province?.length,
+      exp: payload.exp,
+      iat: payload.iat
+    });
+    
+    return payload;
+  } catch (error) {
+    console.error('❌ Safe token decoding failed:', error);
+    return null;
+  }
+}
+
 // Enhanced mobile-compatible token generation
 export const generateYdoToken = (email: string, province: string): string => {
   const payload: YdoTokenPayload = {
@@ -22,8 +58,11 @@ export const generateYdoToken = (email: string, province: string): string => {
   const jsonString = JSON.stringify(payload);
   
   try {
-    // Mobile-first approach - use simple base64 encoding
-    const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+    // Use the same safe encoding approach
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(jsonString);
+    const binaryStr = Array.from(bytes, byte => String.fromCharCode(byte)).join('');
+    const encoded = btoa(binaryStr);
     console.log('Token generated successfully');
     return encoded;
   } catch (error) {
@@ -33,8 +72,9 @@ export const generateYdoToken = (email: string, province: string): string => {
   }
 };
 
+// Legacy function for backward compatibility - now uses the safe decoder
 export const verifyYdoToken = (token: string): YdoTokenPayload | null => {
-  console.log('🔍 MOBILE TOKEN VERIFICATION START');
+  console.log('🔍 TOKEN VERIFICATION START');
   console.log('🌍 Environment:', {
     userAgent: navigator.userAgent,
     isMobile: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent),
@@ -47,58 +87,27 @@ export const verifyYdoToken = (token: string): YdoTokenPayload | null => {
     return null;
   }
 
-  try {
-    // Mobile-optimized decoding strategy
-    let decodedString: string;
-    
-    console.log('📱 Attempting mobile-compatible decoding...');
-    
-    try {
-      // Primary mobile-compatible method
-      decodedString = decodeURIComponent(escape(atob(token)));
-      console.log('✅ Mobile decoding successful');
-    } catch (mobileError) {
-      console.log('⚠️ Mobile decoding failed, trying simple atob:', mobileError);
-      try {
-        decodedString = atob(token);
-        console.log('✅ Simple atob successful');
-      } catch (simpleError) {
-        console.error('❌ All decoding methods failed:', simpleError);
-        return null;
-      }
-    }
-
-    console.log('📋 Decoded string preview:', decodedString.substring(0, 50) + '...');
-    
-    const payload = JSON.parse(decodedString) as YdoTokenPayload;
-    
-    console.log('🎯 PARSED PAYLOAD:', {
-      email: payload.email,
-      province: `"${payload.province}"`,
-      provinceLength: payload.province?.length,
-      provinceCharCodes: payload.province ? Array.from(payload.province).map(c => c.charCodeAt(0)) : [],
-      exp: payload.exp,
-      iat: payload.iat
-    });
-    
-    // Check expiration
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (payload.exp < currentTime) {
-      console.error('❌ Token expired');
-      return null;
-    }
-    
-    // Validate required fields
-    if (!payload.email || !payload.province) {
-      console.error('❌ Missing required fields');
-      return null;
-    }
-    
-    console.log('✅ TOKEN VERIFICATION SUCCESS');
-    return payload;
-    
-  } catch (error) {
-    console.error('❌ TOKEN VERIFICATION FAILED:', error);
+  // Use the new safe decoder
+  const payload = decodeTokenSafe(token);
+  
+  if (!payload) {
+    console.error('❌ Token decoding failed');
     return null;
   }
+  
+  // Check expiration
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (payload.exp < currentTime) {
+    console.error('❌ Token expired');
+    return null;
+  }
+  
+  // Validate required fields
+  if (!payload.email || !payload.province) {
+    console.error('❌ Missing required fields');
+    return null;
+  }
+  
+  console.log('✅ TOKEN VERIFICATION SUCCESS');
+  return payload;
 };
