@@ -1,7 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -430,14 +430,12 @@ const YdoSecureAccess = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Sorular yükleniyor...</p>
           
-          {/* Enhanced Mobile Debug Panel with Connection Status */}
           <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-lg text-left text-xs max-h-96 overflow-y-auto">
             <div className="flex items-center gap-2 mb-3">
               <Bug className="h-4 w-4 text-blue-600" />
               <span className="font-bold text-blue-800">Mobil Debug Konsolu</span>
             </div>
             
-            {/* Connection Status Indicator */}
             <div className="mb-4 p-2 border-2 rounded">
               <div className="flex items-center gap-2 mb-2">
                 <Database className="h-3 w-3" />
@@ -458,8 +456,8 @@ const YdoSecureAccess = () => {
                   <strong>Hata:</strong> {detailedError}
                 </div>
               )}
-            
-            {/* Real-time debug logs */}
+            </div>
+
             <div className="space-y-1 mb-4 max-h-48 overflow-y-auto bg-white p-2 rounded border">
               <div className="font-semibold text-blue-800 mb-1">🔧 Canlı Loglar:</div>
               {mobileDebugLogs.slice(-10).map((log, index) => {
@@ -474,7 +472,6 @@ const YdoSecureAccess = () => {
               })}
             </div>
 
-            {/* Key status indicators */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="bg-white p-2 rounded border">
                 <div className="flex items-center gap-1">
@@ -676,7 +673,6 @@ const YdoSecureAccess = () => {
               {tokenData?.province} ili için gelen sorular ({questions.length} adet)
             </p>
             
-            {/* Enhanced Mobile Debug Results Panel */}
             {isMobile && (
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
@@ -704,14 +700,12 @@ const YdoSecureAccess = () => {
                     }
                   </div>
                   
-                  {/* Connection error details */}
                   {connectionStatus === 'failed' && detailedError && (
                     <div className="text-red-700 bg-red-50 p-2 rounded text-xs">
                       <strong>Bağlantı Hatası:</strong> {detailedError}
                     </div>
                   )}
                   
-                  {/* Live debug logs display */}
                   <div className="mt-3 p-3 bg-white border border-blue-200 rounded text-xs max-h-32 overflow-y-auto">
                     <div className="font-semibold text-blue-800 mb-2">🔧 Son Debug Logları:</div>
                     {mobileDebugLogs.slice(-8).map((log, index) => {
@@ -796,13 +790,11 @@ const YdoSecureAccess = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Unified responsive grid layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {questions.map((question) => (
                     <Card key={question.id} className="border border-gray-200 hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="space-y-3">
-                          {/* Header with name and status */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0 flex-1">
                               <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
@@ -813,19 +805,16 @@ const YdoSecureAccess = () => {
                             {getStatusBadge(question)}
                           </div>
 
-                          {/* Email */}
                           <div className="flex items-center gap-2 text-xs text-gray-600">
                             <Mail className="h-3 w-3 flex-shrink-0" />
                             <span className="truncate">{question.email}</span>
                           </div>
 
-                          {/* Date */}
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <Clock className="h-3 w-3 flex-shrink-0" />
                             <span>{formatDate(question.created_at)}</span>
                           </div>
                           
-                          {/* Question preview */}
                           <div className="bg-gray-50 p-3 rounded border">
                             <p className="text-sm text-gray-700 line-clamp-3">
                               {question.question.length > 120
@@ -834,14 +823,12 @@ const YdoSecureAccess = () => {
                             </p>
                           </div>
                           
-                          {/* Answer date if exists */}
                           {question.answer_date && (
                             <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
                               Yanıtlandı: {formatDate(question.answer_date)}
                             </div>
                           )}
                           
-                          {/* Action button */}
                           <div className="pt-2 border-t border-gray-100">
                             {canEditAnswer(question) ? (
                               <Button
