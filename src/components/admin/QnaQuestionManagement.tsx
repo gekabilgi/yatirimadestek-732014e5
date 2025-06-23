@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,55 +27,127 @@ const QnaQuestionManagement = () => {
 
   useEffect(() => {
     fetchQuestions();
-  }, []);
+  }, [filterStatus]);
 
   const fetchQuestions = async () => {
     try {
-      console.log('Fetching questions with filter:', filterStatus);
-      
-      // Build query with proper text handling for Turkish characters
+      setLoading(true);
+      console.log('🔍 Starting fetchQuestions with filter:', filterStatus);
+      console.log('🌐 User agent:', navigator.userAgent);
+      console.log('📱 Platform info:', {
+        platform: navigator.platform,
+        language: navigator.language,
+        languages: navigator.languages
+      });
+
+      // Test connection first
+      console.log('🔌 Testing Supabase connection...');
+      const { data: testData, error: testError } = await supabase
+        .from('soru_cevap')
+        .select('count')
+        .limit(1);
+
+      if (testError) {
+        console.error('❌ Connection test failed:', testError);
+        throw new Error(`Connection failed: ${testError.message}`);
+      }
+
+      console.log('✅ Connection test successful');
+
+      // Build the main query
       let query = supabase
         .from('soru_cevap')
-        .select('*', { count: 'exact' })
+        .select('*')
         .order('created_at', { ascending: false });
 
-      // Apply filter if not 'all' - use text comparison that handles Turkish characters properly
+      // Apply status filter if not 'all'
       if (filterStatus !== 'all') {
+        console.log('🎯 Applying filter for status:', filterStatus);
         query = query.eq('answer_status', filterStatus);
       }
 
-      console.log('Executing query...');
+      console.log('📤 Executing main query...');
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Supabase query error:', error);
+        console.error('❌ Query execution failed:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
-      console.log('Query successful. Found', count, 'records');
-      console.log('Sample data:', data?.slice(0, 2));
-      
-      // Ensure text fields are properly decoded
-      const processedData = data?.map(question => ({
-        ...question,
-        question: question.question || '',
-        answer: question.answer || '',
-        full_name: question.full_name || '',
-        email: question.email || '',
-        province: question.province || '',
-        phone: question.phone || '',
-        return_reason: question.return_reason || '',
-        admin_notes: question.admin_notes || '',
-        answer_status: question.answer_status || 'unanswered'
-      })) || [];
+      console.log('✅ Query successful:', {
+        totalRecords: data?.length || 0,
+        count: count,
+        firstRecordSample: data?.[0] ? {
+          id: data[0].id,
+          question_length: data[0].question?.length,
+          question_preview: data[0].question?.substring(0, 50),
+          answer_status: data[0].answer_status,
+          full_name: data[0].full_name,
+          email: data[0].email
+        } : null
+      });
 
-      console.log('Processed data:', processedData.length, 'questions');
+      // Process the data with better encoding handling
+      const processedData = (data || []).map((item, index) => {
+        console.log(`🔄 Processing record ${index + 1}:`, {
+          id: item.id,
+          originalQuestion: item.question,
+          questionLength: item.question?.length,
+          hasAnswer: !!item.answer
+        });
+
+        // Ensure all text fields are properly handled
+        const processed = {
+          ...item,
+          question: item.question || '',
+          answer: item.answer || '',
+          full_name: item.full_name || '',
+          email: item.email || '',
+          province: item.province || '',
+          phone: item.phone || '',
+          return_reason: item.return_reason || '',
+          admin_notes: item.admin_notes || '',
+          answer_status: item.answer_status || 'unanswered'
+        };
+
+        console.log(`✅ Processed record ${index + 1}:`, {
+          id: processed.id,
+          processedQuestion: processed.question.substring(0, 50),
+          processedQuestionLength: processed.question.length
+        });
+
+        return processed;
+      });
+
+      console.log('🎯 Final processed data:', {
+        totalProcessed: processedData.length,
+        sampleData: processedData.slice(0, 2).map(item => ({
+          id: item.id,
+          question: item.question.substring(0, 30),
+          full_name: item.full_name,
+          answer_status: item.answer_status
+        }))
+      });
+
       setQuestions(processedData);
+      console.log('✅ Questions state updated successfully');
+      
     } catch (error) {
-      console.error('Error fetching questions:', error);
-      toast.error('Sorular yüklenirken hata oluştu: ' + (error as Error).message);
+      console.error('💥 Critical error in fetchQuestions:', {
+        error: error,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
+      
+      toast.error(`Sorular yüklenirken hata oluştu: ${(error as Error).message}`);
     } finally {
       setLoading(false);
+      console.log('🏁 fetchQuestions completed');
     }
   };
 
@@ -270,6 +341,8 @@ const QnaQuestionManagement = () => {
     );
   }
 
+  console.log('🎨 Rendering component with questions:', questions.length);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -281,9 +354,8 @@ const QnaQuestionManagement = () => {
             </CardTitle>
             <div className="flex gap-2">
               <Select value={filterStatus} onValueChange={(value) => {
-                console.log('Filter changed to:', value);
+                console.log('🔄 Filter changed to:', value);
                 setFilterStatus(value);
-                fetchQuestions();
               }}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Durum Filtrele" />
