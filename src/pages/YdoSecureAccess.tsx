@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,10 +41,10 @@ const YdoSecureAccess = () => {
     
     try {
       // Test 1: Basic client info
-      addMobileLog(`Supabase URL: ${supabase.supabaseUrl}`, 'info');
-      addMobileLog(`Auth URL: ${supabase.auth.url}`, 'info');
+      addMobileLog('Supabase URL: https://zyxiznikuvpwmopraauj.supabase.co', 'info');
+      addMobileLog('Auth URL: https://zyxiznikuvpwmopraauj.supabase.co/auth/v1', 'info');
       
-      // Test 2: Simple query with timeout
+      // Test 2: Simple count query with timeout - fixed syntax
       addMobileLog('Test 2: Simple count query with timeout...', 'info');
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Connection timeout after 10s')), 10000)
@@ -53,10 +52,10 @@ const YdoSecureAccess = () => {
       
       const queryPromise = supabase
         .from('soru_cevap')
-        .select('count(*)', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
         .limit(1);
       
-      const { data: countResult, error: countError, count } = await Promise.race([
+      const { error: countError, count } = await Promise.race([
         queryPromise,
         timeoutPromise
       ]) as any;
@@ -111,8 +110,6 @@ const YdoSecureAccess = () => {
     addMobileLog(`Local time: ${new Date().toLocaleString()}`, 'info');
     
     // URL Analysis
-    const fullUrl = window.location.href;
-    const urlParams = new URLSearchParams(window.location.search);
     const token = searchParams.get('token');
     
     addMobileLog(`URL Search Params: ${window.location.search}`, 'info');
@@ -284,17 +281,18 @@ const YdoSecureAccess = () => {
         addMobileLog(`Found ${uniqueProvinces.length} unique provinces in DB`, 'info');
         addMobileLog(`Sample provinces: ${uniqueProvinces.slice(0, 3).join(', ')}`, 'info');
         
-        // Character-level comparison
-        const exactMatches = uniqueProvinces.filter(p => p === province);
-        const caseMatches = uniqueProvinces.filter(p => p.toLowerCase() === province.toLowerCase());
-        const trimMatches = uniqueProvinces.filter(p => p.trim() === province.trim());
+        // Character-level comparison - fixed type issues
+        const exactMatches = uniqueProvinces.filter((p: string) => p === province);
+        const caseMatches = uniqueProvinces.filter((p: string) => p.toLowerCase() === province.toLowerCase());
+        const trimMatches = uniqueProvinces.filter((p: string) => p.trim() === province.trim());
         
         addMobileLog(`Exact matches: ${exactMatches.length}`, 'info');
         addMobileLog(`Case matches: ${caseMatches.length}`, 'info');
         addMobileLog(`Trim matches: ${trimMatches.length}`, 'info');
         
         if (uniqueProvinces.length > 0) {
-          addMobileLog(`First province chars: [${Array.from(uniqueProvinces[0]).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
+          const firstProvince = uniqueProvinces[0] as string;
+          addMobileLog(`First province chars: [${Array.from(firstProvince).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
           addMobileLog(`Target province chars: [${Array.from(province).map(c => c.charCodeAt(0)).join(', ')}]`, 'info');
         }
 
@@ -750,7 +748,6 @@ const YdoSecureAccess = () => {
                 )}
               </div>
             )}
-          </CardHeader>
           <CardContent>
             {questions.length === 0 ? (
               <div className="text-center py-12">
