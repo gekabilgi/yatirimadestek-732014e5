@@ -405,6 +405,56 @@ export type Database = {
           },
         ]
       }
+      qna_email_logs: {
+        Row: {
+          created_at: string
+          email_subject: string
+          email_type: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          sender_email: string
+          sent_date: string
+          sent_page: string
+          soru_cevap_id: string | null
+          transmission_status: string
+        }
+        Insert: {
+          created_at?: string
+          email_subject: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          sender_email: string
+          sent_date?: string
+          sent_page: string
+          soru_cevap_id?: string | null
+          transmission_status?: string
+        }
+        Update: {
+          created_at?: string
+          email_subject?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          sender_email?: string
+          sent_date?: string
+          sent_page?: string
+          soru_cevap_id?: string | null
+          transmission_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qna_email_logs_soru_cevap_id_fkey"
+            columns: ["soru_cevap_id"]
+            isOneToOne: false
+            referencedRelation: "soru_cevap"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sector_search: {
         Row: {
           bolge_1: number | null

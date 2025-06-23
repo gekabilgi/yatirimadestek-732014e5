@@ -3,6 +3,7 @@ import React from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import QnaQuestionManagement from '@/components/admin/QnaQuestionManagement';
 import QnaAdminEmailManagement from '@/components/admin/QnaAdminEmailManagement';
+import QnaEmailLogsManagement from '@/components/admin/QnaEmailLogsManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const QAManagement = () => {
@@ -18,6 +19,7 @@ const QAManagement = () => {
           <TabsList>
             <TabsTrigger value="questions">Sorular</TabsTrigger>
             <TabsTrigger value="emails">Admin E-postalar</TabsTrigger>
+            <TabsTrigger value="email-logs">E-posta Logları</TabsTrigger>
           </TabsList>
           
           <TabsContent value="questions">
@@ -26,6 +28,10 @@ const QAManagement = () => {
           
           <TabsContent value="emails">
             <QnaAdminEmailManagement />
+          </TabsContent>
+          
+          <TabsContent value="email-logs">
+            <QnaEmailLogsManagement />
           </TabsContent>
         </Tabs>
       </div>

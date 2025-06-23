@@ -40,6 +40,20 @@ export interface QnaAdminEmail {
   created_at: string;
 }
 
+export interface QnaEmailLog {
+  id: string;
+  soru_cevap_id: string | null;
+  sent_page: string;
+  sender_email: string;
+  recipient_email: string;
+  sent_date: string;
+  email_subject: string;
+  transmission_status: string;
+  error_message: string | null;
+  email_type: string;
+  created_at: string;
+}
+
 export interface AuditTrail {
   id: string;
   soru_cevap_id: string;
