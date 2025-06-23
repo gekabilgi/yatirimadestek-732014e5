@@ -1,3 +1,4 @@
+
 export interface Question {
   id: string;
   category: string | null;
@@ -16,9 +17,9 @@ export interface Question {
   admin_notes: string | null;
   answered_by_user_id: string | null;
   approved_by_admin_id: string | null;
-  answer_status: 'unanswered' | 'answered' | 'returned' | 'corrected' | 'approved';
+  answer_status: string | null; // Changed from union type to string | null to match database
   return_reason: string | null;
-  admin_sent: boolean;
+  admin_sent: boolean | null;
   return_date: string | null;
 }
 
