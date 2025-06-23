@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -32,7 +33,7 @@ const getBaseUrl = (): string => {
   return 'https://efd7e70c-3a69-4fb9-a26d-55aefb24b4b1.lovable.app';
 };
 
-// Simple token generation for YDO access
+// Simple token generation for YDO access - Fixed to handle UTF-8 characters
 const generateYdoToken = (email: string, province: string): string => {
   const payload = {
     email,
@@ -41,8 +42,13 @@ const generateYdoToken = (email: string, province: string): string => {
     iat: Math.floor(Date.now() / 1000)
   };
   
-  // Simple base64 encoding (in production, use proper JWT with server-side signing)
-  return btoa(JSON.stringify(payload));
+  // Convert to UTF-8 bytes then base64 encode properly
+  const jsonString = JSON.stringify(payload);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  
+  // Use Deno's built-in base64 encoding which handles UTF-8 properly
+  return btoa(String.fromCharCode(...data));
 };
 
 const sendBrevoEmail = async (emailData: EmailData) => {
