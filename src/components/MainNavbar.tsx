@@ -15,12 +15,20 @@ const MainNavbar = () => {
     await signOut();
   };
 
-  const navItems = [
+  // Base navigation items available to everyone
+  const baseNavItems = [
     { name: 'Ana Sayfa', href: '/' },
     { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
+  ];
+
+  // Admin-only navigation items
+  const adminNavItems = [
     { name: 'Soru & Cevap', href: '/qna' },
     { name: 'Destek Arama', href: '/searchsupport' },
   ];
+
+  // Combine nav items based on user role
+  const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
   return (
     <nav className="bg-white border-b shadow-sm sticky top-0 z-50">
