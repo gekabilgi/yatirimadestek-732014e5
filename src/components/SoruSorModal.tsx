@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,11 @@ const PROVINCES = [
   'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce'
 ];
 
-const SoruSorModal = () => {
+interface SoruSorModalProps {
+  trigger?: React.ReactNode;
+}
+
+const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -89,17 +94,21 @@ const SoruSorModal = () => {
     }
   };
 
+  const defaultTrigger = (
+    <Button 
+      variant="outline" 
+      size="lg"
+      className="px-8 py-3 text-lg"
+    >
+      <MessageSquare className="mr-2 h-5 w-5" />
+      Soru Sor
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="lg"
-          className="px-8 py-3 text-lg"
-        >
-          <MessageSquare className="mr-2 h-5 w-5" />
-          Soru Sor
-        </Button>
+        {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
