@@ -25,6 +25,7 @@ const MainNavbar = () => {
   const adminNavItems = [
     { name: 'Soru & Cevap', href: '/qna' },
     { name: 'Destek Arama', href: '/searchsupport' },
+    { name: 'Yatırımcı Sözlüğü', href: '/investor-glossary' },
   ];
 
   // Combine nav items based on user role

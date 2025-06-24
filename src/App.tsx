@@ -43,8 +43,21 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/incentive-tools" element={<IncentiveTools />} />
-              <Route path="/qna" element={<QNA />} />
-              <Route path="/searchsupport" element={<SearchSupport />} />
+              <Route path="/qna" element={
+                <ProtectedAdminRoute>
+                  <QNA />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/searchsupport" element={
+                <ProtectedAdminRoute>
+                  <SearchSupport />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/investor-glossary" element={
+                <ProtectedAdminRoute>
+                  <InvestorGlossary />
+                </ProtectedAdminRoute>
+              } />
               <Route path="/ydo/secure-access" element={<YdoSecureAccess />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={
@@ -65,6 +78,11 @@ const App = () => {
               <Route path="/admin/email-management" element={
                 <ProtectedAdminRoute>
                   <AdminEmailManagement />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/glossary-management" element={
+                <ProtectedAdminRoute>
+                  <AdminGlossaryManagement />
                 </ProtectedAdminRoute>
               } />
               <Route path="/program/:id" element={<ProgramDetails />} />
