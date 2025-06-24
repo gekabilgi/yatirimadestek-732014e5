@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -10,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, BookOpen } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 interface GlossaryTerm {
@@ -132,119 +131,191 @@ const AdminGlossaryManagement = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Yatırımcı Sözlüğü Yönetimi</h1>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Yeni Terim Ekle
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingTerm ? 'Terim Düzenle' : 'Yeni Terim Ekle'}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="term">Terim</Label>
-                  <Input
-                    id="term"
-                    value={formData.term}
-                    onChange={(e) => setFormData({ ...formData, term: e.target.value })}
-                    placeholder="Terim adını girin..."
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="definition">Tanım</Label>
-                  <textarea
-                    id="definition"
-                    value={formData.definition}
-                    onChange={(e) => setFormData({ ...formData, definition: e.target.value })}
-                    placeholder="Terim tanımını girin..."
-                    className="w-full min-h-32 p-3 border border-input rounded-md bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    required
-                  />
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                    İptal
-                  </Button>
-                  <Button type="submit" disabled={createUpdateMutation.isPending}>
-                    {createUpdateMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+      <div className="space-y-8">
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <BookOpen className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Yatırımcı Sözlüğü Yönetimi</h1>
+                <p className="text-gray-600 mt-1">Yatırım terimleri ve tanımlarını yönetin</p>
+              </div>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Yeni Terim Ekle
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center space-x-2">
+                    <BookOpen className="h-5 w-5 text-blue-600" />
+                    <span>{editingTerm ? 'Terim Düzenle' : 'Yeni Terim Ekle'}</span>
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="term" className="text-sm font-medium">Terim</Label>
+                    <Input
+                      id="term"
+                      value={formData.term}
+                      onChange={(e) => setFormData({ ...formData, term: e.target.value })}
+                      placeholder="Terim adını girin..."
+                      className="h-10"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="definition" className="text-sm font-medium">Tanım</Label>
+                    <textarea
+                      id="definition"
+                      value={formData.definition}
+                      onChange={(e) => setFormData({ ...formData, definition: e.target.value })}
+                      placeholder="Terim tanımını girin..."
+                      className="w-full min-h-32 p-3 border border-input rounded-md bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                      required
+                    />
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                      İptal
+                    </Button>
+                    <Button type="submit" disabled={createUpdateMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+                      {createUpdateMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Terim Listesi</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4" />
-              <Input
-                placeholder="Terim veya tanımda ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-sm"
-              />
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Toplam Terim</p>
+                  <p className="text-2xl font-bold text-gray-900">{termsData?.total || 0}</p>
+                </div>
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Bu Sayfada</p>
+                  <p className="text-2xl font-bold text-gray-900">{termsData?.terms.length || 0}</p>
+                </div>
+                <div className="p-3 bg-green-100 rounded-full">
+                  <Search className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Sayfa</p>
+                  <p className="text-2xl font-bold text-gray-900">{currentPage} / {totalPages}</p>
+                </div>
+                <div className="p-3 bg-purple-100 rounded-full">
+                  <span className="text-purple-600 font-bold text-lg">#</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search and Table */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="text-lg font-semibold">Terim Listesi</CardTitle>
+              <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
+                <Search className="h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Terim veya tanımda ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="text-center py-8">Yükleniyor...</div>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-gray-600">Yükleniyor...</p>
+              </div>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Terim</TableHead>
-                      <TableHead>Tanım</TableHead>
-                      <TableHead className="w-24">İşlemler</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {termsData?.terms.map((term) => (
-                      <TableRow key={term.id}>
-                        <TableCell className="font-medium">{term.term}</TableCell>
-                        <TableCell className="max-w-md truncate">{term.definition}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(term)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(term.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="font-semibold text-gray-900">Terim</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Tanım</TableHead>
+                        <TableHead className="w-24 font-semibold text-gray-900">İşlemler</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {termsData?.terms.map((term, index) => (
+                        <TableRow key={term.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                          <TableCell className="font-medium text-gray-900 max-w-xs">
+                            <div className="truncate">{term.term}</div>
+                          </TableCell>
+                          <TableCell className="text-gray-600 max-w-md">
+                            <div className="truncate">{term.definition}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(term)}
+                                className="h-8 w-8 p-0 hover:bg-blue-100"
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(term.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {totalPages > 1 && (
-                  <div className="flex justify-center mt-6">
+                  <div className="flex justify-center py-6 border-t bg-gray-50">
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious 
                             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-blue-50'}
                           />
                         </PaginationItem>
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -252,7 +323,7 @@ const AdminGlossaryManagement = () => {
                             <PaginationLink
                               onClick={() => setCurrentPage(page)}
                               isActive={currentPage === page}
-                              className="cursor-pointer"
+                              className={`cursor-pointer ${currentPage === page ? 'bg-blue-600 text-white hover:bg-blue-700' : 'hover:bg-blue-50'}`}
                             >
                               {page}
                             </PaginationLink>
@@ -261,7 +332,7 @@ const AdminGlossaryManagement = () => {
                         <PaginationItem>
                           <PaginationNext 
                             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-blue-50'}
                           />
                         </PaginationItem>
                       </PaginationContent>
