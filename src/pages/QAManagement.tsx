@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const QAManagement = () => {
   return (
     <AdminLayout>
-      <div className="space-y-4 lg:space-y-6">
+      <div className="space-y-4 lg:space-y-6 mt-16">
         <div className="px-2 lg:px-0">
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Q&A Management</h1>
           <p className="text-gray-600 mt-2 text-sm lg:text-base">Manage Q&A system and admin email notifications</p>
