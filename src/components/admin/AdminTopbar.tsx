@@ -2,9 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Bell, Settings, Search, Menu, X } from 'lucide-react';
+import { LogOut, Bell, Settings, Search, Menu, X, Home } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface AdminTopbarProps {
   isMobileMenuOpen: boolean;
@@ -15,13 +15,16 @@ interface AdminTopbarProps {
 export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: AdminTopbarProps) => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/admin') return 'Dashboard';
+    if (path === '/admin/support-programs') return 'Destek Programları';
     if (path === '/admin/qa-management') return 'Q&A Yönetimi';
     if (path === '/admin/analytics') return 'Analytics';
     if (path === '/admin/email-management') return 'E-posta Yönetimi';
+    if (path === '/admin/glossary-management') return 'Sözlük Yönetimi';
     return 'Admin Panel';
   };
 
@@ -30,6 +33,10 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
       return user.email.slice(0, 2).toUpperCase();
     }
     return 'AD';
+  };
+
+  const handleHomeClick = () => {
+    navigate('/');
   };
 
   return (
@@ -52,8 +59,19 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
         </div>
       </div>
 
-      {/* Right section - Search, notifications, user menu */}
+      {/* Right section - Home, Search, notifications, user menu */}
       <div className="flex items-center space-x-2 lg:space-x-4">
+        {/* Home button */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleHomeClick}
+          className="p-2"
+          title="Ana Sayfaya Dön"
+        >
+          <Home className="h-4 w-4" />
+        </Button>
+
         {/* Search button */}
         <Button variant="ghost" size="sm" className="hidden sm:flex p-2">
           <Search className="h-4 w-4" />
