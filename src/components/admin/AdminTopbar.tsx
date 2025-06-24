@@ -40,7 +40,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
   };
 
   return (
-    <div className="bg-white border-b shadow-sm h-16 flex items-center justify-between px-4 lg:px-6 fixed">
+    <div className="bg-white border-b shadow-sm h-16 flex items-center justify-between px-4 lg:px-6 flex-no-wrap fixed top-0 w-full z-10">
       {/* Left section - Menu toggle and page title */}
       <div className="flex items-center space-x-4">
         {/* Mobile menu toggle */}
