@@ -1,9 +1,8 @@
 import React from 'react';
-import { ArrowRight, Search, Calculator, FileDown } from 'lucide-react';
+import { ArrowRight, Search, Calculator, FileDown, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import ChatBubbleIcon from '@/components/icons/ChatBubbleIcon';
 
 const EnhancedHero = () => {
   const navigate = useNavigate();
@@ -124,7 +123,7 @@ const EnhancedHero = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="rounded-lg bg-purple-500 p-2 text-white">
-                      <ChatBubbleIcon className="h-6 w-6" />
+                      <MessageSquare className="h-6 w-6" />
                     </div>
                     <h3 className="font-semibold text-lg">Soru-Cevap</h3>
                   </div>
