@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Search, BookOpen } from 'lucide-react';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
 
 interface GlossaryTerm {
   id: string;
@@ -128,6 +128,47 @@ const AdminGlossaryManagement = () => {
   };
 
   const totalPages = Math.ceil((termsData?.total || 0) / itemsPerPage);
+
+  // Generate pagination range with ellipsis
+  const generatePaginationRange = () => {
+    const range = [];
+    const showEllipsis = totalPages > 7;
+    
+    if (!showEllipsis) {
+      // Show all pages if 7 or fewer
+      for (let i = 1; i <= totalPages; i++) {
+        range.push(i);
+      }
+    } else {
+      // Always show first page
+      range.push(1);
+      
+      if (currentPage > 4) {
+        range.push('ellipsis-start');
+      }
+      
+      // Show pages around current page
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        if (!range.includes(i)) {
+          range.push(i);
+        }
+      }
+      
+      if (currentPage < totalPages - 3) {
+        range.push('ellipsis-end');
+      }
+      
+      // Always show last page
+      if (!range.includes(totalPages)) {
+        range.push(totalPages);
+      }
+    }
+    
+    return range;
+  };
 
   return (
     <AdminLayout>
@@ -310,33 +351,45 @@ const AdminGlossaryManagement = () => {
 
                 {totalPages > 1 && (
                   <div className="flex justify-center py-6 border-t bg-gray-50">
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious 
-                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-blue-50'}
-                          />
-                        </PaginationItem>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(page)}
-                              isActive={currentPage === page}
-                              className={`cursor-pointer ${currentPage === page ? 'bg-blue-600 text-white hover:bg-blue-700' : 'hover:bg-blue-50'}`}
-                            >
-                              {page}
-                            </PaginationLink>
+                    <div className="flex flex-wrap items-center justify-center gap-1 max-w-full">
+                      <Pagination>
+                        <PaginationContent className="flex-wrap">
+                          <PaginationItem>
+                            <PaginationPrevious 
+                              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                              className={`${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-blue-50'} text-sm`}
+                            />
                           </PaginationItem>
-                        ))}
-                        <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-blue-50'}
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
+                          
+                          {generatePaginationRange().map((page, index) => (
+                            <PaginationItem key={index}>
+                              {page === 'ellipsis-start' || page === 'ellipsis-end' ? (
+                                <PaginationEllipsis />
+                              ) : (
+                                <PaginationLink
+                                  onClick={() => setCurrentPage(page as number)}
+                                  isActive={currentPage === page}
+                                  className={`cursor-pointer text-sm min-w-[36px] ${
+                                    currentPage === page 
+                                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                      : 'hover:bg-blue-50'
+                                  }`}
+                                >
+                                  {page}
+                                </PaginationLink>
+                              )}
+                            </PaginationItem>
+                          ))}
+                          
+                          <PaginationItem>
+                            <PaginationNext 
+                              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                              className={`${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-blue-50'} text-sm`}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
                   </div>
                 )}
               </>
