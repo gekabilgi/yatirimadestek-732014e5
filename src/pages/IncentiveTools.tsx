@@ -27,7 +27,7 @@ const IncentiveTools = () => {
             Teşvik araçlarını kullanarak yeni teşvik sisteminde size uygun olabilecek destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
           </p>
         </div>
-        <div className="mb-2 mt-6 text-center">
+        <div className="mt-6 text-center">
             <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
               <span className="mr-2 h-2 w-2 rounded-full bg-green-500"></span>
               Türkiye Yüzyılı Kalkınma Hamlesi
