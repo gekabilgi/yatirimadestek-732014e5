@@ -81,6 +81,16 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
               >
                 E-posta Yönetimi
               </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
+                  navigate('/admin/glossary-management');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Sözlük Yönetimi
+              </Button>
             </nav>
           </div>
         </div>
@@ -122,6 +132,13 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                   onClick={() => navigate('/admin/email-management')}
                 >
                   E-posta Yönetimi
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => navigate('/admin/glossary-management')}
+                >
+                  Sözlük Yönetimi
                 </Button>
               </nav>
             </div>

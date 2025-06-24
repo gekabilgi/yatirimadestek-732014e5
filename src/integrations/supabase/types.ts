@@ -73,6 +73,30 @@ export type Database = {
           },
         ]
       }
+      glossary_terms: {
+        Row: {
+          created_at: string
+          definition: string
+          id: string
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          definition: string
+          id?: string
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          definition?: string
+          id?: string
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       incentive_supports: {
         Row: {
           created_at: string | null

@@ -14,6 +14,8 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
 import AdminEmailManagement from "./pages/AdminEmailManagement";
+import AdminGlossaryManagement from "./pages/AdminGlossaryManagement";
+import InvestorGlossary from "./pages/InvestorGlossary";
 import ProgramDetails from "./pages/ProgramDetails";
 import NotFound from "./pages/NotFound";
 import SearchSupport from "./pages/SearchSupport";
