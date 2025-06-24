@@ -208,28 +208,7 @@ const AnsweredQuestionsSection = () => {
         </div>
 
         {/* Call to Action */}
-        {filteredQuestions.length > 0 && (
-          <div className="text-center mt-12">
-            <Card className="bg-gradient-to-r from-primary/5 to-green-50 border-primary/20">
-              <CardContent className="py-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Aradığınız cevabı bulamadınız mı?
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Uzmanlarımıza yeni bir soru sorun ve kişiselleştirilmiş yanıt alın.
-                </p>
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                  >
-                    Yeni Soru Sor
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        
       </div>
     </section>
   );
