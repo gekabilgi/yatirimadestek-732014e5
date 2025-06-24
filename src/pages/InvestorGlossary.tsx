@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
 import MainNavbar from '@/components/MainNavbar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GlossaryTerm {
   id: string;
@@ -20,6 +22,7 @@ const InvestorGlossary = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
+  const isMobile = useIsMobile();
 
   // Turkish alphabet
   const turkishAlphabet = ['A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 'Ğ', 'H', 'I', 'İ', 'J', 'K', 'L', 'M', 'N', 'O', 'Ö', 'P', 'R', 'S', 'Ş', 'T', 'U', 'Ü', 'V', 'Y', 'Z'];
@@ -77,6 +80,48 @@ const InvestorGlossary = () => {
   };
 
   const totalPages = Math.ceil((termsData?.total || 0) / itemsPerPage);
+
+  // Generate pagination range optimized for mobile
+  const generatePaginationRange = () => {
+    const range = [];
+    const maxVisible = isMobile ? 3 : 5; // Show fewer pages on mobile
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        range.push(i);
+      }
+    } else {
+      // Always show first page
+      range.push(1);
+      
+      if (currentPage > 3 && !isMobile) {
+        range.push('ellipsis-start');
+      } else if (currentPage > 2 && isMobile) {
+        range.push('ellipsis-start');
+      }
+      
+      // Show current page and neighbors
+      const start = Math.max(2, currentPage - (isMobile ? 0 : 1));
+      const end = Math.min(totalPages - 1, currentPage + (isMobile ? 0 : 1));
+      
+      for (let i = start; i <= end; i++) {
+        if (!range.includes(i)) {
+          range.push(i);
+        }
+      }
+      
+      if (currentPage < totalPages - (isMobile ? 1 : 2)) {
+        range.push('ellipsis-end');
+      }
+      
+      // Always show last page if not already included
+      if (!range.includes(totalPages) && totalPages > 1) {
+        range.push(totalPages);
+      }
+    }
+    
+    return range;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -182,45 +227,52 @@ const InvestorGlossary = () => {
                 </div>
               )}
 
-              {/* Pagination */}
+              {/* Compact Mobile Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center mt-8">
                   <Pagination>
-                    <PaginationContent>
+                    <PaginationContent className="gap-1">
                       <PaginationItem>
-                        <PaginationPrevious 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                        />
+                          disabled={currentPage === 1}
+                          className={`h-8 ${isMobile ? 'w-8 px-0' : 'px-2'}`}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          {!isMobile && <span className="ml-1">Önceki</span>}
+                        </Button>
                       </PaginationItem>
-                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        let page;
-                        if (totalPages <= 5) {
-                          page = i + 1;
-                        } else if (currentPage <= 3) {
-                          page = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          page = totalPages - 4 + i;
-                        } else {
-                          page = currentPage - 2 + i;
-                        }
-                        return (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(page)}
-                              isActive={currentPage === page}
-                              className="cursor-pointer"
+                      
+                      {generatePaginationRange().map((page, index) => (
+                        <PaginationItem key={index}>
+                          {page === 'ellipsis-start' || page === 'ellipsis-end' ? (
+                            <PaginationEllipsis className="h-8 w-8" />
+                          ) : (
+                            <Button
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page as number)}
+                              className="h-8 w-8 px-0"
                             >
                               {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
+                            </Button>
+                          )}
+                        </PaginationItem>
+                      ))}
+                      
                       <PaginationItem>
-                        <PaginationNext 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                        />
+                          disabled={currentPage === totalPages}
+                          className={`h-8 ${isMobile ? 'w-8 px-0' : 'px-2'}`}
+                        >
+                          {!isMobile && <span className="mr-1">Sonraki</span>}
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
                       </PaginationItem>
                     </PaginationContent>
                   </Pagination>
