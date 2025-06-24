@@ -344,7 +344,7 @@ const QnaQuestionManagement = () => {
   console.log('🎨 Rendering component with questions:', questions.length);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-16">
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
