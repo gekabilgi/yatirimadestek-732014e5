@@ -55,6 +55,16 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                 variant="ghost"
                 className="w-full justify-start"
                 onClick={() => {
+                  navigate('/admin/support-programs');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Destek Programları
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
                   navigate('/admin/qa-management');
                   setIsMobileMenuOpen(false);
                 }}
@@ -111,6 +121,13 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                   onClick={() => navigate('/admin')}
                 >
                   Dashboard
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => navigate('/admin/support-programs')}
+                >
+                  Destek Programları
                 </Button>
                 <Button
                   variant="ghost"

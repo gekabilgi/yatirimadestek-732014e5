@@ -10,6 +10,7 @@ import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import Index from "./pages/Index";
 import IncentiveTools from "./pages/IncentiveTools";
 import Admin from "./pages/Admin";
+import AdminSupportPrograms from "./pages/AdminSupportPrograms";
 import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
@@ -63,6 +64,11 @@ const App = () => {
               <Route path="/admin" element={
                 <ProtectedAdminRoute>
                   <Admin />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/support-programs" element={
+                <ProtectedAdminRoute>
+                  <AdminSupportPrograms />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/analytics" element={
