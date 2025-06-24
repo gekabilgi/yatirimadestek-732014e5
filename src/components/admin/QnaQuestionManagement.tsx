@@ -614,7 +614,7 @@ const QnaQuestionManagement = () => {
           )}
         </DialogContent>
       </Dialog>
-   
+    
   );
 };
 
