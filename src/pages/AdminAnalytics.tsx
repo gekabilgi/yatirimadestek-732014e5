@@ -6,7 +6,7 @@ import { BarChart3, Users, FileText, TrendingUp } from 'lucide-react';
 const AdminAnalytics = () => {
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 mt-16">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Analytics Dashboard</h2>
           <p className="text-gray-600">Monitor support program performance and user engagement</p>
