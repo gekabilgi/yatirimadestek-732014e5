@@ -181,7 +181,7 @@ const AdminGlossaryManagement = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 mt-16">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border">
           <div className="flex items-center justify-between">
