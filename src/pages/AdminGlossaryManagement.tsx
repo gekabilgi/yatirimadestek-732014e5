@@ -31,9 +31,11 @@ const AdminGlossaryManagement = () => {
   const queryClient = useQueryClient();
 
   // Fetch glossary terms with search and pagination
-  const { data: termsData, isLoading } = useQuery({
+  const { data: termsData, isLoading, error } = useQuery({
     queryKey: ['admin-glossary-terms', searchQuery, currentPage],
     queryFn: async () => {
+      console.log('Fetching glossary terms...', { searchQuery, currentPage });
+      
       let query = supabase
         .from('glossary_terms')
         .select('*', { count: 'exact' });
@@ -47,6 +49,8 @@ const AdminGlossaryManagement = () => {
         .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
 
       const { data, error, count } = await query;
+      console.log('Query result:', { data, error, count });
+      
       if (error) throw error;
       return { terms: data || [], total: count || 0 };
     },
@@ -135,19 +139,16 @@ const AdminGlossaryManagement = () => {
     const showEllipsis = totalPages > 7;
     
     if (!showEllipsis) {
-      // Show all pages if 7 or fewer
       for (let i = 1; i <= totalPages; i++) {
         range.push(i);
       }
     } else {
-      // Always show first page
       range.push(1);
       
       if (currentPage > 4) {
         range.push('ellipsis-start');
       }
       
-      // Show pages around current page
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
       
@@ -161,7 +162,6 @@ const AdminGlossaryManagement = () => {
         range.push('ellipsis-end');
       }
       
-      // Always show last page
       if (!range.includes(totalPages)) {
         range.push(totalPages);
       }
@@ -169,6 +169,15 @@ const AdminGlossaryManagement = () => {
     
     return range;
   };
+
+  // Debug logging
+  console.log('Component render:', { 
+    termsData, 
+    isLoading, 
+    error, 
+    searchQuery, 
+    currentPage 
+  });
 
   return (
     <AdminLayout>
@@ -303,6 +312,10 @@ const AdminGlossaryManagement = () => {
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p className="mt-2 text-gray-600">Yükleniyor...</p>
               </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-red-600">Hata: {error.message}</p>
+              </div>
             ) : (
               <>
                 <div className="overflow-x-auto">
@@ -315,36 +328,44 @@ const AdminGlossaryManagement = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {termsData?.terms.map((term, index) => (
-                        <TableRow key={term.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <TableCell className="font-medium text-gray-900 max-w-xs">
-                            <div className="truncate">{term.term}</div>
-                          </TableCell>
-                          <TableCell className="text-gray-600 max-w-md">
-                            <div className="truncate">{term.definition}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(term)}
-                                className="h-8 w-8 p-0 hover:bg-blue-100"
-                              >
-                                <Edit className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(term.id)}
-                                className="h-8 w-8 p-0 hover:bg-red-100"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
+                      {termsData?.terms && termsData.terms.length > 0 ? (
+                        termsData.terms.map((term, index) => (
+                          <TableRow key={term.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            <TableCell className="font-medium text-gray-900 max-w-xs">
+                              <div className="truncate" title={term.term}>{term.term}</div>
+                            </TableCell>
+                            <TableCell className="text-gray-600 max-w-md">
+                              <div className="truncate" title={term.definition}>{term.definition}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEdit(term)}
+                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                >
+                                  <Edit className="h-4 w-4 text-blue-600" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(term.id)}
+                                  className="h-8 w-8 p-0 hover:bg-red-100"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center py-12">
+                            <p className="text-gray-600">Hiç terim bulunamadı.</p>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </div>
