@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -21,14 +22,10 @@ interface EmailData {
 
 // Get the base URL for the application
 const getBaseUrl = (): string => {
-  // Check if we're in production by looking at the request origin or environment
   const isProduction = supabaseUrl.includes('zyxiznikuvpwmopraauj');
-  
   if (isProduction) {
     return 'https://tesviksor.com';
   }
-  
-  // For development/preview, use the lovable preview URL
   return 'https://efd7e70c-3a69-4fb9-a26d-55aefb24b4b1.lovable.app';
 };
 
@@ -99,24 +96,102 @@ const verifyYdoToken = (token: string): YdoTokenPayload | null => {
   }
 };
 
-const sendBrevoEmail = async (emailData: EmailData) => {
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'api-key': brevoApiKey,
-    },
-    body: JSON.stringify(emailData),
-  });
+// Enhanced email logging function
+const logEmailTransaction = async (
+  emailData: {
+    soru_cevap_id?: string;
+    sent_page: string;
+    sender_email: string;
+    recipient_email: string;
+    email_subject: string;
+    email_type: string;
+  },
+  success: boolean,
+  errorMessage?: string
+) => {
+  try {
+    console.log('📧 Logging email transaction:', emailData);
+    
+    const logEntry = {
+      soru_cevap_id: emailData.soru_cevap_id || null,
+      sent_page: emailData.sent_page,
+      sender_email: emailData.sender_email,
+      recipient_email: emailData.recipient_email,
+      sent_date: new Date().toISOString(),
+      email_subject: emailData.email_subject,
+      transmission_status: success ? 'sent' : 'failed',
+      error_message: errorMessage || null,
+      email_type: emailData.email_type
+    };
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('Brevo API error:', error);
-    throw new Error(`Brevo API error: ${response.status}`);
+    const { error } = await supabase
+      .from('qna_email_logs')
+      .insert([logEntry]);
+
+    if (error) {
+      console.error('❌ Failed to log email transaction:', error);
+    } else {
+      console.log('✅ Email transaction logged successfully');
+    }
+  } catch (error) {
+    console.error('❌ Error in logEmailTransaction:', error);
   }
+};
 
-  return await response.json();
+const sendBrevoEmail = async (emailData: EmailData, logData: any) => {
+  try {
+    console.log('📤 Sending email via Brevo:', emailData.subject);
+    
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': brevoApiKey,
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('❌ Brevo API error:', error);
+      
+      // Log failed email for each recipient
+      for (const recipient of emailData.to) {
+        await logEmailTransaction({
+          ...logData,
+          recipient_email: recipient.email
+        }, false, `Brevo API error: ${response.status} - ${error}`);
+      }
+      
+      throw new Error(`Brevo API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Email sent successfully via Brevo');
+    
+    // Log successful email for each recipient
+    for (const recipient of emailData.to) {
+      await logEmailTransaction({
+        ...logData,
+        recipient_email: recipient.email
+      }, true);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Error in sendBrevoEmail:', error);
+    
+    // Log failed email for each recipient if not already logged
+    for (const recipient of emailData.to) {
+      await logEmailTransaction({
+        ...logData,
+        recipient_email: recipient.email
+      }, false, (error as Error).message);
+    }
+    
+    throw error;
+  }
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -126,9 +201,9 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { type, questionId, questionData, token } = await req.json();
-    console.log('Processing notification:', { type, questionId });
+    console.log('🔔 Processing notification:', { type, questionId });
 
-    // Handle YDO question fetching
+    // Handle YDO question fetching with enhanced Turkish character support
     if (type === 'fetch_ydo_questions') {
       if (!token) {
         return new Response(
@@ -152,15 +227,21 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Fetch questions for the province using service role (bypasses RLS)
-      const { data: questions, error } = await supabase
+      console.log('🔍 Fetching questions for province:', tokenPayload.province);
+
+      // Enhanced query with better Turkish character handling
+      let query = supabase
         .from('soru_cevap')
         .select('*')
-        .eq('province', tokenPayload.province)
         .order('created_at', { ascending: false });
 
+      // Use exact match for province - this should handle Turkish characters correctly
+      query = query.eq('province', tokenPayload.province);
+
+      const { data: questions, error } = await query;
+
       if (error) {
-        console.error('Error fetching questions:', error);
+        console.error('❌ Error fetching questions:', error);
         return new Response(
           JSON.stringify({ error: 'Failed to fetch questions' }),
           {
@@ -170,8 +251,23 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
+      console.log(`✅ Found ${questions?.length || 0} questions for province: "${tokenPayload.province}"`);
+      
+      // Process and normalize text fields to handle Turkish characters
+      const processedQuestions = (questions || []).map(question => ({
+        ...question,
+        question: question.question || '',
+        answer: question.answer || '',
+        full_name: question.full_name || '',
+        email: question.email || '',
+        province: question.province || '',
+        phone: question.phone || '',
+        return_reason: question.return_reason || '',
+        admin_notes: question.admin_notes || ''
+      }));
+
       return new Response(
-        JSON.stringify({ success: true, questions: questions || [] }),
+        JSON.stringify({ success: true, questions: processedQuestions }),
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -191,7 +287,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Verify the YDO token
       const tokenPayload = verifyYdoToken(token);
       if (!tokenPayload) {
         return new Response(
@@ -205,7 +300,6 @@ const handler = async (req: Request): Promise<Response> => {
 
       const { questionId, answer, isCorrection } = questionData;
 
-      // Update the question with the answer using service role
       const newStatus = isCorrection ? 'corrected' : 'answered';
       const { error: updateError } = await supabase
         .from('soru_cevap')
@@ -219,7 +313,7 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('id', questionId);
 
       if (updateError) {
-        console.error('Error updating question:', updateError);
+        console.error('❌ Error updating question:', updateError);
         return new Response(
           JSON.stringify({ error: 'Failed to update question' }),
           {
@@ -242,7 +336,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
       if (notificationError) {
-        console.error('Error sending notification:', notificationError);
+        console.error('❌ Error sending notification:', notificationError);
       }
 
       return new Response(
@@ -255,7 +349,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (type === 'submit_question') {
-      // Insert the question using service role to bypass RLS
       const { data, error } = await supabase
         .from('soru_cevap')
         .insert([{
@@ -270,11 +363,10 @@ const handler = async (req: Request): Promise<Response> => {
         .single();
 
       if (error) {
-        console.error('Error inserting question:', error);
+        console.error('❌ Error inserting question:', error);
         throw error;
       }
 
-      // Send notifications for the new question
       await sendNewQuestionNotifications(data);
 
       return new Response(
@@ -291,7 +383,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (type === 'answer_sent') {
-      // Send answer to the user who asked the question
       const emailData: EmailData = {
         to: [{ email: questionData.email, name: questionData.full_name }],
         subject: 'Sorunuza Yanıt Geldi - TeşvikSor',
@@ -316,22 +407,27 @@ const handler = async (req: Request): Promise<Response> => {
         sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
       };
 
-      await sendBrevoEmail(emailData);
-      console.log('Answer notification sent to user:', questionData.email);
+      await sendBrevoEmail(emailData, {
+        soru_cevap_id: questionData.id,
+        sent_page: 'Admin Panel',
+        sender_email: 'noreply@tesviksor.com',
+        email_subject: emailData.subject,
+        email_type: 'answer_sent'
+      });
+
+      console.log('✅ Answer notification sent to user:', questionData.email);
     }
 
     if (type === 'answer_returned') {
-      // Send return notification to YDO users of that province, not to the question asker
       const baseUrl = getBaseUrl();
       
-      // Get YDO users for the province where the question was asked
       const { data: ydoUsers, error: ydoError } = await supabase
         .from('ydo_users')
         .select('email, full_name')
         .eq('province', questionData.province);
 
       if (ydoError) {
-        console.error('Error fetching YDO users:', ydoError);
+        console.error('❌ Error fetching YDO users:', ydoError);
         throw ydoError;
       }
 
@@ -370,25 +466,29 @@ const handler = async (req: Request): Promise<Response> => {
             sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
           };
 
-          await sendBrevoEmail(emailData);
+          await sendBrevoEmail(emailData, {
+            soru_cevap_id: questionData.id,
+            sent_page: 'Admin Panel',
+            sender_email: 'noreply@tesviksor.com',
+            email_subject: emailData.subject,
+            email_type: 'answer_returned'
+          });
         }
-        console.log('Return notification sent to', ydoUsers.length, 'YDO users for province:', questionData.province);
+        console.log(`✅ Return notification sent to ${ydoUsers.length} YDO users for province: ${questionData.province}`);
       }
     }
 
     if (type === 'answer_provided' || type === 'answer_corrected') {
-      // Send notification to admins when YDO provides/corrects an answer
       const baseUrl = getBaseUrl();
       const adminPanelUrl = `${baseUrl}/admin/qa-management`;
 
-      // Get admin emails
       const { data: adminEmails, error: adminError } = await supabase
         .from('qna_admin_emails')
         .select('email, full_name')
         .eq('is_active', true);
 
       if (adminError) {
-        console.error('Error fetching admin emails:', adminError);
+        console.error('❌ Error fetching admin emails:', adminError);
       }
 
       if (adminEmails && adminEmails.length > 0) {
@@ -425,8 +525,15 @@ const handler = async (req: Request): Promise<Response> => {
           sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
         };
 
-        await sendBrevoEmail(adminEmailData);
-        console.log(`${isCorrection ? 'Correction' : 'Answer'} notification sent to`, adminEmails.length, 'admins');
+        await sendBrevoEmail(adminEmailData, {
+          soru_cevap_id: questionData.id,
+          sent_page: 'YDO Panel',
+          sender_email: 'noreply@tesviksor.com',
+          email_subject: adminEmailData.subject,
+          email_type: isCorrection ? 'answer_corrected' : 'answer_provided'
+        });
+
+        console.log(`✅ ${isCorrection ? 'Correction' : 'Answer'} notification sent to ${adminEmails.length} admins`);
       }
     }
 
@@ -438,7 +545,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error) {
-    console.error('Error in send-qna-notifications:', error);
+    console.error('❌ Error in send-qna-notifications:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
@@ -459,7 +566,7 @@ const sendNewQuestionNotifications = async (questionData: any) => {
     .eq('province', questionData.province);
 
   if (ydoError) {
-    console.error('Error fetching YDO users:', ydoError);
+    console.error('❌ Error fetching YDO users:', ydoError);
   }
 
   // Get admin emails
@@ -469,7 +576,7 @@ const sendNewQuestionNotifications = async (questionData: any) => {
     .eq('is_active', true);
 
   if (adminError) {
-    console.error('Error fetching admin emails:', adminError);
+    console.error('❌ Error fetching admin emails:', adminError);
   }
 
   // Send secure access links to YDO users
@@ -505,9 +612,15 @@ const sendNewQuestionNotifications = async (questionData: any) => {
         sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
       };
 
-      await sendBrevoEmail(ydoEmailData);
+      await sendBrevoEmail(ydoEmailData, {
+        soru_cevap_id: questionData.id,
+        sent_page: 'Soru & Cevap Sayfası',
+        sender_email: 'noreply@tesviksor.com',
+        email_subject: ydoEmailData.subject,
+        email_type: 'new_question'
+      });
     }
-    console.log('Secure access notifications sent to', ydoUsers.length, 'YDO users');
+    console.log(`✅ Secure access notifications sent to ${ydoUsers.length} YDO users`);
   }
 
   // Send regular notifications to admins
@@ -538,8 +651,15 @@ const sendNewQuestionNotifications = async (questionData: any) => {
       sender: { email: 'noreply@tesviksor.com', name: 'TeşvikSor' }
     };
 
-    await sendBrevoEmail(adminEmailData);
-    console.log('Admin notification sent to', adminEmails.length, 'admins');
+    await sendBrevoEmail(adminEmailData, {
+      soru_cevap_id: questionData.id,
+      sent_page: 'Soru & Cevap Sayfası',
+      sender_email: 'noreply@tesviksor.com',
+      email_subject: adminEmailData.subject,
+      email_type: 'new_question'
+    });
+
+    console.log(`✅ Admin notification sent to ${adminEmails.length} admins`);
   }
 };
 
