@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import MainNavbar from '@/components/MainNavbar';
 
 interface GlossaryTerm {
   id: string;
@@ -80,6 +80,9 @@ const InvestorGlossary = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Main Navigation */}
+      <MainNavbar />
+      
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

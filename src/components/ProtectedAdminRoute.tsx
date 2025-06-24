@@ -10,6 +10,8 @@ interface ProtectedAdminRouteProps {
 const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
   const { user, isAdmin, loading } = useAuth();
 
+  console.log('ProtectedAdminRoute check:', { user: !!user, isAdmin, loading });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -19,9 +21,11 @@ const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) =
   }
 
   if (!user || !isAdmin) {
+    console.log('Access denied - redirecting to admin login');
     return <Navigate to="/admin/login" replace />;
   }
 
+  console.log('Access granted - rendering protected content');
   return <>{children}</>;
 };
 
