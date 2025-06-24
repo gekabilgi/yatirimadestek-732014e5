@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { ArrowRight, Search, Calculator, FileDown } from 'lucide-react';
+import { ArrowRight, Search, Calculator, FileDown, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -124,10 +123,7 @@ const EnhancedHero = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="rounded-lg bg-purple-500 p-2 text-white">
-                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
-                      </svg>
+                      <MessageSquare className="h-6 w-6" />
                     </div>
                     <h3 className="font-semibold text-lg">Soru-Cevap</h3>
                   </div>
