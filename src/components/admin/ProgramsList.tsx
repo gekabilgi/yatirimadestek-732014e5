@@ -119,7 +119,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
 
   if (loading) {
     return (
-      <Card>
+      <Card className="space-y-6 mt-16">
         <CardHeader>
           <CardTitle>Existing Support Programs</CardTitle>
         </CardHeader>
@@ -131,7 +131,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
   }
 
   return (
-    <Card>
+    <Card className="space-y-6 mt-16">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Existing Support Programs ({programs.length})</CardTitle>
