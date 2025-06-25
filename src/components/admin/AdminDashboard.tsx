@@ -1,15 +1,17 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Users, FileText, MessageSquare, TrendingUp, Eye, Clock, UserPlus, Mail, BookOpen, CheckCircle } from 'lucide-react';
+import { Users, FileText, MessageSquare, TrendingUp, Eye, Clock, UserPlus, Mail, BookOpen, Activity, MousePointer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export const AdminDashboard = () => {
   // Fetch Google Analytics data
-  const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery({
+  const { data: analyticsData, isLoading: isAnalyticsLoading, error: analyticsError } = useQuery({
     queryKey: ['google-analytics'],
     queryFn: async () => {
       console.log('Fetching Google Analytics data...');
@@ -214,6 +216,13 @@ export const AdminDashboard = () => {
     refetchInterval: 60000 // Refresh every minute
   });
 
+  // Format engagement rate as percentage
+  const formatEngagementRate = (rate: string) => {
+    const numericRate = parseFloat(rate);
+    if (isNaN(numericRate)) return '0%';
+    return `${(numericRate * 100).toFixed(1)}%`;
+  };
+
   // Process analytics data for charts
   const pageViewsData = React.useMemo(() => {
     if (!analyticsData?.dailyPageViews) return [];
@@ -224,22 +233,6 @@ export const AdminDashboard = () => {
       return {
         name: dayNames[date.getDay()],
         views: item.views
-      };
-    });
-  }, [analyticsData]);
-
-  const userEngagementData = React.useMemo(() => {
-    if (!analyticsData?.monthlyUsers) return [];
-    
-    const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
-                       'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    
-    return analyticsData.monthlyUsers.map((item: any) => {
-      const year = item.month.slice(0, 4);
-      const month = parseInt(item.month.slice(4, 6)) - 1;
-      return {
-        name: monthNames[month],
-        users: item.users
       };
     });
   }, [analyticsData]);
@@ -256,40 +249,87 @@ export const AdminDashboard = () => {
     }));
   }, [analyticsData]);
 
-  const stats = [
+  // Google Analytics stat cards
+  const gaStats = [
     {
-      title: 'Toplam Ziyaretçi',
-      value: analyticsData?.totalUsers || statsData?.totalUsers?.toString() || '0',
-      change: '+12.5%',
-      icon: Users,
+      title: 'Aktif Kullanıcılar',
+      subtitle: 'Şu anda',
+      value: analyticsData?.activeUsers || '0',
+      icon: Activity,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      loading: isAnalyticsLoading,
+    },
+    {
+      title: 'Yeni Kullanıcılar',
+      subtitle: 'Son 7 gün',
+      value: analyticsData?.newUsers || '0',
+      icon: UserPlus,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      loading: isAnalyticsLoading,
+    },
+    {
+      title: 'Oturumlar',
+      subtitle: 'Son 7 gün',
+      value: analyticsData?.sessions || '0',
+      icon: Users,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      loading: isAnalyticsLoading,
     },
     {
       title: 'Sayfa Görüntüleme',
-      value: analyticsData?.totalPageViews || '0',
-      change: '+8.2%',
+      subtitle: 'Son 7 gün',
+      value: analyticsData?.pageViews || '0',
       icon: Eye,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      loading: isAnalyticsLoading,
     },
     {
+      title: 'Etkileşim Oranı',
+      subtitle: 'Son 7 gün',
+      value: formatEngagementRate(analyticsData?.engagementRate || '0'),
+      icon: MousePointer,
+      color: 'text-pink-600',
+      bgColor: 'bg-pink-50',
+      loading: isAnalyticsLoading,
+    },
+  ];
+
+  // Database stats
+  const dbStats = [
+    {
       title: 'Destek Programları',
+      subtitle: 'Toplam',
       value: statsData?.totalPrograms?.toString() || '0',
-      change: '+3',
       icon: FileText,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      loading: false,
     },
     {
       title: 'Toplam Sorular',
+      subtitle: 'Q&A sisteminde',
       value: statsData?.totalQuestions?.toString() || '0',
-      change: '+15',
       icon: MessageSquare,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      loading: false,
+    },
+    {
+      title: 'Sözlük Terimleri',
+      subtitle: 'Toplam',
+      value: statsData?.glossaryTerms?.toString() || '0',
+      icon: BookOpen,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
+      loading: false,
     },
   ];
+
+  const allStats = [...gaStats, ...dbStats];
 
   const formatTimeAgo = (timeString: string) => {
     const now = new Date();
@@ -311,23 +351,27 @@ export const AdminDashboard = () => {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-2">Admin panel ana sayfası ve analitik veriler</p>
+        {analyticsError && (
+          <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600 text-sm">Google Analytics verileri yüklenirken hata oluştu: {analyticsError.message}</p>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index}>
+        {allStats.map((stat, index) => (
+          <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {isAnalyticsLoading && (index === 0 || index === 1) ? 'Yükleniyor...' : stat.value}
-                  </p>
-                  <p className="text-sm text-green-600 flex items-center mt-1">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    {stat.change}
-                  </p>
+                  <p className="text-xs text-gray-500 mb-2">{stat.subtitle}</p>
+                  {stat.loading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  )}
                 </div>
                 <div className={`p-3 rounded-lg ${stat.bgColor}`}>
                   <stat.icon className={`h-6 w-6 ${stat.color}`} />
@@ -344,113 +388,107 @@ export const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Haftalık Sayfa Görüntüleme</CardTitle>
-            <CardDescription>Son 7 günün sayfa görüntüleme verileri</CardDescription>
+            <CardDescription>Son 7 günün sayfa görüntüleme verileri (Google Analytics)</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={pageViewsData.length > 0 ? pageViewsData : [
-                { name: 'Yükleniyor...', views: 0 }
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="views" fill="#3B82F6" />
-              </BarChart>
-            </ResponsiveContainer>
+            {isAnalyticsLoading ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-64 w-full" />
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={pageViewsData.length > 0 ? pageViewsData : [
+                  { name: 'Veri yok', views: 0 }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="views" fill="#3B82F6" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        {/* User Engagement Chart */}
+        {/* Top Pages Pie Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Kullanıcı Katılımı</CardTitle>
-            <CardDescription>Aylık aktif kullanıcı sayısı</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={userEngagementData.length > 0 ? userEngagementData : [
-                { name: 'Yükleniyor...', users: 0 }
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="users" stroke="#10B981" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Top Pages Pie Chart */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
             <CardTitle>Popüler Sayfalar</CardTitle>
-            <CardDescription>En çok ziyaret edilen sayfalar</CardDescription>
+            <CardDescription>En çok ziyaret edilen sayfalar (Son 7 gün)</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={topPagesData.length > 0 ? topPagesData : [
-                    { name: 'Yükleniyor...', value: 100, color: '#0088FE' }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, value }) => topPagesData.length > 0 ? `${name} ${value}%` : name}
-                >
-                  {(topPagesData.length > 0 ? topPagesData : [{ color: '#0088FE' }]).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Son Aktiviteler</CardTitle>
-            <CardDescription>Sistem üzerindeki son işlemler</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 max-h-80 overflow-y-auto">
-              {activitiesData && activitiesData.length > 0 ? (
-                activitiesData.map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className={`p-2 rounded-full ${
-                      activity.type === 'create' ? 'bg-green-100 text-green-600' :
-                      activity.type === 'update' ? 'bg-blue-100 text-blue-600' :
-                      activity.type === 'user' ? 'bg-purple-100 text-purple-600' :
-                      'bg-orange-100 text-orange-600'
-                    }`}>
-                      <activity.icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                      <p className="text-xs text-gray-500 truncate">{activity.detail}</p>
-                      <p className="text-xs text-gray-400">{formatTimeAgo(activity.time)}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">Henüz aktivite bulunmuyor</p>
+            {isAnalyticsLoading ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-64 w-full rounded-full" />
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={topPagesData.length > 0 ? topPagesData : [
+                      { name: 'Veri yok', value: 100, color: '#0088FE' }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, value }) => topPagesData.length > 0 ? `${name} ${value}%` : name}
+                  >
+                    {(topPagesData.length > 0 ? topPagesData : [{ color: '#0088FE' }]).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Son Aktiviteler</CardTitle>
+          <CardDescription>Sistem üzerindeki son işlemler</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4 max-h-80 overflow-y-auto">
+            {activitiesData && activitiesData.length > 0 ? (
+              activitiesData.map((activity, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div className={`p-2 rounded-full ${
+                    activity.type === 'create' ? 'bg-green-100 text-green-600' :
+                    activity.type === 'update' ? 'bg-blue-100 text-blue-600' :
+                    activity.type === 'user' ? 'bg-purple-100 text-purple-600' :
+                    'bg-orange-100 text-orange-600'
+                  }`}>
+                    <activity.icon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                    <p className="text-xs text-gray-500 truncate">{activity.detail}</p>
+                    <p className="text-xs text-gray-400">{formatTimeAgo(activity.time)}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500">Henüz aktivite bulunmuyor</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

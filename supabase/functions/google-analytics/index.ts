@@ -58,10 +58,14 @@ async function createJWT(credentials: GoogleAnalyticsCredentials): Promise<strin
 
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
   
-  // Import the private key
+  // Convert PEM private key to binary format
+  const pemKey = credentials.private_key.replace(/\\n/g, '\n');
+  const pemContents = pemKey.replace(/-----BEGIN PRIVATE KEY-----\n/, '').replace(/\n-----END PRIVATE KEY-----/, '').replace(/\n/g, '');
+  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  
   const privateKey = await crypto.subtle.importKey(
     'pkcs8',
-    new TextEncoder().encode(credentials.private_key.replace(/\\n/g, '\n')),
+    binaryKey,
     {
       name: 'RSASSA-PKCS1-v1_5',
       hash: 'SHA-256',
@@ -87,102 +91,141 @@ async function createJWT(credentials: GoogleAnalyticsCredentials): Promise<strin
 async function fetchAnalyticsData(accessToken: string, propertyId: string) {
   const baseUrl = 'https://analyticsdata.googleapis.com/v1beta';
   
-  // Get total users (last 30 days)
-  const usersResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
-      metrics: [{ name: 'totalUsers' }],
-    }),
-  });
+  try {
+    // Get active users (real-time)
+    const activeUsersResponse = await fetch(`${baseUrl}/${propertyId}:runRealtimeReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        metrics: [{ name: 'activeUsers' }],
+      }),
+    });
 
-  // Get page views (last 30 days)
-  const pageViewsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
-      metrics: [{ name: 'screenPageViews' }],
-    }),
-  });
+    // Get new users (last 7 days)
+    const newUsersResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        metrics: [{ name: 'newUsers' }],
+      }),
+    });
 
-  // Get daily page views (last 7 days)
-  const dailyPageViewsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-      dimensions: [{ name: 'date' }],
-      metrics: [{ name: 'screenPageViews' }],
-      orderBys: [{ dimension: { dimensionName: 'date' } }],
-    }),
-  });
+    // Get sessions (last 7 days)
+    const sessionsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        metrics: [{ name: 'sessions' }],
+      }),
+    });
 
-  // Get top pages
-  const topPagesResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
-      dimensions: [{ name: 'pageTitle' }],
-      metrics: [{ name: 'screenPageViews' }],
-      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-      limit: 5,
-    }),
-  });
+    // Get page views (last 7 days)
+    const pageViewsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        metrics: [{ name: 'screenPageViews' }],
+      }),
+    });
 
-  // Get monthly users (last 6 months)
-  const monthlyUsersResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      dateRanges: [{ startDate: '6monthsAgo', endDate: 'today' }],
-      dimensions: [{ name: 'yearMonth' }],
-      metrics: [{ name: 'activeUsers' }],
-      orderBys: [{ dimension: { dimensionName: 'yearMonth' } }],
-    }),
-  });
+    // Get engagement rate (last 7 days)
+    const engagementResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        metrics: [{ name: 'engagementRate' }],
+      }),
+    });
 
-  const [usersData, pageViewsData, dailyPageViewsData, topPagesData, monthlyUsersData] = await Promise.all([
-    usersResponse.json(),
-    pageViewsResponse.json(),
-    dailyPageViewsResponse.json(),
-    topPagesResponse.json(),
-    monthlyUsersResponse.json(),
-  ]);
+    // Get daily page views for trend (last 7 days)
+    const dailyPageViewsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'screenPageViews' }],
+        orderBys: [{ dimension: { dimensionName: 'date' } }],
+      }),
+    });
 
-  return {
-    totalUsers: usersData.rows?.[0]?.metricValues?.[0]?.value || '0',
-    totalPageViews: pageViewsData.rows?.[0]?.metricValues?.[0]?.value || '0',
-    dailyPageViews: dailyPageViewsData.rows?.map((row: any) => ({
-      date: row.dimensionValues[0].value,
-      views: parseInt(row.metricValues[0].value)
-    })) || [],
-    topPages: topPagesData.rows?.map((row: any) => ({
-      title: row.dimensionValues[0].value,
-      views: parseInt(row.metricValues[0].value)
-    })) || [],
-    monthlyUsers: monthlyUsersData.rows?.map((row: any) => ({
-      month: row.dimensionValues[0].value,
-      users: parseInt(row.metricValues[0].value)
-    })) || [],
-  };
+    // Get top pages
+    const topPagesResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        dimensions: [{ name: 'pageTitle' }],
+        metrics: [{ name: 'screenPageViews' }],
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 5,
+      }),
+    });
+
+    const [
+      activeUsersData,
+      newUsersData,
+      sessionsData,
+      pageViewsData,
+      engagementData,
+      dailyPageViewsData,
+      topPagesData
+    ] = await Promise.all([
+      activeUsersResponse.json(),
+      newUsersResponse.json(),
+      sessionsResponse.json(),
+      pageViewsResponse.json(),
+      engagementResponse.json(),
+      dailyPageViewsResponse.json(),
+      topPagesResponse.json(),
+    ]);
+
+    console.log('GA4 API responses received successfully');
+
+    return {
+      activeUsers: activeUsersData.rows?.[0]?.metricValues?.[0]?.value || '0',
+      newUsers: newUsersData.rows?.[0]?.metricValues?.[0]?.value || '0',
+      sessions: sessionsData.rows?.[0]?.metricValues?.[0]?.value || '0',
+      pageViews: pageViewsData.rows?.[0]?.metricValues?.[0]?.value || '0',
+      engagementRate: engagementData.rows?.[0]?.metricValues?.[0]?.value || '0',
+      dailyPageViews: dailyPageViewsData.rows?.map((row: any) => ({
+        date: row.dimensionValues[0].value,
+        views: parseInt(row.metricValues[0].value)
+      })) || [],
+      topPages: topPagesData.rows?.map((row: any) => ({
+        title: row.dimensionValues[0].value,
+        views: parseInt(row.metricValues[0].value)
+      })) || [],
+    };
+  } catch (error) {
+    console.error('Error fetching GA4 data:', error);
+    throw error;
+  }
 }
 
 serve(async (req) => {
@@ -198,12 +241,13 @@ serve(async (req) => {
       throw new Error('Missing Google Analytics credentials or property ID');
     }
 
+    console.log('Parsing GA credentials...');
     const credentials: GoogleAnalyticsCredentials = JSON.parse(credentialsString);
+    
     console.log('Getting access token...');
-    
     const accessToken = await getAccessToken(credentials);
-    console.log('Fetching analytics data...');
     
+    console.log('Fetching analytics data...');
     const analyticsData = await fetchAnalyticsData(accessToken, propertyId);
     
     return new Response(JSON.stringify(analyticsData), {
