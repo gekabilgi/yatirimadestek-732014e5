@@ -34,6 +34,10 @@ async function getAccessToken(credentials: GoogleAnalyticsCredentials): Promise<
     }),
   });
 
+  if (!response.ok) {
+    throw new Error(`Failed to get access token: ${response.status} ${response.statusText}`);
+  }
+
   const data = await response.json();
   return data.access_token;
 }
@@ -103,6 +107,10 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
         metrics: [{ name: 'activeUsers' }],
       }),
     });
+
+    if (!activeUsersResponse.ok) {
+      console.error('Failed to fetch active users:', activeUsersResponse.status, activeUsersResponse.statusText);
+    }
 
     // Get new users (last 7 days)
     const newUsersResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
@@ -196,28 +204,28 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       dailyPageViewsData,
       topPagesData
     ] = await Promise.all([
-      activeUsersResponse.json(),
-      newUsersResponse.json(),
-      sessionsResponse.json(),
-      pageViewsResponse.json(),
-      engagementResponse.json(),
-      dailyPageViewsResponse.json(),
-      topPagesResponse.json(),
+      activeUsersResponse.ok ? activeUsersResponse.json() : null,
+      newUsersResponse.ok ? newUsersResponse.json() : null,
+      sessionsResponse.ok ? sessionsResponse.json() : null,
+      pageViewsResponse.ok ? pageViewsResponse.json() : null,
+      engagementResponse.ok ? engagementResponse.json() : null,
+      dailyPageViewsResponse.ok ? dailyPageViewsResponse.json() : null,
+      topPagesResponse.ok ? topPagesResponse.json() : null,
     ]);
 
-    console.log('GA4 API responses received successfully');
+    console.log('GA4 API responses received');
 
     return {
-      activeUsers: activeUsersData.rows?.[0]?.metricValues?.[0]?.value || '0',
-      newUsers: newUsersData.rows?.[0]?.metricValues?.[0]?.value || '0',
-      sessions: sessionsData.rows?.[0]?.metricValues?.[0]?.value || '0',
-      pageViews: pageViewsData.rows?.[0]?.metricValues?.[0]?.value || '0',
-      engagementRate: engagementData.rows?.[0]?.metricValues?.[0]?.value || '0',
-      dailyPageViews: dailyPageViewsData.rows?.map((row: any) => ({
+      activeUsers: activeUsersData?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      newUsers: newUsersData?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      sessions: sessionsData?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      pageViews: pageViewsData?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      engagementRate: engagementData?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      dailyPageViews: dailyPageViewsData?.rows?.map((row: any) => ({
         date: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)
       })) || [],
-      topPages: topPagesData.rows?.map((row: any) => ({
+      topPages: topPagesData?.rows?.map((row: any) => ({
         title: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)
       })) || [],
@@ -238,11 +246,24 @@ serve(async (req) => {
     const propertyId = Deno.env.get('GA_PROPERTY_ID');
 
     if (!credentialsString || !propertyId) {
+      console.error('Missing credentials or property ID');
       throw new Error('Missing Google Analytics credentials or property ID');
     }
 
     console.log('Parsing GA credentials...');
-    const credentials: GoogleAnalyticsCredentials = JSON.parse(credentialsString);
+    
+    // Try to parse credentials with better error handling
+    let credentials: GoogleAnalyticsCredentials;
+    try {
+      // Clean up the credentials string - remove any BOM or extra whitespace
+      const cleanCredentialsString = credentialsString.trim().replace(/^\uFEFF/, '');
+      credentials = JSON.parse(cleanCredentialsString);
+    } catch (parseError) {
+      console.error('Failed to parse credentials JSON:', parseError);
+      console.error('Credentials string length:', credentialsString.length);
+      console.error('First 100 chars:', credentialsString.substring(0, 100));
+      throw new Error('Invalid Google Analytics credentials format');
+    }
     
     console.log('Getting access token...');
     const accessToken = await getAccessToken(credentials);
