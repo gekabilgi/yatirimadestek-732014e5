@@ -5,35 +5,22 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Users, FileText, MessageSquare, TrendingUp, Eye, Clock, UserPlus, Mail, BookOpen, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Mock data for charts (keeping the existing chart data)
-const pageViewsData = [
-  { name: 'Pzt', views: 1200 },
-  { name: 'Sal', views: 1900 },
-  { name: 'Çar', views: 800 },
-  { name: 'Per', views: 1600 },
-  { name: 'Cum', views: 2400 },
-  { name: 'Cmt', views: 2100 },
-  { name: 'Paz', views: 1800 },
-];
-
-const userEngagementData = [
-  { name: 'Ocak', users: 450 },
-  { name: 'Şubat', users: 620 },
-  { name: 'Mart', users: 580 },
-  { name: 'Nisan', users: 750 },
-  { name: 'Mayıs', users: 890 },
-  { name: 'Haziran', users: 1200 },
-];
-
-const topPagesData = [
-  { name: 'Ana Sayfa', value: 35, color: '#0088FE' },
-  { name: 'Teşvik Araçları', value: 28, color: '#00C49F' },
-  { name: 'Soru & Cevap', value: 18, color: '#FFBB28' },
-  { name: 'Yatırımcı Sözlüğü', value: 12, color: '#FF8042' },
-  { name: 'Diğer', value: 7, color: '#8884d8' },
-];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export const AdminDashboard = () => {
+  // Fetch Google Analytics data
+  const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery({
+    queryKey: ['google-analytics'],
+    queryFn: async () => {
+      console.log('Fetching Google Analytics data...');
+      const { data, error } = await supabase.functions.invoke('google-analytics');
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch real activities from the database
   const { data: activitiesData } = useQuery({
     queryKey: ['admin-dashboard-activities'],
@@ -227,10 +214,52 @@ export const AdminDashboard = () => {
     refetchInterval: 60000 // Refresh every minute
   });
 
+  // Process analytics data for charts
+  const pageViewsData = React.useMemo(() => {
+    if (!analyticsData?.dailyPageViews) return [];
+    
+    const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+    return analyticsData.dailyPageViews.map((item: any) => {
+      const date = new Date(item.date.slice(0,4), item.date.slice(4,6)-1, item.date.slice(6,8));
+      return {
+        name: dayNames[date.getDay()],
+        views: item.views
+      };
+    });
+  }, [analyticsData]);
+
+  const userEngagementData = React.useMemo(() => {
+    if (!analyticsData?.monthlyUsers) return [];
+    
+    const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                       'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    
+    return analyticsData.monthlyUsers.map((item: any) => {
+      const year = item.month.slice(0, 4);
+      const month = parseInt(item.month.slice(4, 6)) - 1;
+      return {
+        name: monthNames[month],
+        users: item.users
+      };
+    });
+  }, [analyticsData]);
+
+  const topPagesData = React.useMemo(() => {
+    if (!analyticsData?.topPages) return [];
+    
+    const total = analyticsData.topPages.reduce((sum: number, page: any) => sum + page.views, 0);
+    
+    return analyticsData.topPages.map((page: any, index: number) => ({
+      name: page.title.length > 20 ? page.title.substring(0, 20) + '...' : page.title,
+      value: Math.round((page.views / total) * 100),
+      color: COLORS[index % COLORS.length]
+    }));
+  }, [analyticsData]);
+
   const stats = [
     {
       title: 'Toplam Ziyaretçi',
-      value: statsData?.totalUsers?.toString() || '0',
+      value: analyticsData?.totalUsers || statsData?.totalUsers?.toString() || '0',
       change: '+12.5%',
       icon: Users,
       color: 'text-blue-600',
@@ -238,7 +267,7 @@ export const AdminDashboard = () => {
     },
     {
       title: 'Sayfa Görüntüleme',
-      value: '45,231',
+      value: analyticsData?.totalPageViews || '0',
       change: '+8.2%',
       icon: Eye,
       color: 'text-green-600',
@@ -292,7 +321,9 @@ export const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {isAnalyticsLoading && (index === 0 || index === 1) ? 'Yükleniyor...' : stat.value}
+                  </p>
                   <p className="text-sm text-green-600 flex items-center mt-1">
                     <TrendingUp className="h-4 w-4 mr-1" />
                     {stat.change}
@@ -317,7 +348,9 @@ export const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={pageViewsData}>
+              <BarChart data={pageViewsData.length > 0 ? pageViewsData : [
+                { name: 'Yükleniyor...', views: 0 }
+              ]}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -336,7 +369,9 @@ export const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={userEngagementData}>
+              <LineChart data={userEngagementData.length > 0 ? userEngagementData : [
+                { name: 'Yükleniyor...', users: 0 }
+              ]}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -360,15 +395,17 @@ export const AdminDashboard = () => {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={topPagesData}
+                  data={topPagesData.length > 0 ? topPagesData : [
+                    { name: 'Yükleniyor...', value: 100, color: '#0088FE' }
+                  ]}
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, value }) => topPagesData.length > 0 ? `${name} ${value}%` : name}
                 >
-                  {topPagesData.map((entry, index) => (
+                  {(topPagesData.length > 0 ? topPagesData : [{ color: '#0088FE' }]).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
