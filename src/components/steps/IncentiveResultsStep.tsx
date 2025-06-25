@@ -59,7 +59,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     };
     
     let prioritySupports = {
-      taxDiscount: "20", // Always 20%
+      taxDiscount: "30", // Always 20%
       interestSupport: "25", // Always 25%
       cap: "24000000" // Always 24M TL
     };
