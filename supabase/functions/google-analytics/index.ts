@@ -73,9 +73,8 @@ async function createJWT(credentials: GoogleAnalyticsCredentials): Promise<strin
 
     const signatureInput = `${encodedHeader}.${encodedPayload}`;
     
-    // Convert PEM private key to binary format
     console.log('Processing private key for JWT signing...');
-    const pemKey = credentials.private_key.replace(/\\n/g, '\n');
+    const pemKey = credentials.private_key;
     
     if (!pemKey.includes('-----BEGIN PRIVATE KEY-----')) {
       throw new Error('Invalid private key format - missing PEM headers');
@@ -129,10 +128,9 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
   try {
     console.log('Fetching analytics data for property:', propertyId);
     
-    // Prepare all API requests
     const requests = [
       // Active users (real-time)
-      fetch(`${baseUrl}/${propertyId}:runRealtimeReport`, {
+      fetch(`${baseUrl}/properties/${propertyId}:runRealtimeReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -144,7 +142,7 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       }),
       
       // New users (last 7 days)
-      fetch(`${baseUrl}/${propertyId}:runReport`, {
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -157,7 +155,7 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       }),
       
       // Sessions (last 7 days)
-      fetch(`${baseUrl}/${propertyId}:runReport`, {
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -170,7 +168,7 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       }),
       
       // Page views (last 7 days)
-      fetch(`${baseUrl}/${propertyId}:runReport`, {
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -183,7 +181,7 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       }),
       
       // Engagement rate (last 7 days)
-      fetch(`${baseUrl}/${propertyId}:runReport`, {
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -196,7 +194,7 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       }),
       
       // Daily page views for trend (last 7 days)
-      fetch(`${baseUrl}/${propertyId}:runReport`, {
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -211,7 +209,7 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       }),
       
       // Top pages
-      fetch(`${baseUrl}/${propertyId}:runReport`, {
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -227,10 +225,8 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       }),
     ];
 
-    // Execute all requests in parallel
     const responses = await Promise.all(requests);
     
-    // Check each response and log errors
     const results = await Promise.all(
       responses.map(async (response, index) => {
         const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'engagementRate', 'dailyPageViews', 'topPages'];
@@ -275,7 +271,6 @@ serve(async (req) => {
     const url = new URL(req.url);
     const isHealthCheck = url.searchParams.get('health') === 'true';
 
-    // Get environment variables
     const credentialsString = Deno.env.get('GOOGLE_ANALYTICS_CREDENTIALS');
     const propertyId = Deno.env.get('GA_PROPERTY_ID');
 
@@ -290,22 +285,11 @@ serve(async (req) => {
     }
 
     console.log('Environment variables found - parsing credentials...');
-    console.log('Credentials string length:', credentialsString.length);
-    console.log('Property ID:', propertyId);
     
-    // Parse credentials with comprehensive error handling
     let credentials: GoogleAnalyticsCredentials;
     try {
-      // Clean up the credentials string - remove any BOM, extra whitespace, or control characters
-      const cleanCredentialsString = credentialsString
-        .trim()
-        .replace(/^\uFEFF/, '') // Remove BOM
-        .replace(/[\r\n\t]/g, ''); // Remove control characters that might break JSON parsing
+      credentials = JSON.parse(credentialsString);
       
-      console.log('Attempting to parse credentials JSON...');
-      credentials = JSON.parse(cleanCredentialsString);
-      
-      // Validate required fields
       const requiredFields = ['type', 'project_id', 'private_key_id', 'private_key', 'client_email', 'client_id'];
       const missingFields = requiredFields.filter(field => !credentials[field as keyof GoogleAnalyticsCredentials]);
       
@@ -321,21 +305,12 @@ serve(async (req) => {
       
     } catch (parseError) {
       console.error('Failed to parse credentials JSON:', parseError);
-      console.error('Raw credentials preview (first 100 chars):', credentialsString.substring(0, 100));
-      
-      // Provide specific error messages based on the type of parsing error
-      if (parseError instanceof SyntaxError) {
-        throw new Error(`Invalid JSON format in GOOGLE_ANALYTICS_CREDENTIALS: ${parseError.message}. Please ensure the environment variable contains a valid JSON service account key.`);
-      } else {
-        throw new Error(`Credential validation failed: ${parseError.message}`);
-      }
+      throw new Error(`Invalid JSON format in GOOGLE_ANALYTICS_CREDENTIALS: ${parseError.message}`);
     }
     
-    // Get access token
     console.log('Getting access token...');
     const accessToken = await getAccessToken(credentials);
     
-    // Health check mode - just verify credentials work
     if (isHealthCheck) {
       console.log('Health check passed - credentials are valid');
       return new Response(JSON.stringify({ 
@@ -347,7 +322,6 @@ serve(async (req) => {
       });
     }
     
-    // Fetch analytics data
     console.log('Fetching analytics data...');
     const analyticsData = await fetchAnalyticsData(accessToken, propertyId);
     
@@ -359,7 +333,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in google-analytics function:', error);
     
-    // Provide user-friendly error messages
     let userMessage = 'Failed to fetch Google Analytics data';
     let statusCode = 500;
     
