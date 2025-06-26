@@ -17,215 +17,245 @@ interface GoogleAnalyticsCredentials {
   token_uri: string;
   auth_provider_x509_cert_url: string;
   client_x509_cert_url: string;
-  universe_domain: string;
+  universe_domain?: string;
 }
 
 async function getAccessToken(credentials: GoogleAnalyticsCredentials): Promise<string> {
-  const jwt = await createJWT(credentials);
-  
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt,
-    }),
-  });
+  try {
+    console.log('Creating JWT for service account:', credentials.client_email);
+    const jwt = await createJWT(credentials);
+    
+    console.log('Requesting access token from Google OAuth2...');
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to get access token: ${response.status} ${response.statusText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OAuth2 token request failed:', response.status, errorText);
+      throw new Error(`Failed to get access token: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Successfully obtained access token');
+    return data.access_token;
+  } catch (error) {
+    console.error('Error in getAccessToken:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  return data.access_token;
 }
 
 async function createJWT(credentials: GoogleAnalyticsCredentials): Promise<string> {
-  const header = {
-    alg: 'RS256',
-    typ: 'JWT',
-  };
+  try {
+    const header = {
+      alg: 'RS256',
+      typ: 'JWT',
+    };
 
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    iss: credentials.client_email,
-    scope: 'https://www.googleapis.com/auth/analytics.readonly',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600,
-    iat: now,
-  };
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      iss: credentials.client_email,
+      scope: 'https://www.googleapis.com/auth/analytics.readonly',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600,
+      iat: now,
+    };
 
-  const encodedHeader = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  const encodedPayload = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    const encodedHeader = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    const encodedPayload = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
-  const signatureInput = `${encodedHeader}.${encodedPayload}`;
-  
-  // Convert PEM private key to binary format
-  const pemKey = credentials.private_key.replace(/\\n/g, '\n');
-  const pemContents = pemKey.replace(/-----BEGIN PRIVATE KEY-----\n/, '').replace(/\n-----END PRIVATE KEY-----/, '').replace(/\n/g, '');
-  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
-  
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    binaryKey,
-    {
-      name: 'RSASSA-PKCS1-v1_5',
-      hash: 'SHA-256',
-    },
-    false,
-    ['sign']
-  );
+    const signatureInput = `${encodedHeader}.${encodedPayload}`;
+    
+    // Convert PEM private key to binary format
+    console.log('Processing private key for JWT signing...');
+    const pemKey = credentials.private_key.replace(/\\n/g, '\n');
+    
+    if (!pemKey.includes('-----BEGIN PRIVATE KEY-----')) {
+      throw new Error('Invalid private key format - missing PEM headers');
+    }
+    
+    const pemContents = pemKey
+      .replace(/-----BEGIN PRIVATE KEY-----\n?/, '')
+      .replace(/\n?-----END PRIVATE KEY-----/, '')
+      .replace(/\n/g, '');
+    
+    let binaryKey;
+    try {
+      binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+    } catch (error) {
+      throw new Error('Failed to decode private key base64 content');
+    }
+    
+    const privateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      binaryKey,
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256',
+      },
+      false,
+      ['sign']
+    );
 
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    privateKey,
-    new TextEncoder().encode(signatureInput)
-  );
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      privateKey,
+      new TextEncoder().encode(signatureInput)
+    );
 
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
+    const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
 
-  return `${signatureInput}.${encodedSignature}`;
+    console.log('JWT created successfully');
+    return `${signatureInput}.${encodedSignature}`;
+  } catch (error) {
+    console.error('Error creating JWT:', error);
+    throw new Error(`JWT creation failed: ${error.message}`);
+  }
 }
 
 async function fetchAnalyticsData(accessToken: string, propertyId: string) {
   const baseUrl = 'https://analyticsdata.googleapis.com/v1beta';
   
   try {
-    // Get active users (real-time)
-    const activeUsersResponse = await fetch(`${baseUrl}/${propertyId}:runRealtimeReport`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        metrics: [{ name: 'activeUsers' }],
+    console.log('Fetching analytics data for property:', propertyId);
+    
+    // Prepare all API requests
+    const requests = [
+      // Active users (real-time)
+      fetch(`${baseUrl}/${propertyId}:runRealtimeReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          metrics: [{ name: 'activeUsers' }],
+        }),
       }),
-    });
-
-    if (!activeUsersResponse.ok) {
-      console.error('Failed to fetch active users:', activeUsersResponse.status, activeUsersResponse.statusText);
-    }
-
-    // Get new users (last 7 days)
-    const newUsersResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-        metrics: [{ name: 'newUsers' }],
+      
+      // New users (last 7 days)
+      fetch(`${baseUrl}/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          metrics: [{ name: 'newUsers' }],
+        }),
       }),
-    });
-
-    // Get sessions (last 7 days)
-    const sessionsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-        metrics: [{ name: 'sessions' }],
+      
+      // Sessions (last 7 days)
+      fetch(`${baseUrl}/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          metrics: [{ name: 'sessions' }],
+        }),
       }),
-    });
-
-    // Get page views (last 7 days)
-    const pageViewsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-        metrics: [{ name: 'screenPageViews' }],
+      
+      // Page views (last 7 days)
+      fetch(`${baseUrl}/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          metrics: [{ name: 'screenPageViews' }],
+        }),
       }),
-    });
-
-    // Get engagement rate (last 7 days)
-    const engagementResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-        metrics: [{ name: 'engagementRate' }],
+      
+      // Engagement rate (last 7 days)
+      fetch(`${baseUrl}/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          metrics: [{ name: 'engagementRate' }],
+        }),
       }),
-    });
-
-    // Get daily page views for trend (last 7 days)
-    const dailyPageViewsResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-        dimensions: [{ name: 'date' }],
-        metrics: [{ name: 'screenPageViews' }],
-        orderBys: [{ dimension: { dimensionName: 'date' } }],
+      
+      // Daily page views for trend (last 7 days)
+      fetch(`${baseUrl}/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'date' }],
+          metrics: [{ name: 'screenPageViews' }],
+          orderBys: [{ dimension: { dimensionName: 'date' } }],
+        }),
       }),
-    });
-
-    // Get top pages
-    const topPagesResponse = await fetch(`${baseUrl}/${propertyId}:runReport`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-        dimensions: [{ name: 'pageTitle' }],
-        metrics: [{ name: 'screenPageViews' }],
-        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-        limit: 5,
+      
+      // Top pages
+      fetch(`${baseUrl}/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'pageTitle' }],
+          metrics: [{ name: 'screenPageViews' }],
+          orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+          limit: 5,
+        }),
       }),
-    });
+    ];
 
-    const [
-      activeUsersData,
-      newUsersData,
-      sessionsData,
-      pageViewsData,
-      engagementData,
-      dailyPageViewsData,
-      topPagesData
-    ] = await Promise.all([
-      activeUsersResponse.ok ? activeUsersResponse.json() : null,
-      newUsersResponse.ok ? newUsersResponse.json() : null,
-      sessionsResponse.ok ? sessionsResponse.json() : null,
-      pageViewsResponse.ok ? pageViewsResponse.json() : null,
-      engagementResponse.ok ? engagementResponse.json() : null,
-      dailyPageViewsResponse.ok ? dailyPageViewsResponse.json() : null,
-      topPagesResponse.ok ? topPagesResponse.json() : null,
-    ]);
+    // Execute all requests in parallel
+    const responses = await Promise.all(requests);
+    
+    // Check each response and log errors
+    const results = await Promise.all(
+      responses.map(async (response, index) => {
+        const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'engagementRate', 'dailyPageViews', 'topPages'];
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Failed to fetch ${requestNames[index]}:`, response.status, errorText);
+          return null;
+        }
+        return response.json();
+      })
+    );
 
-    console.log('GA4 API responses received');
+    console.log('Analytics API requests completed');
 
     return {
-      activeUsers: activeUsersData?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      newUsers: newUsersData?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      sessions: sessionsData?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      pageViews: pageViewsData?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      engagementRate: engagementData?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      dailyPageViews: dailyPageViewsData?.rows?.map((row: any) => ({
+      activeUsers: results[0]?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      newUsers: results[1]?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      sessions: results[2]?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      pageViews: results[3]?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      engagementRate: results[4]?.rows?.[0]?.metricValues?.[0]?.value || '0',
+      dailyPageViews: results[5]?.rows?.map((row: any) => ({
         date: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)
       })) || [],
-      topPages: topPagesData?.rows?.map((row: any) => ({
+      topPages: results[6]?.rows?.map((row: any) => ({
         title: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)
       })) || [],
@@ -242,44 +272,116 @@ serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+    const isHealthCheck = url.searchParams.get('health') === 'true';
+
+    // Get environment variables
     const credentialsString = Deno.env.get('GOOGLE_ANALYTICS_CREDENTIALS');
     const propertyId = Deno.env.get('GA_PROPERTY_ID');
 
-    if (!credentialsString || !propertyId) {
-      console.error('Missing credentials or property ID');
-      throw new Error('Missing Google Analytics credentials or property ID');
+    if (!credentialsString) {
+      console.error('GOOGLE_ANALYTICS_CREDENTIALS environment variable is not set');
+      throw new Error('Google Analytics credentials not configured');
     }
 
-    console.log('Parsing GA credentials...');
+    if (!propertyId) {
+      console.error('GA_PROPERTY_ID environment variable is not set');
+      throw new Error('Google Analytics property ID not configured');
+    }
+
+    console.log('Environment variables found - parsing credentials...');
+    console.log('Credentials string length:', credentialsString.length);
+    console.log('Property ID:', propertyId);
     
-    // Try to parse credentials with better error handling
+    // Parse credentials with comprehensive error handling
     let credentials: GoogleAnalyticsCredentials;
     try {
-      // Clean up the credentials string - remove any BOM or extra whitespace
-      const cleanCredentialsString = credentialsString.trim().replace(/^\uFEFF/, '');
+      // Clean up the credentials string - remove any BOM, extra whitespace, or control characters
+      const cleanCredentialsString = credentialsString
+        .trim()
+        .replace(/^\uFEFF/, '') // Remove BOM
+        .replace(/[\r\n\t]/g, ''); // Remove control characters that might break JSON parsing
+      
+      console.log('Attempting to parse credentials JSON...');
       credentials = JSON.parse(cleanCredentialsString);
+      
+      // Validate required fields
+      const requiredFields = ['type', 'project_id', 'private_key_id', 'private_key', 'client_email', 'client_id'];
+      const missingFields = requiredFields.filter(field => !credentials[field as keyof GoogleAnalyticsCredentials]);
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required credential fields: ${missingFields.join(', ')}`);
+      }
+      
+      if (credentials.type !== 'service_account') {
+        throw new Error(`Invalid credential type: ${credentials.type}. Expected: service_account`);
+      }
+      
+      console.log('Credentials parsed successfully for service account:', credentials.client_email);
+      
     } catch (parseError) {
       console.error('Failed to parse credentials JSON:', parseError);
-      console.error('Credentials string length:', credentialsString.length);
-      console.error('First 100 chars:', credentialsString.substring(0, 100));
-      throw new Error('Invalid Google Analytics credentials format');
+      console.error('Raw credentials preview (first 100 chars):', credentialsString.substring(0, 100));
+      
+      // Provide specific error messages based on the type of parsing error
+      if (parseError instanceof SyntaxError) {
+        throw new Error(`Invalid JSON format in GOOGLE_ANALYTICS_CREDENTIALS: ${parseError.message}. Please ensure the environment variable contains a valid JSON service account key.`);
+      } else {
+        throw new Error(`Credential validation failed: ${parseError.message}`);
+      }
     }
     
+    // Get access token
     console.log('Getting access token...');
     const accessToken = await getAccessToken(credentials);
     
+    // Health check mode - just verify credentials work
+    if (isHealthCheck) {
+      console.log('Health check passed - credentials are valid');
+      return new Response(JSON.stringify({ 
+        status: 'ready', 
+        message: 'Google Analytics credentials are valid and access token obtained successfully',
+        propertyId: propertyId
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Fetch analytics data
     console.log('Fetching analytics data...');
     const analyticsData = await fetchAnalyticsData(accessToken, propertyId);
     
+    console.log('Successfully retrieved analytics data');
     return new Response(JSON.stringify(analyticsData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+    
   } catch (error) {
     console.error('Error in google-analytics function:', error);
+    
+    // Provide user-friendly error messages
+    let userMessage = 'Failed to fetch Google Analytics data';
+    let statusCode = 500;
+    
+    if (error.message.includes('credentials')) {
+      userMessage = 'Google Analytics credentials are invalid or incorrectly formatted';
+      statusCode = 401;
+    } else if (error.message.includes('property')) {
+      userMessage = 'Google Analytics property ID is invalid or not accessible';
+      statusCode = 403;
+    } else if (error.message.includes('access token')) {
+      userMessage = 'Failed to authenticate with Google Analytics API';
+      statusCode = 401;
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: userMessage,
+        details: error.message,
+        timestamp: new Date().toISOString()
+      }),
       {
-        status: 500,
+        status: statusCode,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
