@@ -128,15 +128,43 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
   try {
     console.log('Fetching analytics data for property:', propertyId);
     
+    // Test basic access first with a simple query
+    console.log('Testing basic API access...');
+    const testResponse = await fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        metrics: [{ name: 'activeUsers' }],
+      }),
+    });
+
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error('Test API request failed:', testResponse.status, errorText);
+      
+      if (testResponse.status === 403) {
+        throw new Error(`Permission denied: The service account '${accessToken.split('.')[1] ? 'configured' : 'invalid'}' does not have access to GA4 property ${propertyId}. Please add the service account email as a user in your Google Analytics property settings.`);
+      }
+      
+      throw new Error(`GA4 API test failed: ${testResponse.status} - ${errorText}`);
+    }
+
+    console.log('Basic API access successful, fetching full analytics data...');
+    
     const requests = [
-      // Active users (real-time)
-      fetch(`${baseUrl}/properties/${propertyId}:runRealtimeReport`, {
+      // Active users (using standard report instead of realtime)
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          dateRanges: [{ startDate: 'today', endDate: 'today' }],
           metrics: [{ name: 'activeUsers' }],
         }),
       }),
@@ -180,19 +208,6 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
         }),
       }),
       
-      // Engagement rate (last 7 days)
-      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-          metrics: [{ name: 'engagementRate' }],
-        }),
-      }),
-      
       // Daily page views for trend (last 7 days)
       fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
         method: 'POST',
@@ -207,29 +222,13 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
           orderBys: [{ dimension: { dimensionName: 'date' } }],
         }),
       }),
-      
-      // Top pages
-      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-          dimensions: [{ name: 'pageTitle' }],
-          metrics: [{ name: 'screenPageViews' }],
-          orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-          limit: 5,
-        }),
-      }),
     ];
 
     const responses = await Promise.all(requests);
     
     const results = await Promise.all(
       responses.map(async (response, index) => {
-        const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'engagementRate', 'dailyPageViews', 'topPages'];
+        const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'dailyPageViews'];
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Failed to fetch ${requestNames[index]}:`, response.status, errorText);
@@ -239,22 +238,19 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
       })
     );
 
-    console.log('Analytics API requests completed');
+    console.log('Analytics API requests completed successfully');
 
     return {
       activeUsers: results[0]?.rows?.[0]?.metricValues?.[0]?.value || '0',
       newUsers: results[1]?.rows?.[0]?.metricValues?.[0]?.value || '0',
       sessions: results[2]?.rows?.[0]?.metricValues?.[0]?.value || '0',
       pageViews: results[3]?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      engagementRate: results[4]?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      dailyPageViews: results[5]?.rows?.map((row: any) => ({
+      engagementRate: '0', // Simplified for now
+      dailyPageViews: results[4]?.rows?.map((row: any) => ({
         date: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)
       })) || [],
-      topPages: results[6]?.rows?.map((row: any) => ({
-        title: row.dimensionValues[0].value,
-        views: parseInt(row.metricValues[0].value)
-      })) || [],
+      topPages: [], // Simplified for now
     };
   } catch (error) {
     console.error('Error fetching GA4 data:', error);
@@ -316,7 +312,9 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         status: 'ready', 
         message: 'Google Analytics credentials are valid and access token obtained successfully',
-        propertyId: propertyId
+        propertyId: propertyId,
+        serviceAccount: credentials.client_email,
+        instructions: `If you see permission errors, please add ${credentials.client_email} as a user to your Google Analytics property.`
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -336,7 +334,10 @@ serve(async (req) => {
     let userMessage = 'Failed to fetch Google Analytics data';
     let statusCode = 500;
     
-    if (error.message.includes('credentials')) {
+    if (error.message.includes('Permission denied') || error.message.includes('PERMISSION_DENIED')) {
+      userMessage = `Access denied to Google Analytics property. Please add the service account email as a user in your GA4 property settings with 'Viewer' permissions.`;
+      statusCode = 403;
+    } else if (error.message.includes('credentials')) {
       userMessage = 'Google Analytics credentials are invalid or incorrectly formatted';
       statusCode = 401;
     } else if (error.message.includes('property')) {
@@ -351,7 +352,8 @@ serve(async (req) => {
       JSON.stringify({ 
         error: userMessage,
         details: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        action: statusCode === 403 ? 'Add service account to GA4 property as Viewer' : 'Check credentials and configuration'
       }),
       {
         status: statusCode,
