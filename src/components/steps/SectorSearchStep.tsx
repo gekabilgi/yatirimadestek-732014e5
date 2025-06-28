@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,7 +73,7 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
       // Check if the search term looks like a NACE code (contains numbers)
       const isNaceSearch = /\d/.test(searchTermLower);
       
-      let query = supabase.from('sector_search').select('*');
+      let query = supabase.from('sector_search1').select('*');
       
       if (isNaceSearch) {
         // For NACE code search, format the search term and search for codes starting with it

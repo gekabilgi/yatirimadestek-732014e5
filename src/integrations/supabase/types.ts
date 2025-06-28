@@ -536,6 +536,63 @@ export type Database = {
         }
         Relationships: []
       }
+      sector_search1: {
+        Row: {
+          bolge_1: number | null
+          bolge_2: number | null
+          bolge_3: number | null
+          bolge_4: number | null
+          bolge_5: number | null
+          bolge_6: number | null
+          created_at: string | null
+          hedef_yatirim: boolean | null
+          id: number
+          nace_kodu: string
+          oncelikli_yatirim: boolean | null
+          orta_yuksek_teknoloji: boolean | null
+          sartlar: string | null
+          sektor: string
+          updated_at: string | null
+          yuksek_teknoloji: boolean | null
+        }
+        Insert: {
+          bolge_1?: number | null
+          bolge_2?: number | null
+          bolge_3?: number | null
+          bolge_4?: number | null
+          bolge_5?: number | null
+          bolge_6?: number | null
+          created_at?: string | null
+          hedef_yatirim?: boolean | null
+          id?: number
+          nace_kodu: string
+          oncelikli_yatirim?: boolean | null
+          orta_yuksek_teknoloji?: boolean | null
+          sartlar?: string | null
+          sektor: string
+          updated_at?: string | null
+          yuksek_teknoloji?: boolean | null
+        }
+        Update: {
+          bolge_1?: number | null
+          bolge_2?: number | null
+          bolge_3?: number | null
+          bolge_4?: number | null
+          bolge_5?: number | null
+          bolge_6?: number | null
+          created_at?: string | null
+          hedef_yatirim?: boolean | null
+          id?: number
+          nace_kodu?: string
+          oncelikli_yatirim?: boolean | null
+          orta_yuksek_teknoloji?: boolean | null
+          sartlar?: string | null
+          sektor?: string
+          updated_at?: string | null
+          yuksek_teknoloji?: boolean | null
+        }
+        Relationships: []
+      }
       sgk: {
         Row: {
           alt_bolge: number | null
