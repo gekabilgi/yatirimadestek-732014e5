@@ -14,7 +14,7 @@ interface SectorSearchStepProps {
 }
 
 const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
-  selectedSector,
+  selectedSector
   onSectorSelect,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,9 +74,12 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
       
       let query = supabase.from('sector_search').select('*');
       
+      
       if (isNaceSearch) {
         // For NACE code search, format the search term and search for codes starting with it
         const formattedSearch = formatNaceCode(searchTermLower);
+
+        console.log("formattedSearch: ", formattedSearch)
         
         // Search for NACE codes that start with the formatted search term
         query = query.ilike('nace_kodu', `${formattedSearch}%`);
