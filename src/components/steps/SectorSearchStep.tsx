@@ -14,7 +14,7 @@ interface SectorSearchStepProps {
 }
 
 const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
-  selectedSector
+  selectedSector,
   onSectorSelect,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
