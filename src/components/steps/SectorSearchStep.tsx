@@ -56,75 +56,93 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
   };
 
   const handleSearch = async () => {
-    if (!searchTerm.trim()) {
-      toast({
-        title: "Uyarı",
-        description: "Lütfen bir sektör adı veya NACE kodu girin.",
-        variant: "destructive",
-      });
-      return;
+  if (!searchTerm.trim()) {
+    toast({
+      title: "Uyarı",
+      description: "Lütfen bir sektör adı veya NACE kodu girin.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsSearching(true);
+  try {
+    const rawInput = searchTerm.trim();
+    const isNaceSearch = /\d/.test(rawInput); // Contains number = likely NACE
+
+    let data = null;
+    let error = null;
+
+    if (isNaceSearch) {
+      const clean = rawInput.replace(/\./g, ''); // e.g., 051001
+
+      const formatted = insertDots(clean); // e.g., 05.10.01
+
+      // Try to match both cleaned and formatted versions
+      const result = await supabase
+        .from("sector_search")
+        .select("*")
+        .or(`nace_kodu.ilike.${clean}%,nace_kodu.ilike.${formatted}%`)
+        .order("sektor");
+
+      data = result.data;
+      error = result.error;
+    } else {
+      // Sector name search
+      const result = await supabase
+        .from("sector_search")
+        .select("*")
+        .ilike("sektor", `%${rawInput.toLowerCase()}%`)
+        .order("sektor");
+
+      data = result.data;
+      error = result.error;
     }
 
-    setIsSearching(true);
-    try {
-      const searchTermLower = searchTerm.toLowerCase().trim();
-      
-      // Check if the search term looks like a NACE code (contains numbers)
-      const isNaceSearch = /\d/.test(searchTermLower);
-      
-      let query = supabase.from('sector_search').select('*');
-      
-      
-      if (isNaceSearch) {
-        // For NACE code search, format the search term and search for codes starting with it
-        const formattedSearch = formatNaceCode(searchTermLower);
-
-        console.log("formattedSearch: ", formattedSearch);
-        
-        // Search for NACE codes that start with the formatted search term
-        query = query.ilike('nace_kodu', `${formattedSearch}%`);
-      } else {
-        // For sector name search
-        query = query.ilike('sektor', `%${searchTermLower}%`);
-      }
-      
-      const { data, error } = await query.order('sektor');
-
-      if (error) {
-        console.error('Search error:', error);
-        toast({
-          title: "Hata",
-          description: "Arama sırasında bir hata oluştu.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setSearchResults(data || []);
-      
-      if (!data || data.length === 0) {
-        toast({
-          title: "Sonuç Bulunamadı",
-          description: "Girilen kriterlere uygun sektör bulunamadı.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Arama Tamamlandı",
-          description: `${data.length} sektör bulundu.`,
-        });
-      }
-    } catch (error) {
-      console.error('Search error:', error);
+    if (error) {
+      console.error("Search error:", error);
       toast({
         title: "Hata",
         description: "Arama sırasında bir hata oluştu.",
         variant: "destructive",
       });
-    } finally {
-      setIsSearching(false);
+      return;
     }
-  };
+
+    setSearchResults(data || []);
+
+    if (!data || data.length === 0) {
+      toast({
+        title: "Sonuç Bulunamadı",
+        description: "Girilen kriterlere uygun sektör bulunamadı.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Arama Tamamlandı",
+        description: `${data.length} sektör bulundu.`,
+      });
+    }
+  } catch (error) {
+    console.error("Search error:", error);
+    toast({
+      title: "Hata",
+      description: "Arama sırasında bir hata oluştu.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsSearching(false);
+  }
+};
+
+// 👇 Helper function: insert dots into NACE code
+const insertDots = (code: string): string => {
+  if (code.length >= 6) return `${code.slice(0, 2)}.${code.slice(2, 4)}.${code.slice(4)}`;
+  if (code.length >= 4) return `${code.slice(0, 2)}.${code.slice(2, 4)}`;
+  if (code.length >= 2) return `${code.slice(0, 2)}.${code.slice(2)}`;
+  return code;
+};
+
 
   const handleSectorSelect = (sector: SectorSearchData) => {
     onSectorSelect(sector);
