@@ -734,16 +734,6 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
             </div>
           </div>
 
-          {/* Istanbul Mining Warning */}
-          {shouldShowIstanbulMiningWarning() && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                <strong>Önemli Uyarı:</strong> Seçilen sektör İstanbul ilinde desteklenmemektedir.
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Target Sector Interest/Profit Share Support Warning */}
           {incentiveResult.sector.isTarget && [1, 2, 3].includes(incentiveResult.location.region) && (
             <Alert className="border-red-200 bg-red-50">
@@ -787,66 +777,78 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                 <CardTitle className="text-base">Yatırım Türü Destekleri</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {incentiveResult.sector.isTarget && (
-                  <div className="space-y-2">
-                    <h5 className="font-medium text-sm text-blue-600">Hedef Yatırım Destekleri</h5>
-                    <div className="text-xs space-y-1">
-                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.target.taxDiscount)}</div>
-                      <div>
-                        Faiz/Kar Payı Desteği Oranı: {
-                          supportValues.target.interestSupport === "N/A" 
-                            ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
-                            : supportValues.target.interestSupport.includes("Uygulanmaz") 
-                              ? <span className="text-orange-600 font-medium">{supportValues.target.interestSupport}</span>
-                              : formatPercentage(supportValues.target.interestSupport)
-                        }
+                {/* Show Istanbul Mining Warning instead of support details */}
+                {shouldShowIstanbulMiningWarning() ? (
+                  <Alert className="border-red-200 bg-red-50">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-red-800">
+                      <strong>Önemli Uyarı:</strong> Seçilen sektör İstanbul ilinde desteklenmemektedir.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    {incentiveResult.sector.isTarget && (
+                      <div className="space-y-2">
+                        <h5 className="font-medium text-sm text-blue-600">Hedef Yatırım Destekleri</h5>
+                        <div className="text-xs space-y-1">
+                          <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.target.taxDiscount)}</div>
+                          <div>
+                            Faiz/Kar Payı Desteği Oranı: {
+                              supportValues.target.interestSupport === "N/A" 
+                                ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
+                                : supportValues.target.interestSupport.includes("Uygulanmaz") 
+                                  ? <span className="text-orange-600 font-medium">{supportValues.target.interestSupport}</span>
+                                  : formatPercentage(supportValues.target.interestSupport)
+                            }
+                          </div>
+                          <div>
+                            Faiz/Kar Payı Desteği Üst Limit Tutarı: {
+                              supportValues.target.cap === "N/A" 
+                                ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
+                                : supportValues.target.cap.includes("Uygulanmaz") 
+                                  ? <span className="text-orange-600 font-medium">{supportValues.target.cap}</span>
+                                  : formatCurrency(supportValues.target.cap)
+                            }
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        Faiz/Kar Payı Desteği Üst Limit Tutarı: {
-                          supportValues.target.cap === "N/A" 
-                            ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
-                            : supportValues.target.cap.includes("Uygulanmaz") 
-                              ? <span className="text-orange-600 font-medium">{supportValues.target.cap}</span>
-                              : formatCurrency(supportValues.target.cap)
-                        }
+                    )}
+                    
+                    {(incentiveResult.sector.isPriority || incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) && (
+                      <div className="space-y-2">
+                        <h5 className="font-medium text-sm text-green-600">
+                          {incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech 
+                            ? "Öncelikli ve Yüksek/Orta-Yüksek Teknoloji Yatırım Destekleri"
+                            : "Öncelikli Yatırım Destekleri"
+                          }
+                        </h5>
+                        <div className="text-xs space-y-1">
+                          <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.priority.taxDiscount)}</div>
+                          <div>
+                            Faiz/Kar Payı Desteği Oranı: {
+                              supportValues.priority.interestSupport.includes("Uygulanmaz") 
+                                ? <span className="text-orange-600 font-medium">{supportValues.priority.interestSupport}</span>
+                                : formatPercentage(supportValues.priority.interestSupport)
+                            }
+                          </div>
+                          <div>
+                            Faiz/Kar Payı Desteği Üst Limit Tutarı: {
+                              supportValues.priority.cap.includes("Uygulanmaz") 
+                                ? <span className="text-orange-600 font-medium">{supportValues.priority.cap}</span>
+                                : formatCurrency(supportValues.priority.cap)
+                            }
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )}
-                
-                {(incentiveResult.sector.isPriority || incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) && (
-                  <div className="space-y-2">
-                    <h5 className="font-medium text-sm text-green-600">
-                      {incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech 
-                        ? "Öncelikli ve Yüksek/Orta-Yüksek Teknoloji Yatırım Destekleri"
-                        : "Öncelikli Yatırım Destekleri"
-                      }
-                    </h5>
-                    <div className="text-xs space-y-1">
-                      <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.priority.taxDiscount)}</div>
-                      <div>
-                        Faiz/Kar Payı Desteği Oranı: {
-                          supportValues.priority.interestSupport.includes("Uygulanmaz") 
-                            ? <span className="text-orange-600 font-medium">{supportValues.priority.interestSupport}</span>
-                            : formatPercentage(supportValues.priority.interestSupport)
-                        }
-                      </div>
-                      <div>
-                        Faiz/Kar Payı Desteği Üst Limit Tutarı: {
-                          supportValues.priority.cap.includes("Uygulanmaz") 
-                            ? <span className="text-orange-600 font-medium">{supportValues.priority.cap}</span>
-                            : formatCurrency(supportValues.priority.cap)
-                        }
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Warning about Faiz/Kar Payı limit with yellow background - only for target sectors in regions 4,5,6 */}
-          {incentiveResult.sector.isTarget && [4, 5, 6].includes(incentiveResult.location.region) && (
+          {/* Warning about Faiz/Kar Payı limit with yellow background - only for target sectors in regions 4,5,6 and not Istanbul mining */}
+          {incentiveResult.sector.isTarget && [4, 5, 6].includes(incentiveResult.location.region) && !shouldShowIstanbulMiningWarning() && (
             <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
