@@ -26,25 +26,62 @@ const WorldMap = ({ data }: { data: any[] }) => {
   };
 
   return (
-    <div className="w-full h-[300px] flex items-center justify-center">
-      <div className="relative w-full max-w-4xl">
-        <svg viewBox="0 0 1000 500" className="w-full h-full">
+    <div className="w-full h-[400px] flex flex-col items-center justify-center">
+      <div className="relative w-full max-w-5xl">
+        <svg viewBox="0 0 1000 500" className="w-full h-full border rounded-lg bg-blue-50">
           {/* Simplified world map paths - major countries */}
-          {/* Turkey */}
+          
+          {/* United States */}
           <path
-            d="M540 180 L580 180 L590 190 L580 200 L540 200 Z"
-            fill={getCountryColor('TR')}
+            d="M150 200 L300 200 L320 220 L310 270 L280 280 L150 280 Z"
+            fill={getCountryColor('US')}
             stroke="#333"
-            strokeWidth="0.5"
+            strokeWidth="1"
             className="hover:opacity-80 cursor-pointer"
           />
           
-          {/* USA */}
+          {/* Canada */}
           <path
-            d="M150 200 L300 200 L300 280 L150 280 Z"
-            fill={getCountryColor('US')}
+            d="M150 120 L350 120 L350 200 L150 200 Z"
+            fill={getCountryColor('CA')}
             stroke="#333"
-            strokeWidth="0.5"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Brazil */}
+          <path
+            d="M280 320 L380 320 L390 380 L370 420 L280 420 Z"
+            fill={getCountryColor('BR')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* United Kingdom */}
+          <path
+            d="M470 160 L490 160 L490 180 L470 180 Z"
+            fill={getCountryColor('GB')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* France */}
+          <path
+            d="M470 180 L500 180 L500 220 L470 220 Z"
+            fill={getCountryColor('FR')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Germany */}
+          <path
+            d="M500 160 L530 160 L530 200 L500 200 Z"
+            fill={getCountryColor('DE')}
+            stroke="#333"
+            strokeWidth="1"
             className="hover:opacity-80 cursor-pointer"
           />
           
@@ -53,7 +90,70 @@ const WorldMap = ({ data }: { data: any[] }) => {
             d="M420 220 L480 220 L480 260 L420 260 Z"
             fill={getCountryColor('ES')}
             stroke="#333"
-            strokeWidth="0.5"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Turkey */}
+          <path
+            d="M540 180 L590 180 L590 220 L540 220 Z"
+            fill={getCountryColor('TR')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Russia */}
+          <path
+            d="M530 120 L800 120 L800 200 L530 200 Z"
+            fill={getCountryColor('RU')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* China */}
+          <path
+            d="M700 200 L820 200 L820 280 L700 280 Z"
+            fill={getCountryColor('CN')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* India */}
+          <path
+            d="M650 250 L720 250 L720 350 L650 350 Z"
+            fill={getCountryColor('IN')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Japan */}
+          <path
+            d="M850 220 L880 220 L880 280 L850 280 Z"
+            fill={getCountryColor('JP')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Australia */}
+          <path
+            d="M750 380 L850 380 L850 420 L750 420 Z"
+            fill={getCountryColor('AU')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* South Korea */}
+          <path
+            d="M820 240 L840 240 L840 260 L820 260 Z"
+            fill={getCountryColor('KR')}
+            stroke="#333"
+            strokeWidth="1"
             className="hover:opacity-80 cursor-pointer"
           />
           
@@ -62,43 +162,94 @@ const WorldMap = ({ data }: { data: any[] }) => {
             d="M780 320 L790 320 L790 330 L780 330 Z"
             fill={getCountryColor('SG')}
             stroke="#333"
-            strokeWidth="0.5"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Italy */}
+          <path
+            d="M500 200 L520 200 L520 260 L500 260 Z"
+            fill={getCountryColor('IT')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Netherlands */}
+          <path
+            d="M480 150 L500 150 L500 170 L480 170 Z"
+            fill={getCountryColor('NL')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Mexico */}
+          <path
+            d="M150 280 L250 280 L250 340 L150 340 Z"
+            fill={getCountryColor('MX')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* South Africa */}
+          <path
+            d="M520 380 L570 380 L570 420 L520 420 Z"
+            fill={getCountryColor('ZA')}
+            stroke="#333"
+            strokeWidth="1"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Egypt */}
+          <path
+            d="M520 260 L550 260 L550 300 L520 300 Z"
+            fill={getCountryColor('EG')}
+            stroke="#333"
+            strokeWidth="1"
             className="hover:opacity-80 cursor-pointer"
           />
         </svg>
-        
-        {/* Legend */}
-        <div className="mt-4 flex justify-center space-x-4 text-xs">
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-gray-200 rounded"></div>
-            <span>Veri yok</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-100 rounded"></div>
-            <span>Az</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-400 rounded"></div>
-            <span>Orta</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-600 rounded"></div>
-            <span>Çok</span>
-          </div>
+      </div>
+      
+      {/* Legend */}
+      <div className="mt-4 flex justify-center space-x-4 text-xs">
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-gray-200 rounded"></div>
+          <span>Veri yok</span>
         </div>
-        
-        {/* Country list */}
-        <div className="mt-4 space-y-2">
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-blue-100 rounded"></div>
+          <span>Az (1-10)</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-blue-300 rounded"></div>
+          <span>Orta (11-50)</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-blue-500 rounded"></div>
+          <span>Çok (51-100)</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-blue-700 rounded"></div>
+          <span>Çok fazla (100+)</span>
+        </div>
+      </div>
+      
+      {/* Country list */}
+      <div className="mt-4 w-full max-w-2xl">
+        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
           {data.map((country, index) => (
-            <div key={index} className="flex justify-between items-center text-sm">
+            <div key={index} className="flex justify-between items-center text-sm p-2 bg-white rounded border">
               <span className="flex items-center space-x-2">
                 <div 
                   className="w-3 h-3 rounded"
                   style={{ backgroundColor: getCountryColor(country.countryCode) }}
                 ></div>
-                <span>{country.country}</span>
+                <span className="font-medium">{country.country}</span>
               </span>
-              <span className="font-medium">{country.users}</span>
+              <span className="text-blue-600 font-bold">{country.users}</span>
             </div>
           ))}
         </div>
@@ -534,7 +685,7 @@ export const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             {isAnalyticsLoading ? (
-              <div className="flex items-center justify-center h-[300px]">
+              <div className="flex items-center justify-center h-[400px]">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-64 w-full" />
