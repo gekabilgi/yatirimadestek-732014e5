@@ -11,6 +11,7 @@ import { LocationSupport } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
+import { isIstanbulMiningInvestment, isResGesInvestment, getGesResOverrideValues } from '@/utils/investmentValidation';
 
 interface IncentiveResultsStepProps {
   queryData: UnifiedQueryData;
@@ -77,11 +78,38 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       }
     }
 
+    // Check for GES/RES special case
+    if (queryData.selectedSector && isResGesInvestment({
+      nace_kodu: queryData.selectedSector.nace_kodu,
+      sektor: queryData.selectedSector.sektor
+    })) {
+      const gesResOverrides = getGesResOverrideValues();
+      
+      // Override interest support values for both target and priority
+      if (targetSupports.interestSupport !== "N/A") {
+        targetSupports.interestSupport = gesResOverrides.interestSupport;
+        targetSupports.cap = gesResOverrides.interestSupportCap;
+      }
+      
+      prioritySupports.interestSupport = gesResOverrides.interestSupport;
+      prioritySupports.cap = gesResOverrides.interestSupportCap;
+    }
+
     return {
       target: targetSupports,
       priority: prioritySupports,
       isCombination
     };
+  };
+
+  // Check if we should show Istanbul mining warning
+  const shouldShowIstanbulMiningWarning = () => {
+    if (!queryData.selectedSector || !queryData.selectedProvince) return false;
+    
+    return isIstanbulMiningInvestment(
+      queryData.selectedProvince,
+      queryData.selectedSector.nace_kodu
+    );
   };
 
   // Helper function to convert Turkish characters for PDF
@@ -323,9 +351,9 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       
       const targetTaxDiscount = formatPercentage(supportValues.target.taxDiscount);
       const targetInterestSupport = supportValues.target.interestSupport !== "N/A" ? 
-        formatPercentage(supportValues.target.interestSupport) : "Uygulanmaz";
+        formatPercentage(supportValues.target.interestSupport) : supportValues.target.interestSupport;
       const targetCap = supportValues.target.cap !== "N/A" ? 
-        formatCurrency(supportValues.target.cap) : "Uygulanmaz";
+        formatCurrency(supportValues.target.cap) : supportValues.target.cap;
       
       doc.text(convertTurkishChars(`Vergi Indirim Destegi Yatirim Katki Orani: ${targetTaxDiscount}`), leftMargin + 5, yPos);
       yPos += 5;
@@ -356,8 +384,10 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       doc.setFont('helvetica', 'normal');
       
       const priorityTaxDiscount = formatPercentage(supportValues.priority.taxDiscount);
-      const priorityInterestSupport = formatPercentage(supportValues.priority.interestSupport);
-      const priorityCap = formatCurrency(supportValues.priority.cap);
+      const priorityInterestSupport = supportValues.priority.interestSupport.includes("Uygulanmaz") ? 
+        supportValues.priority.interestSupport : formatPercentage(supportValues.priority.interestSupport);
+      const priorityCap = supportValues.priority.cap.includes("Uygulanmaz") ? 
+        supportValues.priority.cap : formatCurrency(supportValues.priority.cap);
       
       doc.text(convertTurkishChars(`Vergi Indirim Destegi Yatirim Katki Orani: ${priorityTaxDiscount}`), leftMargin + 5, yPos);
       yPos += 5;
@@ -704,6 +734,16 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
             </div>
           </div>
 
+          {/* Istanbul Mining Warning */}
+          {shouldShowIstanbulMiningWarning() && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <strong>Önemli Uyarı:</strong> Seçilen sektör İstanbul ilinde desteklenmemektedir.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Target Sector Interest/Profit Share Support Warning */}
           {incentiveResult.sector.isTarget && [1, 2, 3].includes(incentiveResult.location.region) && (
             <Alert className="border-red-200 bg-red-50">
@@ -756,14 +796,18 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                         Faiz/Kar Payı Desteği Oranı: {
                           supportValues.target.interestSupport === "N/A" 
                             ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
-                            : formatPercentage(supportValues.target.interestSupport)
+                            : supportValues.target.interestSupport.includes("Uygulanmaz") 
+                              ? <span className="text-orange-600 font-medium">{supportValues.target.interestSupport}</span>
+                              : formatPercentage(supportValues.target.interestSupport)
                         }
                       </div>
                       <div>
                         Faiz/Kar Payı Desteği Üst Limit Tutarı: {
                           supportValues.target.cap === "N/A" 
                             ? <span className="text-red-600 font-medium">Uygulanmaz (1., 2., 3. Bölge)</span>
-                            : formatCurrency(supportValues.target.cap)
+                            : supportValues.target.cap.includes("Uygulanmaz") 
+                              ? <span className="text-orange-600 font-medium">{supportValues.target.cap}</span>
+                              : formatCurrency(supportValues.target.cap)
                         }
                       </div>
                     </div>
@@ -780,8 +824,20 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                     </h5>
                     <div className="text-xs space-y-1">
                       <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.priority.taxDiscount)}</div>
-                      <div>Faiz/Kar Payı Desteği Oranı: {formatPercentage(supportValues.priority.interestSupport)}</div>
-                      <div>Faiz/Kar Payı Desteği Üst Limit Tutarı: {formatCurrency(supportValues.priority.cap)}</div>
+                      <div>
+                        Faiz/Kar Payı Desteği Oranı: {
+                          supportValues.priority.interestSupport.includes("Uygulanmaz") 
+                            ? <span className="text-orange-600 font-medium">{supportValues.priority.interestSupport}</span>
+                            : formatPercentage(supportValues.priority.interestSupport)
+                        }
+                      </div>
+                      <div>
+                        Faiz/Kar Payı Desteği Üst Limit Tutarı: {
+                          supportValues.priority.cap.includes("Uygulanmaz") 
+                            ? <span className="text-orange-600 font-medium">{supportValues.priority.cap}</span>
+                            : formatCurrency(supportValues.priority.cap)
+                        }
+                      </div>
                     </div>
                   </div>
                 )}
