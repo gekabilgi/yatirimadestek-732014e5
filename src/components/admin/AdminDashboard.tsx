@@ -1,13 +1,111 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Users, FileText, MessageSquare, TrendingUp, Eye, Clock, UserPlus, Mail, BookOpen, Activity, MousePointer } from 'lucide-react';
+import { Users, FileText, MessageSquare, TrendingUp, Eye, Clock, UserPlus, Mail, BookOpen, Activity, MousePointer, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+// World map component using SVG
+const WorldMap = ({ data }: { data: any[] }) => {
+  const getCountryColor = (countryCode: string) => {
+    const country = data.find(d => d.countryCode === countryCode);
+    if (!country) return '#f0f0f0';
+    
+    const maxUsers = Math.max(...data.map(d => d.users));
+    const intensity = country.users / maxUsers;
+    
+    // Color intensity based on user count
+    if (intensity > 0.8) return '#1e40af'; // Dark blue
+    if (intensity > 0.6) return '#3b82f6'; // Blue
+    if (intensity > 0.4) return '#60a5fa'; // Light blue
+    if (intensity > 0.2) return '#93c5fd'; // Lighter blue
+    return '#dbeafe'; // Very light blue
+  };
+
+  return (
+    <div className="w-full h-[300px] flex items-center justify-center">
+      <div className="relative w-full max-w-4xl">
+        <svg viewBox="0 0 1000 500" className="w-full h-full">
+          {/* Simplified world map paths - major countries */}
+          {/* Turkey */}
+          <path
+            d="M540 180 L580 180 L590 190 L580 200 L540 200 Z"
+            fill={getCountryColor('TR')}
+            stroke="#333"
+            strokeWidth="0.5"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* USA */}
+          <path
+            d="M150 200 L300 200 L300 280 L150 280 Z"
+            fill={getCountryColor('US')}
+            stroke="#333"
+            strokeWidth="0.5"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Spain */}
+          <path
+            d="M420 220 L480 220 L480 260 L420 260 Z"
+            fill={getCountryColor('ES')}
+            stroke="#333"
+            strokeWidth="0.5"
+            className="hover:opacity-80 cursor-pointer"
+          />
+          
+          {/* Singapore */}
+          <path
+            d="M780 320 L790 320 L790 330 L780 330 Z"
+            fill={getCountryColor('SG')}
+            stroke="#333"
+            strokeWidth="0.5"
+            className="hover:opacity-80 cursor-pointer"
+          />
+        </svg>
+        
+        {/* Legend */}
+        <div className="mt-4 flex justify-center space-x-4 text-xs">
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-gray-200 rounded"></div>
+            <span>Veri yok</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-blue-100 rounded"></div>
+            <span>Az</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-blue-400 rounded"></div>
+            <span>Orta</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-blue-600 rounded"></div>
+            <span>Çok</span>
+          </div>
+        </div>
+        
+        {/* Country list */}
+        <div className="mt-4 space-y-2">
+          {data.map((country, index) => (
+            <div key={index} className="flex justify-between items-center text-sm">
+              <span className="flex items-center space-x-2">
+                <div 
+                  className="w-3 h-3 rounded"
+                  style={{ backgroundColor: getCountryColor(country.countryCode) }}
+                ></div>
+                <span>{country.country}</span>
+              </span>
+              <span className="font-medium">{country.users}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const AdminDashboard = () => {
   // Fetch Google Analytics data
@@ -237,6 +335,17 @@ export const AdminDashboard = () => {
     });
   }, [analyticsData]);
 
+  // Process analytics data for country visualization
+  const countryData = React.useMemo(() => {
+    if (!analyticsData?.topCountries) return [];
+    
+    return analyticsData.topCountries.map((country: any) => ({
+      country: country.country,
+      countryCode: country.countryCode,
+      users: country.users
+    }));
+  }, [analyticsData]);
+
   const topPagesData = React.useMemo(() => {
     if (!analyticsData?.topPages) return [];
     
@@ -414,41 +523,27 @@ export const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Top Pages Pie Chart */}
+        {/* World Map for Countries */}
         <Card>
           <CardHeader>
-            <CardTitle>Popüler Sayfalar</CardTitle>
-            <CardDescription>En çok ziyaret edilen sayfalar (Son 7 gün)</CardDescription>
+            <CardTitle className="flex items-center space-x-2">
+              <Globe className="h-5 w-5" />
+              <span>Ülkelere Göre Kullanıcılar</span>
+            </CardTitle>
+            <CardDescription>Kullanıcıların bulunduğu ülkeler (Son 7 gün)</CardDescription>
           </CardHeader>
           <CardContent>
             {isAnalyticsLoading ? (
               <div className="flex items-center justify-center h-[300px]">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-64 w-full rounded-full" />
+                  <Skeleton className="h-64 w-full" />
                 </div>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={topPagesData.length > 0 ? topPagesData : [
-                      { name: 'Veri yok', value: 100, color: '#0088FE' }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, value }) => topPagesData.length > 0 ? `${name} ${value}%` : name}
-                  >
-                    {(topPagesData.length > 0 ? topPagesData : [{ color: '#0088FE' }]).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <WorldMap data={countryData.length > 0 ? countryData : [
+                { country: 'Veri yok', countryCode: 'XX', users: 0 }
+              ]} />
             )}
           </CardContent>
         </Card>
