@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,35 +14,50 @@ interface WorldMapChartProps {
   isLoading?: boolean;
 }
 
+const normalizeName = (name: string) =>
+  name.toLowerCase().replace(/[^a-zA-Z]/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+const buildDynamicCountryMap = (geoFeatures: any[], analyticsData: CountryData): CountryData => {
+  const dynamicMap: CountryData = {};
+
+  const normalizedAnalytics = Object.entries(analyticsData).reduce((acc, [name, value]) => {
+    acc[normalizeName(name)] = value;
+    return acc;
+  }, {} as Record<string, number>);
+
+  geoFeatures.forEach((geo) => {
+    const geoName = geo.properties.NAME;
+    const normGeoName = normalizeName(geoName);
+
+    if (normalizedAnalytics[normGeoName]) {
+      dynamicMap[geoName] = normalizedAnalytics[normGeoName];
+    }
+  });
+
+  return dynamicMap;
+};
+
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = false }) => {
-  const [geoNames, setGeoNames] = React.useState<string[]>([]);
+  const [geoFeatures, setGeoFeatures] = useState<any[]>([]);
+  const [normalizedData, setNormalizedData] = useState<CountryData>({});
 
-  React.useEffect(() => {
-    fetch(geoUrl)
-      .then(res => res.json())
-      .then(worldData => {
-        const names = worldData.features.map((f: any) => f.properties.NAME);
-        setGeoNames(names);
-      });
-  }, []);
+  useEffect(() => {
+    const loadGeo = async () => {
+      const res = await fetch(geoUrl);
+      const geo = await res.json();
+      setGeoFeatures(geo.features);
+      setNormalizedData(buildDynamicCountryMap(geo.features, data));
+    };
 
-  const normalizedData = React.useMemo(() => {
-    if (!data || geoNames.length === 0) return {};
-    const normalized: CountryData = {};
-    Object.entries(data).forEach(([country, value]) => {
-      const match = geoNames.find(geoName => geoName.toLowerCase() === country.toLowerCase());
-      const matchedCountry = match || country;
-      normalized[matchedCountry] = value;
-    });
-    return normalized;
-  }, [data, geoNames]);
+    if (data) loadGeo();
+  }, [data]);
 
   const maxVisits = Math.max(...Object.values(normalizedData || {}));
 
   const getCountryColor = (geo: any) => {
     const countryName = geo.properties.NAME;
-    if (!normalizedData || !normalizedData[countryName]) return '#f8fafc';
     const visits = normalizedData[countryName];
+    if (!visits) return '#f8fafc';
     const intensity = visits / maxVisits;
     if (intensity >= 0.8) return '#1e40af';
     if (intensity >= 0.6) return '#3b82f6';
@@ -90,9 +105,9 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
                           stroke="#e2e8f0"
                           strokeWidth={0.5}
                           style={{
-                            default: { outline: "none" },
-                            hover: { fill: "#1e293b", outline: "none", cursor: "pointer" },
-                            pressed: { fill: "#0f172a", outline: "none" },
+                            default: { outline: 'none' },
+                            hover: { fill: '#1e293b', outline: 'none', cursor: 'pointer' },
+                            pressed: { fill: '#0f172a', outline: 'none' },
                           }}
                         />
                       </TooltipTrigger>
@@ -136,9 +151,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
       )}
 
       {!hasData && (
-        <div className="mt-4 text-center text-gray-500 text-sm">
-          Henüz ülke verisi bulunmuyor
-        </div>
+        <div className="mt-4 text-center text-gray-500 text-sm">Henüz ülke verisi bulunmuyor</div>
       )}
     </div>
   );
