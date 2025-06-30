@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,77 +14,56 @@ interface WorldMapChartProps {
   isLoading?: boolean;
 }
 
-// Comprehensive country name mapping from Google Analytics to GeoJSON
-const countryNameMapping: { [key: string]: string } = {
-  'United States': 'United States of America',
-  'South Korea': 'Korea',
-  'Czech Republic': 'Czechia',
-  'Russia': 'Russian Federation',
-  'Tanzania': 'United Republic of Tanzania',
-  'Venezuela': 'Venezuela (Bolivarian Republic of)',
-  'Syria': 'Syrian Arab Republic',
-  'Iran': 'Iran (Islamic Republic of)',
-  'Vietnam': 'Viet Nam',
-  'Bolivia': 'Bolivia (Plurinational State of)',
-  'Moldova': 'Republic of Moldova',
-  'North Macedonia': 'Macedonia',
-  'Democratic Republic of the Congo': 'Democratic Republic of the Congo',
-  'Republic of the Congo': 'Congo',
-  'Laos': "Lao People's Democratic Republic",
-  'Myanmar': 'Myanmar',
-  'Palestine': 'Palestine',
-  'Brunei': 'Brunei Darussalam',
-  'East Timor': 'Timor-Leste',
-  'Eswatini': 'eSwatini',
-  'Ivory Coast': "Côte d'Ivoire",
-  'Cape Verde': 'Cabo Verde',
-  'Micronesia': 'Micronesia (Federated States of)',
-  'Türkiye': 'Turkey', // This is the key mapping for Turkey
-  'Turkey': 'Turkey',
+const normalizeName = (name: string) =>
+  name.toLowerCase().replace(/[^a-zA-Z]/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+const buildDynamicCountryMap = (geoFeatures: any[], analyticsData: CountryData): CountryData => {
+  const dynamicMap: CountryData = {};
+
+  const normalizedAnalytics = Object.entries(analyticsData).reduce((acc, [name, value]) => {
+    acc[normalizeName(name)] = value;
+    return acc;
+  }, {} as Record<string, number>);
+
+  geoFeatures.forEach((geo) => {
+    const geoName = geo.properties.NAME;
+    const normGeoName = normalizeName(geoName);
+
+    if (normalizedAnalytics[normGeoName]) {
+      dynamicMap[geoName] = normalizedAnalytics[normGeoName];
+    }
+  });
+
+  return dynamicMap;
 };
 
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = false }) => {
-  console.log('WorldMapChart received data:', data);
-  
-  // Normalize country names for mapping
-  const normalizedData = React.useMemo(() => {
-    if (!data) return {};
-    
-    const normalized: CountryData = {};
-    Object.entries(data).forEach(([country, value]) => {
-      const mappedCountry = countryNameMapping[country] || country;
-      normalized[mappedCountry] = value;
-      console.log(`Mapping: ${country} -> ${mappedCountry} (${value} visits)`);
-    });
-    
-    console.log('Normalized country data:', normalized);
-    return normalized;
+  const [geoFeatures, setGeoFeatures] = useState<any[]>([]);
+  const [normalizedData, setNormalizedData] = useState<CountryData>({});
+
+  useEffect(() => {
+    const loadGeo = async () => {
+      const res = await fetch(geoUrl);
+      const geo = await res.json();
+      setGeoFeatures(geo.features);
+      setNormalizedData(buildDynamicCountryMap(geo.features, data));
+    };
+
+    if (data) loadGeo();
   }, [data]);
 
-  // Calculate the maximum visits for color scaling
   const maxVisits = Math.max(...Object.values(normalizedData || {}));
-  console.log('Max visits for scaling:', maxVisits);
-  
-  // Color intensity function
+
   const getCountryColor = (geo: any) => {
     const countryName = geo.properties.NAME;
-    console.log(`Getting color for country: ${countryName}`);
-    
-    if (!normalizedData || !normalizedData[countryName]) {
-      return '#f8fafc'; // Very light gray for no data
-    }
-    
     const visits = normalizedData[countryName];
+    if (!visits) return '#f8fafc';
     const intensity = visits / maxVisits;
-    
-    console.log(`Country ${countryName} has ${visits} visits, intensity: ${intensity}`);
-    
-    // Blue gradient based on intensity
-    if (intensity >= 0.8) return '#1e40af'; // Dark blue
-    if (intensity >= 0.6) return '#3b82f6'; // Blue
-    if (intensity >= 0.4) return '#60a5fa'; // Light blue
-    if (intensity >= 0.2) return '#93c5fd'; // Lighter blue
-    return '#dbeafe'; // Very light blue
+    if (intensity >= 0.8) return '#1e40af';
+    if (intensity >= 0.6) return '#3b82f6';
+    if (intensity >= 0.4) return '#60a5fa';
+    if (intensity >= 0.2) return '#93c5fd';
+    return '#dbeafe';
   };
 
   const getTooltipContent = (geo: any) => {
@@ -103,7 +81,6 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
   }
 
   const hasData = normalizedData && Object.keys(normalizedData).length > 0;
-  console.log('Has data:', hasData);
 
   return (
     <div className="w-full">
@@ -111,10 +88,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
         <div className="relative">
           <ComposableMap
             projection="geoMercator"
-            projectionConfig={{
-              scale: 120,
-              center: [0, 20]
-            }}
+            projectionConfig={{ scale: 120, center: [0, 20] }}
             width={800}
             height={400}
             className="w-full h-auto border rounded-lg bg-slate-50"
@@ -122,40 +96,26 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
             <ZoomableGroup>
               <Geographies geography={geoUrl}>
                 {({ geographies }) =>
-                  geographies.map((geo) => {
-                    const fillColor = getCountryColor(geo);
-                    console.log(`Rendering ${geo.properties.NAME} with color: ${fillColor}`);
-                    
-                    return (
-                      <Tooltip key={geo.rsmKey}>
-                        <TooltipTrigger asChild>
-                          <Geography
-                            geography={geo}
-                            fill={fillColor}
-                            stroke="#e2e8f0"
-                            strokeWidth={0.5}
-                            style={{
-                              default: {
-                                outline: "none",
-                              },
-                              hover: {
-                                fill: "#1e293b",
-                                outline: "none",
-                                cursor: "pointer",
-                              },
-                              pressed: {
-                                fill: "#0f172a",
-                                outline: "none",
-                              },
-                            }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{getTooltipContent(geo)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })
+                  geographies.map((geo) => (
+                    <Tooltip key={geo.rsmKey}>
+                      <TooltipTrigger asChild>
+                        <Geography
+                          geography={geo}
+                          fill={getCountryColor(geo)}
+                          stroke="#e2e8f0"
+                          strokeWidth={0.5}
+                          style={{
+                            default: { outline: 'none' },
+                            hover: { fill: '#1e293b', outline: 'none', cursor: 'pointer' },
+                            pressed: { fill: '#0f172a', outline: 'none' },
+                          }}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{getTooltipContent(geo)}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))
                 }
               </Geographies>
             </ZoomableGroup>
@@ -163,33 +123,16 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
         </div>
       </TooltipProvider>
 
-      {/* Legend */}
       {hasData && maxVisits > 0 && (
         <div className="mt-4 flex justify-center space-x-4 text-xs text-gray-600">
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-slate-200 rounded"></div>
-            <span>Veri yok</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-100 rounded"></div>
-            <span>Az (1-{Math.round(maxVisits * 0.2)})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-300 rounded"></div>
-            <span>Orta ({Math.round(maxVisits * 0.2)}-{Math.round(maxVisits * 0.6)})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            <span>Çok ({Math.round(maxVisits * 0.6)}-{Math.round(maxVisits * 0.8)})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-700 rounded"></div>
-            <span>En çok ({Math.round(maxVisits * 0.8)}+)</span>
-          </div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-slate-200 rounded"></div><span>Veri yok</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-100 rounded"></div><span>Az (1-{Math.round(maxVisits * 0.2)})</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-300 rounded"></div><span>Orta ({Math.round(maxVisits * 0.2)}-{Math.round(maxVisits * 0.6)})</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-500 rounded"></div><span>Çok ({Math.round(maxVisits * 0.6)}-{Math.round(maxVisits * 0.8)})</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-700 rounded"></div><span>En çok ({Math.round(maxVisits * 0.8)}+)</span></div>
         </div>
       )}
 
-      {/* Top Countries List */}
       {hasData && (
         <div className="mt-4">
           <h4 className="text-sm font-medium text-gray-700 mb-2">En Çok Kullanıcı Olan Ülkeler</h4>
@@ -207,18 +150,8 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
         </div>
       )}
 
-      {/* No Data Message */}
       {!hasData && (
-        <div className="mt-4 text-center text-gray-500 text-sm">
-          Henüz ülke verisi bulunmuyor
-        </div>
-      )}
-
-      {/* Debug Info */}
-      {hasData && (
-        <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
-          <strong>Debug:</strong> Raw data: {JSON.stringify(data)} | Normalized: {JSON.stringify(normalizedData)}
-        </div>
+        <div className="mt-4 text-center text-gray-500 text-sm">Henüz ülke verisi bulunmuyor</div>
       )}
     </div>
   );
