@@ -237,12 +237,22 @@ export const AdminDashboard = () => {
 
   // Process analytics data for country map
   const countryData = React.useMemo(() => {
-    if (!analyticsData?.topCountries) return {};
+    console.log('Processing country data from analytics:', analyticsData?.topCountries);
     
-    return analyticsData.topCountries.reduce((acc: any, country: any) => {
-      acc[country.country] = country.users;
+    if (!analyticsData?.topCountries || !Array.isArray(analyticsData.topCountries)) {
+      console.log('No country data available');
+      return {};
+    }
+    
+    const result = analyticsData.topCountries.reduce((acc: any, country: any) => {
+      if (country.country && country.users) {
+        acc[country.country] = parseInt(country.users);
+      }
       return acc;
     }, {});
+    
+    console.log('Processed country data for map:', result);
+    return result;
   }, [analyticsData]);
 
   // Google Analytics stat cards

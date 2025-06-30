@@ -15,17 +15,61 @@ interface WorldMapChartProps {
   isLoading?: boolean;
 }
 
+// Country name mapping from Google Analytics to GeoJSON
+const countryNameMapping: { [key: string]: string } = {
+  'United States': 'United States of America',
+  'South Korea': 'Korea',
+  'Czech Republic': 'Czechia',
+  'Russia': 'Russian Federation',
+  'Tanzania': 'United Republic of Tanzania',
+  'Venezuela': 'Venezuela (Bolivarian Republic of)',
+  'Syria': 'Syrian Arab Republic',
+  'Iran': 'Iran (Islamic Republic of)',
+  'Vietnam': 'Viet Nam',
+  'Bolivia': 'Bolivia (Plurinational State of)',
+  'Moldova': 'Republic of Moldova',
+  'North Macedonia': 'Macedonia',
+  'Democratic Republic of the Congo': 'Democratic Republic of the Congo',
+  'Republic of the Congo': 'Congo',
+  'Laos': "Lao People's Democratic Republic",
+  'Myanmar': 'Myanmar',
+  'Palestine': 'Palestine',
+  'Brunei': 'Brunei Darussalam',
+  'East Timor': 'Timor-Leste',
+  'Eswatini': 'eSwatini',
+  'Ivory Coast': "Côte d'Ivoire",
+  'Cape Verde': 'Cabo Verde',
+  'Micronesia': 'Micronesia (Federated States of)',
+};
+
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = false }) => {
+  console.log('WorldMapChart received data:', data);
+  
+  // Normalize country names for mapping
+  const normalizedData = React.useMemo(() => {
+    if (!data) return {};
+    
+    const normalized: CountryData = {};
+    Object.entries(data).forEach(([country, value]) => {
+      const mappedCountry = countryNameMapping[country] || country;
+      normalized[mappedCountry] = value;
+    });
+    
+    console.log('Normalized country data:', normalized);
+    return normalized;
+  }, [data]);
+
   // Calculate the maximum visits for color scaling
-  const maxVisits = Math.max(...Object.values(data || {}));
+  const maxVisits = Math.max(...Object.values(normalizedData || {}));
+  console.log('Max visits for scaling:', maxVisits);
   
   // Color intensity function
   const getCountryColor = (countryName: string) => {
-    if (!data || !data[countryName]) {
+    if (!normalizedData || !normalizedData[countryName]) {
       return '#f8fafc'; // Very light gray for no data
     }
     
-    const visits = data[countryName];
+    const visits = normalizedData[countryName];
     const intensity = visits / maxVisits;
     
     // Blue gradient based on intensity
@@ -38,8 +82,8 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
 
   const getTooltipContent = (geo: any) => {
     const countryName = geo.properties.NAME;
-    const visits = data?.[countryName] || 0;
-    return visits > 0 ? `${countryName}: ${visits} ziyaret` : `${countryName}: Veri yok`;
+    const visits = normalizedData?.[countryName] || 0;
+    return visits > 0 ? `${countryName}: ${visits} kullanıcı` : `${countryName}: Veri yok`;
   };
 
   if (isLoading) {
@@ -49,6 +93,9 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
       </div>
     );
   }
+
+  const hasData = normalizedData && Object.keys(normalizedData).length > 0;
+  console.log('Has data:', hasData);
 
   return (
     <div className="w-full">
@@ -104,44 +151,53 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
       </TooltipProvider>
 
       {/* Legend */}
-      <div className="mt-4 flex justify-center space-x-4 text-xs text-gray-600">
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-slate-200 rounded"></div>
-          <span>Veri yok</span>
+      {hasData && maxVisits > 0 && (
+        <div className="mt-4 flex justify-center space-x-4 text-xs text-gray-600">
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-slate-200 rounded"></div>
+            <span>Veri yok</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-blue-100 rounded"></div>
+            <span>Az (1-{Math.round(maxVisits * 0.2)})</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-blue-300 rounded"></div>
+            <span>Orta ({Math.round(maxVisits * 0.2)}-{Math.round(maxVisits * 0.6)})</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-blue-500 rounded"></div>
+            <span>Çok ({Math.round(maxVisits * 0.6)}-{Math.round(maxVisits * 0.8)})</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-blue-700 rounded"></div>
+            <span>En çok ({Math.round(maxVisits * 0.8)}+)</span>
+          </div>
         </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-100 rounded"></div>
-          <span>Az (1-{Math.round(maxVisits * 0.2)})</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-300 rounded"></div>
-          <span>Orta ({Math.round(maxVisits * 0.2)}-{Math.round(maxVisits * 0.6)})</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-500 rounded"></div>
-          <span>Çok ({Math.round(maxVisits * 0.6)}-{Math.round(maxVisits * 0.8)})</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-700 rounded"></div>
-          <span>En çok ({Math.round(maxVisits * 0.8)}+)</span>
-        </div>
-      </div>
+      )}
 
       {/* Top Countries List */}
-      {data && Object.keys(data).length > 0 && (
+      {hasData && (
         <div className="mt-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">En Çok Ziyaret Edilen Ülkeler</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">En Çok Kullanıcı Olan Ülkeler</h4>
           <div className="grid grid-cols-2 gap-2 max-h-24 overflow-y-auto">
-            {Object.entries(data)
+            {Object.entries(normalizedData)
               .sort(([, a], [, b]) => b - a)
               .slice(0, 8)
-              .map(([country, visits]) => (
+              .map(([country, users]) => (
                 <div key={country} className="flex justify-between items-center text-xs p-2 bg-white rounded border">
                   <span className="font-medium truncate">{country}</span>
-                  <span className="text-blue-600 font-bold ml-2">{visits}</span>
+                  <span className="text-blue-600 font-bold ml-2">{users}</span>
                 </div>
               ))}
           </div>
+        </div>
+      )}
+
+      {/* No Data Message */}
+      {!hasData && (
+        <div className="mt-4 text-center text-gray-500 text-sm">
+          Henüz ülke verisi bulunmuyor
         </div>
       )}
     </div>

@@ -222,13 +222,29 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
           orderBys: [{ dimension: { dimensionName: 'date' } }],
         }),
       }),
+      
+      // Top countries by users (last 7 days)
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          dimensions: [{ name: 'country' }],
+          metrics: [{ name: 'activeUsers' }],
+          orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+          limit: 20,
+        }),
+      }),
     ];
 
     const responses = await Promise.all(requests);
     
     const results = await Promise.all(
       responses.map(async (response, index) => {
-        const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'dailyPageViews'];
+        const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'dailyPageViews', 'topCountries'];
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Failed to fetch ${requestNames[index]}:`, response.status, errorText);
@@ -240,6 +256,14 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
 
     console.log('Analytics API requests completed successfully');
 
+    // Process country data
+    const topCountries = results[5]?.rows?.map((row: any) => ({
+      country: row.dimensionValues[0].value,
+      users: parseInt(row.metricValues[0].value)
+    })) || [];
+
+    console.log('Country data retrieved:', topCountries);
+
     return {
       activeUsers: results[0]?.rows?.[0]?.metricValues?.[0]?.value || '0',
       newUsers: results[1]?.rows?.[0]?.metricValues?.[0]?.value || '0',
@@ -250,7 +274,7 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
         date: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)
       })) || [],
-      topPages: [], // Simplified for now
+      topCountries: topCountries,
     };
   } catch (error) {
     console.error('Error fetching GA4 data:', error);
