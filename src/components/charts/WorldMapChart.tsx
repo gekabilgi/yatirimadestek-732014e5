@@ -15,7 +15,7 @@ interface WorldMapChartProps {
   isLoading?: boolean;
 }
 
-// Country name mapping from Google Analytics to GeoJSON
+// Comprehensive country name mapping from Google Analytics to GeoJSON
 const countryNameMapping: { [key: string]: string } = {
   'United States': 'United States of America',
   'South Korea': 'Korea',
@@ -40,6 +40,8 @@ const countryNameMapping: { [key: string]: string } = {
   'Ivory Coast': "Côte d'Ivoire",
   'Cape Verde': 'Cabo Verde',
   'Micronesia': 'Micronesia (Federated States of)',
+  'Türkiye': 'Turkey', // This is the key mapping for Turkey
+  'Turkey': 'Turkey',
 };
 
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = false }) => {
@@ -53,6 +55,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
     Object.entries(data).forEach(([country, value]) => {
       const mappedCountry = countryNameMapping[country] || country;
       normalized[mappedCountry] = value;
+      console.log(`Mapping: ${country} -> ${mappedCountry} (${value} visits)`);
     });
     
     console.log('Normalized country data:', normalized);
@@ -64,13 +67,18 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
   console.log('Max visits for scaling:', maxVisits);
   
   // Color intensity function
-  const getCountryColor = (countryName: string) => {
+  const getCountryColor = (geo: any) => {
+    const countryName = geo.properties.NAME;
+    console.log(`Getting color for country: ${countryName}`);
+    
     if (!normalizedData || !normalizedData[countryName]) {
       return '#f8fafc'; // Very light gray for no data
     }
     
     const visits = normalizedData[countryName];
     const intensity = visits / maxVisits;
+    
+    console.log(`Country ${countryName} has ${visits} visits, intensity: ${intensity}`);
     
     // Blue gradient based on intensity
     if (intensity >= 0.8) return '#1e40af'; // Dark blue
@@ -114,35 +122,40 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
             <ZoomableGroup>
               <Geographies geography={geoUrl}>
                 {({ geographies }) =>
-                  geographies.map((geo) => (
-                    <Tooltip key={geo.rsmKey}>
-                      <TooltipTrigger asChild>
-                        <Geography
-                          geography={geo}
-                          fill={getCountryColor(geo.properties.NAME)}
-                          stroke="#e2e8f0"
-                          strokeWidth={0.5}
-                          style={{
-                            default: {
-                              outline: "none",
-                            },
-                            hover: {
-                              fill: "#1e293b",
-                              outline: "none",
-                              cursor: "pointer",
-                            },
-                            pressed: {
-                              fill: "#0f172a",
-                              outline: "none",
-                            },
-                          }}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{getTooltipContent(geo)}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))
+                  geographies.map((geo) => {
+                    const fillColor = getCountryColor(geo);
+                    console.log(`Rendering ${geo.properties.NAME} with color: ${fillColor}`);
+                    
+                    return (
+                      <Tooltip key={geo.rsmKey}>
+                        <TooltipTrigger asChild>
+                          <Geography
+                            geography={geo}
+                            fill={fillColor}
+                            stroke="#e2e8f0"
+                            strokeWidth={0.5}
+                            style={{
+                              default: {
+                                outline: "none",
+                              },
+                              hover: {
+                                fill: "#1e293b",
+                                outline: "none",
+                                cursor: "pointer",
+                              },
+                              pressed: {
+                                fill: "#0f172a",
+                                outline: "none",
+                              },
+                            }}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{getTooltipContent(geo)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })
                 }
               </Geographies>
             </ZoomableGroup>
@@ -198,6 +211,13 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
       {!hasData && (
         <div className="mt-4 text-center text-gray-500 text-sm">
           Henüz ülke verisi bulunmuyor
+        </div>
+      )}
+
+      {/* Debug Info */}
+      {hasData && (
+        <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+          <strong>Debug:</strong> Raw data: {JSON.stringify(data)} | Normalized: {JSON.stringify(normalizedData)}
         </div>
       )}
     </div>
