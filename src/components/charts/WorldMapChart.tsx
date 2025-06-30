@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   ComposableMap,
@@ -25,61 +26,130 @@ interface WorldMapChartProps {
   isLoading?: boolean;
 }
 
+// Mapping from Google Analytics country names to GeoJSON country names
+const countryNameMapping: { [key: string]: string } = {
+  'Türkiye': 'Turkey',
+  'Turkey': 'Turkey',
+  'United States': 'United States of America',
+  'USA': 'United States of America',
+  'Spain': 'Spain',
+  'Singapore': 'Singapore',
+  'Germany': 'Germany',
+  'France': 'France',
+  'United Kingdom': 'United Kingdom',
+  'UK': 'United Kingdom',
+  'Russia': 'Russia',
+  'China': 'China',
+  'Japan': 'Japan',
+  'India': 'India',
+  'Brazil': 'Brazil',
+  'Canada': 'Canada',
+  'Australia': 'Australia',
+  'Italy': 'Italy',
+  'Netherlands': 'Netherlands',
+  'South Korea': 'South Korea',
+  'Mexico': 'Mexico',
+  'Argentina': 'Argentina',
+  'South Africa': 'South Africa',
+  'Saudi Arabia': 'Saudi Arabia',
+  'United Arab Emirates': 'United Arab Emirates',
+  'Egypt': 'Egypt',
+  'Nigeria': 'Nigeria',
+  'Kenya': 'Kenya',
+  'Morocco': 'Morocco',
+  'Algeria': 'Algeria',
+  'Tunisia': 'Tunisia',
+  'Libya': 'Libya',
+  'Sudan': 'Sudan',
+  'Ethiopia': 'Ethiopia',
+  'Ghana': 'Ghana',
+  'Cameroon': 'Cameroon',
+  'Uganda': 'Uganda',
+  'Tanzania': 'Tanzania',
+  'Zimbabwe': 'Zimbabwe',
+  'Zambia': 'Zambia',
+  'Botswana': 'Botswana',
+  'Namibia': 'Namibia',
+  'Angola': 'Angola',
+  'Democratic Republic of the Congo': 'Democratic Republic of the Congo',
+  'Republic of the Congo': 'Republic of the Congo',
+  'Central African Republic': 'Central African Republic',
+  'Chad': 'Chad',
+  'Niger': 'Niger',
+  'Mali': 'Mali',
+  'Burkina Faso': 'Burkina Faso',
+  'Senegal': 'Senegal',
+  'Guinea': 'Guinea',
+  'Sierra Leone': 'Sierra Leone',
+  'Liberia': 'Liberia',
+  'Côte d\'Ivoire': 'Côte d\'Ivoire',
+  'Ivory Coast': 'Côte d\'Ivoire',
+  'Togo': 'Togo',
+  'Benin': 'Benin',
+  'Gabon': 'Gabon',
+  'Equatorial Guinea': 'Equatorial Guinea',
+  'São Tomé and Príncipe': 'São Tomé and Príncipe',
+  'Cape Verde': 'Cape Verde',
+  'Gambia': 'Gambia',
+  'Guinea-Bissau': 'Guinea-Bissau',
+  'Mauritania': 'Mauritania',
+  'Western Sahara': 'Western Sahara',
+  'Djibouti': 'Djibouti',
+  'Eritrea': 'Eritrea',
+  'Somalia': 'Somalia',
+  'Comoros': 'Comoros',
+  'Madagascar': 'Madagascar',
+  'Mauritius': 'Mauritius',
+  'Seychelles': 'Seychelles',
+  'Réunion': 'Réunion',
+  'Mayotte': 'Mayotte'
+};
+
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   data,
   isLoading = false,
 }) => {
-  const [geoCountryNames, setGeoCountryNames] = React.useState<string[]>([]);
-
-  // Fetch country names from GeoJSON once
-  React.useEffect(() => {
-    fetch(geoUrl)
-      .then((res) => res.json())
-      .then((geoData) => {
-        const names = geoData.features.map(
-          (f: any) => f.properties.NAME as string
-        );
-        setGeoCountryNames(names);
-      });
-  }, []);
-
+  // Normalize country data using mapping
   const normalizedData = React.useMemo(() => {
-    if (!data || geoCountryNames.length === 0) return {};
+    if (!data || Object.keys(data).length === 0) return {};
+
+    console.log('Original data from Analytics:', data);
 
     const normalized: CountryData = {};
     Object.entries(data).forEach(([country, value]) => {
-      if (!country || typeof country !== 'string') return;
+      if (!country || typeof country !== 'string' || country === '(not set)') return;
 
-      const matchedGeo = geoCountryNames.find(
-        (name) =>
-          typeof name === 'string' &&
-          name.toLowerCase() === country.toLowerCase()
-      );
-
-      const normalizedName = matchedGeo || country;
-      normalized[normalizedName] = value;
+      // Use mapping if available, otherwise use original name
+      const mappedName = countryNameMapping[country] || country;
+      normalized[mappedName] = value;
+      
+      console.log(`Mapping: "${country}" -> "${mappedName}" (${value} users)`);
     });
 
+    console.log('Normalized data for map:', normalized);
     return normalized;
-  }, [data, geoCountryNames]);
+  }, [data]);
 
   const maxVisits = Math.max(...Object.values(normalizedData || {}));
+  console.log('Max visits for color scaling:', maxVisits);
 
   const getCountryColor = (geo: any) => {
     const countryName = geo.properties.NAME;
+    const visits = normalizedData?.[countryName] || 0;
 
-    if (!normalizedData || !normalizedData[countryName]) {
-      return '#f8fafc';
+    if (visits === 0) {
+      return '#f8fafc'; // Light gray for no data
     }
 
-    const visits = normalizedData[countryName];
     const intensity = visits / maxVisits;
+    console.log(`Country: ${countryName}, Visits: ${visits}, Intensity: ${intensity}`);
 
-    if (intensity >= 0.8) return '#1e40af';
-    if (intensity >= 0.6) return '#3b82f6';
-    if (intensity >= 0.4) return '#60a5fa';
-    if (intensity >= 0.2) return '#93c5fd';
-    return '#dbeafe';
+    // Color scale from light blue to dark blue
+    if (intensity >= 0.8) return '#1e40af'; // Dark blue
+    if (intensity >= 0.6) return '#3b82f6'; // Medium-dark blue
+    if (intensity >= 0.4) return '#60a5fa'; // Medium blue
+    if (intensity >= 0.2) return '#93c5fd'; // Light-medium blue
+    return '#dbeafe'; // Light blue
   };
 
   const getTooltipContent = (geo: any) => {
