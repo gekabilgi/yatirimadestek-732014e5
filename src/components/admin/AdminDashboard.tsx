@@ -2,261 +2,10 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, FileText, MessageSquare, TrendingUp, Eye, Clock, UserPlus, Mail, BookOpen, Activity, MousePointer, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-// World map component using SVG
-const WorldMap = ({ data }: { data: any[] }) => {
-  const getCountryColor = (countryCode: string) => {
-    const country = data.find(d => d.countryCode === countryCode);
-    if (!country) return '#f0f0f0';
-    
-    const maxUsers = Math.max(...data.map(d => d.users));
-    const intensity = country.users / maxUsers;
-    
-    // Color intensity based on user count
-    if (intensity > 0.8) return '#1e40af'; // Dark blue
-    if (intensity > 0.6) return '#3b82f6'; // Blue
-    if (intensity > 0.4) return '#60a5fa'; // Light blue
-    if (intensity > 0.2) return '#93c5fd'; // Lighter blue
-    return '#dbeafe'; // Very light blue
-  };
-
-  return (
-    <div className="w-full h-[400px] flex flex-col items-center justify-center">
-      <div className="relative w-full max-w-5xl">
-        <svg viewBox="0 0 1000 500" className="w-full h-full border rounded-lg bg-blue-50">
-          {/* Simplified world map paths - major countries */}
-          
-          {/* United States */}
-          <path
-            d="M150 200 L300 200 L320 220 L310 270 L280 280 L150 280 Z"
-            fill={getCountryColor('US')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Canada */}
-          <path
-            d="M150 120 L350 120 L350 200 L150 200 Z"
-            fill={getCountryColor('CA')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Brazil */}
-          <path
-            d="M280 320 L380 320 L390 380 L370 420 L280 420 Z"
-            fill={getCountryColor('BR')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* United Kingdom */}
-          <path
-            d="M470 160 L490 160 L490 180 L470 180 Z"
-            fill={getCountryColor('GB')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* France */}
-          <path
-            d="M470 180 L500 180 L500 220 L470 220 Z"
-            fill={getCountryColor('FR')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Germany */}
-          <path
-            d="M500 160 L530 160 L530 200 L500 200 Z"
-            fill={getCountryColor('DE')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Spain */}
-          <path
-            d="M420 220 L480 220 L480 260 L420 260 Z"
-            fill={getCountryColor('ES')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Turkey */}
-          <path
-            d="M540 180 L590 180 L590 220 L540 220 Z"
-            fill={getCountryColor('TR')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Russia */}
-          <path
-            d="M530 120 L800 120 L800 200 L530 200 Z"
-            fill={getCountryColor('RU')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* China */}
-          <path
-            d="M700 200 L820 200 L820 280 L700 280 Z"
-            fill={getCountryColor('CN')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* India */}
-          <path
-            d="M650 250 L720 250 L720 350 L650 350 Z"
-            fill={getCountryColor('IN')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Japan */}
-          <path
-            d="M850 220 L880 220 L880 280 L850 280 Z"
-            fill={getCountryColor('JP')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Australia */}
-          <path
-            d="M750 380 L850 380 L850 420 L750 420 Z"
-            fill={getCountryColor('AU')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* South Korea */}
-          <path
-            d="M820 240 L840 240 L840 260 L820 260 Z"
-            fill={getCountryColor('KR')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Singapore */}
-          <path
-            d="M780 320 L790 320 L790 330 L780 330 Z"
-            fill={getCountryColor('SG')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Italy */}
-          <path
-            d="M500 200 L520 200 L520 260 L500 260 Z"
-            fill={getCountryColor('IT')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Netherlands */}
-          <path
-            d="M480 150 L500 150 L500 170 L480 170 Z"
-            fill={getCountryColor('NL')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Mexico */}
-          <path
-            d="M150 280 L250 280 L250 340 L150 340 Z"
-            fill={getCountryColor('MX')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* South Africa */}
-          <path
-            d="M520 380 L570 380 L570 420 L520 420 Z"
-            fill={getCountryColor('ZA')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-          
-          {/* Egypt */}
-          <path
-            d="M520 260 L550 260 L550 300 L520 300 Z"
-            fill={getCountryColor('EG')}
-            stroke="#333"
-            strokeWidth="1"
-            className="hover:opacity-80 cursor-pointer"
-          />
-        </svg>
-      </div>
-      
-      {/* Legend */}
-      <div className="mt-4 flex justify-center space-x-4 text-xs">
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-gray-200 rounded"></div>
-          <span>Veri yok</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-100 rounded"></div>
-          <span>Az (1-10)</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-300 rounded"></div>
-          <span>Orta (11-50)</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-500 rounded"></div>
-          <span>Çok (51-100)</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-700 rounded"></div>
-          <span>Çok fazla (100+)</span>
-        </div>
-      </div>
-      
-      {/* Country list */}
-      <div className="mt-4 w-full max-w-2xl">
-        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-          {data.map((country, index) => (
-            <div key={index} className="flex justify-between items-center text-sm p-2 bg-white rounded border">
-              <span className="flex items-center space-x-2">
-                <div 
-                  className="w-3 h-3 rounded"
-                  style={{ backgroundColor: getCountryColor(country.countryCode) }}
-                ></div>
-                <span className="font-medium">{country.country}</span>
-              </span>
-              <span className="text-blue-600 font-bold">{country.users}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
+import { WorldMapChart } from '@/components/charts/WorldMapChart';
 
 export const AdminDashboard = () => {
   // Fetch Google Analytics data
@@ -486,27 +235,14 @@ export const AdminDashboard = () => {
     });
   }, [analyticsData]);
 
-  // Process analytics data for country visualization
+  // Process analytics data for country map
   const countryData = React.useMemo(() => {
-    if (!analyticsData?.topCountries) return [];
+    if (!analyticsData?.topCountries) return {};
     
-    return analyticsData.topCountries.map((country: any) => ({
-      country: country.country,
-      countryCode: country.countryCode,
-      users: country.users
-    }));
-  }, [analyticsData]);
-
-  const topPagesData = React.useMemo(() => {
-    if (!analyticsData?.topPages) return [];
-    
-    const total = analyticsData.topPages.reduce((sum: number, page: any) => sum + page.views, 0);
-    
-    return analyticsData.topPages.map((page: any, index: number) => ({
-      name: page.title.length > 20 ? page.title.substring(0, 20) + '...' : page.title,
-      value: Math.round((page.views / total) * 100),
-      color: COLORS[index % COLORS.length]
-    }));
+    return analyticsData.topCountries.reduce((acc: any, country: any) => {
+      acc[country.country] = country.users;
+      return acc;
+    }, {});
   }, [analyticsData]);
 
   // Google Analytics stat cards
@@ -684,18 +420,10 @@ export const AdminDashboard = () => {
             <CardDescription>Kullanıcıların bulunduğu ülkeler (Son 7 gün)</CardDescription>
           </CardHeader>
           <CardContent>
-            {isAnalyticsLoading ? (
-              <div className="flex items-center justify-center h-[400px]">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-64 w-full" />
-                </div>
-              </div>
-            ) : (
-              <WorldMap data={countryData.length > 0 ? countryData : [
-                { country: 'Veri yok', countryCode: 'XX', users: 0 }
-              ]} />
-            )}
+            <WorldMapChart 
+              data={countryData} 
+              isLoading={isAnalyticsLoading} 
+            />
           </CardContent>
         </Card>
       </div>
