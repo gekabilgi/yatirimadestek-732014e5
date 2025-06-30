@@ -32,10 +32,10 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
     const normalized: CountryData = {};
 
     Object.entries(data).forEach(([gaCountry, value]) => {
-      if (!gaCountry || typeof gaCountry !== 'string') return;
+      if (!gaCountry) return;
 
       const matchedCountry = geoCountries.find(
-        (geoName) => typeof geoName === 'string' && geoName.toLowerCase() === gaCountry.toLowerCase()
+        (geoName) => geoName?.toLowerCase() === gaCountry.toLowerCase()
       );
 
       const finalName = matchedCountry || gaCountry;
