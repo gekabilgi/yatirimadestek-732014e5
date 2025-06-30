@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,49 +15,35 @@ interface WorldMapChartProps {
 }
 
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = false }) => {
-  const [geoCountryNames, setGeoCountryNames] = useState<string[]>([]);
+  const [geoNames, setGeoNames] = React.useState<string[]>([]);
 
-  // Fetch country names from GeoJSON for dynamic matching
-  useEffect(() => {
+  React.useEffect(() => {
     fetch(geoUrl)
-      .then((res) => res.json())
-      .then((geoData) => {
-        const names = geoData.features.map((f: any) => f.properties.NAME);
-        setGeoCountryNames(names);
+      .then(res => res.json())
+      .then(worldData => {
+        const names = worldData.features.map((f: any) => f.properties.NAME);
+        setGeoNames(names);
       });
   }, []);
 
-  // Normalize incoming country names to match GeoJSON
-  const normalizedData = useMemo(() => {
-    if (!data || geoCountryNames.length === 0) return {};
+  const normalizedData = React.useMemo(() => {
+    if (!data || geoNames.length === 0) return {};
     const normalized: CountryData = {};
-
     Object.entries(data).forEach(([country, value]) => {
-      if (!country || country.toLowerCase() === '(not set)') return;
-
-      const matchedGeo = geoCountryNames.find(
-        (geoName) =>
-          geoName.toLowerCase() === country.toLowerCase() ||
-          geoName.toLowerCase().includes(country.toLowerCase()) ||
-          country.toLowerCase().includes(geoName.toLowerCase())
-      );
-
-      const normalizedName = matchedGeo || country;
-      normalized[normalizedName] = value;
+      const match = geoNames.find(geoName => geoName.toLowerCase() === country.toLowerCase());
+      const matchedCountry = match || country;
+      normalized[matchedCountry] = value;
     });
-
     return normalized;
-  }, [data, geoCountryNames]);
+  }, [data, geoNames]);
 
   const maxVisits = Math.max(...Object.values(normalizedData || {}));
 
   const getCountryColor = (geo: any) => {
     const countryName = geo.properties.NAME;
-    const visits = normalizedData?.[countryName];
-
-    if (!visits) return '#f8fafc';
+    if (!normalizedData || !normalizedData[countryName]) return '#f8fafc';
+    const visits = normalizedData[countryName];
     const intensity = visits / maxVisits;
-
     if (intensity >= 0.8) return '#1e40af';
     if (intensity >= 0.6) return '#3b82f6';
     if (intensity >= 0.4) return '#60a5fa';
@@ -104,13 +90,9 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
                           stroke="#e2e8f0"
                           strokeWidth={0.5}
                           style={{
-                            default: { outline: 'none' },
-                            hover: {
-                              fill: '#1e293b',
-                              outline: 'none',
-                              cursor: 'pointer',
-                            },
-                            pressed: { fill: '#0f172a', outline: 'none' },
+                            default: { outline: "none" },
+                            hover: { fill: "#1e293b", outline: "none", cursor: "pointer" },
+                            pressed: { fill: "#0f172a", outline: "none" },
                           }}
                         />
                       </TooltipTrigger>
@@ -126,33 +108,16 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({ data, isLoading = 
         </div>
       </TooltipProvider>
 
-      {/* Legend */}
       {hasData && maxVisits > 0 && (
         <div className="mt-4 flex justify-center space-x-4 text-xs text-gray-600">
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-slate-200 rounded"></div>
-            <span>Veri yok</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-100 rounded"></div>
-            <span>Az (1-{Math.round(maxVisits * 0.2)})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-300 rounded"></div>
-            <span>Orta ({Math.round(maxVisits * 0.2)}-{Math.round(maxVisits * 0.6)})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            <span>Çok ({Math.round(maxVisits * 0.6)}-{Math.round(maxVisits * 0.8)})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-blue-700 rounded"></div>
-            <span>En çok ({Math.round(maxVisits * 0.8)}+)</span>
-          </div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-slate-200 rounded"></div><span>Veri yok</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-100 rounded"></div><span>Az (1-{Math.round(maxVisits * 0.2)})</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-300 rounded"></div><span>Orta ({Math.round(maxVisits * 0.2)}-{Math.round(maxVisits * 0.6)})</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-500 rounded"></div><span>Çok ({Math.round(maxVisits * 0.6)}-{Math.round(maxVisits * 0.8)})</span></div>
+          <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-blue-700 rounded"></div><span>En çok ({Math.round(maxVisits * 0.8)}+)</span></div>
         </div>
       )}
 
-      {/* Top Countries */}
       {hasData && (
         <div className="mt-4">
           <h4 className="text-sm font-medium text-gray-700 mb-2">En Çok Kullanıcı Olan Ülkeler</h4>
