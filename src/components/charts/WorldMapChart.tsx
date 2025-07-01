@@ -136,12 +136,14 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
     const countryName = geo.properties.NAME;
     const visits = normalizedData?.[countryName] || 0;
 
+    console.log(`Checking color for country: ${countryName}, visits: ${visits}`);
+
     if (visits === 0) {
       return '#f8fafc'; // Light gray for no data
     }
 
     const intensity = visits / maxVisits;
-    console.log(`Country: ${countryName}, Visits: ${visits}, Intensity: ${intensity}`);
+    console.log(`Country: ${countryName}, Visits: ${visits}, Intensity: ${intensity}, MaxVisits: ${maxVisits}`);
 
     // Color scale from light blue to dark blue
     if (intensity >= 0.8) return '#1e40af'; // Dark blue
