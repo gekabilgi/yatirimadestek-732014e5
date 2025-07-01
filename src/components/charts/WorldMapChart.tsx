@@ -132,8 +132,13 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   const maxVisits = Math.max(...Object.values(normalizedData || {}));
   console.log('Max visits for color scaling:', maxVisits);
 
+  const getCountryName = (geo: any) => {
+    // Try different possible property names for country name
+    return geo.properties.NAME || geo.properties.name || geo.properties.NAME_EN || geo.properties.ADMIN || geo.properties.sovereignt || 'Unknown';
+  };
+
   const getCountryColor = (geo: any) => {
-    const countryName = geo.properties.NAME;
+    const countryName = getCountryName(geo);
     const visits = normalizedData?.[countryName] || 0;
 
     console.log(`Checking color for country: ${countryName}, visits: ${visits}`);
@@ -154,7 +159,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   };
 
   const getTooltipContent = (geo: any) => {
-    const countryName = geo.properties.NAME;
+    const countryName = getCountryName(geo);
     const visits = normalizedData?.[countryName] || 0;
     return visits > 0
       ? `${countryName}: ${visits} kullanıcı`
@@ -187,8 +192,13 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
           >
             <ZoomableGroup>
               <Geographies geography={geoUrl}>
-                {({ geographies }) =>
-                  geographies.map((geo) => {
+                {({ geographies }) => {
+                  // Debug: Log the first geography to see available properties
+                  if (geographies.length > 0) {
+                    console.log('First geography properties:', geographies[0].properties);
+                  }
+                  
+                  return geographies.map((geo) => {
                     const fillColor = getCountryColor(geo);
                     return (
                       <Tooltip key={geo.rsmKey}>
@@ -214,8 +224,8 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
                         </TooltipContent>
                       </Tooltip>
                     );
-                  })
-                }
+                  });
+                }}
               </Geographies>
             </ZoomableGroup>
           </ComposableMap>
