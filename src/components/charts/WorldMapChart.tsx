@@ -28,10 +28,7 @@ interface WorldMapChartProps {
 
 // Mapping from Google Analytics country names to GeoJSON country names
 const countryNameMapping: { [key: string]: string } = {
-  'Türkiye': 'Türkiye',
   'Türkiye': 'Turkey',
-  'Turkey': 'Turkey',
-  'Turkey': 'Türkiye',
   'United States': 'United States of America',
   'USA': 'United States of America',
   'Spain': 'Spain',
