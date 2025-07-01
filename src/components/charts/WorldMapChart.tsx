@@ -7,11 +7,10 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const geoUrl =
@@ -104,6 +103,13 @@ const countryNameMapping: { [key: string]: string } = {
   'Mayotte': 'Mayotte'
 };
 
+// Reverse mapping for better country name matching from GeoJSON to Analytics
+const reverseCountryMapping: { [key: string]: string } = {
+  'United States of America': 'United States',
+  'Turkey': 'Türkiye',
+  'Côte d\'Ivoire': 'Ivory Coast'
+};
+
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   data,
   isLoading = false,
@@ -134,21 +140,49 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
 
   const getCountryName = (geo: any) => {
     // Try different possible property names for country name
-    return geo.properties.NAME || geo.properties.name || geo.properties.NAME_EN || geo.properties.ADMIN || geo.properties.sovereignt || 'Unknown';
+    const possibleNames = [
+      geo.properties.NAME,
+      geo.properties.name, 
+      geo.properties.NAME_EN,
+      geo.properties.ADMIN,
+      geo.properties.sovereignt,
+      geo.properties.NAME_LONG
+    ];
+    
+    for (const name of possibleNames) {
+      if (name && typeof name === 'string') {
+        return name;
+      }
+    }
+    
+    return 'Unknown';
   };
 
   const getCountryColor = (geo: any) => {
-    const countryName = getCountryName(geo);
-    const visits = normalizedData?.[countryName] || 0;
+    const geoCountryName = getCountryName(geo);
+    
+    // First try direct match
+    let visits = normalizedData?.[geoCountryName] || 0;
+    
+    // If no direct match, try reverse mapping
+    if (visits === 0 && reverseCountryMapping[geoCountryName]) {
+      const originalName = reverseCountryMapping[geoCountryName];
+      visits = data?.[originalName] || 0;
+    }
+    
+    // Also try normalized data with reverse mapping
+    if (visits === 0) {
+      visits = normalizedData?.[geoCountryName] || 0;
+    }
 
-    console.log(`Checking color for country: ${countryName}, visits: ${visits}`);
+    console.log(`Checking color for country: ${geoCountryName}, visits: ${visits}`);
 
     if (visits === 0) {
       return '#f8fafc'; // Light gray for no data
     }
 
     const intensity = visits / maxVisits;
-    console.log(`Country: ${countryName}, Visits: ${visits}, Intensity: ${intensity}, MaxVisits: ${maxVisits}`);
+    console.log(`Country: ${geoCountryName}, Visits: ${visits}, Intensity: ${intensity}, MaxVisits: ${maxVisits}`);
 
     // Color scale from light blue to dark blue
     if (intensity >= 0.8) return '#1e40af'; // Dark blue
@@ -159,11 +193,18 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   };
 
   const getTooltipContent = (geo: any) => {
-    const countryName = getCountryName(geo);
-    const visits = normalizedData?.[countryName] || 0;
-    return visits > 0
-      ? `${countryName}: ${visits} kullanıcı`
-      : `${countryName}: Veri yok`;
+    const geoCountryName = getCountryName(geo);
+    
+    // First try direct match
+    let visits = normalizedData?.[geoCountryName] || 0;
+    
+    // If no direct match, try reverse mapping
+    if (visits === 0 && reverseCountryMapping[geoCountryName]) {
+      const originalName = reverseCountryMapping[geoCountryName];
+      visits = data?.[originalName] || 0;
+    }
+    
+    return { countryName: geoCountryName, visits };
   };
 
   if (isLoading) {
@@ -178,59 +219,89 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
 
   return (
     <div className="w-full">
-      <TooltipProvider>
-        <div className="relative">
-          <ComposableMap
-            projection="geoMercator"
-            projectionConfig={{
-              scale: 120,
-              center: [0, 20],
-            }}
-            width={800}
-            height={400}
-            className="w-full h-auto border rounded-lg bg-slate-50"
-          >
-            <ZoomableGroup>
-              <Geographies geography={geoUrl}>
-                {({ geographies }) => {
-                  // Debug: Log the first geography to see available properties
-                  if (geographies.length > 0) {
-                    console.log('First geography properties:', geographies[0].properties);
-                  }
+      <div className="relative">
+        <ComposableMap
+          projection="geoMercator"
+          projectionConfig={{
+            scale: 120,
+            center: [0, 20],
+          }}
+          width={800}
+          height={400}
+          className="w-full h-auto border rounded-lg bg-slate-50"
+        >
+          <ZoomableGroup>
+            <Geographies geography={geoUrl}>
+              {({ geographies }) => {
+                // Debug: Log the first geography to see available properties
+                if (geographies.length > 0) {
+                  console.log('First geography properties:', geographies[0].properties);
+                }
+                
+                return geographies.map((geo) => {
+                  const fillColor = getCountryColor(geo);
+                  const tooltipData = getTooltipContent(geo);
                   
-                  return geographies.map((geo) => {
-                    const fillColor = getCountryColor(geo);
-                    return (
-                      <Tooltip key={geo.rsmKey}>
-                        <TooltipTrigger asChild>
-                          <Geography
-                            geography={geo}
-                            fill={fillColor}
-                            stroke="#e2e8f0"
-                            strokeWidth={0.5}
-                            style={{
-                              default: { outline: 'none' },
-                              hover: {
-                                fill: '#1e293b',
-                                outline: 'none',
-                                cursor: 'pointer',
-                              },
-                              pressed: { fill: '#0f172a', outline: 'none' },
-                            }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{getTooltipContent(geo)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  });
-                }}
-              </Geographies>
-            </ZoomableGroup>
-          </ComposableMap>
-        </div>
-      </TooltipProvider>
+                  return (
+                    <HoverCard key={geo.rsmKey} openDelay={100} closeDelay={100}>
+                      <HoverCardTrigger asChild>
+                        <Geography
+                          geography={geo}
+                          fill={fillColor}
+                          stroke="#e2e8f0"
+                          strokeWidth={0.5}
+                          style={{
+                            default: { outline: 'none' },
+                            hover: {
+                              fill: '#1e293b',
+                              outline: 'none',
+                              cursor: 'pointer',
+                            },
+                            pressed: { fill: '#0f172a', outline: 'none' },
+                          }}
+                        />
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-64 p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-sm flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">🌍</span>
+                            </div>
+                            <h4 className="font-semibold text-sm">{tooltipData.countryName}</h4>
+                          </div>
+                          <div className="border-t pt-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Etkin Kullanıcı Sayısı</span>
+                              <span className="text-lg font-bold text-blue-600">
+                                {tooltipData.visits}
+                              </span>
+                            </div>
+                            {tooltipData.visits > 0 && (
+                              <div className="mt-1">
+                                <div className="text-xs text-gray-500">
+                                  Son 7 gün
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                  <div 
+                                    className="bg-blue-500 h-1.5 rounded-full" 
+                                    style={{ 
+                                      width: `${Math.min((tooltipData.visits / maxVisits) * 100, 100)}%` 
+                                    }}
+                                  ></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  );
+                });
+              }}
+            </Geographies>
+          </ZoomableGroup>
+        </ComposableMap>
+      </div>
 
       {hasData && maxVisits > 0 && (
         <div className="mt-4 flex justify-center space-x-4 text-xs text-gray-600">
