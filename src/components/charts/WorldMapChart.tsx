@@ -103,11 +103,15 @@ const countryNameMapping: { [key: string]: string } = {
   'Mayotte': 'Mayotte'
 };
 
-// Reverse mapping for better country name matching from GeoJSON to Analytics
-const reverseCountryMapping: { [key: string]: string } = {
+// Reverse mapping: GeoJSON country name -> Analytics country name (for better matching)
+const geoToAnalyticsMapping: { [key: string]: string } = {
   'United States of America': 'United States',
   'Turkey': 'Türkiye',
-  'Côte d\'Ivoire': 'Ivory Coast'
+  'Côte d\'Ivoire': 'Ivory Coast',
+  // Common alternative names in GeoJSON
+  'USA': 'United States',
+  'US': 'United States',
+  'America': 'United States'
 };
 
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({
@@ -141,12 +145,13 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   const getCountryName = (geo: any) => {
     // Try different possible property names for country name
     const possibleNames = [
-      geo.properties.NAME,
-      geo.properties.name, 
-      geo.properties.NAME_EN,
-      geo.properties.ADMIN,
-      geo.properties.sovereignt,
-      geo.properties.NAME_LONG
+      geo.properties?.NAME,
+      geo.properties?.name, 
+      geo.properties?.NAME_EN,
+      geo.properties?.ADMIN,
+      geo.properties?.sovereignt,
+      geo.properties?.NAME_LONG,
+      geo.properties?.BRK_NAME
     ];
     
     for (const name of possibleNames) {
@@ -158,24 +163,51 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
     return 'Unknown';
   };
 
-  const getCountryColor = (geo: any) => {
-    const geoCountryName = getCountryName(geo);
-    
-    // First try direct match
+  const getCountryVisits = (geoCountryName: string) => {
+    // First, try direct match with normalized data
     let visits = normalizedData?.[geoCountryName] || 0;
     
-    // If no direct match, try reverse mapping
-    if (visits === 0 && reverseCountryMapping[geoCountryName]) {
-      const originalName = reverseCountryMapping[geoCountryName];
-      visits = data?.[originalName] || 0;
-    }
-    
-    // Also try normalized data with reverse mapping
-    if (visits === 0) {
-      visits = normalizedData?.[geoCountryName] || 0;
+    if (visits > 0) {
+      console.log(`Direct match found for ${geoCountryName}: ${visits} visits`);
+      return visits;
     }
 
-    console.log(`Checking color for country: ${geoCountryName}, visits: ${visits}`);
+    // Try reverse mapping (GeoJSON name -> Analytics name)
+    const analyticsName = geoToAnalyticsMapping[geoCountryName];
+    if (analyticsName && data?.[analyticsName]) {
+      visits = data[analyticsName];
+      console.log(`Reverse mapping found: ${geoCountryName} -> ${analyticsName}: ${visits} visits`);
+      return visits;
+    }
+
+    // Try fuzzy matching for common cases
+    const lowerGeoName = geoCountryName.toLowerCase();
+    
+    // Special cases for USA
+    if (lowerGeoName.includes('united states') || lowerGeoName.includes('america') || geoCountryName === 'USA' || geoCountryName === 'US') {
+      visits = data?.['United States'] || normalizedData?.['United States of America'] || 0;
+      if (visits > 0) {
+        console.log(`USA fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        return visits;
+      }
+    }
+
+    // Special case for Turkey
+    if (lowerGeoName.includes('turkey')) {
+      visits = data?.['Türkiye'] || normalizedData?.['Turkey'] || 0;
+      if (visits > 0) {
+        console.log(`Turkey fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        return visits;
+      }
+    }
+
+    console.log(`No match found for country: ${geoCountryName}`);
+    return 0;
+  };
+
+  const getCountryColor = (geo: any) => {
+    const geoCountryName = getCountryName(geo);
+    const visits = getCountryVisits(geoCountryName);
 
     if (visits === 0) {
       return '#f8fafc'; // Light gray for no data
@@ -194,15 +226,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
 
   const getTooltipContent = (geo: any) => {
     const geoCountryName = getCountryName(geo);
-    
-    // First try direct match
-    let visits = normalizedData?.[geoCountryName] || 0;
-    
-    // If no direct match, try reverse mapping
-    if (visits === 0 && reverseCountryMapping[geoCountryName]) {
-      const originalName = reverseCountryMapping[geoCountryName];
-      visits = data?.[originalName] || 0;
-    }
+    const visits = getCountryVisits(geoCountryName);
     
     return { countryName: geoCountryName, visits };
   };
@@ -233,9 +257,14 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
           <ZoomableGroup>
             <Geographies geography={geoUrl}>
               {({ geographies }) => {
-                // Debug: Log the first geography to see available properties
+                // Debug: Log the first few geographies to understand the data structure
                 if (geographies.length > 0) {
-                  console.log('First geography properties:', geographies[0].properties);
+                  console.log('Sample geography properties:', geographies.slice(0, 3).map(g => ({
+                    NAME: g.properties?.NAME,
+                    name: g.properties?.name,
+                    ADMIN: g.properties?.ADMIN,
+                    allProps: Object.keys(g.properties || {})
+                  })));
                 }
                 
                 return geographies.map((geo) => {
