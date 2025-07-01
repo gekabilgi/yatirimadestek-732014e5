@@ -25,7 +25,7 @@ interface WorldMapChartProps {
   isLoading?: boolean;
 }
 
-// Mapping from Google Analytics country names to GeoJSON country names
+// Enhanced mapping from Google Analytics country names to GeoJSON country names
 const countryNameMapping: { [key: string]: string } = {
   'Türkiye': 'Turkey',
   'United States': 'United States of America',
@@ -100,18 +100,19 @@ const countryNameMapping: { [key: string]: string } = {
   'Mauritius': 'Mauritius',
   'Seychelles': 'Seychelles',
   'Réunion': 'Réunion',
-  'Mayotte': 'Mayotte'
+  'Mayotte': 'Mayotte',
+  'Republic of Singapore': 'Singapore'
 };
 
-// Reverse mapping: GeoJSON country name -> Analytics country name (for better matching)
+// Reverse mapping and additional GeoJSON variations
 const geoToAnalyticsMapping: { [key: string]: string } = {
   'United States of America': 'United States',
   'Turkey': 'Türkiye',
   'Côte d\'Ivoire': 'Ivory Coast',
-  // Common alternative names in GeoJSON
   'USA': 'United States',
   'US': 'United States',
-  'America': 'United States'
+  'America': 'United States',
+  'Republic of Singapore': 'Singapore'
 };
 
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({
@@ -143,7 +144,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   console.log('Max visits for color scaling:', maxVisits);
 
   const getCountryName = (geo: any) => {
-    // Try different possible property names for country name
+    // Try different possible property names for country name in order of preference
     const possibleNames = [
       geo.properties?.NAME,
       geo.properties?.name, 
@@ -151,24 +152,31 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
       geo.properties?.ADMIN,
       geo.properties?.sovereignt,
       geo.properties?.NAME_LONG,
-      geo.properties?.BRK_NAME
+      geo.properties?.BRK_NAME,
+      geo.properties?.NAME_SORT,
+      geo.properties?.SUBUNIT,
+      geo.properties?.NAME_CIAWF
     ];
     
     for (const name of possibleNames) {
-      if (name && typeof name === 'string') {
-        return name;
+      if (name && typeof name === 'string' && name.trim() !== '') {
+        console.log(`Found country name: "${name}" from properties`);
+        return name.trim();
       }
     }
     
+    console.log('No valid country name found in properties:', geo.properties);
     return 'Unknown';
   };
 
   const getCountryVisits = (geoCountryName: string) => {
+    console.log(`\n=== Matching country: "${geoCountryName}"`);
+    
     // First, try direct match with normalized data
     let visits = normalizedData?.[geoCountryName] || 0;
     
     if (visits > 0) {
-      console.log(`Direct match found for ${geoCountryName}: ${visits} visits`);
+      console.log(`✓ Direct match found for ${geoCountryName}: ${visits} visits`);
       return visits;
     }
 
@@ -176,32 +184,57 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
     const analyticsName = geoToAnalyticsMapping[geoCountryName];
     if (analyticsName && data?.[analyticsName]) {
       visits = data[analyticsName];
-      console.log(`Reverse mapping found: ${geoCountryName} -> ${analyticsName}: ${visits} visits`);
+      console.log(`✓ Reverse mapping found: ${geoCountryName} -> ${analyticsName}: ${visits} visits`);
       return visits;
     }
 
-    // Try fuzzy matching for common cases
+    // Special case matching for common variations
     const lowerGeoName = geoCountryName.toLowerCase();
     
-    // Special cases for USA
-    if (lowerGeoName.includes('united states') || lowerGeoName.includes('america') || geoCountryName === 'USA' || geoCountryName === 'US') {
+    // USA variations
+    if (lowerGeoName.includes('united states') || 
+        lowerGeoName.includes('america') || 
+        geoCountryName === 'USA' || 
+        geoCountryName === 'US') {
       visits = data?.['United States'] || normalizedData?.['United States of America'] || 0;
       if (visits > 0) {
-        console.log(`USA fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        console.log(`✓ USA fuzzy match found for ${geoCountryName}: ${visits} visits`);
         return visits;
       }
     }
 
-    // Special case for Turkey
+    // Turkey variations
     if (lowerGeoName.includes('turkey')) {
       visits = data?.['Türkiye'] || normalizedData?.['Turkey'] || 0;
       if (visits > 0) {
-        console.log(`Turkey fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        console.log(`✓ Turkey fuzzy match found for ${geoCountryName}: ${visits} visits`);
         return visits;
       }
     }
 
-    console.log(`No match found for country: ${geoCountryName}`);
+    // Singapore variations - check multiple possible names
+    if (lowerGeoName.includes('singapore') || 
+        geoCountryName === 'Republic of Singapore' ||
+        geoCountryName === 'SGP') {
+      visits = data?.['Singapore'] || normalizedData?.['Singapore'] || 0;
+      if (visits > 0) {
+        console.log(`✓ Singapore fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        return visits;
+      }
+    }
+
+    // Try partial matching for other countries
+    for (const [analyticsCountry, analyticsVisits] of Object.entries(data || {})) {
+      if (analyticsCountry === '(not set)') continue;
+      
+      const lowerAnalyticsName = analyticsCountry.toLowerCase();
+      if (lowerGeoName.includes(lowerAnalyticsName) || lowerAnalyticsName.includes(lowerGeoName)) {
+        console.log(`✓ Partial match found: ${geoCountryName} <-> ${analyticsCountry}: ${analyticsVisits} visits`);
+        return analyticsVisits as number;
+      }
+    }
+
+    console.log(`✗ No match found for country: ${geoCountryName}`);
     return 0;
   };
 
@@ -214,7 +247,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
     }
 
     const intensity = visits / maxVisits;
-    console.log(`Country: ${geoCountryName}, Visits: ${visits}, Intensity: ${intensity}, MaxVisits: ${maxVisits}`);
+    console.log(`Checking color for country: ${geoCountryName}, visits: ${visits}, intensity: ${intensity}`);
 
     // Color scale from light blue to dark blue
     if (intensity >= 0.8) return '#1e40af'; // Dark blue
