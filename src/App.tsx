@@ -9,8 +9,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import Index from "./pages/Index";
 import IncentiveTools from "./pages/IncentiveTools";
+import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import Admin from "./pages/Admin";
 import AdminSupportPrograms from "./pages/AdminSupportPrograms";
+import AdminFeasibilityReports from "./pages/AdminFeasibilityReports";
+import FeasibilityStatistics from "./pages/FeasibilityStatistics";
 import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
@@ -44,6 +47,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/incentive-tools" element={<IncentiveTools />} />
+              <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
@@ -69,6 +73,16 @@ const App = () => {
               <Route path="/admin/support-programs" element={
                 <ProtectedAdminRoute>
                   <AdminSupportPrograms />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/feasibility-reports" element={
+                <ProtectedAdminRoute>
+                  <AdminFeasibilityReports />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/feasibility-statistics" element={
+                <ProtectedAdminRoute>
+                  <FeasibilityStatistics />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/analytics" element={

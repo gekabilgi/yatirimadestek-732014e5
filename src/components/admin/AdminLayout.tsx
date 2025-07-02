@@ -1,178 +1,88 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { AdminTopbar } from './AdminTopbar';
+import { 
+  Home, 
+  MessageSquare, 
+  FileText, 
+  Mail, 
+  Book, 
+  BarChart3, 
+  Settings,
+  Target,
+  TrendingUp
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+  const location = useLocation();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/admin/login');
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const navigation = [
+    { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Soru & Cevap', href: '/admin/qa-management', icon: MessageSquare },
+    { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
+    { name: 'Fizibilite İstatistikleri', href: '/admin/feasibility-statistics', icon: TrendingUp },
+    { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },
+    { name: 'Yatırımcı Sözlüğü', href: '/admin/glossary-management', icon: Book },
+    { name: 'E-posta Yönetimi', href: '/admin/email-management', icon: Mail },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
-      <AdminTopbar 
-        isMobileMenuOpen={isMobileMenuOpen}
-        toggleMobileMenu={toggleMobileMenu}
-        onLogout={handleLogout}
-      />
-
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={toggleMobileMenu}>
-          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-semibold">Admin Menü</h2>
-            </div>
-            <nav className="p-4 space-y-2">
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate('/admin');
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Dashboard
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate('/admin/support-programs');
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Destek Programları
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate('/admin/qa-management');
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Q&A Yönetimi
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate('/admin/analytics');
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Analytics
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate('/admin/email-management');
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                E-posta Yönetimi
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate('/admin/glossary-management');
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Sözlük Yönetimi
-              </Button>
-            </nav>
-          </div>
-        </div>
-      )}
-
+      <AdminTopbar />
+      
       <div className="flex">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-16 bg-white border-r border-gray-200">
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-              <div className="flex items-center flex-shrink-0 px-4 mb-5">
-                <h1 className="text-lg font-bold text-gray-900">Navigation</h1>
-              </div>
-              <nav className="flex-1 px-2 space-y-1">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin')}
-                >
-                  Dashboard
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/support-programs')}
-                >
-                  Destek Programları
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/qa-management')}
-                >
-                  Q&A Yönetimi
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/analytics')}
-                >
-                  Analytics
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/email-management')}
-                >
-                  E-posta Yönetimi
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/glossary-management')}
-                >
-                  Sözlük Yönetimi
-                </Button>
+        {/* Sidebar */}
+        <div className="hidden md:flex md:w-64 md:flex-col">
+          <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200 overflow-y-auto">
+            <div className="flex items-center flex-shrink-0 px-4">
+              <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
+            </div>
+            <div className="mt-5 flex-grow flex flex-col">
+              <nav className="flex-1 px-2 pb-4 space-y-1">
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={cn(
+                        isActive
+                          ? 'bg-primary text-white'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                        'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
+                      )}
+                    >
+                      <item.icon
+                        className={cn(
+                          isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500',
+                          'mr-3 flex-shrink-0 h-6 w-6'
+                        )}
+                      />
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </nav>
             </div>
           </div>
-        </aside>
+        </div>
 
         {/* Main content */}
-        <div className="lg:pl-64 flex flex-col flex-1 pt-0">
-          <main className="flex-1 relative overflow-y-auto focus:outline-none">
-            <div className="py-4 lg:py-6">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {children}
-              </div>
-            </div>
+        <div className="flex flex-col flex-1">
+          <main className="flex-1 p-6">
+            {children}
           </main>
         </div>
       </div>
     </div>
   );
 };
+
+export { AdminLayout };

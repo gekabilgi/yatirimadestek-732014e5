@@ -187,6 +187,81 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_feasibility_reports: {
+        Row: {
+          alt_sektor_tanim_tag: string | null
+          created_at: string | null
+          dokumanlar: string | null
+          fizibilitenin_hazirlanma_tarihi: string | null
+          geri_odeme_suresi: number | null
+          gtip_kodu_tag: string | null
+          guncellenme_tarihi: string | null
+          hedef_ulke_tag: string | null
+          id: string
+          il_tag: string | null
+          istihdam: number | null
+          kalkinma_ajansi_tag: string | null
+          keywords_tag: string | null
+          link: string | null
+          nace_kodu_tanim: string | null
+          sabit_yatirim_tutari: number | null
+          sabit_yatirim_tutari_aralik_tag: string | null
+          ska_tag: string | null
+          updated_at: string | null
+          ust_sektor_tanim_tag: string | null
+          yatirim_boyutu_tag: string | null
+          yatirim_konusu: string
+        }
+        Insert: {
+          alt_sektor_tanim_tag?: string | null
+          created_at?: string | null
+          dokumanlar?: string | null
+          fizibilitenin_hazirlanma_tarihi?: string | null
+          geri_odeme_suresi?: number | null
+          gtip_kodu_tag?: string | null
+          guncellenme_tarihi?: string | null
+          hedef_ulke_tag?: string | null
+          id?: string
+          il_tag?: string | null
+          istihdam?: number | null
+          kalkinma_ajansi_tag?: string | null
+          keywords_tag?: string | null
+          link?: string | null
+          nace_kodu_tanim?: string | null
+          sabit_yatirim_tutari?: number | null
+          sabit_yatirim_tutari_aralik_tag?: string | null
+          ska_tag?: string | null
+          updated_at?: string | null
+          ust_sektor_tanim_tag?: string | null
+          yatirim_boyutu_tag?: string | null
+          yatirim_konusu: string
+        }
+        Update: {
+          alt_sektor_tanim_tag?: string | null
+          created_at?: string | null
+          dokumanlar?: string | null
+          fizibilitenin_hazirlanma_tarihi?: string | null
+          geri_odeme_suresi?: number | null
+          gtip_kodu_tag?: string | null
+          guncellenme_tarihi?: string | null
+          hedef_ulke_tag?: string | null
+          id?: string
+          il_tag?: string | null
+          istihdam?: number | null
+          kalkinma_ajansi_tag?: string | null
+          keywords_tag?: string | null
+          link?: string | null
+          nace_kodu_tanim?: string | null
+          sabit_yatirim_tutari?: number | null
+          sabit_yatirim_tutari_aralik_tag?: string | null
+          ska_tag?: string | null
+          updated_at?: string | null
+          ust_sektor_tanim_tag?: string | null
+          yatirim_boyutu_tag?: string | null
+          yatirim_konusu?: string
+        }
+        Relationships: []
+      }
       location_support: {
         Row: {
           alt_bolge: string | null
