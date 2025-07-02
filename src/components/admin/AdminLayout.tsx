@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AdminTopbar } from './AdminTopbar';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Home, 
   MessageSquare, 
@@ -21,6 +22,9 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Home },
@@ -33,13 +37,33 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   ];
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminTopbar />
+      <AdminTopbar 
+        isMobileMenuOpen={isMobileMenuOpen}
+        toggleMobileMenu={toggleMobileMenu}
+        onLogout={handleLogout}
+      />
       
       <div className="flex">
         {/* Sidebar */}
-        <div className="hidden md:flex md:w-64 md:flex-col">
+        <div className={cn(
+          "md:flex md:w-64 md:flex-col",
+          isMobileMenuOpen ? "block" : "hidden"
+        )}>
           <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
               <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
@@ -58,6 +82,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
                         'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
                       )}
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <item.icon
                         className={cn(
