@@ -104,17 +104,6 @@ const countryNameMapping: { [key: string]: string } = {
   'Republic of Singapore': 'Singapore'
 };
 
-// Reverse mapping and additional GeoJSON variations
-const geoToAnalyticsMapping: { [key: string]: string } = {
-  'United States of America': 'United States',
-  'Turkey': 'Türkiye',
-  'Côte d\'Ivoire': 'Ivory Coast',
-  'USA': 'United States',
-  'US': 'United States',
-  'America': 'United States',
-  'Republic of Singapore': 'Singapore'
-};
-
 export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   data,
   isLoading = false,
@@ -146,8 +135,8 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
   const getCountryName = (geo: any) => {
     // Try different possible property names for country name in order of preference
     const possibleNames = [
-      geo.properties?.NAME,
       geo.properties?.name, 
+      geo.properties?.NAME,
       geo.properties?.NAME_EN,
       geo.properties?.ADMIN,
       geo.properties?.sovereignt,
@@ -160,7 +149,6 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
     
     for (const name of possibleNames) {
       if (name && typeof name === 'string' && name.trim() !== '') {
-        console.log(`Found country name: "${name}" from properties`);
         return name.trim();
       }
     }
@@ -180,50 +168,49 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
       return visits;
     }
 
-    // Try reverse mapping (GeoJSON name -> Analytics name)
-    const analyticsName = geoToAnalyticsMapping[geoCountryName];
-    if (analyticsName && data?.[analyticsName]) {
-      visits = data[analyticsName];
-      console.log(`✓ Reverse mapping found: ${geoCountryName} -> ${analyticsName}: ${visits} visits`);
+    // Check original data for exact matches
+    if (data?.[geoCountryName]) {
+      visits = data[geoCountryName];
+      console.log(`✓ Original data match found for ${geoCountryName}: ${visits} visits`);
       return visits;
     }
 
-    // Special case matching for common variations
-    const lowerGeoName = geoCountryName.toLowerCase();
-    
-    // USA variations
-    if (lowerGeoName.includes('united states') || 
-        lowerGeoName.includes('america') || 
+    // USA variations - check multiple possible GeoJSON names
+    if (geoCountryName === 'United States of America' || 
+        geoCountryName === 'United States' || 
         geoCountryName === 'USA' || 
-        geoCountryName === 'US') {
+        geoCountryName === 'US' ||
+        geoCountryName === 'America') {
       visits = data?.['United States'] || normalizedData?.['United States of America'] || 0;
       if (visits > 0) {
-        console.log(`✓ USA fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        console.log(`✓ USA match found for ${geoCountryName}: ${visits} visits`);
         return visits;
       }
     }
 
     // Turkey variations
-    if (lowerGeoName.includes('turkey')) {
+    if (geoCountryName === 'Turkey' || geoCountryName === 'Türkiye') {
       visits = data?.['Türkiye'] || normalizedData?.['Turkey'] || 0;
       if (visits > 0) {
-        console.log(`✓ Turkey fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        console.log(`✓ Turkey match found for ${geoCountryName}: ${visits} visits`);
         return visits;
       }
     }
 
-    // Singapore variations - check multiple possible names
-    if (lowerGeoName.includes('singapore') || 
+    // Singapore variations - check all possible names
+    if (geoCountryName === 'Singapore' || 
         geoCountryName === 'Republic of Singapore' ||
-        geoCountryName === 'SGP') {
+        geoCountryName === 'SGP' ||
+        geoCountryName.toLowerCase().includes('singapore')) {
       visits = data?.['Singapore'] || normalizedData?.['Singapore'] || 0;
       if (visits > 0) {
-        console.log(`✓ Singapore fuzzy match found for ${geoCountryName}: ${visits} visits`);
+        console.log(`✓ Singapore match found for ${geoCountryName}: ${visits} visits`);
         return visits;
       }
     }
 
-    // Try partial matching for other countries
+    // Try case-insensitive partial matching
+    const lowerGeoName = geoCountryName.toLowerCase();
     for (const [analyticsCountry, analyticsVisits] of Object.entries(data || {})) {
       if (analyticsCountry === '(not set)') continue;
       
@@ -247,7 +234,7 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
     }
 
     const intensity = visits / maxVisits;
-    console.log(`Checking color for country: ${geoCountryName}, visits: ${visits}, intensity: ${intensity}`);
+    console.log(`Color for ${geoCountryName}: ${visits} visits, intensity: ${intensity}`);
 
     // Color scale from light blue to dark blue
     if (intensity >= 0.8) return '#1e40af'; // Dark blue
@@ -290,22 +277,23 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
           <ZoomableGroup>
             <Geographies geography={geoUrl}>
               {({ geographies }) => {
-                // Debug: Log the first few geographies to understand the data structure
-                if (geographies.length > 0) {
-                  console.log('Sample geography properties:', geographies.slice(0, 3).map(g => ({
-                    NAME: g.properties?.NAME,
-                    name: g.properties?.name,
-                    ADMIN: g.properties?.ADMIN,
-                    allProps: Object.keys(g.properties || {})
-                  })));
-                }
+                // Debug: Log all geography names to see what we're working with
+                const allCountryNames = geographies.map(g => getCountryName(g)).sort();
+                console.log('All available country names in GeoJSON:', allCountryNames);
+                
+                // Look specifically for Singapore variants
+                const singaporeVariants = allCountryNames.filter(name => 
+                  name.toLowerCase().includes('singapore') || 
+                  name.toLowerCase().includes('sing')
+                );
+                console.log('Singapore variants found:', singaporeVariants);
                 
                 return geographies.map((geo) => {
                   const fillColor = getCountryColor(geo);
                   const tooltipData = getTooltipContent(geo);
                   
                   return (
-                    <HoverCard key={geo.rsmKey} openDelay={100} closeDelay={100}>
+                    <HoverCard key={geo.rsmKey} openDelay={100} closeDelay={200}>
                       <HoverCardTrigger asChild>
                         <Geography
                           geography={geo}
@@ -323,22 +311,22 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
                           }}
                         />
                       </HoverCardTrigger>
-                      <HoverCardContent className="w-64 p-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-sm flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">🌍</span>
+                      {tooltipData.visits > 0 && (
+                        <HoverCardContent className="w-64 p-4" side="top">
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-sm flex items-center justify-center">
+                                <span className="text-white text-xs font-bold">🌍</span>
+                              </div>
+                              <h4 className="font-semibold text-sm">{tooltipData.countryName}</h4>
                             </div>
-                            <h4 className="font-semibold text-sm">{tooltipData.countryName}</h4>
-                          </div>
-                          <div className="border-t pt-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Etkin Kullanıcı Sayısı</span>
-                              <span className="text-lg font-bold text-blue-600">
-                                {tooltipData.visits}
-                              </span>
-                            </div>
-                            {tooltipData.visits > 0 && (
+                            <div className="border-t pt-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Etkin Kullanıcı Sayısı</span>
+                                <span className="text-lg font-bold text-blue-600">
+                                  {tooltipData.visits}
+                                </span>
+                              </div>
                               <div className="mt-1">
                                 <div className="text-xs text-gray-500">
                                   Son 7 gün
@@ -352,10 +340,10 @@ export const WorldMapChart: React.FC<WorldMapChartProps> = ({
                                   ></div>
                                 </div>
                               </div>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      </HoverCardContent>
+                        </HoverCardContent>
+                      )}
                     </HoverCard>
                   );
                 });
