@@ -110,7 +110,7 @@ const FeasibilityStatistics = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6  mt-16">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Fizibilite İstatistikleri</h1>
           <p className="text-gray-600">Yatırım fırsatları ve fizibilite raporları istatistikleri</p>
