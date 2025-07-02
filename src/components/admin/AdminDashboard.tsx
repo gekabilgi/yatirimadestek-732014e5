@@ -84,7 +84,7 @@ const AdminDashboard = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-16">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600">Sistem durumu ve hızlı erişim</p>
