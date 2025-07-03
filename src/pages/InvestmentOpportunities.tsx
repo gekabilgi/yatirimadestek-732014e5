@@ -124,7 +124,7 @@ const InvestmentOpportunities = () => {
       const sdgNumber = tag.trim().split('-')[0];
       return {
         number: sdgNumber,
-        icon: sdgMapping[sdgNumber] || 'sdg1.png',
+        icon: sdgMapping[sdgNumber] || 'sdg1.svg',
         label: tag.trim()
       };
     });
