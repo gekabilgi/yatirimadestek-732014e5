@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -35,11 +34,11 @@ const provinces = [
 ];
 
 const investmentRanges = [
-  '0-500.000 TL',
-  '500.000-1.000.000 TL',
-  '1.000.000-5.000.000 TL',
-  '5.000.000-10.000.000 TL',
-  '10.000.000+ TL'
+  '0-500.000 USD',
+  '500.000-1.000.000 USD',
+  '1.000.000-5.000.000 USD',
+  '5.000.000-10.000.000 USD',
+  '10.000.000+ USD'
 ];
 
 const scopes = [
@@ -177,7 +176,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
               </div>
 
               <div>
-                <Label htmlFor="investment-range">Yatırım Tutarı</Label>
+                <Label htmlFor="investment-range">Yatırım Tutarı (USD)</Label>
                 <Select value={investmentRange} onValueChange={setInvestmentRange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Tutar aralığı seçin" />

@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronUp, Download, MessageCircle, Share2, Globe, MapPin, Building, Calendar, Users, DollarSign, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, MessageCircle, Share2, Globe, MapPin, Building, Calendar, Users, Clock } from 'lucide-react';
+import { CurrencyBadges } from './CurrencyBadges';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -124,7 +124,7 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
               {report.yatirim_konusu}
             </CardTitle>
             
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
               {report.il_tag && (
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
@@ -136,13 +136,6 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   <span>{format(new Date(report.fizibilitenin_hazirlanma_tarihi), 'dd.MM.yyyy', { locale: tr })}</span>
-                </div>
-              )}
-              
-              {report.sabit_yatirim_tutari && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span>{report.sabit_yatirim_tutari.toLocaleString('tr-TR')} TL</span>
                 </div>
               )}
               
@@ -160,6 +153,13 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
                 </div>
               )}
             </div>
+
+            {/* Currency badges for investment amount */}
+            {report.sabit_yatirim_tutari && (
+              <div className="mb-2">
+                <CurrencyBadges usdAmount={report.sabit_yatirim_tutari} />
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-2 ml-4">
