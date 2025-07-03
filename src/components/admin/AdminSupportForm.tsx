@@ -273,6 +273,7 @@ export const AdminSupportForm = ({ onSubmit, onCancel, editingProgram, isLoading
   };
 
   return (
+    <div className="space-y-8 mt-16">
     <Card>
       <CardHeader>
         <div className="flex items-center gap-4">
@@ -506,5 +507,6 @@ export const AdminSupportForm = ({ onSubmit, onCancel, editingProgram, isLoading
         </form>
       </CardContent>
     </Card>
+      </div>
   );
 };
