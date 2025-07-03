@@ -38,6 +38,45 @@ export type Database = {
           },
         ]
       }
+      exchange_rates: {
+        Row: {
+          created_at: string
+          date: string
+          eur_buying: number
+          eur_selling: number
+          gbp_buying: number
+          gbp_selling: number
+          id: string
+          updated_at: string
+          usd_buying: number
+          usd_selling: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          eur_buying: number
+          eur_selling: number
+          gbp_buying: number
+          gbp_selling: number
+          id?: string
+          updated_at?: string
+          usd_buying: number
+          usd_selling: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          eur_buying?: number
+          eur_selling?: number
+          gbp_buying?: number
+          gbp_selling?: number
+          id?: string
+          updated_at?: string
+          usd_buying?: number
+          usd_selling?: number
+        }
+        Relationships: []
+      }
       file_attachments: {
         Row: {
           display_order: number
