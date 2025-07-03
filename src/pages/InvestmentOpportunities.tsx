@@ -2,14 +2,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronUp, Download, MessageCircle, Share2, Globe, MapPin, Building } from 'lucide-react';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import MainNavbar from '@/components/MainNavbar';
-import { format } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { InvestmentOpportunityCard } from '@/components/InvestmentOpportunityCard';
+import { InvestmentSearchBar, InvestmentFilters } from '@/components/InvestmentSearchBar';
 
 interface FeasibilityReport {
   id: string;
@@ -41,15 +37,50 @@ const InvestmentOpportunities = () => {
   const [page, setPage] = useState(0);
   const [allReports, setAllReports] = useState<FeasibilityReport[]>([]);
   const [hasMore, setHasMore] = useState(true);
+  const [filters, setFilters] = useState<InvestmentFilters>({});
 
   const { data: reports, isLoading, error } = useQuery({
-    queryKey: ['feasibility-reports', page],
+    queryKey: ['feasibility-reports', page, filters],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('investment_feasibility_reports')
         .select('*')
-        .order('created_at', { ascending: false })
-        .range(page * 15, (page + 1) * 15 - 1);
+        .order('created_at', { ascending: false });
+
+      // Apply filters
+      if (filters.keyword) {
+        query = query.or(`yatirim_konusu.ilike.%${filters.keyword}%,keywords_tag.ilike.%${filters.keyword}%,nace_kodu_tanim.ilike.%${filters.keyword}%`);
+      }
+
+      if (filters.province) {
+        query = query.ilike('il_tag', `%${filters.province}%`);
+      }
+
+      if (filters.sector) {
+        query = query.or(`ust_sektor_tanim_tag.ilike.%${filters.sector}%,alt_sektor_tanim_tag.ilike.%${filters.sector}%,nace_kodu_tanim.ilike.%${filters.sector}%`);
+      }
+
+      if (filters.scope) {
+        query = query.ilike('yatirim_boyutu_tag', `%${filters.scope}%`);
+      }
+
+      if (filters.investmentRange) {
+        // Handle investment range filtering
+        const range = filters.investmentRange;
+        if (range === '0-500.000 TL') {
+          query = query.lte('sabit_yatirim_tutari', 500000);
+        } else if (range === '500.000-1.000.000 TL') {
+          query = query.gte('sabit_yatirim_tutari', 500000).lte('sabit_yatirim_tutari', 1000000);
+        } else if (range === '1.000.000-5.000.000 TL') {
+          query = query.gte('sabit_yatirim_tutari', 1000000).lte('sabit_yatirim_tutari', 5000000);
+        } else if (range === '5.000.000-10.000.000 TL') {
+          query = query.gte('sabit_yatirim_tutari', 5000000).lte('sabit_yatirim_tutari', 10000000);
+        } else if (range === '10.000.000+ TL') {
+          query = query.gte('sabit_yatirim_tutari', 10000000);
+        }
+      }
+
+      const { data, error } = await query.range(page * 15, (page + 1) * 15 - 1);
 
       if (error) throw error;
       return data as FeasibilityReport[];
@@ -97,70 +128,11 @@ const InvestmentOpportunities = () => {
     });
   };
 
-  const getSDGIcons = (skaTag: string | null) => {
-    if (!skaTag) return [];
-    
-    const sdgMapping: { [key: string]: string } = {
-      '1': 'sdg1.svg',
-      '2': 'sdg2.svg',
-      '3': 'sdg3.svg',
-      '4': 'sdg4.svg',
-      '5': 'sdg5.svg',
-      '6': 'sdg6.svg',
-      '7': 'sdg7.svg',
-      '8': 'sdg8.svg',
-      '9': 'sdg9.svg',
-      '10': 'sdg10.svg',
-      '11': 'sdg11.svg',
-      '12': 'sdg12.svg',
-      '13': 'sdg13.svg',
-      '14': 'sdg14.svg',
-      '15': 'sdg15.svg',
-      '16': 'sdg16.svg',
-      '17': 'sdg17.svg',
-    };
-
-    return skaTag.split('|').map(tag => {
-      const sdgNumber = tag.trim().split('-')[0];
-      return {
-        number: sdgNumber,
-        icon: sdgMapping[sdgNumber] || 'sdg1.svg',
-        label: tag.trim()
-      };
-    });
-  };
-
-  const getScopeIcon = (scope: string | null) => {
-    if (!scope) return <Globe className="h-4 w-4" />;
-    
-    const lowerScope = scope.toLowerCase();
-    if (lowerScope.includes('yerel') || lowerScope.includes('local')) {
-      return <MapPin className="h-4 w-4" />;
-    } else if (lowerScope.includes('ulusal') || lowerScope.includes('national')) {
-      return <Building className="h-4 w-4" />;
-    }
-    return <Globe className="h-4 w-4" />;
-  };
-
-  const handleShare = (report: FeasibilityReport) => {
-    if (navigator.share) {
-      navigator.share({
-        title: report.yatirim_konusu,
-        text: `Yatırım Fırsatı: ${report.yatirim_konusu}`,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link panoya kopyalandı!');
-    }
-  };
-
-  const handleDownload = (report: FeasibilityReport) => {
-    if (report.link) {
-      window.open(report.link, '_blank');
-    } else {
-      toast.error('İndirme linki bulunamadı');
-    }
+  const handleSearch = (newFilters: InvestmentFilters) => {
+    setFilters(newFilters);
+    setPage(0);
+    setAllReports([]);
+    setExpandedCards(new Set());
   };
 
   if (error) {
@@ -187,6 +159,10 @@ const InvestmentOpportunities = () => {
           <p className="text-gray-600">Fizibilite raporları ve yatırım fırsatları</p>
         </div>
 
+        <div className="mb-6">
+          <InvestmentSearchBar onSearch={handleSearch} filters={filters} />
+        </div>
+
         {isLoading && page === 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
@@ -203,132 +179,14 @@ const InvestmentOpportunities = () => {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {allReports.map((report) => {
-              const isExpanded = expandedCards.has(report.id);
-              const sdgIcons = getSDGIcons(report.ska_tag);
-
-              return (
-                <Card key={report.id} className="transition-all duration-200 hover:shadow-lg">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg leading-tight line-clamp-2">
-                        {report.yatirim_konusu}
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleExpand(report.id)}
-                        className="ml-2 flex-shrink-0"
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    
-                    {sdgIcons.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {sdgIcons.map((sdg, index) => (
-                          <img
-                            key={index}
-                            src={`/img/sdgicon/${sdg.icon}`}
-                            alt={sdg.label}
-                            className="w-8 h-8 rounded"
-                            title={sdg.label}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </CardHeader>
-
-                  {isExpanded && (
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        {report.fizibilitenin_hazirlanma_tarihi && (
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">Hazırlanma Tarihi:</span>
-                            <p className="text-sm text-gray-600">
-                              {format(new Date(report.fizibilitenin_hazirlanma_tarihi), 'dd MMMM yyyy', { locale: tr })}
-                            </p>
-                          </div>
-                        )}
-
-                        {report.yatirim_boyutu_tag && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-700">Kapsam:</span>
-                            <div className="flex items-center gap-1">
-                              {getScopeIcon(report.yatirim_boyutu_tag)}
-                              <Badge variant="outline" className="text-xs">
-                                {report.yatirim_boyutu_tag}
-                              </Badge>
-                            </div>
-                          </div>
-                        )}
-
-                        {report.il_tag && (
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">İl:</span>
-                            <p className="text-sm text-gray-600">{report.il_tag}</p>
-                          </div>
-                        )}
-
-                        {report.sabit_yatirim_tutari && (
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">Sabit Yatırım Tutarı:</span>
-                            <p className="text-sm text-gray-600">
-                              {report.sabit_yatirim_tutari.toLocaleString('tr-TR')} TL
-                            </p>
-                          </div>
-                        )}
-
-                        {report.istihdam && (
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">İstihdam:</span>
-                            <p className="text-sm text-gray-600">{report.istihdam} kişi</p>
-                          </div>
-                        )}
-
-                        {report.geri_odeme_suresi && (
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">Geri Ödeme Süresi:</span>
-                            <p className="text-sm text-gray-600">{report.geri_odeme_suresi} ay</p>
-                          </div>
-                        )}
-
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleShare(report)}
-                            className="flex-1"
-                          >
-                            <Share2 className="h-4 w-4 mr-1" />
-                            Paylaş
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toast.info('Yorum özelliği yakında eklenecek')}
-                            className="flex-1"
-                          >
-                            <MessageCircle className="h-4 w-4 mr-1" />
-                            Yorum
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownload(report)}
-                            className="flex-1"
-                            disabled={!report.link}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            PDF
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              );
-            })}
+            {allReports.map((report) => (
+              <InvestmentOpportunityCard
+                key={report.id}
+                report={report}
+                isExpanded={expandedCards.has(report.id)}
+                onToggleExpand={toggleExpand}
+              />
+            ))}
           </div>
         )}
 
@@ -347,8 +205,12 @@ const InvestmentOpportunities = () => {
 
         {allReports.length === 0 && !isLoading && (
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz yatırım fırsatı bulunmuyor</h3>
-            <p className="text-gray-600">Yeni fırsatlar eklendiğinde burada görünecektir.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {Object.keys(filters).length > 0 ? 'Arama kriterlerinize uygun yatırım fırsatı bulunamadı' : 'Henüz yatırım fırsatı bulunmuyor'}
+            </h3>
+            <p className="text-gray-600">
+              {Object.keys(filters).length > 0 ? 'Farklı arama kriterleri deneyebilirsiniz.' : 'Yeni fırsatlar eklendiğinde burada görünecektir.'}
+            </p>
           </div>
         )}
       </div>
