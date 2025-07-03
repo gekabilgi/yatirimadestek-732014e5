@@ -86,6 +86,7 @@ export const AdminEntryForm = ({ onSubmit, isLoading }: AdminEntryFormProps) => 
   };
 
   return (
+    <div className="space-y-8 mt-16">
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl text-gray-900">Add New Support Program</CardTitle>
@@ -231,5 +232,6 @@ export const AdminEntryForm = ({ onSubmit, isLoading }: AdminEntryFormProps) => 
         </form>
       </CardContent>
     </Card>
+      </div>
   );
 };
