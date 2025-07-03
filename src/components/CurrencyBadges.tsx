@@ -81,7 +81,7 @@ export const CurrencyBadges = ({ usdAmount }: CurrencyBadgesProps) => {
   if (!rates) {
     return (
       <Badge variant="outline">
-        <DollarSign className="h-3 w-3 mr-1" />
+        <Banknote className="h-3 w-3 mr-1" />
         ${usdAmount.toLocaleString('en-US')}
       </Badge>
     );
