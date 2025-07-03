@@ -71,7 +71,7 @@ export const CurrencyBadges = ({ usdAmount }: CurrencyBadgesProps) => {
     return (
       <div className="flex gap-2">
         <Badge variant="outline" className="animate-pulse">
-          <DollarSign className="h-3 w-3 mr-1" />
+          <Banknote className="h-3 w-3 mr-1" />
           Loading...
         </Badge>
       </div>
@@ -102,7 +102,7 @@ export const CurrencyBadges = ({ usdAmount }: CurrencyBadgesProps) => {
         ₺{tryAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
       </Badge>
       <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-        <Euro className="h-3 w-3 mr-1" />
+        <Banknote className="h-3 w-3 mr-1" />
         €{eurAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
       </Badge>
       <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
