@@ -76,6 +76,36 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
     onSearch({});
   };
 
+  const removeFilter = (filterType: string) => {
+    switch (filterType) {
+      case 'keyword':
+        setKeyword('');
+        break;
+      case 'province':
+        setProvince('');
+        break;
+      case 'sector':
+        setSector('');
+        break;
+      case 'investmentRange':
+        setInvestmentRange('');
+        break;
+      case 'scope':
+        setScope('');
+        break;
+    }
+    
+    const newFilters = {
+      keyword: filterType === 'keyword' ? undefined : keyword.trim() || undefined,
+      province: filterType === 'province' ? undefined : province || undefined,
+      sector: filterType === 'sector' ? undefined : sector.trim() || undefined,
+      investmentRange: filterType === 'investmentRange' ? undefined : investmentRange || undefined,
+      scope: filterType === 'scope' ? undefined : scope || undefined,
+    };
+    
+    onSearch(newFilters);
+  };
+
   const activeFiltersCount = [province, sector, investmentRange, scope, keyword].filter(Boolean).length;
 
   return (
@@ -125,7 +155,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
                   <SelectTrigger>
                     <SelectValue placeholder="İl seçin" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60">
                     <SelectItem value="">Tümü</SelectItem>
                     {provinces.map((prov) => (
                       <SelectItem key={prov} value={prov}>
@@ -201,8 +231,8 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
             <Badge variant="secondary" className="flex items-center gap-1">
               Arama: {keyword}
               <X 
-                className="w-3 h-3 cursor-pointer" 
-                onClick={() => setKeyword('')}
+                className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                onClick={() => removeFilter('keyword')}
               />
             </Badge>
           )}
@@ -210,8 +240,8 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
             <Badge variant="secondary" className="flex items-center gap-1">
               İl: {province}
               <X 
-                className="w-3 h-3 cursor-pointer" 
-                onClick={() => setProvince('')}
+                className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                onClick={() => removeFilter('province')}
               />
             </Badge>
           )}
@@ -219,8 +249,8 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
             <Badge variant="secondary" className="flex items-center gap-1">
               Sektör: {sector}
               <X 
-                className="w-3 h-3 cursor-pointer" 
-                onClick={() => setSector('')}
+                className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                onClick={() => removeFilter('sector')}
               />
             </Badge>
           )}
@@ -228,8 +258,8 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
             <Badge variant="secondary" className="flex items-center gap-1">
               Tutar: {investmentRange}
               <X 
-                className="w-3 h-3 cursor-pointer" 
-                onClick={() => setInvestmentRange('')}
+                className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                onClick={() => removeFilter('investmentRange')}
               />
             </Badge>
           )}
@@ -237,8 +267,8 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
             <Badge variant="secondary" className="flex items-center gap-1">
               Kapsam: {scope}
               <X 
-                className="w-3 h-3 cursor-pointer" 
-                onClick={() => setScope('')}
+                className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                onClick={() => removeFilter('scope')}
               />
             </Badge>
           )}

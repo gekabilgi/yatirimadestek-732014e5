@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import MainNavbar from '@/components/MainNavbar';
-import { InvestmentOpportunityCard } from '@/components/InvestmentOpportunityCard';
+import { InvestmentOpportunityRow } from '@/components/InvestmentOpportunityRow';
 import { InvestmentSearchBar, InvestmentFilters } from '@/components/InvestmentSearchBar';
 
 interface FeasibilityReport {
@@ -38,6 +38,7 @@ const InvestmentOpportunities = () => {
   const [allReports, setAllReports] = useState<FeasibilityReport[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [filters, setFilters] = useState<InvestmentFilters>({});
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['feasibility-reports', page, filters],
@@ -65,7 +66,6 @@ const InvestmentOpportunities = () => {
       }
 
       if (filters.investmentRange) {
-        // Handle investment range filtering
         const range = filters.investmentRange;
         if (range === '0-500.000 TL') {
           query = query.lte('sabit_yatirim_tutari', 500000);
@@ -95,26 +95,33 @@ const InvestmentOpportunities = () => {
         setAllReports(prev => [...prev, ...reports]);
       }
       setHasMore(reports.length === 15);
+      setIsLoadingMore(false);
     }
   }, [reports, page]);
 
   const loadMore = useCallback(() => {
-    if (hasMore && !isLoading) {
+    if (hasMore && !isLoading && !isLoadingMore) {
+      setIsLoadingMore(true);
       setPage(prev => prev + 1);
     }
-  }, [hasMore, isLoading]);
+  }, [hasMore, isLoading, isLoadingMore]);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop !== document.documentElement.offsetHeight || isLoading) {
-        return;
+      if (
+        window.innerHeight + document.documentElement.scrollTop >= 
+        document.documentElement.offsetHeight - 1000 &&
+        !isLoading &&
+        !isLoadingMore &&
+        hasMore
+      ) {
+        loadMore();
       }
-      loadMore();
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadMore, isLoading]);
+  }, [loadMore, isLoading, isLoadingMore, hasMore]);
 
   const toggleExpand = (id: string) => {
     setExpandedCards(prev => {
@@ -133,13 +140,14 @@ const InvestmentOpportunities = () => {
     setPage(0);
     setAllReports([]);
     setExpandedCards(new Set());
+    setHasMore(true);
   };
 
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
         <MainNavbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Hata Oluştu</h1>
             <p className="text-gray-600">Yatırım fırsatları yüklenirken bir hata oluştu.</p>
@@ -153,10 +161,11 @@ const InvestmentOpportunities = () => {
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Yatırım Fırsatları</h1>
-          <p className="text-gray-600">Fizibilite raporları ve yatırım fırsatları</p>
+          <p className="text-gray-600 mb-4">Fizibilite raporları ve yatırım fırsatları</p>
+          <p className="text-sm text-gray-500">Toplam {allReports.length} sonuç bulundu</p>
         </div>
 
         <div className="mb-6">
@@ -164,7 +173,7 @@ const InvestmentOpportunities = () => {
         </div>
 
         {isLoading && page === 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
@@ -178,9 +187,9 @@ const InvestmentOpportunities = () => {
             ))}
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
             {allReports.map((report) => (
-              <InvestmentOpportunityCard
+              <InvestmentOpportunityRow
                 key={report.id}
                 report={report}
                 isExpanded={expandedCards.has(report.id)}
@@ -190,7 +199,7 @@ const InvestmentOpportunities = () => {
           </div>
         )}
 
-        {isLoading && page > 0 && (
+        {isLoadingMore && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="text-gray-600 mt-2">Daha fazla rapor yükleniyor...</p>
@@ -206,10 +215,10 @@ const InvestmentOpportunities = () => {
         {allReports.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {Object.keys(filters).length > 0 ? 'Arama kriterlerinize uygun yatırım fırsatı bulunamadı' : 'Henüz yatırım fırsatı bulunmuyor'}
+              {Object.keys(filters).some(key => filters[key as keyof InvestmentFilters]) ? 'Arama kriterlerinize uygun yatırım fırsatı bulunamadı' : 'Henüz yatırım fırsatı bulunmuyor'}
             </h3>
             <p className="text-gray-600">
-              {Object.keys(filters).length > 0 ? 'Farklı arama kriterleri deneyebilirsiniz.' : 'Yeni fırsatlar eklendiğinde burada görünecektir.'}
+              {Object.keys(filters).some(key => filters[key as keyof InvestmentFilters]) ? 'Farklı arama kriterleri deneyebilirsiniz.' : 'Yeni fırsatlar eklendiğinde burada görünecektir.'}
             </p>
           </div>
         )}
