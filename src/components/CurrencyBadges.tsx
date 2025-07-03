@@ -27,14 +27,14 @@ export const CurrencyBadges = ({ usdAmount }: CurrencyBadgesProps) => {
     try {
       // First try to get from database
       const { data: dbRates, error: dbError } = await supabase
-        .from('exchange_rates' as any)
+        .from('exchange_rates')
         .select('*')
         .order('date', { ascending: false })
         .limit(1)
         .single();
 
       if (dbRates && !dbError) {
-        setRates(dbRates as ExchangeRates);
+        setRates(dbRates);
         setLoading(false);
         return;
       }
@@ -51,14 +51,14 @@ export const CurrencyBadges = ({ usdAmount }: CurrencyBadgesProps) => {
 
       // Get the updated rates from database after function call
       const { data: updatedRates } = await supabase
-        .from('exchange_rates' as any)
+        .from('exchange_rates')
         .select('*')
         .order('date', { ascending: false })
         .limit(1)
         .single();
 
       if (updatedRates) {
-        setRates(updatedRates as ExchangeRates);
+        setRates(updatedRates);
       }
     } catch (error) {
       console.error('Error fetching exchange rates:', error);

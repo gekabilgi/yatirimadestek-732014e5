@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { XMLParser } from "npm:fast-xml-parser";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,33 +21,40 @@ serve(async (req) => {
 
     console.log('Fetching TCMB exchange rates...');
     
-    const xmlUrl = "https://www.tcmb.gov.tr/kurlar/today.xml";
-    const response = await fetch(xmlUrl);
+    const TCMB_URL = "https://www.tcmb.gov.tr/kurlar/today.xml";
+    const response = await fetch(TCMB_URL);
+    
     if (!response.ok) throw new Error("Failed to fetch TCMB data");
 
-    const xmlText = await response.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(xmlText, "application/xml");
+    const xml = await response.text();
 
-    const extractRate = (code: string, field: string) => {
-      const node = xml.querySelector(`Currency[CurrencyCode="${code}"]`);
-      return node?.querySelector(field)?.textContent || null;
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+      parseTagValue: true,
+      parseAttributeValue: true,
+    });
+
+    const json = parser.parse(xml);
+    const currencies = json.Tarih_Date.Currency;
+
+    const getRate = (code: string) => {
+      const found = currencies.find((c: any) => c["@_CurrencyCode"] === code);
+      return {
+        name: found?.CurrencyName ?? "",
+        forexSelling: parseFloat(found?.ForexSelling ?? "0"),
+        banknoteSelling: parseFloat(found?.BanknoteSelling ?? "0"),
+        forexBuying: parseFloat(found?.ForexBuying ?? "0"),
+        banknoteBuying: parseFloat(found?.BanknoteBuying ?? "0"),
+      };
     };
 
     const exchangeData = {
-      USD: {
-        ForexBuying: extractRate("USD", "ForexBuying"),
-        ForexSelling: extractRate("USD", "ForexSelling"),
-      },
-      EUR: {
-        ForexBuying: extractRate("EUR", "ForexBuying"),
-        ForexSelling: extractRate("EUR", "ForexSelling"),
-      },
-      GBP: {
-        ForexBuying: extractRate("GBP", "ForexBuying"),
-        ForexSelling: extractRate("GBP", "ForexSelling"),
-      },
-      date: xml.documentElement.getAttribute("Date") || new Date().toISOString().slice(0, 10),
+      USD: getRate("USD"),
+      EUR: getRate("EUR"),
+      GBP: getRate("GBP"),
+      CHF: getRate("CHF"),
+      date: json.Tarih_Date["@_Date"],
     };
 
     console.log('Exchange data extracted:', exchangeData);
@@ -56,12 +64,12 @@ serve(async (req) => {
       .from('exchange_rates')
       .upsert({
         date: exchangeData.date,
-        usd_buying: parseFloat(exchangeData.USD.ForexBuying || '0'),
-        usd_selling: parseFloat(exchangeData.USD.ForexSelling || '0'),
-        eur_buying: parseFloat(exchangeData.EUR.ForexBuying || '0'),
-        eur_selling: parseFloat(exchangeData.EUR.ForexSelling || '0'),
-        gbp_buying: parseFloat(exchangeData.GBP.ForexBuying || '0'),
-        gbp_selling: parseFloat(exchangeData.GBP.ForexSelling || '0'),
+        usd_buying: exchangeData.USD.forexBuying,
+        usd_selling: exchangeData.USD.forexSelling,
+        eur_buying: exchangeData.EUR.forexBuying,
+        eur_selling: exchangeData.EUR.forexSelling,
+        gbp_buying: exchangeData.GBP.forexBuying,
+        gbp_selling: exchangeData.GBP.forexSelling,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'date'
