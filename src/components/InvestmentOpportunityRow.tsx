@@ -62,6 +62,25 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
       '16': 'sdg16.svg',
       '17': 'sdg17.svg',
     };
+const sdgNames: { [key: string]: string } = {
+  "1": "No Poverty",
+  "2": "Zero Hunger",
+  "3": "Good Health and Well-being",
+  "4": "Quality Education",
+  "5": "Gender Equality",
+  "6": "Clean Water and Sanitation",
+  "7": "Affordable and Clean Energy",
+  "8": "Decent Work and Economic Growth",
+  "9": "Industry, Innovation and Infrastructure",
+  "10": "Reduced Inequalities",
+  "11": "Sustainable Cities and Communities",
+  "12": "Responsible Consumption and Production",
+  "13": "Climate Action",
+  "14": "Life Below Water",
+  "15": "Life on Land",
+  "16": "Peace, Justice and Strong Institutions",
+  "17": "Partnerships for the Goals"
+};
 
     const uniqueSDGs = new Set<string>();
     
@@ -74,11 +93,12 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
     });
 
     return Array.from(uniqueSDGs).map(sdgNumber => ({
-      number: sdgNumber,
-      icon: sdgMapping[sdgNumber] || 'sdg1.svg',
-      label: `SDG ${sdgNumber}`
-    }));
-  };
+  number: sdgNumber,
+  icon: sdgMapping[sdgNumber] || 'sdg1.svg',
+  label: `SDG ${sdgNumber}`,
+  title: `SDG ${sdgNumber}: ${sdgNames[sdgNumber] || 'Unknown Goal'}`
+}));
+
 
   const getScopeIcon = (scope: string | null) => {
     if (!scope) return <Globe className="h-4 w-4" />;
