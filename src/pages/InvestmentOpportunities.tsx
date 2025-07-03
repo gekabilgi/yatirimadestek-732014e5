@@ -67,15 +67,15 @@ const InvestmentOpportunities = () => {
 
       if (filters.investmentRange) {
         const range = filters.investmentRange;
-        if (range === '0-500.000 TL') {
+        if (range === '0-500.000 USD') {
           query = query.lte('sabit_yatirim_tutari', 500000);
-        } else if (range === '500.000-1.000.000 TL') {
+        } else if (range === '500.000-1.000.000 USD') {
           query = query.gte('sabit_yatirim_tutari', 500000).lte('sabit_yatirim_tutari', 1000000);
-        } else if (range === '1.000.000-5.000.000 TL') {
+        } else if (range === '1.000.000-5.000.000 USD') {
           query = query.gte('sabit_yatirim_tutari', 1000000).lte('sabit_yatirim_tutari', 5000000);
-        } else if (range === '5.000.000-10.000.000 TL') {
+        } else if (range === '5.000.000-10.000.000 USD') {
           query = query.gte('sabit_yatirim_tutari', 5000000).lte('sabit_yatirim_tutari', 10000000);
-        } else if (range === '10.000.000+ TL') {
+        } else if (range === '10.000.000+ USD') {
           query = query.gte('sabit_yatirim_tutari', 10000000);
         }
       }
