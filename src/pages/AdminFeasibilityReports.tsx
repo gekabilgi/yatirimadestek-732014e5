@@ -491,7 +491,7 @@ const AdminFeasibilityReports = () => {
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-8 lg:p-12">
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8 mt-6">
           {/* Header Section */}
           <div className="text-center sm:text-left">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-12">
