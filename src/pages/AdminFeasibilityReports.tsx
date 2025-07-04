@@ -158,7 +158,9 @@ const AdminFeasibilityReports = () => {
     gtipKodlari: [] as string[],
     ustSektorler: [] as string[],
     altSektorler: [] as string[],
-    kalkinmaAjanslari: [] as string[]
+    kalkinmaAjanslari: [] as string[],
+    yatirimTutariAraliklari: [] as string[],
+    hedefUlkeler: [] as string[]
   });
 
   // Data queries for dropdowns
@@ -196,10 +198,10 @@ const AdminFeasibilityReports = () => {
       guncellenme_tarihi: formData.get('guncellenme_tarihi') as string || null,
       nace_kodu_tanim: formState.naceKodlari.join('|') || null,
       gtip_kodu_tag: formState.gtipKodlari.join('|') || null,
-      hedef_ulke_tag: formData.get('hedef_ulke_tag') as string || null,
+      hedef_ulke_tag: formState.hedefUlkeler.join('|') || null,
       ust_sektor_tanim_tag: formState.ustSektorler.join('|') || null,
       alt_sektor_tanim_tag: formState.altSektorler.join('|') || null,
-      sabit_yatirim_tutari_aralik_tag: formData.get('sabit_yatirim_tutari_aralik_tag') as string || null,
+      sabit_yatirim_tutari_aralik_tag: formState.yatirimTutariAraliklari.join('|') || null,
       kalkinma_ajansi_tag: formState.kalkinmaAjanslari.join('|') || null,
       il_tag: formState.iller.join('|') || null,
       ska_tag: formState.sdgSecilimleri.join('|') || null,
@@ -285,51 +287,52 @@ const AdminFeasibilityReports = () => {
     { label: 'Services', value: 'Services' }
   ];
 
+  // Updated Turkish sub-sector list
   const altSektorOptions: MultiSelectOption[] = [
-    "Wood Products and Furniture Manufacturing",
-    "Basic Metal Industry",
-    "Waste Disposal and Recycling",
-    "ICT and Optical Products Manufacturing",
-    "IT and Media Services",
-    "Crop Production",
-    "Leather and Related Products Manufacturing",
-    "Education",
-    "Electrical Equipment Manufacturing",
-    "Energy Production",
-    "Finance, Insurance and Real Estate",
-    "Food Products Manufacturing",
-    "Animal Husbandry",
-    "Beverage Manufacturing",
-    "Construction",
-    "Paper and Paper Products Manufacturing",
-    "Rubber and Plastic Products Manufacturing",
-    "Chemical Products Manufacturing",
-    "Coal and Petroleum Products Manufacturing",
-    "Sand, Clay, Stone and Mineral Mining",
-    "Logistics and Maintenance",
-    "Mining Exploration and Drilling",
-    "Machinery Installation, Maintenance and Repair",
-    "Machinery and Equipment Manufacturing",
-    "Medical Products Manufacturing",
-    "Metal Ore Mining",
-    "Metal Products Manufacturing",
-    "Measurement and Testing Equipment Manufacturing",
-    "Organic Agriculture and Livestock",
-    "Forestry",
-    "Automotive Industry",
-    "Healthcare",
-    "Defense Industry Manufacturing",
-    "Greenhouse Agriculture",
-    "Ceramic and Glass Products Manufacturing",
-    "Socio-Cultural Activities",
-    "Sports Equipment and Musical Instrument Manufacturing",
-    "Fisheries",
-    "Agro-Industry",
-    "Building Materials Manufacturing from Stone and Earth",
-    "Textile and Apparel Manufacturing",
-    "Tourism",
-    "Transport Vehicle Manufacturing",
-    "Creative Industries"
+    "Ağaç Ürünleri ve Mobilya İmalatı",
+    "Ana Metal Sanayi",
+    "Atıkların Bertarafı ve Geri Kazanım",
+    "Bilgi İletişim Teknolojileri ve Optik Ürünlerin İmalatı",
+    "Bilişim ve Medya Hizmetleri",
+    "Bitkisel Üretim",
+    "Deri ve İlgili Ürünlerin İmalatı",
+    "Eğitim",
+    "Elektrikli Teçhizat İmalatı",
+    "Enerji Üretimi",
+    "Finans, Sigorta ve Gayrimenkul",
+    "Gıda Ürünleri İmalatı",
+    "Hayvancılık",
+    "İçeceklerin İmalatı",
+    "İnşaat",
+    "Kâğıt ve Kâğıt Ürünlerinin İmalatı",
+    "Kauçuk ve Plastik Ürünlerin İmalatı",
+    "Kimyasal Ürünlerin İmalatı",
+    "Kömür ve Petrol Ürünleri İmalatı",
+    "Kum, Kil, Taş ve Mineral Ocakçılığı",
+    "Lojistik ve Bakım Onarım",
+    "Maden Arama ve Sondaj Faaliyetleri",
+    "Makine Ekipmanların Kurulum, Bakım ve Onarımı",
+    "Makine ve Ekipman İmalatı",
+    "Medikal Ürünleri İmalatı",
+    "Metal Cevheri Madenciliği",
+    "Metal Ürünleri İmalatı",
+    "Ölçüm ve Test Donanımları İmalatı",
+    "Organik Tarım ve Hayvancılık",
+    "Ormancılık",
+    "Otomotiv Sanayi",
+    "Sağlık",
+    "Savunma Sanayi İmalatı",
+    "Seracılık",
+    "Seramik ve Cam Ürünleri İmalatı",
+    "Sosyo-Kültürel Faaliyetler",
+    "Spor Malzemeleri ve Müzik Aletleri İmalatı",
+    "Su Ürünleri",
+    "Tarımsal Sanayi",
+    "Taş ve Topraktan Yapı Malzemeleri İmalatı",
+    "Tekstil ve Konfeksiyon Ürünlerinin İmalatı",
+    "Turizm",
+    "Ulaşım Araçları İmalatı",
+    "Yaratıcı Endüstriler"
   ].map(sector => ({ label: sector, value: sector }));
 
   const kalkinmaAjansiOptions: MultiSelectOption[] = [
@@ -361,6 +364,44 @@ const AdminFeasibilityReports = () => {
     "Kuzey Anadolu Kalkınma Ajansı (KUZKA)"
   ].map(ajansi => ({ label: ajansi, value: ajansi }));
 
+  // Investment amount ranges
+  const yatirimTutariAralikOptions: MultiSelectOption[] = [
+    "10.000 USD - 20.000 USD",
+    "20.000 USD - 50.000 USD",
+    "50.000 USD - 100.000 USD",
+    "100.000 USD - 200.000 USD",
+    "200.000 USD - 500.000 USD",
+    "500.000 USD - 1.000.000 USD",
+    "1.000.000 USD - 3.000.000 USD",
+    "3.000.000 USD - 10.000.000 USD",
+    "10.000.000 USD - 50.000.000 USD",
+    "50.000.000 USD - 100.000.000 USD",
+    ">100.000.000 USD"
+  ].map(range => ({ label: range, value: range }));
+
+  // World countries list
+  const hedefUlkeOptions: MultiSelectOption[] = [
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+    "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia",
+    "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada",
+    "Cape Verde", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia",
+    "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador",
+    "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia",
+    "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras",
+    "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica",
+    "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon",
+    "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives",
+    "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia",
+    "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua",
+    "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Panama", "Papua New Guinea",
+    "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis",
+    "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone",
+    "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka",
+    "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste",
+    "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates",
+    "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+  ].map(country => ({ label: country, value: country }));
+
   // Reset form state when editing changes
   React.useEffect(() => {
     if (editingReport) {
@@ -372,7 +413,9 @@ const AdminFeasibilityReports = () => {
         gtipKodlari: editingReport.gtip_kodu_tag?.split('|').filter(Boolean) || [],
         ustSektorler: editingReport.ust_sektor_tanim_tag?.split('|').filter(Boolean) || [],
         altSektorler: editingReport.alt_sektor_tanim_tag?.split('|').filter(Boolean) || [],
-        kalkinmaAjanslari: editingReport.kalkinma_ajansi_tag?.split('|').filter(Boolean) || []
+        kalkinmaAjanslari: editingReport.kalkinma_ajansi_tag?.split('|').filter(Boolean) || [],
+        yatirimTutariAraliklari: editingReport.sabit_yatirim_tutari_aralik_tag?.split('|').filter(Boolean) || [],
+        hedefUlkeler: editingReport.hedef_ulke_tag?.split('|').filter(Boolean) || []
       });
     } else {
       setFormState({
@@ -383,7 +426,9 @@ const AdminFeasibilityReports = () => {
         gtipKodlari: [],
         ustSektorler: [],
         altSektorler: [],
-        kalkinmaAjanslari: []
+        kalkinmaAjanslari: [],
+        yatirimTutariAraliklari: [],
+        hedefUlkeler: []
       });
     }
   }, [editingReport]);
@@ -524,7 +569,7 @@ const AdminFeasibilityReports = () => {
                   />
                 </div>
 
-                {/* Enhanced Lower Sector Multi-Select */}
+                {/* Enhanced Lower Sector Multi-Select with Turkish options */}
                 <div>
                   <Label>Alt Sektör</Label>
                   <MultiSelect
@@ -545,6 +590,29 @@ const AdminFeasibilityReports = () => {
                     onChange={(selected) => setFormState(prev => ({ ...prev, kalkinmaAjanslari: selected }))}
                     placeholder="Kalkınma ajanslarını seçin..."
                     searchPlaceholder="Ajans ara..."
+                  />
+                </div>
+
+                {/* New Investment Amount Range Multi-Select */}
+                <div>
+                  <Label>Sabit Yatırım Tutarı Aralığı</Label>
+                  <MultiSelect
+                    options={yatirimTutariAralikOptions}
+                    selected={formState.yatirimTutariAraliklari}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, yatirimTutariAraliklari: selected }))}
+                    placeholder="Yatırım tutarı aralığını seçin..."
+                  />
+                </div>
+
+                {/* New Target Countries Multi-Select */}
+                <div>
+                  <Label>Hedef Ülke</Label>
+                  <MultiSelect
+                    options={hedefUlkeOptions}
+                    selected={formState.hedefUlkeler}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, hedefUlkeler: selected }))}
+                    placeholder="Hedef ülkeleri seçin..."
+                    searchPlaceholder="Ülke ara..."
                   />
                 </div>
 
@@ -575,24 +643,6 @@ const AdminFeasibilityReports = () => {
                     name="geri_odeme_suresi"
                     type="number"
                     defaultValue={editingReport?.geri_odeme_suresi || ''}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="hedef_ulke_tag">Hedef Ülke</Label>
-                  <Input
-                    id="hedef_ulke_tag"
-                    name="hedef_ulke_tag"
-                    defaultValue={editingReport?.hedef_ulke_tag || ''}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="sabit_yatirim_tutari_aralik_tag">Yatırım Tutarı Aralığı</Label>
-                  <Input
-                    id="sabit_yatirim_tutari_aralik_tag"
-                    name="sabit_yatirim_tutari_aralik_tag"
-                    defaultValue={editingReport?.sabit_yatirim_tutari_aralik_tag || ''}
                   />
                 </div>
 
