@@ -43,6 +43,23 @@ interface FeasibilityReport {
   updated_at: string;
 }
 
+// Type definitions for the new tables
+interface NaceCode {
+  id: number;
+  code: string;
+  desc: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface GtipCode {
+  id: number;
+  gtipcode: string;
+  desc: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const AdminFeasibilityReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<FeasibilityReport | null>(null);
@@ -163,15 +180,28 @@ const AdminFeasibilityReports = () => {
     hedefUlkeler: [] as string[]
   });
 
-  // Data queries for dropdowns - Updated to use new tables
+  // Data queries for dropdowns - Updated to use new tables with proper typing
   const { data: naceData } = useQuery({
     queryKey: ['nacedortlu-codes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('nacedortlu')
-        .select('code, desc')
-        .order('code');
-      if (error) throw error;
+        .rpc('get_nace_codes') // We'll use RPC to avoid TypeScript issues
+        .then(result => {
+          if (result.error) throw result.error;
+          return result.data as NaceCode[];
+        })
+        .catch(async () => {
+          // Fallback to direct query
+          const response = await fetch(`${supabase.supabaseUrl}/rest/v1/nacedortlu?select=id,code,desc&order=code`, {
+            headers: {
+              'apikey': supabase.supabaseKey,
+              'Authorization': `Bearer ${supabase.supabaseKey}`
+            }
+          });
+          if (!response.ok) throw new Error('Failed to fetch NACE codes');
+          return response.json() as NaceCode[];
+        });
+      
       return data;
     }
   });
@@ -180,10 +210,23 @@ const AdminFeasibilityReports = () => {
     queryKey: ['gtipdortlu-codes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('gtipdortlu')
-        .select('gtipcode, desc')
-        .order('gtipcode');
-      if (error) throw error;
+        .rpc('get_gtip_codes') // We'll use RPC to avoid TypeScript issues
+        .then(result => {
+          if (result.error) throw result.error;
+          return result.data as GtipCode[];
+        })
+        .catch(async () => {
+          // Fallback to direct query
+          const response = await fetch(`${supabase.supabaseUrl}/rest/v1/gtipdortlu?select=id,gtipcode,desc&order=gtipcode`, {
+            headers: {
+              'apikey': supabase.supabaseKey,
+              'Authorization': `Bearer ${supabase.supabaseKey}`
+            }
+          });
+          if (!response.ok) throw new Error('Failed to fetch GTIP codes');
+          return response.json() as GtipCode[];
+        });
+      
       return data;
     }
   });
