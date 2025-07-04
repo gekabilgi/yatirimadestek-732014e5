@@ -136,6 +136,30 @@ export type Database = {
         }
         Relationships: []
       }
+      gtipdortlu: {
+        Row: {
+          created_at: string | null
+          description: string
+          gtipcode: string
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          gtipcode: string
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          gtipcode?: string
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       incentive_supports: {
         Row: {
           created_at: string | null
@@ -412,6 +436,30 @@ export type Database = {
           min_investment_region_4?: number | null
           min_investment_region_5?: number | null
           min_investment_region_6?: number | null
+        }
+        Relationships: []
+      }
+      nacedortlu: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: number
+          nacecode: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: number
+          nacecode: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: number
+          nacecode?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

@@ -43,11 +43,11 @@ interface FeasibilityReport {
   updated_at: string;
 }
 
-// Type definitions for the new tables
+// Type definitions for the new tables with correct field names
 interface NaceCode {
   id: number;
-  code: string;
-  desc: string;
+  nacecode: string;
+  description: string;
   created_at: string;
   updated_at: string;
 }
@@ -55,7 +55,7 @@ interface NaceCode {
 interface GtipCode {
   id: number;
   gtipcode: string;
-  desc: string;
+  description: string;
   created_at: string;
   updated_at: string;
 }
@@ -180,14 +180,14 @@ const AdminFeasibilityReports = () => {
     hedefUlkeler: [] as string[]
   });
 
-  // Data queries for dropdowns - Now properly querying the new tables
+  // Data queries for dropdowns - Updated to match your actual table structure
   const { data: naceData } = useQuery({
     queryKey: ['nacedortlu-codes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nacedortlu')
-        .select('id, code, desc')
-        .order('code');
+        .select('id, nacecode, description')
+        .order('nacecode');
       
       if (error) {
         console.warn('NACE codes table query failed:', error);
@@ -203,7 +203,7 @@ const AdminFeasibilityReports = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gtipdortlu')
-        .select('id, gtipcode, desc')
+        .select('id, gtipcode, description')
         .order('gtipcode');
       
       if (error) {
@@ -290,17 +290,17 @@ const AdminFeasibilityReports = () => {
     toast.info('Excel dışa aktarma özelliği yakında eklenecek');
   };
 
-  // Prepare dropdown options - Updated to use new data sources
+  // Prepare dropdown options - Updated to use correct field names
   const naceOptions: MultiSelectOption[] = (naceData || []).map(item => ({
-    label: item.code,
-    value: item.code,
-    description: item.desc
+    label: item.nacecode,
+    value: item.nacecode,
+    description: item.description
   }));
 
   const gtipOptions: MultiSelectOption[] = (gtipData || []).map(item => ({
     label: item.gtipcode,
     value: item.gtipcode,
-    description: item.desc
+    description: item.description
   }));
 
   const provinceOptions: MultiSelectOption[] = (provincesData || []).map(item => ({
