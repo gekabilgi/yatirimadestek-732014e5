@@ -653,8 +653,7 @@ const AdminFeasibilityReports = () => {
                             </div>
 
                             <div className="space-y-2">
-                              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                <Target className="h-4 w-4" />
+                              <Label className="text-sm font-medium text-slate-700">
                                 Yatırım Boyutu
                               </Label>
                               <MultiSelect
@@ -1005,14 +1004,14 @@ const AdminFeasibilityReports = () => {
                               <p className="text-slate-900 font-medium truncate">{report.yatirim_konusu}</p>
                               {report.il_tag && (
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                  {report.il_tag.split('|').filter(Boolean).slice(0, 3).map((il, index) => (
+                                  {report.il_tag.split('|').filter(Boolean).filter(il => il.trim() !== '').slice(0, 3).map((il, index) => (
                                     <Badge key={index} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                      {il}
+                                      {il.trim()}
                                     </Badge>
                                   ))}
-                                  {report.il_tag.split('|').filter(Boolean).length > 3 && (
+                                  {report.il_tag.split('|').filter(Boolean).filter(il => il.trim() !== '').length > 3 && (
                                     <Badge variant="outline" className="text-xs bg-slate-50 text-slate-600 border-slate-200">
-                                      +{report.il_tag.split('|').filter(Boolean).length - 3}
+                                      +{report.il_tag.split('|').filter(Boolean).filter(il => il.trim() !== '').length - 3}
                                     </Badge>
                                   )}
                                 </div>
