@@ -495,7 +495,7 @@ const AdminFeasibilityReports = () => {
           {/* Header Section */}
           <div className="text-center sm:text-left">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div className="space-y-2">
+              <div className="space-y-2 mt-2">
                 <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">
                   Fizibilite Raporları
                 </h1>
