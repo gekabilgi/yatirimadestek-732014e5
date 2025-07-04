@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 import { Plus, Edit, Trash2, Copy, Download, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -148,6 +149,43 @@ const AdminFeasibilityReports = () => {
     },
   });
 
+  // Enhanced form state for multi-select fields
+  const [formState, setFormState] = useState({
+    naceKodlari: [] as string[],
+    iller: [] as string[],
+    yatirimBoyutlari: [] as string[],
+    sdgSecilimleri: [] as string[],
+    gtipKodlari: [] as string[],
+    ustSektorler: [] as string[],
+    altSektorler: [] as string[],
+    kalkinmaAjanslari: [] as string[]
+  });
+
+  // Data queries for dropdowns
+  const { data: naceData } = useQuery({
+    queryKey: ['nace-codes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nace_codes')
+        .select('code, description')
+        .order('code');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: provincesData } = useQuery({
+    queryKey: ['provinces'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('provinces')
+        .select('name')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -156,16 +194,16 @@ const AdminFeasibilityReports = () => {
       yatirim_konusu: formData.get('yatirim_konusu') as string,
       fizibilitenin_hazirlanma_tarihi: formData.get('fizibilitenin_hazirlanma_tarihi') as string || null,
       guncellenme_tarihi: formData.get('guncellenme_tarihi') as string || null,
-      nace_kodu_tanim: formData.get('nace_kodu_tanim') as string || null,
-      gtip_kodu_tag: formData.get('gtip_kodu_tag') as string || null,
+      nace_kodu_tanim: formState.naceKodlari.join('|') || null,
+      gtip_kodu_tag: formState.gtipKodlari.join('|') || null,
       hedef_ulke_tag: formData.get('hedef_ulke_tag') as string || null,
-      ust_sektor_tanim_tag: formData.get('ust_sektor_tanim_tag') as string || null,
-      alt_sektor_tanim_tag: formData.get('alt_sektor_tanim_tag') as string || null,
+      ust_sektor_tanim_tag: formState.ustSektorler.join('|') || null,
+      alt_sektor_tanim_tag: formState.altSektorler.join('|') || null,
       sabit_yatirim_tutari_aralik_tag: formData.get('sabit_yatirim_tutari_aralik_tag') as string || null,
-      kalkinma_ajansi_tag: formData.get('kalkinma_ajansi_tag') as string || null,
-      il_tag: formData.get('il_tag') as string || null,
-      ska_tag: formData.get('ska_tag') as string || null,
-      yatirim_boyutu_tag: formData.get('yatirim_boyutu_tag') as string || null,
+      kalkinma_ajansi_tag: formState.kalkinmaAjanslari.join('|') || null,
+      il_tag: formState.iller.join('|') || null,
+      ska_tag: formState.sdgSecilimleri.join('|') || null,
+      yatirim_boyutu_tag: formState.yatirimBoyutlari.join('|') || null,
       keywords_tag: formData.get('keywords_tag') as string || null,
       sabit_yatirim_tutari: parseFloat(formData.get('sabit_yatirim_tutari') as string) || null,
       istihdam: parseInt(formData.get('istihdam') as string) || null,
@@ -201,9 +239,158 @@ const AdminFeasibilityReports = () => {
     toast.info('Excel dışa aktarma özelliği yakında eklenecek');
   };
 
+  // Prepare dropdown options
+  const naceOptions: MultiSelectOption[] = (naceData || []).map(item => ({
+    label: item.code,
+    value: item.code,
+    description: item.description
+  }));
+
+  const provinceOptions: MultiSelectOption[] = (provincesData || []).map(item => ({
+    label: item.name,
+    value: item.name
+  }));
+
+  const yatirimBoyutuOptions: MultiSelectOption[] = [
+    { label: 'Yerel', value: 'Yerel' },
+    { label: 'Ulusal', value: 'Ulusal' },
+    { label: 'Küresel', value: 'Küresel' }
+  ];
+
+  const sdgOptions = [
+    { number: '1', name: 'No Poverty' },
+    { number: '2', name: 'Zero Hunger' },
+    { number: '3', name: 'Good Health and Well-being' },
+    { number: '4', name: 'Quality Education' },
+    { number: '5', name: 'Gender Equality' },
+    { number: '6', name: 'Clean Water and Sanitation' },
+    { number: '7', name: 'Affordable and Clean Energy' },
+    { number: '8', name: 'Decent Work and Economic Growth' },
+    { number: '9', name: 'Industry, Innovation and Infrastructure' },
+    { number: '10', name: 'Reduced Inequalities' },
+    { number: '11', name: 'Sustainable Cities and Communities' },
+    { number: '12', name: 'Responsible Consumption and Production' },
+    { number: '13', name: 'Climate Action' },
+    { number: '14', name: 'Life Below Water' },
+    { number: '15', name: 'Life on Land' },
+    { number: '16', name: 'Peace, Justice and Strong Institutions' },
+    { number: '17', name: 'Partnerships for the Goals' }
+  ];
+
+  const ustSektorOptions: MultiSelectOption[] = [
+    { label: 'Industry', value: 'Industry' },
+    { label: 'Agriculture', value: 'Agriculture' },
+    { label: 'Mining', value: 'Mining' },
+    { label: 'Energy', value: 'Energy' },
+    { label: 'Services', value: 'Services' }
+  ];
+
+  const altSektorOptions: MultiSelectOption[] = [
+    "Wood Products and Furniture Manufacturing",
+    "Basic Metal Industry",
+    "Waste Disposal and Recycling",
+    "ICT and Optical Products Manufacturing",
+    "IT and Media Services",
+    "Crop Production",
+    "Leather and Related Products Manufacturing",
+    "Education",
+    "Electrical Equipment Manufacturing",
+    "Energy Production",
+    "Finance, Insurance and Real Estate",
+    "Food Products Manufacturing",
+    "Animal Husbandry",
+    "Beverage Manufacturing",
+    "Construction",
+    "Paper and Paper Products Manufacturing",
+    "Rubber and Plastic Products Manufacturing",
+    "Chemical Products Manufacturing",
+    "Coal and Petroleum Products Manufacturing",
+    "Sand, Clay, Stone and Mineral Mining",
+    "Logistics and Maintenance",
+    "Mining Exploration and Drilling",
+    "Machinery Installation, Maintenance and Repair",
+    "Machinery and Equipment Manufacturing",
+    "Medical Products Manufacturing",
+    "Metal Ore Mining",
+    "Metal Products Manufacturing",
+    "Measurement and Testing Equipment Manufacturing",
+    "Organic Agriculture and Livestock",
+    "Forestry",
+    "Automotive Industry",
+    "Healthcare",
+    "Defense Industry Manufacturing",
+    "Greenhouse Agriculture",
+    "Ceramic and Glass Products Manufacturing",
+    "Socio-Cultural Activities",
+    "Sports Equipment and Musical Instrument Manufacturing",
+    "Fisheries",
+    "Agro-Industry",
+    "Building Materials Manufacturing from Stone and Earth",
+    "Textile and Apparel Manufacturing",
+    "Tourism",
+    "Transport Vehicle Manufacturing",
+    "Creative Industries"
+  ].map(sector => ({ label: sector, value: sector }));
+
+  const kalkinmaAjansiOptions: MultiSelectOption[] = [
+    "İstanbul Kalkınma Ajansı (İSTKA)",
+    "Ankara Kalkınma Ajansı (ANKARAKA)",
+    "İzmir Kalkınma Ajansı (İZKA)",
+    "Bursa Eskişehir Bilecik Kalkınma Ajansı (BEBKA)",
+    "Doğu Marmara Kalkınma Ajansı (MARKA)",
+    "Trakya Kalkınma Ajansı (TRAKYAKA)",
+    "Güney Marmara Kalkınma Ajansı (GMKA)",
+    "Zafer Kalkınma Ajansı (ZAFERKA)",
+    "Mevlana Kalkınma Ajansı (MEVKA)",
+    "Orta Anadolu Kalkınma Ajansı (ORAN)",
+    "Ahiler Kalkınma Ajansı (AHİKA)",
+    "İç Anadolu Kalkınma Ajansı (İKA)",
+    "Batı Akdeniz Kalkınma Ajansı (BAKA)",
+    "Güney Ege Kalkınma Ajansı (GEKA)",
+    "Doğu Akdeniz Kalkınma Ajansı (DOĞAKA)",
+    "Çukurova Kalkınma Ajansı (ÇKA)",
+    "Batı Karadeniz Kalkınma Ajansı (BAKKA)",
+    "Orta Karadeniz Kalkınma Ajansı (OKA)",
+    "Doğu Karadeniz Kalkınma Ajansı (DOKA)",
+    "Kuzeydoğu Anadolu Kalkınma Ajansı (KUDAKA)",
+    "Serhat Kalkınma Ajansı (SERKA)",
+    "Dicle Kalkınma Ajansı (DİKA)",
+    "Karacadağ Kalkınma Ajansı (KARACADAĞ)",
+    "İpekyolu Kalkınma Ajansı (İKA)",
+    "Fırat Kalkınma Ajansı (FKA)",
+    "Kuzey Anadolu Kalkınma Ajansı (KUZKA)"
+  ].map(ajansi => ({ label: ajansi, value: ajansi }));
+
+  // Reset form state when editing changes
+  React.useEffect(() => {
+    if (editingReport) {
+      setFormState({
+        naceKodlari: editingReport.nace_kodu_tanim?.split('|').filter(Boolean) || [],
+        iller: editingReport.il_tag?.split('|').filter(Boolean) || [],
+        yatirimBoyutlari: editingReport.yatirim_boyutu_tag?.split('|').filter(Boolean) || [],
+        sdgSecilimleri: editingReport.ska_tag?.split('|').filter(Boolean) || [],
+        gtipKodlari: editingReport.gtip_kodu_tag?.split('|').filter(Boolean) || [],
+        ustSektorler: editingReport.ust_sektor_tanim_tag?.split('|').filter(Boolean) || [],
+        altSektorler: editingReport.alt_sektor_tanim_tag?.split('|').filter(Boolean) || [],
+        kalkinmaAjanslari: editingReport.kalkinma_ajansi_tag?.split('|').filter(Boolean) || []
+      });
+    } else {
+      setFormState({
+        naceKodlari: [],
+        iller: [],
+        yatirimBoyutlari: [],
+        sdgSecilimleri: [],
+        gtipKodlari: [],
+        ustSektorler: [],
+        altSektorler: [],
+        kalkinmaAjanslari: []
+      });
+    }
+  }, [editingReport]);
+
   return (
     <AdminLayout>
-      <div className="space-y-6  mt-16">
+      <div className="space-y-6 mt-16">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Fizibilite Raporları</h1>
@@ -238,6 +425,7 @@ const AdminFeasibilityReports = () => {
                         required
                       />
                     </div>
+                    
                     <div>
                       <Label htmlFor="fizibilitenin_hazirlanma_tarihi">Hazırlanma Tarihi</Label>
                       <Input
@@ -247,6 +435,7 @@ const AdminFeasibilityReports = () => {
                         defaultValue={editingReport?.fizibilitenin_hazirlanma_tarihi || ''}
                       />
                     </div>
+                    
                     <div>
                       <Label htmlFor="guncellenme_tarihi">Güncellenme Tarihi</Label>
                       <Input
@@ -256,156 +445,197 @@ const AdminFeasibilityReports = () => {
                         defaultValue={editingReport?.guncellenme_tarihi || ''}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="nace_kodu_tanim">NACE Kodu Tanımı</Label>
-                      <Input
-                        id="nace_kodu_tanim"
-                        name="nace_kodu_tanim"
-                        defaultValue={editingReport?.nace_kodu_tanim || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="il_tag">İl</Label>
-                      <Input
-                        id="il_tag"
-                        name="il_tag"
-                        defaultValue={editingReport?.il_tag || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="yatirim_boyutu_tag">Yatırım Boyutu</Label>
-                      <Select name="yatirim_boyutu_tag" defaultValue={editingReport?.yatirim_boyutu_tag || ''}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seçiniz" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Yerel">Yerel</SelectItem>
-                          <SelectItem value="Ulusal">Ulusal</SelectItem>
-                          <SelectItem value="Küresel">Küresel</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="sabit_yatirim_tutari">Sabit Yatırım Tutarı</Label>
-                      <Input
-                        id="sabit_yatirim_tutari"
-                        name="sabit_yatirim_tutari"
-                        type="number"
-                        defaultValue={editingReport?.sabit_yatirim_tutari || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="istihdam">İstihdam</Label>
-                      <Input
-                        id="istihdam"
-                        name="istihdam"
-                        type="number"
-                        defaultValue={editingReport?.istihdam || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="geri_odeme_suresi">Geri Ödeme Süresi (Ay)</Label>
-                      <Input
-                        id="geri_odeme_suresi"
-                        name="geri_odeme_suresi"
-                        type="number"
-                        defaultValue={editingReport?.geri_odeme_suresi || ''}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="ska_tag">SKA Etiketleri (| ile ayırın)</Label>
-                      <Input
-                        id="ska_tag"
-                        name="ska_tag"
-                        defaultValue={editingReport?.ska_tag || ''}
-                        placeholder="8-İnsana Yakışır İş ve Ekonomik Büyüme|9-Sanayi, İnovasyon ve Altyapı"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="hedef_ulke_tag">Hedef Ülke</Label>
-                      <Input
-                        id="hedef_ulke_tag"
-                        name="hedef_ulke_tag"
-                        defaultValue={editingReport?.hedef_ulke_tag || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gtip_kodu_tag">GTIP Kodu</Label>
-                      <Input
-                        id="gtip_kodu_tag"
-                        name="gtip_kodu_tag"
-                        defaultValue={editingReport?.gtip_kodu_tag || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="ust_sektor_tanim_tag">Üst Sektör</Label>
-                      <Input
-                        id="ust_sektor_tanim_tag"
-                        name="ust_sektor_tanim_tag"
-                        defaultValue={editingReport?.ust_sektor_tanim_tag || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="alt_sektor_tanim_tag">Alt Sektör</Label>
-                      <Input
-                        id="alt_sektor_tanim_tag"
-                        name="alt_sektor_tanim_tag"
-                        defaultValue={editingReport?.alt_sektor_tanim_tag || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sabit_yatirim_tutari_aralik_tag">Yatırım Tutarı Aralığı</Label>
-                      <Input
-                        id="sabit_yatirim_tutari_aralik_tag"
-                        name="sabit_yatirim_tutari_aralik_tag"
-                        defaultValue={editingReport?.sabit_yatirim_tutari_aralik_tag || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="kalkinma_ajansi_tag">Kalkınma Ajansı</Label>
-                      <Input
-                        id="kalkinma_ajansi_tag"
-                        name="kalkinma_ajansi_tag"
-                        defaultValue={editingReport?.kalkinma_ajansi_tag || ''}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="keywords_tag">Anahtar Kelimeler (| ile ayırın)</Label>
-                      <Input
-                        id="keywords_tag"
-                        name="keywords_tag"
-                        defaultValue={editingReport?.keywords_tag || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dokumanlar">Doküman Adı</Label>
-                      <Input
-                        id="dokumanlar"
-                        name="dokumanlar"
-                        defaultValue={editingReport?.dokumanlar || ''}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="link">İndirme Linki</Label>
-                      <Input
-                        id="link"
-                        name="link"
-                        type="url"
-                        defaultValue={editingReport?.link || ''}
-                      />
-                    </div>
+
+                {/* Enhanced NACE Codes Multi-Select */}
+                <div className="md:col-span-2">
+                  <Label>NACE Kodu Tanımı</Label>
+                  <MultiSelect
+                    options={naceOptions}
+                    selected={formState.naceKodlari}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, naceKodlari: selected }))}
+                    placeholder="NACE kodlarını seçin..."
+                    searchPlaceholder="NACE kodu ara..."
+                    formatLabel={(option) => `${option.label} - ${option.description}`}
+                  />
+                </div>
+
+                {/* Enhanced Province Multi-Select */}
+                <div>
+                  <Label>İl</Label>
+                  <MultiSelect
+                    options={provinceOptions}
+                    selected={formState.iller}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, iller: selected }))}
+                    placeholder="İlleri seçin..."
+                    searchPlaceholder="İl ara..."
+                  />
+                </div>
+
+                {/* Enhanced Investment Scale Multi-Select */}
+                <div>
+                  <Label>Yatırım Boyutu</Label>
+                  <MultiSelect
+                    options={yatirimBoyutuOptions}
+                    selected={formState.yatirimBoyutlari}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, yatirimBoyutlari: selected }))}
+                    placeholder="Yatırım boyutunu seçin..."
+                  />
+                </div>
+
+                {/* Enhanced SDG Checkboxes */}
+                <div className="md:col-span-2">
+                  <Label>SKA Etiketleri (Sürdürülebilir Kalkınma Amaçları)</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2 p-4 border rounded-md max-h-40 overflow-y-auto">
+                    {sdgOptions.map((sdg) => (
+                      <div key={sdg.number} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`sdg-${sdg.number}`}
+                          checked={formState.sdgSecilimleri.includes(sdg.number)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormState(prev => ({
+                                ...prev,
+                                sdgSecilimleri: [...prev.sdgSecilimleri, sdg.number]
+                              }));
+                            } else {
+                              setFormState(prev => ({
+                                ...prev,
+                                sdgSecilimleri: prev.sdgSecilimleri.filter(id => id !== sdg.number)
+                              }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`sdg-${sdg.number}`} className="text-sm">
+                          SDG {sdg.number}: {sdg.name}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                      İptal
-                    </Button>
-                    <Button type="submit">
-                      {editingReport ? 'Güncelle' : 'Ekle'}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                </div>
+
+                {/* Enhanced Upper Sector Multi-Select */}
+                <div>
+                  <Label>Üst Sektör</Label>
+                  <MultiSelect
+                    options={ustSektorOptions}
+                    selected={formState.ustSektorler}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, ustSektorler: selected }))}
+                    placeholder="Üst sektörleri seçin..."
+                  />
+                </div>
+
+                {/* Enhanced Lower Sector Multi-Select */}
+                <div>
+                  <Label>Alt Sektör</Label>
+                  <MultiSelect
+                    options={altSektorOptions}
+                    selected={formState.altSektorler}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, altSektorler: selected }))}
+                    placeholder="Alt sektörleri seçin..."
+                    searchPlaceholder="Sektör ara..."
+                  />
+                </div>
+
+                {/* Enhanced Development Agency Multi-Select */}
+                <div className="md:col-span-2">
+                  <Label>Kalkınma Ajansı</Label>
+                  <MultiSelect
+                    options={kalkinmaAjansiOptions}
+                    selected={formState.kalkinmaAjanslari}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, kalkinmaAjanslari: selected }))}
+                    placeholder="Kalkınma ajanslarını seçin..."
+                    searchPlaceholder="Ajans ara..."
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="sabit_yatirim_tutari">Sabit Yatırım Tutarı</Label>
+                  <Input
+                    id="sabit_yatirim_tutari"
+                    name="sabit_yatirim_tutari"
+                    type="number"
+                    defaultValue={editingReport?.sabit_yatirim_tutari || ''}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="istihdam">İstihdam</Label>
+                  <Input
+                    id="istihdam"
+                    name="istihdam"
+                    type="number"
+                    defaultValue={editingReport?.istihdam || ''}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="geri_odeme_suresi">Geri Ödeme Süresi (Ay)</Label>
+                  <Input
+                    id="geri_odeme_suresi"
+                    name="geri_odeme_suresi"
+                    type="number"
+                    defaultValue={editingReport?.geri_odeme_suresi || ''}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="hedef_ulke_tag">Hedef Ülke</Label>
+                  <Input
+                    id="hedef_ulke_tag"
+                    name="hedef_ulke_tag"
+                    defaultValue={editingReport?.hedef_ulke_tag || ''}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="sabit_yatirim_tutari_aralik_tag">Yatırım Tutarı Aralığı</Label>
+                  <Input
+                    id="sabit_yatirim_tutari_aralik_tag"
+                    name="sabit_yatirim_tutari_aralik_tag"
+                    defaultValue={editingReport?.sabit_yatirim_tutari_aralik_tag || ''}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="keywords_tag">Anahtar Kelimeler (| ile ayırın)</Label>
+                  <Input
+                    id="keywords_tag"
+                    name="keywords_tag"
+                    defaultValue={editingReport?.keywords_tag || ''}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="dokumanlar">Doküman Adı</Label>
+                  <Input
+                    id="dokumanlar"
+                    name="dokumanlar"
+                    defaultValue={editingReport?.dokumanlar || ''}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="link">İndirme Linki</Label>
+                  <Input
+                    id="link"
+                    name="link"
+                    type="url"
+                    defaultValue={editingReport?.link || ''}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                  İptal
+                </Button>
+                <Button type="submit">
+                  {editingReport ? 'Güncelle' : 'Ekle'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
           </div>
         </div>
 
