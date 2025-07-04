@@ -245,16 +245,16 @@ const AdminFeasibilityReports = () => {
       yatirim_konusu: formData.get('yatirim_konusu') as string,
       fizibilitenin_hazirlanma_tarihi: formData.get('fizibilitenin_hazirlanma_tarihi') as string || null,
       guncellenme_tarihi: formData.get('guncellenme_tarihi') as string || null,
-      nace_kodu_tanim: formState.naceKodlari.join('|') || null,
-      gtip_kodu_tag: formState.gtipKodlari.join('|') || null,
-      hedef_ulke_tag: formState.hedefUlkeler.join('|') || null,
-      ust_sektor_tanim_tag: formState.ustSektorler.join('|') || null,
-      alt_sektor_tanim_tag: formState.altSektorler.join('|') || null,
-      sabit_yatirim_tutari_aralik_tag: formState.yatirimTutariAraliklari.join('|') || null,
-      kalkinma_ajansi_tag: formState.kalkinmaAjanslari.join('|') || null,
-      il_tag: formState.iller.join('|') || null,
-      ska_tag: formState.sdgSecilimleri.join('|') || null,
-      yatirim_boyutu_tag: formState.yatirimBoyutlari.join('|') || null,
+      nace_kodu_tanim: formState.naceKodlari.filter(Boolean).join('|') || null,
+      gtip_kodu_tag: formState.gtipKodlari.filter(Boolean).join('|') || null,
+      hedef_ulke_tag: formState.hedefUlkeler.filter(Boolean).join('|') || null,
+      ust_sektor_tanim_tag: formState.ustSektorler.filter(Boolean).join('|') || null,
+      alt_sektor_tanim_tag: formState.altSektorler.filter(Boolean).join('|') || null,
+      sabit_yatirim_tutari_aralik_tag: formState.yatirimTutariAraliklari.filter(Boolean).join('|') || null,
+      kalkinma_ajansi_tag: formState.kalkinmaAjanslari.filter(Boolean).join('|') || null,
+      il_tag: formState.iller.filter(Boolean).join('|') || null,
+      ska_tag: formState.sdgSecilimleri.filter(Boolean).join('|') || null,
+      yatirim_boyutu_tag: formState.yatirimBoyutlari.filter(Boolean).join('|') || null,
       keywords_tag: formData.get('keywords_tag') as string || null,
       sabit_yatirim_tutari: parseFloat(formData.get('sabit_yatirim_tutari') as string) || null,
       istihdam: parseInt(formData.get('istihdam') as string) || null,
@@ -1005,14 +1005,14 @@ const AdminFeasibilityReports = () => {
                               <p className="text-slate-900 font-medium truncate">{report.yatirim_konusu}</p>
                               {report.il_tag && (
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                  {report.il_tag.split('|').slice(0, 3).map((il, index) => (
+                                  {report.il_tag.split('|').filter(Boolean).slice(0, 3).map((il, index) => (
                                     <Badge key={index} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                                       {il}
                                     </Badge>
                                   ))}
-                                  {report.il_tag.split('|').length > 3 && (
+                                  {report.il_tag.split('|').filter(Boolean).length > 3 && (
                                     <Badge variant="outline" className="text-xs bg-slate-50 text-slate-600 border-slate-200">
-                                      +{report.il_tag.split('|').length - 3}
+                                      +{report.il_tag.split('|').filter(Boolean).length - 3}
                                     </Badge>
                                   )}
                                 </div>
