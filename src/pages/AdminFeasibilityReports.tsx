@@ -163,28 +163,50 @@ const AdminFeasibilityReports = () => {
     hedefUlkeler: [] as string[]
   });
 
-  // Data queries for dropdowns
+  // Data queries for dropdowns - Updated to use new tables
   const { data: naceData } = useQuery({
-    queryKey: ['nace-codes'],
+    queryKey: ['nacedortlu-codes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('nace_codes')
-        .select('code, description')
+        .from('nacedortlu')
+        .select('code, desc')
         .order('code');
       if (error) throw error;
       return data;
     }
   });
 
-  const { data: provincesData } = useQuery({
-    queryKey: ['provinces'],
+  const { data: gtipData } = useQuery({
+    queryKey: ['gtipdortlu-codes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('provinces')
-        .select('name')
-        .order('name');
+        .from('gtipdortlu')
+        .select('gtipcode, desc')
+        .order('gtipcode');
       if (error) throw error;
       return data;
+    }
+  });
+
+  // Fixed provinces query to get all Turkish provinces
+  const { data: provincesData } = useQuery({
+    queryKey: ['all-provinces'],
+    queryFn: async () => {
+      // Turkish provinces list
+      const turkishProvinces = [
+        'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya', 'Artvin',
+        'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa',
+        'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır', 'Edirne', 'Elazığ', 'Erzincan',
+        'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkâri', 'Hatay', 'Isparta',
+        'Mersin', 'İstanbul', 'İzmir', 'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir',
+        'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla',
+        'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt',
+        'Sinop', 'Sivas', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa', 'Uşak',
+        'Van', 'Yozgat', 'Zonguldak', 'Aksaray', 'Bayburt', 'Karaman', 'Kırıkkale', 'Batman',
+        'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce'
+      ];
+      
+      return turkishProvinces.map(name => ({ name }));
     }
   });
 
@@ -241,11 +263,17 @@ const AdminFeasibilityReports = () => {
     toast.info('Excel dışa aktarma özelliği yakında eklenecek');
   };
 
-  // Prepare dropdown options
+  // Prepare dropdown options - Updated to use new data sources
   const naceOptions: MultiSelectOption[] = (naceData || []).map(item => ({
     label: item.code,
     value: item.code,
-    description: item.description
+    description: item.desc
+  }));
+
+  const gtipOptions: MultiSelectOption[] = (gtipData || []).map(item => ({
+    label: item.gtipcode,
+    value: item.gtipcode,
+    description: item.desc
   }));
 
   const provinceOptions: MultiSelectOption[] = (provincesData || []).map(item => ({
@@ -491,7 +519,7 @@ const AdminFeasibilityReports = () => {
                       />
                     </div>
 
-                {/* Enhanced NACE Codes Multi-Select */}
+                {/* Enhanced NACE Codes Multi-Select - Now using nacedortlu table */}
                 <div className="md:col-span-2">
                   <Label>NACE Kodu Tanımı</Label>
                   <MultiSelect
@@ -504,7 +532,20 @@ const AdminFeasibilityReports = () => {
                   />
                 </div>
 
-                {/* Enhanced Province Multi-Select */}
+                {/* Enhanced GTIP Codes Multi-Select - Now using gtipdortlu table */}
+                <div className="md:col-span-2">
+                  <Label>GTIP Kodu</Label>
+                  <MultiSelect
+                    options={gtipOptions}
+                    selected={formState.gtipKodlari}
+                    onChange={(selected) => setFormState(prev => ({ ...prev, gtipKodlari: selected }))}
+                    placeholder="GTIP kodlarını seçin..."
+                    searchPlaceholder="GTIP kodu ara..."
+                    formatLabel={(option) => `${option.label} - ${option.description}`}
+                  />
+                </div>
+
+                {/* Enhanced Province Multi-Select - Now showing all 81 Turkish provinces */}
                 <div>
                   <Label>İl</Label>
                   <MultiSelect
