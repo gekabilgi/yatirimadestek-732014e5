@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
-import { Plus, Edit, Trash2, Copy, Download, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Copy, Download, Search, Filter, FileText, Calendar, MapPin, Building, Globe, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -490,417 +490,592 @@ const AdminFeasibilityReports = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 mt-16">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Fizibilite Raporları</h1>
-            <p className="text-gray-600">Yatırım fizibilite raporlarını yönetin</p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={exportToExcel} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Excel'e Aktar
-            </Button>
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setEditingReport(null)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Yeni Rapor
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Header Section */}
+          <div className="text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="space-y-2">
+                <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">
+                  Fizibilite Raporları
+                </h1>
+                <p className="text-slate-600 text-sm sm:text-base">
+                  Yatırım fizibilite raporlarını yönetin ve analiz edin
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={exportToExcel} 
+                  variant="outline"
+                  className="h-11 px-6 bg-white/80 backdrop-blur-sm border-slate-200 hover:bg-white hover:shadow-md transition-all duration-200"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Excel'e Aktar
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingReport ? 'Raporu Düzenle' : 'Yeni Fizibilite Raporu'}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <Label htmlFor="yatirim_konusu">Yatırım Konusu *</Label>
-                      <Input
-                        id="yatirim_konusu"
-                        name="yatirim_konusu"
-                        defaultValue={editingReport?.yatirim_konusu || ''}
-                        required
-                      />
-                    </div>
+                
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      onClick={() => setEditingReport(null)}
+                      className="h-11 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Yeni Rapor Ekle
+                    </Button>
+                  </DialogTrigger>
+                  
+                  <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
+                    <DialogHeader className="border-b border-slate-100 pb-6">
+                      <DialogTitle className="text-2xl font-semibold text-slate-800 flex items-center gap-2">
+                        <FileText className="h-6 w-6 text-blue-600" />
+                        {editingReport ? 'Raporu Düzenle' : 'Yeni Fizibilite Raporu'}
+                      </DialogTitle>
+                    </DialogHeader>
                     
-                    <div>
-                      <Label htmlFor="fizibilitenin_hazirlanma_tarihi">Hazırlanma Tarihi</Label>
-                      <Input
-                        id="fizibilitenin_hazirlanma_tarihi"
-                        name="fizibilitenin_hazirlanma_tarihi"
-                        type="date"
-                        defaultValue={editingReport?.fizibilitenin_hazirlanma_tarihi || ''}
-                      />
+                    <div className="overflow-y-auto max-h-[calc(95vh-120px)] pr-2">
+                      <form onSubmit={handleSubmit} className="space-y-8 py-6">
+                        {/* Basic Information Section */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+                            <h3 className="text-lg font-semibold text-slate-800">Temel Bilgiler</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="lg:col-span-2">
+                              <Label htmlFor="yatirim_konusu" className="text-sm font-medium text-slate-700 mb-2 block">
+                                Yatırım Konusu *
+                              </Label>
+                              <Input
+                                id="yatirim_konusu"
+                                name="yatirim_konusu"
+                                defaultValue={editingReport?.yatirim_konusu || ''}
+                                required
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                                placeholder="Yatırım konusunu detaylı olarak açıklayın..."
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="fizibilitenin_hazirlanma_tarihi" className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Hazırlanma Tarihi
+                              </Label>
+                              <Input
+                                id="fizibilitenin_hazirlanma_tarihi"
+                                name="fizibilitenin_hazirlanma_tarihi"
+                                type="date"
+                                defaultValue={editingReport?.fizibilitenin_hazirlanma_tarihi || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="guncellenme_tarihi" className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Güncellenme Tarihi
+                              </Label>
+                              <Input
+                                id="guncellenme_tarihi"
+                                name="guncellenme_tarihi"
+                                type="date"
+                                defaultValue={editingReport?.guncellenme_tarihi || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Classification Section */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-2 w-2 bg-green-600 rounded-full"></div>
+                            <h3 className="text-lg font-semibold text-slate-800">Sınıflandırma</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                <Building className="h-4 w-4" />
+                                NACE Kodu Tanımı
+                              </Label>
+                              <MultiSelect
+                                options={naceOptions}
+                                selected={formState.naceKodlari}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, naceKodlari: selected }))}
+                                placeholder="NACE kodlarını seçin..."
+                                searchPlaceholder="NACE kodu ara..."
+                                formatLabel={(option) => `${option.label} - ${option.description}`}
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                <Globe className="h-4 w-4" />
+                                GTIP Kodu
+                              </Label>
+                              <MultiSelect
+                                options={gtipOptions}
+                                selected={formState.gtipKodlari}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, gtipKodlari: selected }))}
+                                placeholder="GTIP kodlarını seçin..."
+                                searchPlaceholder="GTIP kodu ara..."
+                                formatLabel={(option) => `${option.label} - ${option.description}`}
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Location & Scale Section */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-2 w-2 bg-purple-600 rounded-full"></div>
+                            <h3 className="text-lg font-semibold text-slate-800">Konum ve Ölçek</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                İl
+                              </Label>
+                              <MultiSelect
+                                options={provinceOptions}
+                                selected={formState.iller}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, iller: selected }))}
+                                placeholder="İlleri seçin..."
+                                searchPlaceholder="İl ara..."
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                <Target className="h-4 w-4" />
+                                Yatırım Boyutu
+                              </Label>
+                              <MultiSelect
+                                options={yatirimBoyutuOptions}
+                                selected={formState.yatirimBoyutlari}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, yatirimBoyutlari: selected }))}
+                                placeholder="Yatırım boyutunu seçin..."
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700">
+                                Hedef Ülke
+                              </Label>
+                              <MultiSelect
+                                options={hedefUlkeOptions}
+                                selected={formState.hedefUlkeler}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, hedefUlkeler: selected }))}
+                                placeholder="Hedef ülkeleri seçin..."
+                                searchPlaceholder="Ülke ara..."
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700">
+                                Sabit Yatırım Tutarı Aralığı
+                              </Label>
+                              <MultiSelect
+                                options={yatirimTutariAralikOptions}
+                                selected={formState.yatirimTutariAraliklari}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, yatirimTutariAraliklari: selected }))}
+                                placeholder="Yatırım tutarı aralığını seçin..."
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sector Information */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-2 w-2 bg-orange-600 rounded-full"></div>
+                            <h3 className="text-lg font-semibold text-slate-800">Sektör Bilgileri</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700">
+                                Üst Sektör
+                              </Label>
+                              <MultiSelect
+                                options={ustSektorOptions}
+                                selected={formState.ustSektorler}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, ustSektorler: selected }))}
+                                placeholder="Üst sektörleri seçin..."
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-700">
+                                Alt Sektör
+                              </Label>
+                              <MultiSelect
+                                options={altSektorOptions}
+                                selected={formState.altSektorler}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, altSektorler: selected }))}
+                                placeholder="Alt sektörleri seçin..."
+                                searchPlaceholder="Sektör ara..."
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+
+                            <div className="lg:col-span-2 space-y-2">
+                              <Label className="text-sm font-medium text-slate-700">
+                                Kalkınma Ajansı
+                              </Label>
+                              <MultiSelect
+                                options={kalkinmaAjansiOptions}
+                                selected={formState.kalkinmaAjanslari}
+                                onChange={(selected) => setFormState(prev => ({ ...prev, kalkinmaAjanslari: selected }))}
+                                placeholder="Kalkınma ajanslarını seçin..."
+                                searchPlaceholder="Ajans ara..."
+                                className="bg-white/50 border-slate-200"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SDG Section */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-2 w-2 bg-teal-600 rounded-full"></div>
+                            <h3 className="text-lg font-semibold text-slate-800">SKA Etiketleri (Sürdürülebilir Kalkınma Amaçları)</h3>
+                          </div>
+                          
+                          <div className="bg-white/30 rounded-lg p-4 border border-slate-200">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
+                              {sdgOptions.map((sdg) => (
+                                <div key={sdg.number} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/50 transition-colors">
+                                  <Checkbox
+                                    id={`sdg-${sdg.number}`}
+                                    checked={formState.sdgSecilimleri.includes(sdg.number)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setFormState(prev => ({
+                                          ...prev,
+                                          sdgSecilimleri: [...prev.sdgSecilimleri, sdg.number]
+                                        }));
+                                      } else {
+                                        setFormState(prev => ({
+                                          ...prev,
+                                          sdgSecilimleri: prev.sdgSecilimleri.filter(id => id !== sdg.number)
+                                        }));
+                                      }
+                                    }}
+                                    className="border-slate-300"
+                                  />
+                                  <Label htmlFor={`sdg-${sdg.number}`} className="text-sm leading-tight cursor-pointer">
+                                    <span className="font-medium text-slate-800">SDG {sdg.number}:</span>
+                                    <span className="text-slate-600 ml-1">{sdg.name}</span>
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Financial Information */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-2 w-2 bg-emerald-600 rounded-full"></div>
+                            <h3 className="text-lg font-semibold text-slate-800">Finansal Bilgiler</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="sabit_yatirim_tutari" className="text-sm font-medium text-slate-700">
+                                Sabit Yatırım Tutarı
+                              </Label>
+                              <Input
+                                id="sabit_yatirim_tutari"
+                                name="sabit_yatirim_tutari"
+                                type="number"
+                                defaultValue={editingReport?.sabit_yatirim_tutari || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                                placeholder="0"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="istihdam" className="text-sm font-medium text-slate-700">
+                                İstihdam
+                              </Label>
+                              <Input
+                                id="istihdam"
+                                name="istihdam"
+                                type="number"
+                                defaultValue={editingReport?.istihdam || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                                placeholder="0"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="geri_odeme_suresi" className="text-sm font-medium text-slate-700">
+                                Geri Ödeme Süresi (Ay)
+                              </Label>
+                              <Input
+                                id="geri_odeme_suresi"
+                                name="geri_odeme_suresi"
+                                type="number"
+                                defaultValue={editingReport?.geri_odeme_suresi || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Additional Information */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-2 w-2 bg-red-600 rounded-full"></div>
+                            <h3 className="text-lg font-semibold text-slate-800">Ek Bilgiler</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="keywords_tag" className="text-sm font-medium text-slate-700">
+                                Anahtar Kelimeler
+                              </Label>
+                              <Input
+                                id="keywords_tag"
+                                name="keywords_tag"
+                                defaultValue={editingReport?.keywords_tag || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                                placeholder="Anahtar kelimeleri | ile ayırın"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="dokumanlar" className="text-sm font-medium text-slate-700">
+                                Doküman Adı
+                              </Label>
+                              <Input
+                                id="dokumanlar"
+                                name="dokumanlar"
+                                defaultValue={editingReport?.dokumanlar || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                                placeholder="Doküman adını girin"
+                              />
+                            </div>
+                            
+                            <div className="lg:col-span-2 space-y-2">
+                              <Label htmlFor="link" className="text-sm font-medium text-slate-700">
+                                İndirme Linki
+                              </Label>
+                              <Input
+                                id="link"
+                                name="link"
+                                type="url"
+                                defaultValue={editingReport?.link || ''}
+                                className="h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                                placeholder="https://example.com/document.pdf"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Form Actions */}
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-slate-100">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => setIsModalOpen(false)}
+                            className="h-12 px-8 bg-white/80 border-slate-200 hover:bg-white hover:shadow-md transition-all duration-200"
+                          >
+                            İptal
+                          </Button>
+                          <Button 
+                            type="submit"
+                            className="h-12 px-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
+                          >
+                            {editingReport ? 'Güncelle' : 'Rapor Ekle'}
+                          </Button>
+                        </div>
+                      </form>
                     </div>
-                    
-                    <div>
-                      <Label htmlFor="guncellenme_tarihi">Güncellenme Tarihi</Label>
-                      <Input
-                        id="guncellenme_tarihi"
-                        name="guncellenme_tarihi"
-                        type="date"
-                        defaultValue={editingReport?.guncellenme_tarihi || ''}
-                      />
-                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </div>
 
-                {/* Enhanced NACE Codes Multi-Select - Now using nacedortlu table */}
-                <div className="md:col-span-2">
-                  <Label>NACE Kodu Tanımı</Label>
-                  <MultiSelect
-                    options={naceOptions}
-                    selected={formState.naceKodlari}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, naceKodlari: selected }))}
-                    placeholder="NACE kodlarını seçin..."
-                    searchPlaceholder="NACE kodu ara..."
-                    formatLabel={(option) => `${option.label} - ${option.description}`}
-                  />
-                </div>
-
-                {/* Enhanced GTIP Codes Multi-Select - Now using gtipdortlu table */}
-                <div className="md:col-span-2">
-                  <Label>GTIP Kodu</Label>
-                  <MultiSelect
-                    options={gtipOptions}
-                    selected={formState.gtipKodlari}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, gtipKodlari: selected }))}
-                    placeholder="GTIP kodlarını seçin..."
-                    searchPlaceholder="GTIP kodu ara..."
-                    formatLabel={(option) => `${option.label} - ${option.description}`}
-                  />
-                </div>
-
-                {/* Enhanced Province Multi-Select - Now showing all 81 Turkish provinces */}
-                <div>
-                  <Label>İl</Label>
-                  <MultiSelect
-                    options={provinceOptions}
-                    selected={formState.iller}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, iller: selected }))}
-                    placeholder="İlleri seçin..."
-                    searchPlaceholder="İl ara..."
-                  />
-                </div>
-
-                {/* Enhanced Investment Scale Multi-Select */}
-                <div>
-                  <Label>Yatırım Boyutu</Label>
-                  <MultiSelect
-                    options={yatirimBoyutuOptions}
-                    selected={formState.yatirimBoyutlari}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, yatirimBoyutlari: selected }))}
-                    placeholder="Yatırım boyutunu seçin..."
-                  />
-                </div>
-
-                {/* Enhanced SDG Checkboxes */}
-                <div className="md:col-span-2">
-                  <Label>SKA Etiketleri (Sürdürülebilir Kalkınma Amaçları)</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2 p-4 border rounded-md max-h-40 overflow-y-auto">
-                    {sdgOptions.map((sdg) => (
-                      <div key={sdg.number} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`sdg-${sdg.number}`}
-                          checked={formState.sdgSecilimleri.includes(sdg.number)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormState(prev => ({
-                                ...prev,
-                                sdgSecilimleri: [...prev.sdgSecilimleri, sdg.number]
-                              }));
-                            } else {
-                              setFormState(prev => ({
-                                ...prev,
-                                sdgSecilimleri: prev.sdgSecilimleri.filter(id => id !== sdg.number)
-                              }));
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`sdg-${sdg.number}`} className="text-sm">
-                          SDG {sdg.number}: {sdg.name}
-                        </Label>
-                      </div>
-                    ))}
+          {/* Search and Filter Card */}
+          <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                <div className="flex-1 flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                  <div className="relative flex-1 min-w-0">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                    <Input
+                      placeholder="Rapor adı ile ara..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-12 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                    />
                   </div>
-                </div>
-
-                {/* Enhanced Upper Sector Multi-Select */}
-                <div>
-                  <Label>Üst Sektör</Label>
-                  <MultiSelect
-                    options={ustSektorOptions}
-                    selected={formState.ustSektorler}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, ustSektorler: selected }))}
-                    placeholder="Üst sektörleri seçin..."
-                  />
-                </div>
-
-                {/* Enhanced Lower Sector Multi-Select with Turkish options */}
-                <div>
-                  <Label>Alt Sektör</Label>
-                  <MultiSelect
-                    options={altSektorOptions}
-                    selected={formState.altSektorler}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, altSektorler: selected }))}
-                    placeholder="Alt sektörleri seçin..."
-                    searchPlaceholder="Sektör ara..."
-                  />
-                </div>
-
-                {/* Enhanced Development Agency Multi-Select */}
-                <div className="md:col-span-2">
-                  <Label>Kalkınma Ajansı</Label>
-                  <MultiSelect
-                    options={kalkinmaAjansiOptions}
-                    selected={formState.kalkinmaAjanslari}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, kalkinmaAjanslari: selected }))}
-                    placeholder="Kalkınma ajanslarını seçin..."
-                    searchPlaceholder="Ajans ara..."
-                  />
-                </div>
-
-                {/* New Investment Amount Range Multi-Select */}
-                <div>
-                  <Label>Sabit Yatırım Tutarı Aralığı</Label>
-                  <MultiSelect
-                    options={yatirimTutariAralikOptions}
-                    selected={formState.yatirimTutariAraliklari}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, yatirimTutariAraliklari: selected }))}
-                    placeholder="Yatırım tutarı aralığını seçin..."
-                  />
-                </div>
-
-                {/* New Target Countries Multi-Select */}
-                <div>
-                  <Label>Hedef Ülke</Label>
-                  <MultiSelect
-                    options={hedefUlkeOptions}
-                    selected={formState.hedefUlkeler}
-                    onChange={(selected) => setFormState(prev => ({ ...prev, hedefUlkeler: selected }))}
-                    placeholder="Hedef ülkeleri seçin..."
-                    searchPlaceholder="Ülke ara..."
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="sabit_yatirim_tutari">Sabit Yatırım Tutarı</Label>
-                  <Input
-                    id="sabit_yatirim_tutari"
-                    name="sabit_yatirim_tutari"
-                    type="number"
-                    defaultValue={editingReport?.sabit_yatirim_tutari || ''}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="istihdam">İstihdam</Label>
-                  <Input
-                    id="istihdam"
-                    name="istihdam"
-                    type="number"
-                    defaultValue={editingReport?.istihdam || ''}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="geri_odeme_suresi">Geri Ödeme Süresi (Ay)</Label>
-                  <Input
-                    id="geri_odeme_suresi"
-                    name="geri_odeme_suresi"
-                    type="number"
-                    defaultValue={editingReport?.geri_odeme_suresi || ''}
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="keywords_tag">Anahtar Kelimeler (| ile ayırın)</Label>
-                  <Input
-                    id="keywords_tag"
-                    name="keywords_tag"
-                    defaultValue={editingReport?.keywords_tag || ''}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="dokumanlar">Doküman Adı</Label>
-                  <Input
-                    id="dokumanlar"
-                    name="dokumanlar"
-                    defaultValue={editingReport?.dokumanlar || ''}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="link">İndirme Linki</Label>
-                  <Input
-                    id="link"
-                    name="link"
-                    type="url"
-                    defaultValue={editingReport?.link || ''}
-                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="h-12 px-6 bg-white/80 border-slate-200 hover:bg-white hover:shadow-md transition-all duration-200"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtreler
+                  </Button>
                 </div>
               </div>
               
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                  İptal
-                </Button>
-                <Button type="submit">
-                  {editingReport ? 'Güncelle' : 'Ekle'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="flex gap-2 flex-1">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Rapor adı ile ara..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            {showFilters && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t">
-                <div>
-                  <Label htmlFor="filter-il">İl</Label>
-                  <Input
-                    id="filter-il"
-                    placeholder="İl filtresi"
-                    value={filters.il_tag}
-                    onChange={(e) => setFilters(prev => ({ ...prev, il_tag: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="filter-boyut">Yatırım Boyutu</Label>
-                  <Select
-                    value={filters.yatirim_boyutu_tag}
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, yatirim_boyutu_tag: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tümü" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Tümü</SelectItem>
-                      <SelectItem value="Yerel">Yerel</SelectItem>
-                      <SelectItem value="Ulusal">Ulusal</SelectItem>
-                      <SelectItem value="Küresel">Küresel</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="filter-ska">SKA Etiketi</Label>
-                  <Input
-                    id="filter-ska"
-                    placeholder="SKA filtresi"
-                    value={filters.ska_tag}
-                    onChange={(e) => setFilters(prev => ({ ...prev, ska_tag: e.target.value }))}
-                  />
-                </div>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-gray-600 mt-2">Yükleniyor...</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Rapor Adı</TableHead>
-                      <TableHead>Hazırlanma Tarihi</TableHead>
-                      <TableHead>Güncellenme Tarihi</TableHead>
-                      <TableHead>İşlemler</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reports?.map((report) => (
-                      <TableRow key={report.id}>
-                        <TableCell className="font-medium">
-                          <div className="max-w-md">
-                            <p className="truncate">{report.yatirim_konusu}</p>
-                            {report.il_tag && (
-                              <Badge variant="outline" className="mt-1">
-                                {report.il_tag}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {report.fizibilitenin_hazirlanma_tarihi
-                            ? format(new Date(report.fizibilitenin_hazirlanma_tarihi), 'dd/MM/yyyy', { locale: tr })
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell>
-                          {report.guncellenme_tarihi
-                            ? format(new Date(report.guncellenme_tarihi), 'dd/MM/yyyy', { locale: tr })
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(report)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleClone(report)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(report.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                
-                {reports && reports.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600">Henüz fizibilite raporu eklenmemiş</p>
+              {showFilters && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-slate-100 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="filter-il" className="text-sm font-medium text-slate-700">İl</Label>
+                    <Input
+                      id="filter-il"
+                      placeholder="İl filtresi"
+                      value={filters.il_tag}
+                      onChange={(e) => setFilters(prev => ({ ...prev, il_tag: e.target.value }))}
+                      className="h-10 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    />
                   </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="space-y-2">
+                    <Label htmlFor="filter-boyut" className="text-sm font-medium text-slate-700">Yatırım Boyutu</Label>
+                    <Select
+                      value={filters.yatirim_boyutu_tag}
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, yatirim_boyutu_tag: value }))}
+                    >
+                      <SelectTrigger className="h-10 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                        <SelectValue placeholder="Tümü" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tümü</SelectItem>
+                        <SelectItem value="Yerel">Yerel</SelectItem>
+                        <SelectItem value="Ulusal">Ulusal</SelectItem>
+                        <SelectItem value="Küresel">Küresel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="filter-ska" className="text-sm font-medium text-slate-700">SKA Etiketi</Label>
+                    <Input
+                      id="filter-ska"
+                      placeholder="SKA filtresi"
+                      value={filters.ska_tag}
+                      onChange={(e) => setFilters(prev => ({ ...prev, ska_tag: e.target.value }))}
+                      className="h-10 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    />
+                  </div>
+                </div>
+              )}
+            </CardHeader>
+            
+            <CardContent>
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                  <p className="text-slate-600 mt-4 text-lg">Yükleniyor...</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-slate-200">
+                        <TableHead className="font-semibold text-slate-700">Rapor Adı</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Hazırlanma Tarihi</TableHead>
+                        <TableHead className="font-semibold text-slate-700">Güncellenme Tarihi</TableHead>
+                        <TableHead className="font-semibold text-slate-700 text-right">İşlemler</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reports?.map((report) => (
+                        <TableRow key={report.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
+                          <TableCell className="font-medium">
+                            <div className="max-w-md">
+                              <p className="text-slate-900 font-medium truncate">{report.yatirim_konusu}</p>
+                              {report.il_tag && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {report.il_tag.split('|').slice(0, 3).map((il, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                      {il}
+                                    </Badge>
+                                  ))}
+                                  {report.il_tag.split('|').length > 3 && (
+                                    <Badge variant="outline" className="text-xs bg-slate-50 text-slate-600 border-slate-200">
+                                      +{report.il_tag.split('|').length - 3}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {report.fizibilitenin_hazirlanma_tarihi
+                              ? format(new Date(report.fizibilitenin_hazirlanma_tarihi), 'dd/MM/yyyy', { locale: tr })
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {report.guncellenme_tarihi
+                              ? format(new Date(report.guncellenme_tarihi), 'dd/MM/yyyy', { locale: tr })
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(report)}
+                                className="h-8 w-8 p-0 bg-white/80 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleClone(report)}
+                                className="h-8 w-8 p-0 bg-white/80 hover:bg-green-50 hover:border-green-200 transition-colors"
+                              >
+                                <Copy className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(report.id)}
+                                className="h-8 w-8 p-0 bg-white/80 hover:bg-red-50 hover:border-red-200 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  {reports && reports.length === 0 && (
+                    <div className="text-center py-16">
+                      <FileText className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-600 text-lg mb-2">Henüz fizibilite raporu eklenmemiş</p>
+                      <p className="text-slate-500">İlk raporunuzu eklemek için "Yeni Rapor Ekle" butonuna tıklayın.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   );
