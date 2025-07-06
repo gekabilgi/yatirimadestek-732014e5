@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Filter } from 'lucide-react';
 import MainNavbar from '@/components/MainNavbar';
 import { InvestmentOpportunityRow } from '@/components/InvestmentOpportunityRow';
+import { InvestmentOpportunityMobileCard } from '@/components/InvestmentOpportunityMobileCard';
 import { InvestmentSearchBar, InvestmentFilters } from '@/components/InvestmentSearchBar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FeasibilityReport {
   id: string;
@@ -44,6 +46,7 @@ const InvestmentOpportunities = () => {
   const [filters, setFilters] = useState<InvestmentFilters>({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['feasibility-reports', page, filters],
@@ -166,66 +169,84 @@ const InvestmentOpportunities = () => {
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />
       
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Yatırım Fırsatları</h1>
-          <p className="text-gray-600 mb-4">Fizibilite raporları ve yatırım fırsatları</p>
-          <p className="text-sm text-gray-500">Toplam {allReports.length} sonuç bulundu</p>
+      <div className={`mx-auto px-2 sm:px-4 py-4 sm:py-8 ${isMobile ? 'max-w-full' : 'max-w-6xl'}`}>
+        <div className="mb-4 sm:mb-8">
+          <h1 className={`font-bold text-gray-900 mb-2 ${isMobile ? 'text-xl' : 'text-3xl'}`}>
+            Yatırım Fırsatları
+          </h1>
+          <p className={`text-gray-600 mb-2 sm:mb-4 ${isMobile ? 'text-sm' : ''}`}>
+            Fizibilite raporları ve yatırım fırsatları
+          </p>
+          <p className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            Toplam {allReports.length} sonuç bulundu
+          </p>
         </div>
 
-        <Card className="mb-6 bg-white shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-              <div className="flex-1 flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+        <Card className={`mb-4 sm:mb-6 bg-white shadow-sm ${isMobile ? 'mx-0' : ''}`}>
+          <CardHeader className={`${isMobile ? 'pb-2 px-3 pt-3' : 'pb-4'}`}>
+            <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 items-start lg:items-center justify-between">
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-4 w-full lg:w-auto">
                 <div className="relative flex-1 min-w-0">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   <Input
                     placeholder="Yatırım konusu, sektör veya anahtar kelime ara..."
                     value={filters.keyword || ''}
                     onChange={(e) => handleSearch({ ...filters, keyword: e.target.value })}
-                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                      isMobile ? 'pl-9 h-10 text-sm' : 'pl-10 h-12'
+                    }`}
                   />
                 </div>
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
-                  className="h-12 px-4 sm:px-6 bg-white border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                  className={`bg-white border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap ${
+                    isMobile ? 'h-10 px-3 text-sm' : 'h-12 px-4 sm:px-6'
+                  }`}
                 >
-                  <Filter className="h-4 w-4 mr-2" />
+                  <Filter className={`mr-2 ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
                   Filtreler
                 </Button>
               </div>
             </div>
 
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-gray-100 mt-4">
+              <div className={`grid gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-100 mt-2 sm:mt-4 ${
+                isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+              }`}>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">İl</Label>
+                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>İl</Label>
                   <Input
                     placeholder="İl seçin"
                     value={filters.province || ''}
                     onChange={(e) => handleSearch({ ...filters, province: e.target.value })}
-                    className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                      isMobile ? 'h-9 text-sm' : 'h-10'
+                    }`}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Sektör</Label>
+                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Sektör</Label>
                   <Input
                     placeholder="Sektör seçin"
                     value={filters.sector || ''}
                     onChange={(e) => handleSearch({ ...filters, sector: e.target.value })}
-                    className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                      isMobile ? 'h-9 text-sm' : 'h-10'
+                    }`}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Yatırım Boyutu</Label>
+                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Yatırım Boyutu</Label>
                   <Select
                     value={filters.scope || ''}
                     onValueChange={(value) => handleSearch({ ...filters, scope: value })}
                   >
-                    <SelectTrigger className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+                    <SelectTrigger className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                      isMobile ? 'h-9 text-sm' : 'h-10'
+                    }`}>
                       <SelectValue placeholder="Boyut seçin" />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-50">
@@ -238,12 +259,14 @@ const InvestmentOpportunities = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Yatırım Tutarı</Label>
+                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Yatırım Tutarı</Label>
                   <Select
                     value={filters.investmentRange || ''}
                     onValueChange={(value) => handleSearch({ ...filters, investmentRange: value })}
                   >
-                    <SelectTrigger className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+                    <SelectTrigger className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                      isMobile ? 'h-9 text-sm' : 'h-10'
+                    }`}>
                       <SelectValue placeholder="Tutar aralığı" />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-50">
@@ -262,7 +285,7 @@ const InvestmentOpportunities = () => {
         </Card>
 
         {isLoading && page === 0 ? (
-          <div className="space-y-4">
+          <div className={`space-y-2 sm:space-y-4 ${isMobile ? 'px-0' : ''}`}>
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
@@ -276,15 +299,24 @@ const InvestmentOpportunities = () => {
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
-            {allReports.map((report) => (
-              <InvestmentOpportunityRow
-                key={report.id}
-                report={report}
-                isExpanded={expandedCards.has(report.id)}
-                onToggleExpand={toggleExpand}
-              />
-            ))}
+          <div className={`space-y-2 sm:space-y-4 ${isMobile ? 'px-0' : ''}`}>
+            {allReports.map((report) => 
+              isMobile ? (
+                <InvestmentOpportunityMobileCard
+                  key={report.id}
+                  report={report}
+                  isExpanded={expandedCards.has(report.id)}
+                  onToggleExpand={toggleExpand}
+                />
+              ) : (
+                <InvestmentOpportunityRow
+                  key={report.id}
+                  report={report}
+                  isExpanded={expandedCards.has(report.id)}
+                  onToggleExpand={toggleExpand}
+                />
+              )
+            )}
           </div>
         )}
 
