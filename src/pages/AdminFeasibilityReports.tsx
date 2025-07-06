@@ -241,20 +241,26 @@ const AdminFeasibilityReports = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    // Helper function to clean and join array values
+    const cleanAndJoin = (arr: string[]) => {
+      const cleaned = arr.filter(item => item && item.trim() !== '');
+      return cleaned.length > 0 ? cleaned.join('|') : null;
+    };
+    
     const reportData = {
       yatirim_konusu: formData.get('yatirim_konusu') as string,
       fizibilitenin_hazirlanma_tarihi: formData.get('fizibilitenin_hazirlanma_tarihi') as string || null,
       guncellenme_tarihi: formData.get('guncellenme_tarihi') as string || null,
-      nace_kodu_tanim: formState.naceKodlari.filter(Boolean).join('|') || null,
-      gtip_kodu_tag: formState.gtipKodlari.filter(Boolean).join('|') || null,
-      hedef_ulke_tag: formState.hedefUlkeler.filter(Boolean).join('|') || null,
-      ust_sektor_tanim_tag: formState.ustSektorler.filter(Boolean).join('|') || null,
-      alt_sektor_tanim_tag: formState.altSektorler.filter(Boolean).join('|') || null,
-      sabit_yatirim_tutari_aralik_tag: formState.yatirimTutariAraliklari.filter(Boolean).join('|') || null,
-      kalkinma_ajansi_tag: formState.kalkinmaAjanslari.filter(Boolean).join('|') || null,
-      il_tag: formState.iller.filter(Boolean).join('|') || null,
-      ska_tag: formState.sdgSecilimleri.filter(Boolean).join('|') || null,
-      yatirim_boyutu_tag: formState.yatirimBoyutlari.filter(Boolean).join('|') || null,
+      nace_kodu_tanim: cleanAndJoin(formState.naceKodlari),
+      gtip_kodu_tag: cleanAndJoin(formState.gtipKodlari),
+      hedef_ulke_tag: cleanAndJoin(formState.hedefUlkeler),
+      ust_sektor_tanim_tag: cleanAndJoin(formState.ustSektorler),
+      alt_sektor_tanim_tag: cleanAndJoin(formState.altSektorler),
+      sabit_yatirim_tutari_aralik_tag: cleanAndJoin(formState.yatirimTutariAraliklari),
+      kalkinma_ajansi_tag: cleanAndJoin(formState.kalkinmaAjanslari),
+      il_tag: cleanAndJoin(formState.iller),
+      ska_tag: cleanAndJoin(formState.sdgSecilimleri),
+      yatirim_boyutu_tag: cleanAndJoin(formState.yatirimBoyutlari),
       keywords_tag: formData.get('keywords_tag') as string || null,
       sabit_yatirim_tutari: parseFloat(formData.get('sabit_yatirim_tutari') as string) || null,
       istihdam: parseInt(formData.get('istihdam') as string) || null,
@@ -457,20 +463,26 @@ const AdminFeasibilityReports = () => {
     "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
   ].map(country => ({ label: country, value: country }));
 
+  // Helper function to safely split and filter values
+  const safeSplitAndFilter = (value: string | null) => {
+    if (!value) return [];
+    return value.split('|').filter(item => item && item.trim() !== '');
+  };
+
   // Reset form state when editing changes
   React.useEffect(() => {
     if (editingReport) {
       setFormState({
-        naceKodlari: editingReport.nace_kodu_tanim?.split('|').filter(Boolean) || [],
-        iller: editingReport.il_tag?.split('|').filter(Boolean) || [],
-        yatirimBoyutlari: editingReport.yatirim_boyutu_tag?.split('|').filter(Boolean) || [],
-        sdgSecilimleri: editingReport.ska_tag?.split('|').filter(Boolean) || [],
-        gtipKodlari: editingReport.gtip_kodu_tag?.split('|').filter(Boolean) || [],
-        ustSektorler: editingReport.ust_sektor_tanim_tag?.split('|').filter(Boolean) || [],
-        altSektorler: editingReport.alt_sektor_tanim_tag?.split('|').filter(Boolean) || [],
-        kalkinmaAjanslari: editingReport.kalkinma_ajansi_tag?.split('|').filter(Boolean) || [],
-        yatirimTutariAraliklari: editingReport.sabit_yatirim_tutari_aralik_tag?.split('|').filter(Boolean) || [],
-        hedefUlkeler: editingReport.hedef_ulke_tag?.split('|').filter(Boolean) || []
+        naceKodlari: safeSplitAndFilter(editingReport.nace_kodu_tanim),
+        iller: safeSplitAndFilter(editingReport.il_tag),
+        yatirimBoyutlari: safeSplitAndFilter(editingReport.yatirim_boyutu_tag),
+        sdgSecilimleri: safeSplitAndFilter(editingReport.ska_tag),
+        gtipKodlari: safeSplitAndFilter(editingReport.gtip_kodu_tag),
+        ustSektorler: safeSplitAndFilter(editingReport.ust_sektor_tanim_tag),
+        altSektorler: safeSplitAndFilter(editingReport.alt_sektor_tanim_tag),
+        kalkinmaAjanslari: safeSplitAndFilter(editingReport.kalkinma_ajansi_tag),
+        yatirimTutariAraliklari: safeSplitAndFilter(editingReport.sabit_yatirim_tutari_aralik_tag),
+        hedefUlkeler: safeSplitAndFilter(editingReport.hedef_ulke_tag)
       });
     } else {
       setFormState({
@@ -490,8 +502,8 @@ const AdminFeasibilityReports = () => {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-8 lg:p-12">
-        <div className="max-w-7xl mx-auto space-y-8 mt-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-8 lg:p-12 mt-16">
+        <div className="max-w-7xl mx-auto space-y-8">
           {/* Header Section */}
           <div className="text-center sm:text-left">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-12">
@@ -508,20 +520,22 @@ const AdminFeasibilityReports = () => {
                 <Button 
                   onClick={exportToExcel} 
                   variant="outline"
-                  className="h-11 px-6 bg-white/80 backdrop-blur-sm border-slate-200 hover:bg-white hover:shadow-md transition-all duration-200"
+                  className="h-11 px-4 sm:px-6 bg-white/80 backdrop-blur-sm border-slate-200 hover:bg-white hover:shadow-md transition-all duration-200 text-sm"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Excel'e Aktar
+                  <span className="hidden sm:inline">Excel'e Aktar</span>
+                  <span className="sm:hidden">Aktar</span>
                 </Button>
                 
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                   <DialogTrigger asChild>
                     <Button 
                       onClick={() => setEditingReport(null)}
-                      className="h-11 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="h-11 px-4 sm:px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200 text-sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Yeni Rapor Ekle
+                      <span className="hidden sm:inline">Yeni Rapor Ekle</span>
+                      <span className="sm:hidden">Yeni Rapor</span>
                     </Button>
                   </DialogTrigger>
                   
@@ -928,7 +942,7 @@ const AdminFeasibilityReports = () => {
                   <Button
                     variant="outline"
                     onClick={() => setShowFilters(!showFilters)}
-                    className="h-12 px-6 bg-white/80 border-slate-200 hover:bg-white hover:shadow-md transition-all duration-200"
+                    className="h-12 px-4 sm:px-6 bg-white/80 border-slate-200 hover:bg-white hover:shadow-md transition-all duration-200 whitespace-nowrap"
                   >
                     <Filter className="h-4 w-4 mr-2" />
                     Filtreler
@@ -957,7 +971,7 @@ const AdminFeasibilityReports = () => {
                       <SelectTrigger className="h-10 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
                         <SelectValue placeholder="Tümü" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white z-50">
                         <SelectItem value="">Tümü</SelectItem>
                         <SelectItem value="Yerel">Yerel</SelectItem>
                         <SelectItem value="Ulusal">Ulusal</SelectItem>
@@ -1004,14 +1018,14 @@ const AdminFeasibilityReports = () => {
                               <p className="text-slate-900 font-medium truncate">{report.yatirim_konusu}</p>
                               {report.il_tag && (
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                  {report.il_tag.split('|').filter(Boolean).filter(il => il.trim() !== '').slice(0, 3).map((il, index) => (
+                                  {safeSplitAndFilter(report.il_tag).slice(0, 3).map((il, index) => (
                                     <Badge key={index} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                                       {il.trim()}
                                     </Badge>
                                   ))}
-                                  {report.il_tag.split('|').filter(Boolean).filter(il => il.trim() !== '').length > 3 && (
+                                  {safeSplitAndFilter(report.il_tag).length > 3 && (
                                     <Badge variant="outline" className="text-xs bg-slate-50 text-slate-600 border-slate-200">
-                                      +{report.il_tag.split('|').filter(Boolean).filter(il => il.trim() !== '').length - 3}
+                                      +{safeSplitAndFilter(report.il_tag).length - 3}
                                     </Badge>
                                   )}
                                 </div>

@@ -25,6 +25,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
     if (path === '/admin/analytics') return 'Analytics';
     if (path === '/admin/email-management') return 'E-posta Yönetimi';
     if (path === '/admin/glossary-management') return 'Sözlük Yönetimi';
+    if (path === '/admin/feasibility-reports') return 'Fizibilite Raporları';
     return 'Admin Panel';
   };
 
@@ -40,7 +41,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
   };
 
   return (
-    <div className="bg-white border-b shadow-sm h-16 flex items-center justify-between px-4 lg:px-6 flex-no-wrap fixed top-0 w-full z-10">
+    <div className="bg-white border-b shadow-sm h-16 flex items-center justify-between px-4 lg:px-6 flex-no-wrap fixed top-0 w-full z-50">
       {/* Left section - Menu toggle and page title */}
       <div className="flex items-center space-x-4">
         {/* Mobile menu toggle */}
@@ -72,8 +73,8 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
           <Home className="h-4 w-4" />
         </Button>
 
-        {/* Search button */}
-        <Button variant="ghost" size="sm" className="hidden sm:flex p-2">
+        {/* Search button - hidden on small screens */}
+        <Button variant="ghost" size="sm" className="hidden md:flex p-2">
           <Search className="h-4 w-4" />
         </Button>
 
@@ -85,8 +86,8 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
           </span>
         </Button>
 
-        {/* Settings */}
-        <Button variant="ghost" size="sm" className="hidden sm:flex p-2">
+        {/* Settings - hidden on small screens */}
+        <Button variant="ghost" size="sm" className="hidden md:flex p-2">
           <Settings className="h-4 w-4" />
         </Button>
 
@@ -99,7 +100,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
             </AvatarFallback>
           </Avatar>
           
-          {/* User info - hidden on mobile */}
+          {/* User info - hidden on mobile and small tablets */}
           <div className="hidden lg:flex flex-col">
             <span className="text-sm font-medium text-gray-900">Admin</span>
             <span className="text-xs text-gray-500">{user?.email}</span>

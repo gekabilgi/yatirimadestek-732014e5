@@ -1,8 +1,12 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Filter } from 'lucide-react';
 import MainNavbar from '@/components/MainNavbar';
 import { InvestmentOpportunityRow } from '@/components/InvestmentOpportunityRow';
 import { InvestmentSearchBar, InvestmentFilters } from '@/components/InvestmentSearchBar';
@@ -39,6 +43,7 @@ const InvestmentOpportunities = () => {
   const [hasMore, setHasMore] = useState(true);
   const [filters, setFilters] = useState<InvestmentFilters>({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['feasibility-reports', page, filters],
@@ -168,9 +173,93 @@ const InvestmentOpportunities = () => {
           <p className="text-sm text-gray-500">Toplam {allReports.length} sonuç bulundu</p>
         </div>
 
-        <div className="mb-6">
-          <InvestmentSearchBar onSearch={handleSearch} filters={filters} />
-        </div>
+        <Card className="mb-6 bg-white shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+              <div className="flex-1 flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <Input
+                    placeholder="Yatırım konusu, sektör veya anahtar kelime ara..."
+                    value={filters.keyword || ''}
+                    onChange={(e) => handleSearch({ ...filters, keyword: e.target.value })}
+                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="h-12 px-4 sm:px-6 bg-white border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtreler
+                </Button>
+              </div>
+            </div>
+
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-gray-100 mt-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">İl</Label>
+                  <Input
+                    placeholder="İl seçin"
+                    value={filters.province || ''}
+                    onChange={(e) => handleSearch({ ...filters, province: e.target.value })}
+                    className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Sektör</Label>
+                  <Input
+                    placeholder="Sektör seçin"
+                    value={filters.sector || ''}
+                    onChange={(e) => handleSearch({ ...filters, sector: e.target.value })}
+                    className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yatırım Boyutu</Label>
+                  <Select
+                    value={filters.scope || ''}
+                    onValueChange={(value) => handleSearch({ ...filters, scope: value })}
+                  >
+                    <SelectTrigger className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+                      <SelectValue placeholder="Boyut seçin" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="">Tümü</SelectItem>
+                      <SelectItem value="Yerel">Yerel</SelectItem>
+                      <SelectItem value="Ulusal">Ulusal</SelectItem>
+                      <SelectItem value="Küresel">Küresel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yatırım Tutarı</Label>
+                  <Select
+                    value={filters.investmentRange || ''}
+                    onValueChange={(value) => handleSearch({ ...filters, investmentRange: value })}
+                  >
+                    <SelectTrigger className="h-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+                      <SelectValue placeholder="Tutar aralığı" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="">Tümü</SelectItem>
+                      <SelectItem value="0-500.000 USD">0-500.000 USD</SelectItem>
+                      <SelectItem value="500.000-1.000.000 USD">500.000-1.000.000 USD</SelectItem>
+                      <SelectItem value="1.000.000-5.000.000 USD">1.000.000-5.000.000 USD</SelectItem>
+                      <SelectItem value="5.000.000-10.000.000 USD">5.000.000-10.000.000 USD</SelectItem>
+                      <SelectItem value="10.000.000+ USD">10.000.000+ USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </CardHeader>
+        </Card>
 
         {isLoading && page === 0 ? (
           <div className="space-y-4">
