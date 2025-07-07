@@ -170,7 +170,7 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
               {report.geri_odeme_suresi && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  <span>{report.geri_odeme_suresi} ay</span>
+                  <span>{report.geri_odeme_suresi} yıl</span>
                 </div>
               )}
             </div>
