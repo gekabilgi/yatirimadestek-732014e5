@@ -145,9 +145,9 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
               {report.yatirim_konusu}
             </CardTitle>
             
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3 w-full">
               {report.il_tag && (
-                <div className="flex items-center gap-1 w-full">
+                <div className="flex items-center gap-1">
                   <span>Yatırım Yeri: </span>
                   <MapPin className="h-4 w-4" />
                   <span>{report.il_tag}</span>
