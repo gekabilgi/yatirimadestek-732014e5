@@ -55,7 +55,7 @@ const AdminTZUrunIlanEkle = () => {
       const { data, error } = await supabase
         .from('tedarik_zinciri_urun_talep')
         .select('*')
-        .eq('id', productId)
+        .eq('id', parseInt(productId))
         .single();
 
       if (error) throw error;
@@ -73,7 +73,7 @@ const AdminTZUrunIlanEkle = () => {
         urun_aciklamasi: productData.urun_aciklamasi,
         minimum_yerlilik_orani: productData.minimum_yerlilik_orani,
         minimum_deneyim: productData.minimum_deneyim,
-        firma_olcegi: productData.firma_olcegi
+        firma_olcegi: productData.firma_olcegi as 'Mikro' | 'Küçük' | 'Orta' | 'Büyük'
       });
     }
   }, [productData]);
@@ -95,7 +95,7 @@ const AdminTZUrunIlanEkle = () => {
             minimum_deneyim: data.minimum_deneyim,
             firma_olcegi: data.firma_olcegi
           })
-          .eq('id', productId);
+          .eq('id', parseInt(productId));
 
         if (error) throw error;
       } else {
@@ -230,7 +230,7 @@ const AdminTZUrunIlanEkle = () => {
                 label="Minimum Yerlilik Oranı (%)"
                 name="minimum_yerlilik_orani"
                 type="number"
-                value={formData.minimum_yerlilik_orani}
+                value={formData.minimum_yerlilik_orani.toString()}
                 onChange={(value) => setFormData(prev => ({ ...prev, minimum_yerlilik_orani: parseInt(value) || 0 }))}
                 error={errors.minimum_yerlilik_orani}
                 placeholder="0-100 arası"
@@ -241,7 +241,7 @@ const AdminTZUrunIlanEkle = () => {
                 label="Minimum Deneyim (Yıl)"
                 name="minimum_deneyim"
                 type="number"
-                value={formData.minimum_deneyim}
+                value={formData.minimum_deneyim.toString()}
                 onChange={(value) => setFormData(prev => ({ ...prev, minimum_deneyim: parseInt(value) || 0 }))}
                 error={errors.minimum_deneyim}
                 placeholder="0-100 arası"

@@ -1,9 +1,10 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthContextProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import NotFound from "./pages/NotFound";
@@ -18,7 +19,7 @@ import ProgramDetails from "./pages/ProgramDetails";
 
 // Admin pages
 import AdminLogin from "./pages/AdminLogin";
-import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import Admin from "./pages/Admin";
 import AdminSupportPrograms from "./pages/AdminSupportPrograms";
 import AdminFeasibilityReports from "./pages/AdminFeasibilityReports";
@@ -45,7 +46,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthContextProvider>
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -149,7 +150,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthContextProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
