@@ -153,16 +153,10 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
                   <span>{report.il_tag}</span>
                 </div>
               )}
-              
-              {report.fizibilitenin_hazirlanma_tarihi && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>{format(new Date(report.fizibilitenin_hazirlanma_tarihi), 'dd.MM.yyyy', { locale: tr })}</span>
-                </div>
-              )}
-              
+             
               {report.istihdam && (
                 <div className="flex items-center gap-1">
+                  <span>Öngörülen İstihdam:</span>
                   <Users className="h-4 w-4" />
                   <span>{report.istihdam} kişi</span>
                 </div>
@@ -170,10 +164,19 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
               
               {report.geri_odeme_suresi && (
                 <div className="flex items-center gap-1">
+                  <span>Yatırımın Geri Dönüş Süresi:</span>
                   <Clock className="h-4 w-4" />
                   <span>{report.geri_odeme_suresi} yıl</span>
                 </div>
               )}
+               
+              {report.fizibilitenin_hazirlanma_tarihi && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{format(new Date(report.fizibilitenin_hazirlanma_tarihi), 'dd.MM.yyyy', { locale: tr })}</span>
+                </div>
+              )}
+              
             </div>
 
             {/* Currency badges for investment amount */}
