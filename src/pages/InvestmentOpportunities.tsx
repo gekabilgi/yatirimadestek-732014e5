@@ -3,14 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Filter } from 'lucide-react';
 import MainNavbar from '@/components/MainNavbar';
 import { InvestmentOpportunityRow } from '@/components/InvestmentOpportunityRow';
 import { InvestmentOpportunityMobileCard } from '@/components/InvestmentOpportunityMobileCard';
-import { InvestmentSearchBar, InvestmentFilters } from '@/components/InvestmentSearchBar';
+import { InvestmentFilters, SmartFilters } from '@/components/InvestmentFilters';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FeasibilityReport {
@@ -43,49 +41,74 @@ const InvestmentOpportunities = () => {
   const [page, setPage] = useState(0);
   const [allReports, setAllReports] = useState<FeasibilityReport[]>([]);
   const [hasMore, setHasMore] = useState(true);
-  const [filters, setFilters] = useState<InvestmentFilters>({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [keyword, setKeyword] = useState('');
+  const [smartFilters, setSmartFilters] = useState<SmartFilters>({});
   const isMobile = useIsMobile();
 
   const { data: reports, isLoading, error } = useQuery({
-    queryKey: ['feasibility-reports', page, filters],
+    queryKey: ['feasibility-reports', page, keyword, smartFilters],
     queryFn: async () => {
       let query = supabase
         .from('investment_feasibility_reports')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Apply filters
-      if (filters.keyword) {
-        query = query.or(`yatirim_konusu.ilike.%${filters.keyword}%,keywords_tag.ilike.%${filters.keyword}%,nace_kodu_tanim.ilike.%${filters.keyword}%`);
+      // Apply keyword search
+      if (keyword) {
+        query = query.or(`yatirim_konusu.ilike.%${keyword}%,keywords_tag.ilike.%${keyword}%,nace_kodu_tanim.ilike.%${keyword}%`);
       }
 
-      if (filters.province) {
-        query = query.ilike('il_tag', `%${filters.province}%`);
+      // Apply smart filters
+      if (smartFilters.naceKodlari && smartFilters.naceKodlari.length > 0) {
+        const naceConditions = smartFilters.naceKodlari.map(code => `nace_kodu_tanim.ilike.%${code}%`).join(',');
+        query = query.or(naceConditions);
       }
 
-      if (filters.sector) {
-        query = query.or(`ust_sektor_tanim_tag.ilike.%${filters.sector}%,alt_sektor_tanim_tag.ilike.%${filters.sector}%,nace_kodu_tanim.ilike.%${filters.sector}%`);
+      if (smartFilters.hedefUlkeler && smartFilters.hedefUlkeler.length > 0) {
+        const ulkeConditions = smartFilters.hedefUlkeler.map(ulke => `hedef_ulke_tag.ilike.%${ulke}%`).join(',');
+        query = query.or(ulkeConditions);
       }
 
-      if (filters.scope) {
-        query = query.ilike('yatirim_boyutu_tag', `%${filters.scope}%`);
+      if (smartFilters.ustSektorler && smartFilters.ustSektorler.length > 0) {
+        const sektorConditions = smartFilters.ustSektorler.map(sektor => `ust_sektor_tanim_tag.ilike.%${sektor}%`).join(',');
+        query = query.or(sektorConditions);
       }
 
-      if (filters.investmentRange) {
-        const range = filters.investmentRange;
-        if (range === '0-500.000 USD') {
-          query = query.lte('sabit_yatirim_tutari', 500000);
-        } else if (range === '500.000-1.000.000 USD') {
-          query = query.gte('sabit_yatirim_tutari', 500000).lte('sabit_yatirim_tutari', 1000000);
-        } else if (range === '1.000.000-5.000.000 USD') {
-          query = query.gte('sabit_yatirim_tutari', 1000000).lte('sabit_yatirim_tutari', 5000000);
-        } else if (range === '5.000.000-10.000.000 USD') {
-          query = query.gte('sabit_yatirim_tutari', 5000000).lte('sabit_yatirim_tutari', 10000000);
-        } else if (range === '10.000.000+ USD') {
-          query = query.gte('sabit_yatirim_tutari', 10000000);
+      if (smartFilters.altSektorler && smartFilters.altSektorler.length > 0) {
+        const altSektorConditions = smartFilters.altSektorler.map(sektor => `alt_sektor_tanim_tag.ilike.%${sektor}%`).join(',');
+        query = query.or(altSektorConditions);
+      }
+
+      if (smartFilters.yatirimTutariAraligi) {
+        const range = smartFilters.yatirimTutariAraligi;
+        if (range === '0-1000000') {
+          query = query.lte('sabit_yatirim_tutari', 1000000);
+        } else if (range === '1000000-10000000') {
+          query = query.gte('sabit_yatirim_tutari', 1000000).lte('sabit_yatirim_tutari', 10000000);
+        } else if (range === '10000000-50000000') {
+          query = query.gte('sabit_yatirim_tutari', 10000000).lte('sabit_yatirim_tutari', 50000000);
+        } else if (range === '50000000-100000000') {
+          query = query.gte('sabit_yatirim_tutari', 50000000).lte('sabit_yatirim_tutari', 100000000);
+        } else if (range === '100000000+') {
+          query = query.gte('sabit_yatirim_tutari', 100000000);
         }
+      }
+
+      if (smartFilters.kalkinmaAjanslari && smartFilters.kalkinmaAjanslari.length > 0) {
+        const ajansConditions = smartFilters.kalkinmaAjanslari.map(ajans => `kalkinma_ajansi_tag.ilike.%${ajans}%`).join(',');
+        query = query.or(ajansConditions);
+      }
+
+      if (smartFilters.iller && smartFilters.iller.length > 0) {
+        const ilConditions = smartFilters.iller.map(il => `il_tag.ilike.%${il}%`).join(',');
+        query = query.or(ilConditions);
+      }
+
+      if (smartFilters.skalar && smartFilters.skalar.length > 0) {
+        const skaConditions = smartFilters.skalar.map(ska => `ska_tag.ilike.%${ska}%`).join(',');
+        query = query.or(skaConditions);
       }
 
       const { data, error } = await query.range(page * 15, (page + 1) * 15 - 1);
@@ -143,12 +166,29 @@ const InvestmentOpportunities = () => {
     });
   };
 
-  const handleSearch = (newFilters: InvestmentFilters) => {
-    setFilters(newFilters);
+  const handleSearch = () => {
     setPage(0);
     setAllReports([]);
     setExpandedCards(new Set());
     setHasMore(true);
+  };
+
+  const handleFiltersChange = (newFilters: SmartFilters) => {
+    setSmartFilters(newFilters);
+  };
+
+  const handleApplyFilters = () => {
+    setPage(0);
+    setAllReports([]);
+    setExpandedCards(new Set());
+    setHasMore(true);
+    setShowFilters(false);
+  };
+
+  const getActiveFiltersCount = () => {
+    return Object.values(smartFilters).filter(value => 
+      Array.isArray(value) ? value.length > 0 : value
+    ).length;
   };
 
   if (error) {
@@ -190,97 +230,39 @@ const InvestmentOpportunities = () => {
                   <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   <Input
                     placeholder="Yatırım konusu, sektör veya anahtar kelime ara..."
-                    value={filters.keyword || ''}
-                    onChange={(e) => handleSearch({ ...filters, keyword: e.target.value })}
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
                       isMobile ? 'pl-9 h-10 text-sm' : 'pl-10 h-12'
                     }`}
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`bg-white border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap ${
-                    isMobile ? 'h-10 px-3 text-sm' : 'h-12 px-4 sm:px-6'
-                  }`}
-                >
-                  <Filter className={`mr-2 ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
-                  Filtreler
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowFilters(true)}
+                    className={`bg-white border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap relative ${
+                      isMobile ? 'h-10 px-3 text-sm' : 'h-12 px-4 sm:px-6'
+                    }`}
+                  >
+                    <Filter className={`mr-2 ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                    Akıllı Filtreler
+                    {getActiveFiltersCount() > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {getActiveFiltersCount()}
+                      </span>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleSearch}
+                    className={`${isMobile ? 'h-10 px-4 text-sm' : 'h-12 px-6'}`}
+                  >
+                    Ara
+                  </Button>
+                </div>
               </div>
             </div>
-
-            {showFilters && (
-              <div className={`grid gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-100 mt-2 sm:mt-4 ${
-                isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-              }`}>
-                <div className="space-y-2">
-                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>İl</Label>
-                  <Input
-                    placeholder="İl seçin"
-                    value={filters.province || ''}
-                    onChange={(e) => handleSearch({ ...filters, province: e.target.value })}
-                    className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
-                      isMobile ? 'h-9 text-sm' : 'h-10'
-                    }`}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Sektör</Label>
-                  <Input
-                    placeholder="Sektör seçin"
-                    value={filters.sector || ''}
-                    onChange={(e) => handleSearch({ ...filters, sector: e.target.value })}
-                    className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
-                      isMobile ? 'h-9 text-sm' : 'h-10'
-                    }`}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Yatırım Boyutu</Label>
-                  <Select
-                    value={filters.scope || ''}
-                    onValueChange={(value) => handleSearch({ ...filters, scope: value })}
-                  >
-                    <SelectTrigger className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
-                      isMobile ? 'h-9 text-sm' : 'h-10'
-                    }`}>
-                      <SelectValue placeholder="Boyut seçin" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white z-50">
-                      <SelectItem value="">Tümü</SelectItem>
-                      <SelectItem value="Yerel">Yerel</SelectItem>
-                      <SelectItem value="Ulusal">Ulusal</SelectItem>
-                      <SelectItem value="Küresel">Küresel</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Yatırım Tutarı</Label>
-                  <Select
-                    value={filters.investmentRange || ''}
-                    onValueChange={(value) => handleSearch({ ...filters, investmentRange: value })}
-                  >
-                    <SelectTrigger className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
-                      isMobile ? 'h-9 text-sm' : 'h-10'
-                    }`}>
-                      <SelectValue placeholder="Tutar aralığı" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white z-50">
-                      <SelectItem value="">Tümü</SelectItem>
-                      <SelectItem value="0-500.000 USD">0-500.000 USD</SelectItem>
-                      <SelectItem value="500.000-1.000.000 USD">500.000-1.000.000 USD</SelectItem>
-                      <SelectItem value="1.000.000-5.000.000 USD">1.000.000-5.000.000 USD</SelectItem>
-                      <SelectItem value="5.000.000-10.000.000 USD">5.000.000-10.000.000 USD</SelectItem>
-                      <SelectItem value="10.000.000+ USD">10.000.000+ USD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
           </CardHeader>
         </Card>
 
@@ -336,14 +318,22 @@ const InvestmentOpportunities = () => {
         {allReports.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {Object.keys(filters).some(key => filters[key as keyof InvestmentFilters]) ? 'Arama kriterlerinize uygun yatırım fırsatı bulunamadı' : 'Henüz yatırım fırsatı bulunmuyor'}
+              {Object.keys(smartFilters).some(key => smartFilters[key as keyof SmartFilters]) ? 'Arama kriterlerinize uygun yatırım fırsatı bulunamadı' : 'Henüz yatırım fırsatı bulunmuyor'}
             </h3>
             <p className="text-gray-600">
-              {Object.keys(filters).some(key => filters[key as keyof InvestmentFilters]) ? 'Farklı arama kriterleri deneyebilirsiniz.' : 'Yeni fırsatlar eklendiğinde burada görünecektir.'}
+              {Object.keys(smartFilters).some(key => smartFilters[key as keyof SmartFilters]) ? 'Farklı arama kriterleri deneyebilirsiniz.' : 'Yeni fırsatlar eklendiğinde burada görünecektir.'}
             </p>
           </div>
         )}
       </div>
+
+      <InvestmentFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={smartFilters}
+        onFiltersChange={handleFiltersChange}
+        onApplyFilters={handleApplyFilters}
+      />
     </div>
   );
 };
