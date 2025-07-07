@@ -182,7 +182,7 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
 
             {/* Currency badges for investment amount */}
             {report.sabit_yatirim_tutari && (
-              <div className="mb-2">
+              <div className="flex items-center gap-1 mb-2">
                 <span>Sabit Yatırım Tutarı: </span>
                 <CurrencyBadges usdAmount={report.sabit_yatirim_tutari} />
               </div>
