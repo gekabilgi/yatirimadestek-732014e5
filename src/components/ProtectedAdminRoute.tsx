@@ -22,7 +22,7 @@ const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) =
 
   if (!user || !isAdmin) {
     console.log('Access denied - redirecting to admin login');
-    return <Navigate to="/admin-login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   console.log('Access granted - rendering protected content');
