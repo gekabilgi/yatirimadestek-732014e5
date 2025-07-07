@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import AdminLayout from '@/components/admin/AdminLayout';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { InvestmentFilters, SmartFilters } from '@/components/InvestmentFilters';
 
 interface FeasibilityReport {
