@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const MainNavbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -18,9 +19,18 @@ const MainNavbar = () => {
     }
   };
 
-  const navigationItems = [
+  const handleAdminLogin = () => {
+    navigate('/admin-login');
+  };
+
+  // Public navigation items (always visible)
+  const publicNavigationItems = [
     { name: 'Ana Sayfa', href: '/' },
     { name: 'Teşvik Araçları', href: '/tesvik-araclari' },
+  ];
+
+  // Admin-only navigation items
+  const adminNavigationItems = [
     { name: 'Destek Ara', href: '/destek-ara' },
     { name: 'Yatırım Fırsatları', href: '/yatirim-firsatlari' },
     { name: 'Fizibilite İstatistikleri', href: '/fizibilite-istatistikleri' },
@@ -28,6 +38,11 @@ const MainNavbar = () => {
     { name: 'Yatırımcı Sözlüğü', href: '/yatirimci-sozlugu' },
     { name: 'Soru & Cevap', href: '/soru-cevap' }
   ];
+
+  // Combine navigation items based on admin status
+  const navigationItems = user && isAdmin 
+    ? [...publicNavigationItems, ...adminNavigationItems]
+    : publicNavigationItems;
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -52,8 +67,14 @@ const MainNavbar = () => {
               </Link>
             ))}
             
-            {user && (
+            {user && isAdmin ? (
               <div className="flex items-center space-x-4 ml-6 pl-6 border-l border-gray-200">
+                <Link
+                  to="/admin"
+                  className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  Admin Panel
+                </Link>
                 <span className="text-sm text-gray-600">
                   <User className="h-4 w-4 inline mr-1" />
                   {user.email}
@@ -65,6 +86,17 @@ const MainNavbar = () => {
                 >
                   <LogOut className="h-4 w-4 mr-1" />
                   Çıkış
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4 ml-6 pl-6 border-l border-gray-200">
+                <Button
+                  onClick={handleAdminLogin}
+                  variant="outline"
+                  size="sm"
+                >
+                  <User className="h-4 w-4 mr-1" />
+                  Admin Girişi
                 </Button>
               </div>
             )}
@@ -101,8 +133,15 @@ const MainNavbar = () => {
               </Link>
             ))}
             
-            {user && (
+            {user && isAdmin ? (
               <div className="pt-4 pb-2 border-t border-gray-200 mt-4">
+                <Link
+                  to="/admin"
+                  className="block px-3 py-2 text-base font-medium text-blue-600 hover:text-blue-800 hover:bg-gray-50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Admin Panel
+                </Link>
                 <div className="px-3 py-2 text-sm text-gray-600">
                   <User className="h-4 w-4 inline mr-1" />
                   {user.email}
@@ -113,6 +152,16 @@ const MainNavbar = () => {
                 >
                   <LogOut className="h-4 w-4 inline mr-1" />
                   Çıkış
+                </button>
+              </div>
+            ) : (
+              <div className="pt-4 pb-2 border-t border-gray-200 mt-4">
+                <button
+                  onClick={handleAdminLogin}
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                >
+                  <User className="h-4 w-4 inline mr-1" />
+                  Admin Girişi
                 </button>
               </div>
             )}
