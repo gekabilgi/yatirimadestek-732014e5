@@ -181,7 +181,7 @@ export const InvestmentOpportunityMobileCard = ({ report, isExpanded, onToggleEx
               {report.geri_odeme_suresi && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span>{report.geri_odeme_suresi} ay</span>
+                  <span>{report.geri_odeme_suresi} yıl</span>
                 </div>
               )}
               {report.sabit_yatirim_tutari && (
