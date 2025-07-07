@@ -199,7 +199,7 @@ export const InvestmentOpportunityCard = ({ report, isExpanded, onToggleExpand }
             {report.geri_odeme_suresi && (
               <div>
                 <span className="text-sm font-medium text-gray-700">Geri Ödeme Süresi:</span>
-                <p className="text-sm text-gray-600">{report.geri_odeme_suresi} ay</p>
+                <p className="text-sm text-gray-600">{report.geri_odeme_suresi} yıl</p>
               </div>
             )}
 
