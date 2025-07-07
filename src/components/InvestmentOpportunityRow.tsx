@@ -148,7 +148,7 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
               {report.il_tag && (
                 <div className="flex items-center gap-1">
-                  <span>Yatırım Yeri:</span>
+                  <span>Yatırım Yeri: </span>
                   <MapPin className="h-4 w-4" />
                   <span>{report.il_tag}</span>
                 </div>
@@ -156,22 +156,23 @@ export const InvestmentOpportunityRow = ({ report, isExpanded, onToggleExpand }:
              
               {report.istihdam && (
                 <div className="flex items-center gap-1">
-                  <span>Öngörülen İstihdam:</span>
+                  <span>Öngörülen İstihdam: </span>
                   <Users className="h-4 w-4" />
-                  <span>{report.istihdam} kişi</span>
+                  <span>{report.istihdam} kişi |</span>
                 </div>
               )}
               
               {report.geri_odeme_suresi && (
                 <div className="flex items-center gap-1">
-                  <span>Yatırımın Geri Dönüş Süresi:</span>
+                  <span>Yatırımın Geri Dönüş Süresi: </span>
                   <Clock className="h-4 w-4" />
-                  <span>{report.geri_odeme_suresi} yıl</span>
+                  <span>{report.geri_odeme_suresi} yıl |</span>
                 </div>
               )}
                
               {report.fizibilitenin_hazirlanma_tarihi && (
                 <div className="flex items-center gap-1">
+                  <span>Rapor Tarihi: </span>
                   <Calendar className="h-4 w-4" />
                   <span>{format(new Date(report.fizibilitenin_hazirlanma_tarihi), 'dd.MM.yyyy', { locale: tr })}</span>
                 </div>
