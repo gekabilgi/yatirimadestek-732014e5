@@ -17,7 +17,7 @@ const MainNavbar = () => {
 
   // Base navigation items available to everyone
   const baseNavItems = [
-    { name: 'Ana Sayfa', href: '/' },
+    
     { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
   ];
 
