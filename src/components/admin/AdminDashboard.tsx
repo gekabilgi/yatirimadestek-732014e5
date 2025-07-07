@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { RecentActivities } from './RecentActivities';
 
 const AdminDashboard = () => {
   const { data: qnaStats } = useQuery({
@@ -141,134 +141,145 @@ const AdminDashboard = () => {
         </Card>
       </div>
 
-      {/* Investment Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Yatırım İstatistikleri
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Toplam Yatırım Tutarı</span>
-                <span className="font-bold">
-                  {feasibilityStats?.totalInvestment?.toLocaleString('tr-TR') || 0} TL
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Toplam İstihdam</span>
-                <span className="font-bold">{feasibilityStats?.totalEmployment || 0} kişi</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Investment Stats and Q&A Status */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Investment Stats and Q&A Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Yatırım İstatistikleri
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Toplam Yatırım Tutarı</span>
+                    <span className="font-bold">
+                      {feasibilityStats?.totalInvestment?.toLocaleString('tr-TR') || 0} TL
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Toplam İstihdam</span>
+                    <span className="font-bold">{feasibilityStats?.totalEmployment || 0} kişi</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Soru & Cevap Durumu
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Cevaplanmış</span>
-                <span className="font-bold text-green-600">{qnaStats?.answered || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Bekleyen</span>
-                <span className="font-bold text-orange-600">{qnaStats?.unanswered || 0}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Soru & Cevap Durumu
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Cevaplanmış</span>
+                    <span className="font-bold text-green-600">{qnaStats?.answered || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Bekleyen</span>
+                    <span className="font-bold text-orange-600">{qnaStats?.unanswered || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Fizibilite Raporları</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">Yatırım fizibilite raporlarını yönetin</p>
-            <div className="flex gap-2">
-              <Link to="/admin/feasibility-reports">
-                <Button size="sm">Raporları Yönet</Button>
-              </Link>
-              <Link to="/admin/feasibility-statistics">
-                <Button size="sm" variant="outline">
-                  <BarChart3 className="h-4 w-4 mr-1" />
-                  İstatistikler
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Fizibilite Raporları</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-gray-600">Yatırım fizibilite raporlarını yönetin</p>
+                <div className="flex gap-2">
+                  <Link to="/admin/feasibility-reports">
+                    <Button size="sm">Raporları Yönet</Button>
+                  </Link>
+                  <Link to="/admin/feasibility-statistics">
+                    <Button size="sm" variant="outline">
+                      <BarChart3 className="h-4 w-4 mr-1" />
+                      İstatistikler
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Soru & Cevap</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">Kullanıcı sorularını yönetin</p>
-            <Link to="/admin/qa-management">
-              <Button size="sm">Soruları Yönet</Button>
-            </Link>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Soru & Cevap</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-gray-600">Kullanıcı sorularını yönetin</p>
+                <Link to="/admin/qa-management">
+                  <Button size="sm">Soruları Yönet</Button>
+                </Link>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Destek Programları</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">Destek programlarını düzenleyin</p>
-            <Link to="/admin/support-programs">
-              <Button size="sm">Programları Yönet</Button>
-            </Link>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Destek Programları</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-gray-600">Destek programlarını düzenleyin</p>
+                <Link to="/admin/support-programs">
+                  <Button size="sm">Programları Yönet</Button>
+                </Link>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Yatırımcı Sözlüğü</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">Terim tanımlarını yönetin</p>
-            <Link to="/admin/glossary-management">
-              <Button size="sm">Sözlüğü Yönet</Button>
-            </Link>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Yatırımcı Sözlüğü</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-gray-600">Terim tanımlarını yönetin</p>
+                <Link to="/admin/glossary-management">
+                  <Button size="sm">Sözlüğü Yönet</Button>
+                </Link>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">E-posta Yönetimi</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">E-posta ayarlarını düzenleyin</p>
-            <Link to="/admin/email-management">
-              <Button size="sm">E-postaları Yönet</Button>
-            </Link>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">E-posta Yönetimi</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-gray-600">E-posta ayarlarını düzenleyin</p>
+                <Link to="/admin/email-management">
+                  <Button size="sm">E-postaları Yönet</Button>
+                </Link>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Analytics</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">Sistem analitiklerini görüntüleyin</p>
-            <Link to="/admin/analytics">
-              <Button size="sm">Analytics</Button>
-            </Link>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Analytics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-gray-600">Sistem analitiklerini görüntüleyin</p>
+                <Link to="/admin/analytics">
+                  <Button size="sm">Analytics</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Right Column - Recent Activities */}
+        <div className="lg:col-span-1">
+          <RecentActivities />
+        </div>
       </div>
     </div>
   );
