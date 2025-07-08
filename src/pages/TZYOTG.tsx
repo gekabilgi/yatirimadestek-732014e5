@@ -263,7 +263,7 @@ const TZYOTG = () => {
             Geri Dön
           </Link>
           <div className="flex items-center space-x-3 mb-4">
-            <Building2 className="h-8 w-8 text-red-600" />
+            <Building2 className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">
               Tedarik Zinciri Yerlileştirme
             </h1>
@@ -473,7 +473,7 @@ const TZYOTG = () => {
                     type="submit"
                     size="lg"
                     disabled={isSubmitting || isUploading}
-                    className="bg-red-600 hover:bg-red-700 text-white px-8"
+                    className="bg-red-600 hover:bg-blue-700 text-white px-8"
                   >
                     {isSubmitting ? 'Gönderiliyor...' : 'Talebi Gönder'}
                   </Button>
