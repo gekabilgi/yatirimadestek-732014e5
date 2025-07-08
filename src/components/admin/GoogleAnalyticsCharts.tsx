@@ -196,7 +196,7 @@ const GoogleAnalyticsCharts = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
-              En Çok Ziyaret Eden Ülkeler Dünya Haritası
+              Ülkelere Göre Etkin Kullanıcı Sayısı
             </CardTitle>
           </CardHeader>
           <CardContent>
