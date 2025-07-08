@@ -274,6 +274,10 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
         date: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)
       })) || [],
+      dailyPageViewss: results[3]?.rows?.map((row: any) => ({
+        date: row.dimensionValues[0].value,
+        views: parseInt(row.metricValues[0].value)
+      })) || [],
       topCountries: topCountries,
     };
   } catch (error) {

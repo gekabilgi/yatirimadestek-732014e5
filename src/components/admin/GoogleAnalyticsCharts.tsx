@@ -126,7 +126,7 @@ const GoogleAnalyticsCharts = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={analyticsData?.dailyPageViews || []}>
+              <LineChart data={analyticsData?.dailyPageViewss || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="date" 
