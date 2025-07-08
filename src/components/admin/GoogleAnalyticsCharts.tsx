@@ -1,9 +1,19 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { WorldMapChart } from '@/components/charts/WorldMapChart';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import { TrendingUp, Users, Eye, Globe, Activity } from 'lucide-react';
 
 const GoogleAnalyticsCharts = () => {
@@ -11,11 +21,10 @@ const GoogleAnalyticsCharts = () => {
     queryKey: ['google-analytics'],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('google-analytics');
-      
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    refetchInterval: 5 * 60 * 1000,
     retry: 2,
   });
 
@@ -46,9 +55,7 @@ const GoogleAnalyticsCharts = () => {
           <p className="text-gray-600">
             Google Analytics verilerine erişilemiyor. Lütfen yapılandırmanızı kontrol edin.
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Hata: {error.message}
-          </p>
+          <p className="text-sm text-gray-500 mt-2">Hata: {error.message}</p>
         </CardContent>
       </Card>
     );
@@ -128,35 +135,24 @@ const GoogleAnalyticsCharts = () => {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={analyticsData?.dailyPageViews || []}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-  dataKey="date" 
-  tickFormatter={(value) => {
-    if (typeof value === 'string' && /^\d{8}$/.test(value)) {
-      const year = value.substring(0, 4);
-      const month = value.substring(4, 6);
-      const day = value.substring(6, 8);
-      return `${day}/${month}`;
-    }
-    return value;
-  }}
-/>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getDate()}/${date.getMonth() + 1}`;
+                  }}
                 />
                 <YAxis />
-                <Tooltip 
-  labelFormatter={(value) => {
-    if (typeof value === 'string' && /^\d{8}$/.test(value)) {
-      const year = value.substring(0, 4);
-      const month = value.substring(4, 6);
-      const day = value.substring(6, 8);
-      return `${day}.${month}.${year}`;
-    }
-    return value;
-  }}
-/>
-                <Line 
-                  type="monotone" 
-                  dataKey="views" 
-                  stroke="#8884d8" 
+                <Tooltip
+                  labelFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString('tr-TR');
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="views"
+                  stroke="#8884d8"
                   strokeWidth={2}
                   dot={{ fill: '#8884d8' }}
                 />
@@ -165,7 +161,7 @@ const GoogleAnalyticsCharts = () => {
           </CardContent>
         </Card>
 
-        {/* Top Countries */}
+        {/* Top Countries - Bar Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -177,10 +173,10 @@ const GoogleAnalyticsCharts = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={analyticsData?.topCountries?.slice(0, 8) || []}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="country" 
-                  angle={-45} 
-                  textAnchor="end" 
+                <XAxis
+                  dataKey="country"
+                  angle={-45}
+                  textAnchor="end"
                   height={100}
                   fontSize={12}
                 />
@@ -189,6 +185,29 @@ const GoogleAnalyticsCharts = () => {
                 <Bar dataKey="users" fill="#82ca9d" />
               </BarChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Top Countries - World Map Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              En Çok Ziyaret Eden Ülkeler Dünya Haritası
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WorldMapChart
+              data={
+                (analyticsData?.topCountries || []).reduce((acc: Record<string, number>, country) => {
+                  if (country.country && country.users) {
+                    acc[country.country] = country.users;
+                  }
+                  return acc;
+                }, {})
+              }
+              isLoading={isLoading}
+            />
           </CardContent>
         </Card>
       </div>
@@ -204,9 +223,7 @@ const GoogleAnalyticsCharts = () => {
               <div className="text-3xl font-bold text-green-600">
                 {analyticsData?.engagementRate || '0'}%
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Kullanıcı etkileşim oranı
-              </p>
+              <p className="text-sm text-gray-600 mt-2">Kullanıcı etkileşim oranı</p>
             </div>
           </CardContent>
         </Card>
@@ -220,9 +237,7 @@ const GoogleAnalyticsCharts = () => {
               <div className="text-3xl font-bold text-blue-600">
                 {analyticsData?.avgSessionDuration || '0'}
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Dakika cinsinden
-              </p>
+              <p className="text-sm text-gray-600 mt-2">Dakika cinsinden</p>
             </div>
           </CardContent>
         </Card>
@@ -236,9 +251,7 @@ const GoogleAnalyticsCharts = () => {
               <div className="text-3xl font-bold text-purple-600">
                 {analyticsData?.bounceRate || '0'}%
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Tek sayfa ziyaretleri
-              </p>
+              <p className="text-sm text-gray-600 mt-2">Tek sayfa ziyaretleri</p>
             </div>
           </CardContent>
         </Card>
