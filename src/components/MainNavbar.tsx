@@ -39,7 +39,7 @@ const MainNavbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <TrendingUp className="h-8 w-8 text-white" />
+              <TrendingUp className="h-8 w-8" />
               <span className="text-lg sm:text-xl font-bold text-gray-900">Yatırım Destek</span>
             </Link>
           </div>
