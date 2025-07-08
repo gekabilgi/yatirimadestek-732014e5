@@ -69,73 +69,79 @@ const TZY = () => {
         </div>
       </section>
 
-      {/* Flow Diagram */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Modern Flow Diagram */}
+      <section className="py-16 bg-gray-50/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
             Süreç Akışı
           </h2>
           
-          {/* Desktop Flow - Horizontal */}
+          {/* Desktop - Horizontal Stepper */}
           <div className="hidden lg:block">
-            <div className="flex items-center justify-between mb-8">
-              {flowSteps.map((step, index) => (
-                <div key={index} className="flex items-center animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                  <Card className="p-6 text-center max-w-xs hover:shadow-lg transition-shadow duration-300">
-                    <div className={`mx-auto mb-4 ${step.color}`}>
-                      <step.icon className="h-12 w-12 mx-auto" />
+            <div className="relative">
+              {/* Progress Line */}
+              <div className="absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-red-200 to-red-300"></div>
+              
+              <div className="relative flex justify-between">
+                {flowSteps.map((step, index) => (
+                  <div key={index} className="flex flex-col items-center max-w-[140px] animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    {/* Step Circle */}
+                    <div className={`relative z-10 w-24 h-24 rounded-full bg-white border-4 border-gray-200 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 ${step.color}`}>
+                      <step.icon className="h-8 w-8" />
                     </div>
-                    <h3 className="font-semibold text-lg mb-2 text-gray-900">
-                      {step.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {step.description}
-                    </p>
-                  </Card>
-                  
-                  {index < flowSteps.length - 1 && (
-                    <div className="mx-4 text-gray-400">
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                    
+                    {/* Step Number */}
+                    <div className="w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center -mt-3 mb-3 z-20">
+                      {index + 1}
                     </div>
-                  )}
-                </div>
-              ))}
+                    
+                    {/* Step Content */}
+                    <div className="text-center">
+                      <h3 className="font-semibold text-sm mb-2 text-gray-900">
+                        {step.title}
+                      </h3>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           
-          {/* Mobile Flow - Vertical */}
-          <div className="lg:hidden space-y-6">
-            {flowSteps.map((step, index) => (
-              <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <Card className="p-6 text-center hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className={`${step.color} mr-4`}>
-                      <step.icon className="h-10 w-10" />
+          {/* Mobile - Vertical Timeline */}
+          <div className="lg:hidden">
+            <div className="relative max-w-md mx-auto">
+              {/* Vertical Line */}
+              <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-red-200 to-red-300"></div>
+              
+              <div className="space-y-8">
+                {flowSteps.map((step, index) => (
+                  <div key={index} className="relative flex items-start animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    {/* Step Circle */}
+                    <div className={`relative z-10 w-12 h-12 rounded-full bg-white border-3 border-gray-200 flex items-center justify-center shadow-md ${step.color} flex-shrink-0`}>
+                      <step.icon className="h-5 w-5" />
                     </div>
-                    <div className="text-left flex-1">
-                      <h3 className="font-semibold text-lg mb-1 text-gray-900">
-                        {index + 1}. {step.title}
+                    
+                    {/* Step Number Badge */}
+                    <div className="absolute -top-1 -left-1 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center z-20">
+                      {index + 1}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="ml-6 flex-1 bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                      <h3 className="font-semibold text-base mb-2 text-gray-900">
+                        {step.title}
                       </h3>
                       <p className="text-sm text-gray-600">
                         {step.description}
                       </p>
                     </div>
                   </div>
-                </Card>
-                
-                {index < flowSteps.length - 1 && (
-                  <div className="flex justify-center py-2">
-                    <div className="text-gray-400">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
