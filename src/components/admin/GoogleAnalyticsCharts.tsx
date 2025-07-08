@@ -189,6 +189,7 @@ const GoogleAnalyticsCharts = () => {
         </Card>
 
         {/* Top Countries - World Map Chart */}
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6 w-full">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -210,6 +211,7 @@ const GoogleAnalyticsCharts = () => {
             />
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Additional Metrics */}
