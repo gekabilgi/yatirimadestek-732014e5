@@ -25,6 +25,7 @@ import NotFound from "./pages/NotFound";
 import SearchSupport from "./pages/SearchSupport";
 import YdoSecureAccess from "./pages/YdoSecureAccess";
 import QNA from "./pages/QNA";
+import TZY from "./pages/TZY";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/incentive-tools" element={<IncentiveTools />} />
               <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
+              <Route path="/tzy" element={<TZY />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
