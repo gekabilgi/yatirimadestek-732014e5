@@ -468,6 +468,107 @@ export type Database = {
         }
         Relationships: []
       }
+      pre_requests: {
+        Row: {
+          created_at: string | null
+          documents_url: string | null
+          e_posta: string
+          firma_adi: string
+          firma_kisa_adi: string | null
+          id: string
+          iletisim_kisisi: string
+          logo_url: string | null
+          status: string | null
+          talep_icerigi: string
+          telefon: string
+          unvan: string
+          updated_at: string | null
+          vergi_kimlik_no: string
+        }
+        Insert: {
+          created_at?: string | null
+          documents_url?: string | null
+          e_posta: string
+          firma_adi: string
+          firma_kisa_adi?: string | null
+          id?: string
+          iletisim_kisisi: string
+          logo_url?: string | null
+          status?: string | null
+          talep_icerigi: string
+          telefon: string
+          unvan: string
+          updated_at?: string | null
+          vergi_kimlik_no: string
+        }
+        Update: {
+          created_at?: string | null
+          documents_url?: string | null
+          e_posta?: string
+          firma_adi?: string
+          firma_kisa_adi?: string | null
+          id?: string
+          iletisim_kisisi?: string
+          logo_url?: string | null
+          status?: string | null
+          talep_icerigi?: string
+          telefon?: string
+          unvan?: string
+          updated_at?: string | null
+          vergi_kimlik_no?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          basvuru_son_tarihi: string
+          created_at: string | null
+          firma_olcegi: string
+          id: string
+          minimum_deneyim: number
+          minimum_yerlilik_orani: number
+          pre_request_id: string
+          status: string | null
+          updated_at: string | null
+          urun_aciklamasi: string
+          urun_grubu_adi: string
+        }
+        Insert: {
+          basvuru_son_tarihi: string
+          created_at?: string | null
+          firma_olcegi: string
+          id?: string
+          minimum_deneyim?: number
+          minimum_yerlilik_orani?: number
+          pre_request_id: string
+          status?: string | null
+          updated_at?: string | null
+          urun_aciklamasi: string
+          urun_grubu_adi: string
+        }
+        Update: {
+          basvuru_son_tarihi?: string
+          created_at?: string | null
+          firma_olcegi?: string
+          id?: string
+          minimum_deneyim?: number
+          minimum_yerlilik_orani?: number
+          pre_request_id?: string
+          status?: string | null
+          updated_at?: string | null
+          urun_aciklamasi?: string
+          urun_grubu_adi?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_pre_request_id_fkey"
+            columns: ["pre_request_id"]
+            isOneToOne: false
+            referencedRelation: "pre_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -835,6 +936,83 @@ export type Database = {
         }
         Relationships: []
       }
+      submission_tracking: {
+        Row: {
+          id: string
+          identifier: string
+          last_submission: string | null
+          submission_count: number | null
+          submission_type: string
+        }
+        Insert: {
+          id?: string
+          identifier: string
+          last_submission?: string | null
+          submission_count?: number | null
+          submission_type: string
+        }
+        Update: {
+          id?: string
+          identifier?: string
+          last_submission?: string | null
+          submission_count?: number | null
+          submission_type?: string
+        }
+        Relationships: []
+      }
+      supplier_applications: {
+        Row: {
+          created_at: string | null
+          e_posta: string
+          firma_adi: string
+          firma_olcegi: string
+          id: string
+          il: string
+          iletisim_kisisi: string
+          product_id: string
+          status: string | null
+          telefon: string
+          unvan: string
+          vergi_kimlik_no: string
+        }
+        Insert: {
+          created_at?: string | null
+          e_posta: string
+          firma_adi: string
+          firma_olcegi: string
+          id?: string
+          il: string
+          iletisim_kisisi: string
+          product_id: string
+          status?: string | null
+          telefon: string
+          unvan: string
+          vergi_kimlik_no: string
+        }
+        Update: {
+          created_at?: string | null
+          e_posta?: string
+          firma_adi?: string
+          firma_olcegi?: string
+          id?: string
+          il?: string
+          iletisim_kisisi?: string
+          product_id?: string
+          status?: string | null
+          telefon?: string
+          unvan?: string
+          vergi_kimlik_no?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_applications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_program_tags: {
         Row: {
           created_at: string | null
@@ -994,6 +1172,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_submission_spam: {
+        Args: {
+          p_identifier: string
+          p_submission_type: string
+          p_cooldown_minutes?: number
+        }
+        Returns: boolean
+      }
+      expire_old_products: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       is_admin: {
         Args: { user_id?: string }
         Returns: boolean
@@ -1005,6 +1195,10 @@ export type Database = {
           p_user_role?: string
           p_notes?: string
         }
+        Returns: undefined
+      }
+      record_submission: {
+        Args: { p_identifier: string; p_submission_type: string }
         Returns: undefined
       }
     }
