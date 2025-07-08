@@ -36,7 +36,7 @@ const TZY = () => {
       icon: Search,
       title: "İnceleme",
       description: "Başvurular Kalkınma Ajansları Tarafından İncelenir",
-      color: "text-red-600"
+      color: "text-blue-600"
     },
     {
       icon: Handshake,
@@ -80,7 +80,7 @@ const TZY = () => {
           <div className="hidden lg:block">
             <div className="relative">
               {/* Progress Line */}
-              <div className="absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-red-200 to-red-300"></div>
+              <div className="absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-200 to-blue-300"></div>
               
               <div className="relative flex justify-between">
                 {flowSteps.map((step, index) => (
@@ -91,7 +91,7 @@ const TZY = () => {
                     </div>
                     
                     {/* Step Number */}
-                    <div className="w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center -mt-3 mb-3 z-20">
+                    <div className="w-6 h-6 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center -mt-3 mb-3 z-20">
                       {index + 1}
                     </div>
                     
@@ -114,7 +114,7 @@ const TZY = () => {
           <div className="lg:hidden">
             <div className="relative max-w-md mx-auto">
               {/* Vertical Line */}
-              <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-red-200 to-red-300"></div>
+              <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-blue-200 to-blue-300"></div>
               
               <div className="space-y-8">
                 {flowSteps.map((step, index) => (
@@ -125,7 +125,7 @@ const TZY = () => {
                     </div>
                     
                     {/* Step Number Badge */}
-                    <div className="absolute -top-1 -left-1 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center z-20">
+                    <div className="absolute -top-1 -left-1 w-5 h-5 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center z-20">
                       {index + 1}
                     </div>
                     
@@ -158,8 +158,8 @@ const TZY = () => {
           
           <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {/* Tedarikçi Bul Button */}
-            <Card className="p-8 hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-red-300 animate-fade-in">
-              <div className="text-red-600 mb-4">
+            <Card className="p-8 hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-blue-300 animate-fade-in">
+              <div className="text-blue-600 mb-4">
                 <Search className="h-16 w-16 mx-auto" />
               </div>
               <h3 className="text-2xl font-bold mb-4 text-gray-900">
@@ -171,7 +171,7 @@ const TZY = () => {
               <Link to="/tzyotg">
                 <Button 
                   size="lg" 
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
                 >
                   Tedarikçi Aramaya Başla
                 </Button>
@@ -179,8 +179,8 @@ const TZY = () => {
             </Card>
 
             {/* Tedarikçi Ol Button */}
-            <Card className="p-8 hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-red-300 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="text-red-600 mb-4">
+            <Card className="p-8 hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-blue-300 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="text-blue-600 mb-4">
                 <Building2 className="h-16 w-16 mx-auto" />
               </div>
               <h3 className="text-2xl font-bold mb-4 text-gray-900">
@@ -192,7 +192,7 @@ const TZY = () => {
               <Link to="/tbg">
                 <Button 
                   size="lg" 
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
                 >
                   Tedarikçi Olarak Başvur
                 </Button>
@@ -210,7 +210,7 @@ const TZY = () => {
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="animate-fade-in">
-              <div className="text-red-600 mb-4">
+              <div className="text-blue-600 mb-4">
                 <CheckCircle className="h-12 w-12 mx-auto" />
               </div>
               <h3 className="text-xl font-semibold mb-3 text-gray-900">Güvenilir İş Ortaklıkları</h3>
@@ -219,7 +219,7 @@ const TZY = () => {
               </p>
             </div>
             <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="text-red-600 mb-4">
+              <div className="text-blue-600 mb-4">
                 <Handshake className="h-12 w-12 mx-auto" />
               </div>
               <h3 className="text-xl font-semibold mb-3 text-gray-900">Kolay Eşleştirme</h3>
@@ -228,7 +228,7 @@ const TZY = () => {
               </p>
             </div>
             <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <div className="text-red-600 mb-4">
+              <div className="text-blue-600 mb-4">
                 <Building2 className="h-12 w-12 mx-auto" />
               </div>
               <h3 className="text-xl font-semibold mb-3 text-gray-900">Yerel Ekonomi</h3>
