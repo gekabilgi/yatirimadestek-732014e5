@@ -473,7 +473,7 @@ const TZYOTG = () => {
                     type="submit"
                     size="lg"
                     disabled={isSubmitting || isUploading}
-                    className="bg-red-600 hover:bg-blue-700 text-white px-8"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                   >
                     {isSubmitting ? 'Gönderiliyor...' : 'Talebi Gönder'}
                   </Button>
