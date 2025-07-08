@@ -26,6 +26,7 @@ import SearchSupport from "./pages/SearchSupport";
 import YdoSecureAccess from "./pages/YdoSecureAccess";
 import QNA from "./pages/QNA";
 import TZY from "./pages/TZY";
+import TZYOTG from "./pages/TZYOTG";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,7 @@ const App = () => {
               <Route path="/incentive-tools" element={<IncentiveTools />} />
               <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
               <Route path="/tzy" element={<TZY />} />
+              <Route path="/tzyotg" element={<TZYOTG />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
