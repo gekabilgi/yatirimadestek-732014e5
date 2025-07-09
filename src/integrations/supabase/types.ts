@@ -866,6 +866,7 @@ export type Database = {
           answer_date: string | null
           answer_status: string | null
           answered: boolean
+          answered_by_full_name: string | null
           answered_by_user_id: string | null
           approved_by_admin_id: string | null
           category: string | null
@@ -876,6 +877,7 @@ export type Database = {
           phone: string | null
           province: string
           question: string
+          question_number: number
           return_date: string | null
           return_reason: string | null
           return_status:
@@ -891,6 +893,7 @@ export type Database = {
           answer_date?: string | null
           answer_status?: string | null
           answered?: boolean
+          answered_by_full_name?: string | null
           answered_by_user_id?: string | null
           approved_by_admin_id?: string | null
           category?: string | null
@@ -901,6 +904,7 @@ export type Database = {
           phone?: string | null
           province: string
           question: string
+          question_number?: number
           return_date?: string | null
           return_reason?: string | null
           return_status?:
@@ -916,6 +920,7 @@ export type Database = {
           answer_date?: string | null
           answer_status?: string | null
           answered?: boolean
+          answered_by_full_name?: string | null
           answered_by_user_id?: string | null
           approved_by_admin_id?: string | null
           category?: string | null
@@ -926,6 +931,7 @@ export type Database = {
           phone?: string | null
           province?: string
           question?: string
+          question_number?: number
           return_date?: string | null
           return_reason?: string | null
           return_status?:
