@@ -353,8 +353,8 @@ const QnaQuestionManagement = () => {
   console.log('🎨 Rendering component with questions:', questions.length);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-xl shadow-sm border border-slate-200/60">
+   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-8 lg:p-12 mt-16">
+        <div className="max-w-7xl mx-auto space-y-8">
         <Card className="border-0 shadow-none bg-transparent">
           <CardHeader className="pb-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -401,7 +401,7 @@ const QnaQuestionManagement = () => {
                 <p className="text-slate-600 mt-4 text-lg">Yükleniyor...</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-y-auto max-h-[calc(95vh-120px)] pr-2">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-slate-200">
