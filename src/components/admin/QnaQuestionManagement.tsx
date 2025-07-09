@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, MessageSquare, Calendar, User, MapPin, CheckCircle, XCircle, ArrowLeft, Send } from 'lucide-react';
+import { Eye, Edit, MessageSquare, Calendar, User, MapPin, CheckCircle, XCircle, ArrowLeft, Send, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Question } from '@/types/qna';
@@ -301,15 +301,24 @@ const QnaQuestionManagement = () => {
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      'unanswered': { label: 'Cevaplanmadı', variant: 'destructive' as const },
-      'answered': { label: 'Cevaplandı', variant: 'default' as const },
-      'returned': { label: 'İade Edildi', variant: 'secondary' as const },
-      'corrected': { label: 'Düzeltildi', variant: 'outline' as const },
-      'approved': { label: 'Onaylandı', variant: 'default' as const }
+      'unanswered': { label: 'Cevaplanmadı', variant: 'outline' as const, className: 'bg-red-50 text-red-700 border-red-200' },
+      'answered': { label: 'Cevaplandı', variant: 'outline' as const, className: 'bg-blue-50 text-blue-700 border-blue-200' },
+      'returned': { label: 'İade Edildi', variant: 'outline' as const, className: 'bg-orange-50 text-orange-700 border-orange-200' },
+      'corrected': { label: 'Düzeltildi', variant: 'outline' as const, className: 'bg-purple-50 text-purple-700 border-purple-200' },
+      'approved': { label: 'Onaylandı', variant: 'outline' as const, className: 'bg-green-50 text-green-700 border-green-200' }
     };
 
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { label: status, variant: 'outline' as const };
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+    const statusInfo = statusMap[status as keyof typeof statusMap] || { 
+      label: status, 
+      variant: 'outline' as const,
+      className: 'bg-slate-50 text-slate-700 border-slate-200'
+    };
+    
+    return (
+      <Badge variant={statusInfo.variant} className={statusInfo.className}>
+        {statusInfo.label}
+      </Badge>
+    );
   };
 
   const openViewDialog = (question: Question) => {
@@ -345,137 +354,176 @@ const QnaQuestionManagement = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Soru & Cevap Yönetimi
-            </CardTitle>
-            <div className="flex gap-2">
-              <Select value={filterStatus} onValueChange={(value) => {
-                console.log('🔄 Filter changed to:', value);
-                setFilterStatus(value);
-              }}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Durum Filtrele" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tümü</SelectItem>
-                  <SelectItem value="unanswered">Cevaplanmadı</SelectItem>
-                  <SelectItem value="answered">Cevaplandı</SelectItem>
-                  <SelectItem value="returned">İade Edildi</SelectItem>
-                  <SelectItem value="approved">Onaylandı</SelectItem>
-                </SelectContent>
-              </Select>
+      <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-xl shadow-sm border border-slate-200/60">
+        <Card className="border-0 shadow-none bg-transparent">
+          <CardHeader className="pb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
+                  <MessageSquare className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl font-bold text-slate-800">
+                    Soru & Cevap Yönetimi
+                  </CardTitle>
+                  <p className="text-slate-600 mt-1">Soruları yönetin ve cevapları onaylayın</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Soru ara..."
+                    className="pl-10 h-11 w-full sm:w-64 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  />
+                </div>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-11 w-full sm:w-40 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                    <SelectValue placeholder="Durum Filtrele" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">Tümü</SelectItem>
+                    <SelectItem value="unanswered">Cevaplanmadı</SelectItem>
+                    <SelectItem value="answered">Cevaplandı</SelectItem>
+                    <SelectItem value="returned">İade Edildi</SelectItem>
+                    <SelectItem value="approved">Onaylandı</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Soru No</TableHead>
-                <TableHead>Soru Sahibi</TableHead>
-                <TableHead>İl</TableHead>
-                <TableHead>Soru</TableHead>
-                <TableHead>Yanıtlayan</TableHead>
-                <TableHead>Durum</TableHead>
-                <TableHead>Tarih</TableHead>
-                <TableHead>İşlemler</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.map((question) => (
-                <TableRow key={question.id}>
-                  <TableCell>
-                    <div className="font-mono text-sm">
-                      #{question.question_number || 'N/A'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{question.full_name}</span>
-                      <span className="text-sm text-gray-500">{question.email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {question.province}
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-xs">
-                    <div className="truncate" title={question.question}>
-                      {question.question}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {question.answered_by_full_name ? (
-                        <span className="font-medium">{question.answered_by_full_name}</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(question.answer_status)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(question.created_at).toLocaleDateString('tr-TR')}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openViewDialog(question)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openAnswerDialog(question)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      {question.answer && (question.answer_status === 'answered' || question.answer_status === 'corrected') && (
-                        <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleApproveAndSend(question)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openReturnDialog(question)}
-                          >
-                            <ArrowLeft className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {questions.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              {filterStatus === 'all' ? 'Henüz soru bulunmamaktadır.' : 'Bu durumda soru bulunmamaktadır.'}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          
+          <CardContent>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                <p className="text-slate-600 mt-4 text-lg">Yükleniyor...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-slate-200">
+                      <TableHead className="font-semibold text-slate-700">Soru No</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Soru Sahibi</TableHead>
+                      <TableHead className="font-semibold text-slate-700">İl</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Soru</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Yanıtlayan</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Durum</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Tarih</TableHead>
+                      <TableHead className="font-semibold text-slate-700 text-right">İşlemler</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {questions.map((question) => (
+                      <TableRow key={question.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
+                        <TableCell>
+                          <div className="font-mono text-sm font-medium text-blue-600">
+                            #{question.question_number || 'N/A'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium text-slate-900">{question.full_name}</div>
+                            <div className="text-sm text-slate-500">{question.email}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="p-1 bg-slate-100 rounded">
+                              <MapPin className="h-3 w-3 text-slate-600" />
+                            </div>
+                            <span className="text-slate-700 font-medium">{question.province}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <div className="font-medium text-slate-900 truncate" title={question.question}>
+                            {question.question}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {question.answered_by_full_name ? (
+                              <div className="flex items-center gap-2">
+                                <div className="p-1 bg-green-100 rounded">
+                                  <User className="h-3 w-3 text-green-600" />
+                                </div>
+                                <span className="font-medium text-slate-700">{question.answered_by_full_name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">Henüz yanıtlanmadı</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(question.answer_status)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <Calendar className="h-4 w-4" />
+                            <span className="text-sm">{new Date(question.created_at).toLocaleDateString('tr-TR')}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openViewDialog(question)}
+                              className="h-8 w-8 p-0 bg-white/80 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                            >
+                              <Eye className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openAnswerDialog(question)}
+                              className="h-8 w-8 p-0 bg-white/80 hover:bg-orange-50 hover:border-orange-200 transition-colors"
+                            >
+                              <Edit className="h-4 w-4 text-orange-600" />
+                            </Button>
+                            {question.answer && (question.answer_status === 'answered' || question.answer_status === 'corrected') && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleApproveAndSend(question)}
+                                  className="h-8 w-8 p-0 bg-white/80 hover:bg-green-50 hover:border-green-200 transition-colors"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openReturnDialog(question)}
+                                  className="h-8 w-8 p-0 bg-white/80 hover:bg-red-50 hover:border-red-200 transition-colors"
+                                >
+                                  <ArrowLeft className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                {questions.length === 0 && (
+                  <div className="text-center py-16">
+                    <MessageSquare className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-600 text-lg mb-2">
+                      {filterStatus === 'all' ? 'Henüz soru bulunmamaktadır' : 'Bu durumda soru bulunmamaktadır'}
+                    </p>
+                    <p className="text-slate-500">Sorular geldiğinde burada görünecektir.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* View Question Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
