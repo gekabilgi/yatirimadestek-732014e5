@@ -406,12 +406,8 @@ const QnaQuestionManagement = () => {
                   <TableHeader>
                     <TableRow className="border-slate-200">
                       <TableHead className="font-semibold text-slate-700">Soru No</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Soru Sahibi</TableHead>
-                      <TableHead className="font-semibold text-slate-700">İl</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Soru</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Yanıtlayan</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Soru & Soru Sahibi</TableHead>
                       <TableHead className="font-semibold text-slate-700">Durum</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Tarih</TableHead>
                       <TableHead className="font-semibold text-slate-700 text-right">İşlemler</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -423,47 +419,31 @@ const QnaQuestionManagement = () => {
                             #{question.question_number || 'N/A'}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium text-slate-900">{question.full_name}</div>
-                            <div className="text-sm text-slate-500">{question.email}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="p-1 bg-slate-100 rounded">
-                              <MapPin className="h-3 w-3 text-slate-600" />
+                        <TableCell className="max-w-md">
+                          <div className="space-y-2">
+                            <div className="font-medium text-slate-900 truncate" title={question.question}>
+                              {question.question}
                             </div>
-                            <span className="text-slate-700 font-medium">{question.province}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-xs">
-                          <div className="font-medium text-slate-900 truncate" title={question.question}>
-                            {question.question}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {question.answered_by_full_name ? (
-                              <div className="flex items-center gap-2">
-                                <div className="p-1 bg-green-100 rounded">
-                                  <User className="h-3 w-3 text-green-600" />
-                                </div>
-                                <span className="font-medium text-slate-700">{question.answered_by_full_name}</span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400">Henüz yanıtlanmadı</span>
-                            )}
+                            <div className="flex flex-wrap gap-2 items-center">
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                {question.full_name}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                {question.province}
+                              </Badge>
+                              {question.answered_by_full_name && (
+                                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                  Yanıtlayan: {question.answered_by_full_name}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {new Date(question.created_at).toLocaleDateString('tr-TR')} • {question.email}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(question.answer_status)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <Calendar className="h-4 w-4" />
-                            <span className="text-sm">{new Date(question.created_at).toLocaleDateString('tr-TR')}</span>
-                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-2">
