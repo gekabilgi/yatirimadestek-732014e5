@@ -12,6 +12,7 @@ import { Eye, Edit, MessageSquare, Calendar, User, MapPin, CheckCircle, XCircle,
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Question } from '@/types/qna';
+import { MultiSelect } from '@/components/ui/multi-select';
 
 const QnaQuestionManagement = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -24,6 +25,33 @@ const QnaQuestionManagement = () => {
   const [answerStatus, setAnswerStatus] = useState<string>('answered');
   const [returnReason, setReturnReason] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  const categoryOptions = [
+    { label: 'Ar-Ge ve Tasarım', value: 'ar-ge-ve-tasarim' },
+    { label: 'Bilişim', value: 'bilisim' },
+    { label: 'Dış Ticaret', value: 'dis-ticaret' },
+    { label: 'Eğitim', value: 'egitim' },
+    { label: 'Enerji', value: 'enerji' },
+    { label: 'Geri Kazanım', value: 'geri-kazanim' },
+    { label: 'Girişimcilik', value: 'girisimcilik' },
+    { label: 'Hizmet Sektörü', value: 'hizmet-sektoru' },
+    { label: 'İstihdam Destekleri', value: 'istihdam-destekleri' },
+    { label: 'İzin-Ruhsat', value: 'izin-ruhsat' },
+    { label: 'Kalkınma Ajansı', value: 'kalkinma-ajansi' },
+    { label: 'Lojistik', value: 'lojistik' },
+    { label: 'Maden', value: 'maden' },
+    { label: 'Sağlık', value: 'saglik' },
+    { label: 'Sanayi', value: 'sanayi' },
+    { label: 'Sertifika/Belgelendirme', value: 'sertifika-belgelendirme' },
+    { label: 'Sosyal Hizmetler', value: 'sosyal-hizmetler' },
+    { label: 'Tanıtım Pazarlama', value: 'tanitim-pazarlama' },
+    { label: 'Tarım Hayvancılık', value: 'tarim-hayvancilik' },
+    { label: 'Tarıma Dayalı Sanayi', value: 'tarima-dayali-sanayi' },
+    { label: 'Ticaret', value: 'ticaret' },
+    { label: 'Turizm', value: 'turizm' },
+    { label: 'Yatırım Teşvik Sistemi', value: 'yatirim-tesvik-sistemi' }
+  ];
 
   useEffect(() => {
     fetchQuestions();
@@ -165,7 +193,8 @@ const QnaQuestionManagement = () => {
         answer_status: answerStatus,
         answer_date: new Date().toISOString(),
         answered: true,
-        answered_by_user_id: (await supabase.auth.getUser()).data.user?.id
+        answered_by_user_id: (await supabase.auth.getUser()).data.user?.id,
+        category: selectedCategories.join(',')
       };
 
       console.log('Update data:', updateData);
@@ -332,7 +361,18 @@ const QnaQuestionManagement = () => {
     setSelectedQuestion(question);
     setAnswer(question.answer || '');
     setAnswerStatus(question.answer_status || 'answered');
+    // Parse existing categories if any
+    const existingCategories = question.category ? question.category.split(',') : [];
+    setSelectedCategories(existingCategories);
     setIsAnswerDialogOpen(true);
+  };
+
+  const handleSelectAllCategories = () => {
+    setSelectedCategories(categoryOptions.map(option => option.value));
+  };
+
+  const handleDeselectAllCategories = () => {
+    setSelectedCategories([]);
   };
 
   const openReturnDialog = (question: Question) => {
@@ -578,35 +618,81 @@ const QnaQuestionManagement = () => {
           </DialogHeader>
           {selectedQuestion && (
             <div className="space-y-4">
-              <div>
-                <Label>Soru</Label>
-                <div className="bg-gray-50 p-3 rounded-md mt-1">
-                  {selectedQuestion.question}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="answer">Cevap</Label>
-                <Textarea
-                  id="answer"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Cevabınızı buraya yazın..."
-                  rows={6}
-                />
-              </div>
-              <div>
-                <Label>Durum</Label>
-                <Select value={answerStatus} onValueChange={setAnswerStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="answered">Cevaplandı</SelectItem>
-                    <SelectItem value="returned">İade Edildi</SelectItem>
-                    <SelectItem value="approved">Onaylandı</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+               <div>
+                 <Label>Soru</Label>
+                 <div className="bg-gray-50 p-3 rounded-md mt-1">
+                   {selectedQuestion.question}
+                 </div>
+               </div>
+               
+               {selectedQuestion.answered_by_full_name && (
+                 <div>
+                   <Label>Yanıtlayan YDO Kullanıcısı</Label>
+                   <div className="bg-blue-50 p-3 rounded-md mt-1 font-medium">
+                     {selectedQuestion.answered_by_full_name}
+                   </div>
+                 </div>
+               )}
+               
+               <div>
+                 <Label htmlFor="answer">Cevap</Label>
+                 <Textarea
+                   id="answer"
+                   value={answer}
+                   onChange={(e) => setAnswer(e.target.value)}
+                   placeholder="Cevabınızı buraya yazın..."
+                   rows={6}
+                 />
+               </div>
+               
+               <div>
+                 <Label>Kategori Etiketleri</Label>
+                 <div className="space-y-3">
+                   <div className="flex gap-2">
+                     <Button
+                       type="button"
+                       variant="outline"
+                       size="sm"
+                       onClick={handleSelectAllCategories}
+                       className="text-xs"
+                     >
+                       Tümünü Seç
+                     </Button>
+                     <Button
+                       type="button"
+                       variant="outline"
+                       size="sm"
+                       onClick={handleDeselectAllCategories}
+                       className="text-xs"
+                     >
+                       Tümünü Kaldır
+                     </Button>
+                   </div>
+                   <MultiSelect
+                     options={categoryOptions}
+                     selected={selectedCategories}
+                     onChange={setSelectedCategories}
+                     placeholder="Kategori seçin..."
+                     searchPlaceholder="Kategori ara..."
+                     emptyText="Kategori bulunamadı."
+                     maxDisplay={3}
+                   />
+                 </div>
+               </div>
+               
+               <div>
+                 <Label>Durum</Label>
+                 <Select value={answerStatus} onValueChange={setAnswerStatus}>
+                   <SelectTrigger>
+                     <SelectValue />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="answered">Cevaplandı</SelectItem>
+                     <SelectItem value="returned">İade Edildi</SelectItem>
+                     <SelectItem value="approved">Onaylandı</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsAnswerDialogOpen(false)}>
                   İptal
