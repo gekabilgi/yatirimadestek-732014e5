@@ -353,157 +353,155 @@ const QnaQuestionManagement = () => {
   console.log('🎨 Rendering component with questions:', questions.length);
 
   return (
-   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-8 lg:p-12 mt-16">
-        <div className="max-w-7xl mx-auto space-y-8">
-        <Card className="border-0 shadow-none bg-transparent">
-          <CardHeader className="pb-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
-                  <MessageSquare className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl font-bold text-slate-800">
-                    Soru & Cevap Yönetimi
-                  </CardTitle>
-                  <p className="text-slate-600 mt-1">Soruları yönetin ve cevapları onaylayın</p>
-                </div>
+    <div className="max-w-6xl mx-auto">
+      <Card className="border-0 shadow-none bg-transparent">
+        <CardHeader className="pb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
+                <MessageSquare className="h-6 w-6 text-white" />
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Soru ara..."
-                    className="pl-10 h-11 w-full sm:w-64 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
-                  />
-                </div>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="h-11 w-full sm:w-40 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
-                    <SelectValue placeholder="Durum Filtrele" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="all">Tümü</SelectItem>
-                    <SelectItem value="unanswered">Cevaplanmadı</SelectItem>
-                    <SelectItem value="answered">Cevaplandı</SelectItem>
-                    <SelectItem value="returned">İade Edildi</SelectItem>
-                    <SelectItem value="approved">Onaylandı</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div>
+                <CardTitle className="text-2xl font-bold text-slate-800">
+                  Soru & Cevap Yönetimi
+                </CardTitle>
+                <p className="text-slate-600 mt-1">Soruları yönetin ve cevapları onaylayın</p>
               </div>
             </div>
-          </CardHeader>
-          
-          <CardContent>
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                <p className="text-slate-600 mt-4 text-lg">Yükleniyor...</p>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Soru ara..."
+                  className="pl-10 h-11 w-full sm:w-64 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                />
               </div>
-            ) : (
-              <div className="overflow-y-auto max-h-[calc(95vh-120px)] pr-2">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-slate-200">
-                      <TableHead className="font-semibold text-slate-700">Soru No</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Soru & Soru Sahibi</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Durum</TableHead>
-                      <TableHead className="font-semibold text-slate-700 text-right">İşlemler</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {questions.map((question) => (
-                      <TableRow key={question.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
-                        <TableCell>
-                          <div className="font-mono text-sm font-medium text-blue-600">
-                            #{question.question_number || 'N/A'}
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-11 w-full sm:w-40 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                  <SelectValue placeholder="Durum Filtrele" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="all">Tümü</SelectItem>
+                  <SelectItem value="unanswered">Cevaplanmadı</SelectItem>
+                  <SelectItem value="answered">Cevaplandı</SelectItem>
+                  <SelectItem value="returned">İade Edildi</SelectItem>
+                  <SelectItem value="approved">Onaylandı</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+          
+        <CardContent>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              <p className="text-slate-600 mt-4 text-lg">Yükleniyor...</p>
+            </div>
+          ) : (
+            <div className="overflow-y-auto max-h-[calc(95vh-120px)] pr-2">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-200">
+                    <TableHead className="font-semibold text-slate-700">Soru No</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Soru & Soru Sahibi</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Durum</TableHead>
+                    <TableHead className="font-semibold text-slate-700 text-right">İşlemler</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {questions.map((question) => (
+                    <TableRow key={question.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
+                      <TableCell>
+                        <div className="font-mono text-sm font-medium text-blue-600">
+                          #{question.question_number || 'N/A'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-md">
+                        <div className="space-y-2">
+                          <div className="font-medium text-slate-900 truncate" title={question.question}>
+                            {question.question}
                           </div>
-                        </TableCell>
-                        <TableCell className="max-w-md">
-                          <div className="space-y-2">
-                            <div className="font-medium text-slate-900 truncate" title={question.question}>
-                              {question.question}
-                            </div>
-                            <div className="flex flex-wrap gap-2 items-center">
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                {question.full_name}
+                          <div className="flex flex-wrap gap-2 items-center">
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              {question.full_name}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              {question.province}
+                            </Badge>
+                            {question.answered_by_full_name && (
+                              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                Yanıtlayan: {question.answered_by_full_name}
                               </Badge>
-                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                {question.province}
-                              </Badge>
-                              {question.answered_by_full_name && (
-                                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
-                                  Yanıtlayan: {question.answered_by_full_name}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {new Date(question.created_at).toLocaleDateString('tr-TR')} • {question.email}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(question.answer_status)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openViewDialog(question)}
-                              className="h-8 w-8 p-0 bg-white/80 hover:bg-blue-50 hover:border-blue-200 transition-colors"
-                            >
-                              <Eye className="h-4 w-4 text-blue-600" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openAnswerDialog(question)}
-                              className="h-8 w-8 p-0 bg-white/80 hover:bg-orange-50 hover:border-orange-200 transition-colors"
-                            >
-                              <Edit className="h-4 w-4 text-orange-600" />
-                            </Button>
-                            {question.answer && (question.answer_status === 'answered' || question.answer_status === 'corrected') && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleApproveAndSend(question)}
-                                  className="h-8 w-8 p-0 bg-white/80 hover:bg-green-50 hover:border-green-200 transition-colors"
-                                >
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openReturnDialog(question)}
-                                  className="h-8 w-8 p-0 bg-white/80 hover:bg-red-50 hover:border-red-200 transition-colors"
-                                >
-                                  <ArrowLeft className="h-4 w-4 text-red-600" />
-                                </Button>
-                              </>
                             )}
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                
-                {questions.length === 0 && (
-                  <div className="text-center py-16">
-                    <MessageSquare className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-600 text-lg mb-2">
-                      {filterStatus === 'all' ? 'Henüz soru bulunmamaktadır' : 'Bu durumda soru bulunmamaktadır'}
-                    </p>
-                    <p className="text-slate-500">Sorular geldiğinde burada görünecektir.</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                          <div className="text-xs text-slate-500">
+                            {new Date(question.created_at).toLocaleDateString('tr-TR')} • {question.email}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(question.answer_status)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openViewDialog(question)}
+                            className="h-8 w-8 p-0 bg-white/80 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                          >
+                            <Eye className="h-4 w-4 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openAnswerDialog(question)}
+                            className="h-8 w-8 p-0 bg-white/80 hover:bg-orange-50 hover:border-orange-200 transition-colors"
+                          >
+                            <Edit className="h-4 w-4 text-orange-600" />
+                          </Button>
+                          {question.answer && (question.answer_status === 'answered' || question.answer_status === 'corrected') && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleApproveAndSend(question)}
+                                className="h-8 w-8 p-0 bg-white/80 hover:bg-green-50 hover:border-green-200 transition-colors"
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openReturnDialog(question)}
+                                className="h-8 w-8 p-0 bg-white/80 hover:bg-red-50 hover:border-red-200 transition-colors"
+                              >
+                                <ArrowLeft className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {questions.length === 0 && (
+                <div className="text-center py-16">
+                  <MessageSquare className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-600 text-lg mb-2">
+                    {filterStatus === 'all' ? 'Henüz soru bulunmamaktadır' : 'Bu durumda soru bulunmamaktadır'}
+                  </p>
+                  <p className="text-slate-500">Sorular geldiğinde burada görünecektir.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* View Question Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
