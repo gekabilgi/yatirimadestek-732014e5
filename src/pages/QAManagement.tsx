@@ -11,7 +11,8 @@ const QAManagement = () => {
     <AdminLayout>
       <div className="space-y-4 lg:space-y-6 mt-16">
         <div className="px-2 lg:px-0">
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Q&A Management</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">
+                Q&A Management</h1>
           <p className="text-gray-600 mt-2 text-sm lg:text-base">Manage Q&A system and admin email notifications</p>
         </div>
         
