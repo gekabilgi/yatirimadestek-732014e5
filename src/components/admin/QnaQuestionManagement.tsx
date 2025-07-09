@@ -375,9 +375,11 @@ const QnaQuestionManagement = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Soru No</TableHead>
                 <TableHead>Soru Sahibi</TableHead>
                 <TableHead>İl</TableHead>
                 <TableHead>Soru</TableHead>
+                <TableHead>Yanıtlayan</TableHead>
                 <TableHead>Durum</TableHead>
                 <TableHead>Tarih</TableHead>
                 <TableHead>İşlemler</TableHead>
@@ -386,6 +388,11 @@ const QnaQuestionManagement = () => {
             <TableBody>
               {questions.map((question) => (
                 <TableRow key={question.id}>
+                  <TableCell>
+                    <div className="font-mono text-sm">
+                      #{question.question_number || 'N/A'}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">{question.full_name}</span>
@@ -401,6 +408,15 @@ const QnaQuestionManagement = () => {
                   <TableCell className="max-w-xs">
                     <div className="truncate" title={question.question}>
                       {question.question}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {question.answered_by_full_name ? (
+                        <span className="font-medium">{question.answered_by_full_name}</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -471,6 +487,10 @@ const QnaQuestionManagement = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <Label>Soru No</Label>
+                  <p className="text-sm font-mono">#{selectedQuestion.question_number || 'N/A'}</p>
+                </div>
+                <div>
                   <Label>Ad Soyad</Label>
                   <p className="text-sm">{selectedQuestion.full_name}</p>
                 </div>
@@ -485,6 +505,10 @@ const QnaQuestionManagement = () => {
                 <div>
                   <Label>İl</Label>
                   <p className="text-sm">{selectedQuestion.province}</p>
+                </div>
+                <div>
+                  <Label>Yanıtlayan</Label>
+                  <p className="text-sm">{selectedQuestion.answered_by_full_name || 'Henüz yanıtlanmadı'}</p>
                 </div>
               </div>
               <div>

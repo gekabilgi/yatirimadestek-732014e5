@@ -298,7 +298,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      const { questionId, answer, isCorrection } = questionData;
+      const { questionId, answer, isCorrection, ydoFullName } = questionData;
 
       const newStatus = isCorrection ? 'corrected' : 'answered';
       const { error: updateError } = await supabase
@@ -308,7 +308,8 @@ const handler = async (req: Request): Promise<Response> => {
           answered: true,
           answer_date: new Date().toISOString(),
           answer_status: newStatus,
-          admin_sent: false
+          admin_sent: false,
+          answered_by_full_name: ydoFullName?.trim() || null
         })
         .eq('id', questionId);
 

@@ -21,6 +21,7 @@ const YdoSecureAccess = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [ydoFullName, setYdoFullName] = useState('');
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -83,16 +84,18 @@ const YdoSecureAccess = () => {
   const handleAnswerQuestion = (question: Question) => {
     setSelectedQuestion(question);
     setAnswer(question.answer || '');
+    setYdoFullName('');
   };
 
   const handleViewQuestion = (question: Question) => {
     setSelectedQuestion(question);
     setAnswer(question.answer || '');
+    setYdoFullName(question.answered_by_full_name || '');
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedQuestion || !answer.trim() || !tokenData) {
-      toast.error('Please provide an answer');
+    if (!selectedQuestion || !answer.trim() || !ydoFullName.trim() || !tokenData) {
+      toast.error('Lütfen yanıt ve tam adınızı girin');
       return;
     }
 
@@ -113,7 +116,8 @@ const YdoSecureAccess = () => {
             full_name: selectedQuestion.full_name,
             email: selectedQuestion.email,
             province: selectedQuestion.province,
-            question: selectedQuestion.question
+            question: selectedQuestion.question,
+            ydoFullName: ydoFullName.trim()
           }
         }
       });
@@ -133,6 +137,7 @@ const YdoSecureAccess = () => {
       toast.success(successMessage);
       setSelectedQuestion(null);
       setAnswer('');
+      setYdoFullName('');
       
       if (token) {
         loadQuestions(token);
@@ -248,6 +253,22 @@ const YdoSecureAccess = () => {
                 </div>
               )}
 
+              {canEdit && (
+                <div>
+                  <Label htmlFor="ydoFullName" className="text-sm font-medium">
+                    Tam Adınız *
+                  </Label>
+                  <input
+                    id="ydoFullName"
+                    type="text"
+                    value={ydoFullName}
+                    onChange={(e) => setYdoFullName(e.target.value)}
+                    placeholder="Tam adınızı girin..."
+                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="answer" className="text-sm font-medium">
                   Yanıt {canEdit && '*'}
@@ -263,11 +284,19 @@ const YdoSecureAccess = () => {
                 />
               </div>
 
+              {!canEdit && selectedQuestion?.answered_by_full_name && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-700">
+                    Bu soruyu yanıtlayan: <strong>{selectedQuestion.answered_by_full_name}</strong>
+                  </p>
+                </div>
+              )}
+
               {canEdit && (
                 <div className="flex gap-4">
                   <Button
                     onClick={handleSubmitAnswer}
-                    disabled={submitting || !answer.trim()}
+                    disabled={submitting || !answer.trim() || !ydoFullName.trim()}
                     className="flex-1"
                   >
                     {submitting ? (

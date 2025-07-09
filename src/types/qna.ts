@@ -21,6 +21,8 @@ export interface Question {
   return_reason: string | null;
   admin_sent: boolean | null;
   return_date: string | null;
+  question_number: number | null;
+  answered_by_full_name: string | null;
 }
 
 export interface YdoUser {
