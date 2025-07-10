@@ -286,6 +286,7 @@ const QnaQuestionManagement = () => {
         .from('soru_cevap')
         .update({
           answer_status: 'returned',
+          return_status: 'returned',
           return_reason: returnReason.trim(),
           return_date: new Date().toISOString(),
           admin_sent: false

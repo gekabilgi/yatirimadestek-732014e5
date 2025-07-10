@@ -301,16 +301,23 @@ const handler = async (req: Request): Promise<Response> => {
       const { questionId, answer, isCorrection, ydoFullName } = questionData;
 
       const newStatus = isCorrection ? 'corrected' : 'answered';
+      const updateData: any = {
+        answer: answer.trim(),
+        answered: true,
+        answer_date: new Date().toISOString(),
+        answer_status: newStatus,
+        admin_sent: false,
+        answered_by_full_name: ydoFullName?.trim() || null
+      };
+      
+      // Set return_status when it's a correction
+      if (isCorrection) {
+        updateData.return_status = 'corrected';
+      }
+      
       const { error: updateError } = await supabase
         .from('soru_cevap')
-        .update({
-          answer: answer.trim(),
-          answered: true,
-          answer_date: new Date().toISOString(),
-          answer_status: newStatus,
-          admin_sent: false,
-          answered_by_full_name: ydoFullName?.trim() || null
-        })
+        .update(updateData)
         .eq('id', questionId);
 
       if (updateError) {
