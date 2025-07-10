@@ -358,7 +358,8 @@ const handler = async (req: Request): Promise<Response> => {
           phone: questionData.phone,
           province: questionData.province,
           question: questionData.question,
-          answer_status: 'unanswered'
+          answer_status: 'unanswered',
+          sent_to_ydo: true
         }])
         .select()
         .single();
