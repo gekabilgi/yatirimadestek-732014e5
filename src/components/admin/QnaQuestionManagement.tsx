@@ -280,23 +280,32 @@ const QnaQuestionManagement = () => {
 
     try {
       console.log('Returning answer to YDO for question:', selectedQuestion.id);
+      console.log('Current question return_status before update:', selectedQuestion.return_status);
+      
+      const updateData = {
+        answer_status: 'returned' as const,
+        return_status: 'returned' as const,
+        return_reason: returnReason.trim(),
+        return_date: new Date().toISOString(),
+        admin_sent: false
+      };
+      
+      console.log('Update data being sent:', updateData);
       
       // Update status to returned
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('soru_cevap')
-        .update({
-          answer_status: 'returned',
-          return_status: 'returned',
-          return_reason: returnReason.trim(),
-          return_date: new Date().toISOString(),
-          admin_sent: false
-        })
-        .eq('id', selectedQuestion.id);
+        .update(updateData)
+        .eq('id', selectedQuestion.id)
+        .select('return_status, answer_status');
 
-      if (updateError) {
-        console.error('Error updating question status:', updateError);
-        throw updateError;
-      }
+       if (updateError) {
+         console.error('Error updating question status:', updateError);
+         throw updateError;
+       }
+
+       console.log('Database update successful. Updated data:', data);
+       console.log('Question return_status after update:', data?.[0]?.return_status);
 
       console.log('Sending return notification...');
       // Send notification to YDO users
