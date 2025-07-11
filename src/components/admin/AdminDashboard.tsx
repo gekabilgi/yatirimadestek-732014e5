@@ -20,16 +20,36 @@ const AdminDashboard = () => {
   const { data: qnaStats } = useQuery({
     queryKey: ['qna-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get total count
+      const { count: total, error: totalError } = await supabase
         .from('soru_cevap')
-        .select('answered, sent_to_user, created_at');
+        .select('*', { count: 'exact', head: true });
       
-      if (error) throw error;
+      if (totalError) throw totalError;
+
+      // Get answered count
+      const { count: answered, error: answeredError } = await supabase
+        .from('soru_cevap')
+        .select('*', { count: 'exact', head: true })
+        .eq('answered', true);
       
-      const total = data.length;
-      const answered = data.filter(q => q.answered).length;
-      const sentToUser = data.filter(q => q.sent_to_user).length;
-      const pending = data.filter(q => !q.answered).length;
+      if (answeredError) throw answeredError;
+
+      // Get sent to user count
+      const { count: sentToUser, error: sentToUserError } = await supabase
+        .from('soru_cevap')
+        .select('*', { count: 'exact', head: true })
+        .eq('sent_to_user', true);
+      
+      if (sentToUserError) throw sentToUserError;
+
+      // Get pending count
+      const { count: pending, error: pendingError } = await supabase
+        .from('soru_cevap')
+        .select('*', { count: 'exact', head: true })
+        .eq('answered', false);
+      
+      if (pendingError) throw pendingError;
       
       return { total, answered, sentToUser, pending };
     },
@@ -90,51 +110,43 @@ const AdminDashboard = () => {
 
       {/* Soru & Cevap Durumu */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Soru & Cevap Durumu</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Sorular</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Soru & Cevap Durumu
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{qnaStats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">Sistem geneli</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{qnaStats?.total || 0}</div>
+                <p className="text-sm text-muted-foreground">Toplam Soru</p>
+                <p className="text-xs text-muted-foreground">Sistem geneli</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{qnaStats?.answered || 0}</div>
+                <p className="text-sm text-muted-foreground">Cevaplanmış</p>
+                <p className="text-xs text-muted-foreground">YDO tarafından</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{qnaStats?.sentToUser || 0}</div>
+                <p className="text-sm text-muted-foreground">Sorana Gönderilen</p>
+                <p className="text-xs text-muted-foreground">Onaylanmış cevaplar</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{qnaStats?.pending || 0}</div>
+                <p className="text-sm text-muted-foreground">Bekleyen</p>
+                <p className="text-xs text-muted-foreground">Yanıt bekliyor</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cevaplanmış</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{qnaStats?.answered || 0}</div>
-            <p className="text-xs text-muted-foreground">YDO tarafından</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sorana Gönderilen</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{qnaStats?.sentToUser || 0}</div>
-            <p className="text-xs text-muted-foreground">Onaylanmış cevaplar</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bekleyen</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{qnaStats?.pending || 0}</div>
-            <p className="text-xs text-muted-foreground">Yanıt bekliyor</p>
-          </CardContent>
-        </Card>
+      {/* Other Stats */}
+      <div className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
