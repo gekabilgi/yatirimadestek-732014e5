@@ -12,9 +12,11 @@ const AnsweredQuestionsSection = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [totalAnsweredCount, setTotalAnsweredCount] = useState(0);
 
   useEffect(() => {
     fetchAnsweredQuestions();
+    fetchTotalAnsweredCount();
   }, []);
 
   const fetchAnsweredQuestions = async () => {
@@ -37,6 +39,24 @@ const AnsweredQuestionsSection = () => {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTotalAnsweredCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('soru_cevap')
+        .select('*', { count: 'exact', head: true })
+        .eq('sent_to_user', true);
+
+      if (error) {
+        console.error('Error fetching total answered count:', error);
+        return;
+      }
+
+      setTotalAnsweredCount(count || 0);
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 
@@ -103,7 +123,7 @@ const AnsweredQuestionsSection = () => {
           {/* Results Count */}
           <div className="text-center mb-6">
             <Badge variant="outline" className="text-lg px-4 py-2">
-              {filteredQuestions.length} yanıtlanmış soru bulundu
+              {searchTerm ? `${filteredQuestions.length} sonuç bulundu` : `${totalAnsweredCount} yanıtlanmış soru bulundu`}
             </Badge>
           </div>
         </div>

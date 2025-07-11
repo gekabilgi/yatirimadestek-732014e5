@@ -22,18 +22,16 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('soru_cevap')
-        .select('answered, created_at');
+        .select('answered, sent_to_user, created_at');
       
       if (error) throw error;
       
       const total = data.length;
       const answered = data.filter(q => q.answered).length;
-      const unanswered = total - answered;
-      const thisMonth = data.filter(q => 
-        new Date(q.created_at).getMonth() === new Date().getMonth()
-      ).length;
+      const sentToUser = data.filter(q => q.sent_to_user).length;
+      const pending = data.filter(q => !q.answered).length;
       
-      return { total, answered, unanswered, thisMonth };
+      return { total, answered, sentToUser, pending };
     },
   });
 
@@ -90,8 +88,10 @@ const AdminDashboard = () => {
         <p className="text-gray-600">Sistem durumu ve hızlı erişim</p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Soru & Cevap Durumu */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Soru & Cevap Durumu</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Toplam Sorular</CardTitle>
@@ -99,9 +99,40 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{qnaStats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Bu ay {qnaStats?.thisMonth || 0} yeni
-            </p>
+            <p className="text-xs text-muted-foreground">Sistem geneli</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cevaplanmış</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{qnaStats?.answered || 0}</div>
+            <p className="text-xs text-muted-foreground">YDO tarafından</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Sorana Gönderilen</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{qnaStats?.sentToUser || 0}</div>
+            <p className="text-xs text-muted-foreground">Onaylanmış cevaplar</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bekleyen</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{qnaStats?.pending || 0}</div>
+            <p className="text-xs text-muted-foreground">Yanıt bekliyor</p>
           </CardContent>
         </Card>
 
@@ -139,6 +170,7 @@ const AdminDashboard = () => {
             <p className="text-xs text-muted-foreground">Tanımlanmış terim</p>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Main Content Grid */}
@@ -170,26 +202,6 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Soru & Cevap Durumu
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Cevaplanmış</span>
-                    <span className="font-bold text-green-600">{qnaStats?.answered || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Bekleyen</span>
-                    <span className="font-bold text-orange-600">{qnaStats?.unanswered || 0}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Quick Actions */}
