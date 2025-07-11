@@ -109,45 +109,41 @@ const AdminDashboard = () => {
       </div>
 
       {/* Soru & Cevap Durumu */}
-      <div className="mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Soru & Cevap Durumu
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{qnaStats?.total || 0}</div>
-                <p className="text-sm text-muted-foreground">Toplam Soru</p>
-                <p className="text-xs text-muted-foreground">Sistem geneli</p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{qnaStats?.answered || 0}</div>
-                <p className="text-sm text-muted-foreground">Cevaplanmış</p>
-                <p className="text-xs text-muted-foreground">YDO tarafından</p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{qnaStats?.sentToUser || 0}</div>
-                <p className="text-sm text-muted-foreground">Sorana Gönderilen</p>
-                <p className="text-xs text-muted-foreground">Onaylanmış cevaplar</p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{qnaStats?.pending || 0}</div>
-                <p className="text-sm text-muted-foreground">Bekleyen</p>
-                <p className="text-xs text-muted-foreground">Yanıt bekliyor</p>
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Soru & Cevap Durumu
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{qnaStats?.total || 0}</div>
+              <p className="text-sm text-muted-foreground">Toplam Soru</p>
+              <p className="text-xs text-muted-foreground">Sistem geneli</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{qnaStats?.answered || 0}</div>
+              <p className="text-sm text-muted-foreground">Cevaplanmış</p>
+              <p className="text-xs text-muted-foreground">YDO tarafından</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{qnaStats?.sentToUser || 0}</div>
+              <p className="text-sm text-muted-foreground">Sorana Gönderilen</p>
+              <p className="text-xs text-muted-foreground">Onaylanmış cevaplar</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{qnaStats?.pending || 0}</div>
+              <p className="text-sm text-muted-foreground">Bekleyen</p>
+              <p className="text-xs text-muted-foreground">Yanıt bekliyor</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Other Stats */}
-      <div className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Fizibilite Raporları</CardTitle>
@@ -182,41 +178,27 @@ const AdminDashboard = () => {
             <p className="text-xs text-muted-foreground">Tanımlanmış terim</p>
           </CardContent>
         </Card>
-        </div>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Yatırım İstatistikleri</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold">
+              {feasibilityStats?.totalInvestment?.toLocaleString('tr-TR') || 0} TL
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {feasibilityStats?.totalEmployment || 0} kişi istihdam
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Investment Stats and Q&A Status */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Investment Stats and Q&A Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Yatırım İstatistikleri
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Toplam Yatırım Tutarı</span>
-                    <span className="font-bold">
-                      {feasibilityStats?.totalInvestment?.toLocaleString('tr-TR') || 0} TL
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Toplam İstihdam</span>
-                    <span className="font-bold">{feasibilityStats?.totalEmployment || 0} kişi</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-          </div>
-
-          {/* Quick Actions */}
+        {/* Left Column - Quick Actions */}
+        <div className="lg:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
