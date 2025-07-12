@@ -1,14 +1,38 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Users, Clock, CheckCircle } from 'lucide-react';
 import SoruSorModal from './SoruSorModal';
+import { supabase } from '@/integrations/supabase/client';
 
 const QnaSection = () => {
+  const [averageResponseTime, setAverageResponseTime] = useState("Hesaplanıyor...");
+
+  useEffect(() => {
+    const fetchAverageResponseTime = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('calculate-avg-response-time');
+        
+        if (error) {
+          console.error('Error fetching average response time:', error);
+          setAverageResponseTime("24 saat");
+          return;
+        }
+
+        setAverageResponseTime(data.averageResponseTime || "24 saat");
+      } catch (error) {
+        console.error('Error calling average response time function:', error);
+        setAverageResponseTime("24 saat");
+      }
+    };
+
+    fetchAverageResponseTime();
+  }, []);
+
   const stats = [
     { label: "Toplam Soru", value: "2.450+", icon: MessageSquare },
     { label: "Aktif Uzman", value: "50+", icon: Users },
-    { label: "Ortalama Yanıt Süresi", value: "24 saat", icon: Clock },
+    { label: "Ortalama Yanıt Süresi", value: averageResponseTime, icon: Clock },
     { label: "Yanıtlanan Sorular", value: "%95", icon: CheckCircle },
   ];
 
