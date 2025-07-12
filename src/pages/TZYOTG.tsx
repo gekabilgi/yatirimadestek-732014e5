@@ -28,7 +28,7 @@ const formSchema = z.object({
     .min(1, 'Unvan zorunludur')
     .max(255, 'Unvan en fazla 255 karakter olabilir'),
   telefon: z.string()
-    .regex(/^[1-9]\d{9}$/, 'Telefon numarası 10 haneli olmalı ve 0 ile başlamamalıdır'),
+    .regex(/^[1-9][0-9]{2}\s[0-9]{3}\s[0-9]{2}\s[0-9]{2}$/, 'Telefon numarası format: 532 123 45 67'),
   e_posta: z.string()
     .email('Geçerli bir e-posta adresi giriniz'),
   talep_icerigi: z.string()
@@ -375,12 +375,12 @@ const TZYOTG = () => {
                         <FormControl>
                           <Input 
                             {...field} 
-                            placeholder="5301234567"
-                            maxLength={10}
+                            placeholder="532 123 45 67"
+                            maxLength={13}
                           />
                         </FormControl>
                         <FormDescription>
-                          10 haneli telefon numarası (0 olmadan)
+                          Format: 532 123 45 67 (boşluklarla birlikte)
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
