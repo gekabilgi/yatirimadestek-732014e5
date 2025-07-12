@@ -478,6 +478,7 @@ export type Database = {
           id: string
           iletisim_kisisi: string
           logo_url: string | null
+          on_request_id: string | null
           status: string | null
           talep_icerigi: string
           telefon: string
@@ -494,6 +495,7 @@ export type Database = {
           id?: string
           iletisim_kisisi: string
           logo_url?: string | null
+          on_request_id?: string | null
           status?: string | null
           talep_icerigi: string
           telefon: string
@@ -510,6 +512,7 @@ export type Database = {
           id?: string
           iletisim_kisisi?: string
           logo_url?: string | null
+          on_request_id?: string | null
           status?: string | null
           talep_icerigi?: string
           telefon?: string
