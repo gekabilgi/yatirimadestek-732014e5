@@ -38,7 +38,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Generate 6-digit random characters for the tracking URL
     const randomCode = generateRandomString(6);
-    const trackingUrl = `https://www.tesviksor.com/tzy/kayitli-talepler/${taxId}-${randomCode}`;
+    const trackingUrl = `https://www.tesviksor.com/tzyotg`;
 
     const emailData = {
       sender: {
@@ -51,14 +51,14 @@ const handler = async (req: Request): Promise<Response> => {
           name: contactPerson
         }
       ],
-      subject: `Supply Chain Localization Pre-Request ${requestId}`,
+      subject: `Tedarik Zinciri Yerlileştirme Ön Talep ${requestId}`,
       htmlContent: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Supply Chain Localization Pre-Request Confirmation</title>
+          <title>Tedarik Zinciri Yerlileştirme Ön Talep Onayı</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -112,47 +112,47 @@ const handler = async (req: Request): Promise<Response> => {
         </head>
         <body>
           <div class="header">
-            <h1>Supply Chain Localization</h1>
-            <p>Pre-Request Confirmation</p>
+            <h1>Tedarik Zinciri Yerlileştirme</h1>
+            <p>Ön Talep Onayı</p>
           </div>
           
           <div class="content">
-            <p>Dear <strong>${contactPerson}</strong>,</p>
+            <p>Sayın <strong>${contactPerson}</strong>,</p>
             
             <div class="highlight">
-              <p><strong>Your Supply Chain Localization Pre-Request submitted via the Investment Support Platform (tesviksor.com) has been received.</strong></p>
+              <p><strong>Yatırım Destek Platformu (tesviksor.com) üzerinden göndermiş olduğunuz Tedarik Zinciri Yerlileştirme Ön Talebiniz alınmıştır.</strong></p>
             </div>
             
-            <p>Your request will be evaluated, and you will be contacted shortly.</p>
+            <p>Talebiniz değerlendirilerek, en kısa sürede sizinle iletişime geçilecektir.</p>
             
-            <p><strong>Request Details:</strong></p>
+            <p><strong>Talep Detayları:</strong></p>
             <ul>
-              <li>Request ID: ${requestId}</li>
-              <li>Company: ${companyName}</li>
-              <li>Contact Person: ${contactPerson}</li>
-              <li>Submission Date: ${new Date().toLocaleDateString('tr-TR')}</li>
+              <li>Talep No: ${requestId}</li>
+              <li>Firma: ${companyName}</li>
+              <li>İletişim Kişisi: ${contactPerson}</li>
+              <li>Gönderim Tarihi: ${new Date().toLocaleDateString('tr-TR')}</li>
             </ul>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${trackingUrl}" class="button">YOUR SUBMITTED REQUESTS</a>
+              <a href="${trackingUrl}" class="button">YENİ TALEP OLUŞTUR</a>
             </div>
             
-            <p><strong>Next Steps:</strong></p>
+            <p><strong>Sonraki Adımlar:</strong></p>
             <ul>
-              <li>Our expert team will evaluate your request</li>
-              <li>Suitable suppliers will be identified and shared with you</li>
-              <li>You will receive informational emails about the process</li>
+              <li>Uzman ekibimiz talebinizi değerlendirecek</li>
+              <li>Uygun tedarikçiler tespit edilerek sizinle paylaşılacak</li>
+              <li>Süreç hakkında bilgilendirme e-postaları alacaksınız</li>
             </ul>
             
-            <p>Thank you for using our platform.</p>
+            <p>Platformumuzu kullandığınız için teşekkür ederiz.</p>
             
-            <p>Best regards,<br>
-            <strong>Teşviksor Investment Support Platform</strong></p>
+            <p>Saygılarımızla,<br>
+            <strong>Teşviksor Yatırım Destek Platformu</strong></p>
           </div>
           
           <div class="footer">
-            <p>This is an automated message. Please do not reply to this email.</p>
-            <p>© 2024 Teşviksor. All rights reserved.</p>
+            <p>Bu otomatik bir mesajdır. Lütfen bu e-postaya yanıt vermeyiniz.</p>
+            <p>© 2024 Teşviksor. Tüm hakları saklıdır.</p>
           </div>
         </body>
         </html>
