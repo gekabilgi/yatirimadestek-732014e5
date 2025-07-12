@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Users, Clock, CheckCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { MessageSquare, Users, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import SoruSorModal from './SoruSorModal';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -83,28 +84,40 @@ const QnaSection = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
-          {stats.map((stat, index) => {
-            const IconComponent = stat.icon;
-            return (
-              <Card key={index} className="border-0 shadow-md bg-white/60 backdrop-blur-sm">
-                <CardContent className="p-6 text-center">
-                  <div className="flex justify-center mb-3">
-                    <div className="rounded-lg bg-primary/10 p-3">
-                      <IconComponent className="h-6 w-6 text-primary" />
+        <TooltipProvider>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+            {stats.map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <Card key={index} className="border-0 shadow-md bg-white/60 backdrop-blur-sm">
+                  <CardContent className="p-6 text-center">
+                    <div className="flex justify-center mb-3">
+                      <div className="rounded-lg bg-primary/10 p-3">
+                        <IconComponent className="h-6 w-6 text-primary" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {stat.label}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                      {stat.value}
+                    </div>
+                    <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
+                      {stat.label}
+                      {stat.label === "Yanıtlanan Sorular" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertCircle className="h-3 w-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Yanıtlanmasına gerek duyulmayan cevaplar yayımlanmamıştır</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TooltipProvider>
 
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
