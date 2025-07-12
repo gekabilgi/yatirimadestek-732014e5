@@ -241,11 +241,15 @@ const TZYOTG = () => {
       // Upload files
       const documentsUrl = await uploadFiles();
 
+      // Generate random 6-digit code and append to VKN
+      const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const uniqueVkn = `${data.vergi_kimlik_no}-${randomCode}`;
+
       // Submit form data
       const { data: insertData, error } = await supabase
         .from('pre_requests')
         .insert({
-          vergi_kimlik_no: data.vergi_kimlik_no,
+          vergi_kimlik_no: uniqueVkn,
           firma_adi: data.firma_adi,
           iletisim_kisisi: data.iletisim_kisisi,
           unvan: data.unvan,
