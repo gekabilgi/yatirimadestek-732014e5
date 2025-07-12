@@ -38,7 +38,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Generate 6-digit random characters for the tracking URL
     const randomCode = generateRandomString(6);
-    const trackingUrl = `https://www.tesviksor.com/tzyotg`;
+    const trackingUrl = `https://www.tesviksor.com/tzy/kayitli-talepler/${taxId}/${randomCode}`;
 
     const emailData = {
       sender: {
