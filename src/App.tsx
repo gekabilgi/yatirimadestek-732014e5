@@ -29,6 +29,7 @@ import TZY from "./pages/TZY";
 import TZYOTG from "./pages/TZYOTG";
 import TZYOTGBasarili from "./pages/TZYOTGBasarili";
 import TZYOTGBasarisiz from "./pages/TZYOTGBasarisiz";
+import TZYKayitliTalepler from "./pages/TZYKayitliTalepler";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,7 @@ const App = () => {
               <Route path="/tzyotg" element={<TZYOTG />} />
               <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
               <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
+              <Route path="/tzy/kayitli-talepler/:taxId/:code" element={<TZYKayitliTalepler />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
