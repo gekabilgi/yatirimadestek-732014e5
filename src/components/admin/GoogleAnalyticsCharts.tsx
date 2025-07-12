@@ -135,20 +135,30 @@ const GoogleAnalyticsCharts = () => {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={analyticsData?.dailyPageViews || []}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getDate()}/${date.getMonth() + 1}`;
-                  }}
-                />
+                <XAxis 
+  dataKey="date" 
+  tickFormatter={(value) => {
+    if (typeof value === 'string' && /^\d{8}$/.test(value)) {
+      const year = value.substring(0, 4);
+      const month = value.substring(4, 6);
+      const day = value.substring(6, 8);
+      return `${day}/${month}`;
+    }
+    return value;
+  }}
+/>
                 <YAxis />
-                <Tooltip
-                  labelFormatter={(value) => {
-                    const date = new Date(value);
-                    return date.toLocaleDateString('tr-TR');
-                  }}
-                />
+                <Tooltip 
+  labelFormatter={(value) => {
+    if (typeof value === 'string' && /^\d{8}$/.test(value)) {
+      const year = value.substring(0, 4);
+      const month = value.substring(4, 6);
+      const day = value.substring(6, 8);
+      return `${day}.${month}.${year}`;
+    }
+    return value;
+  }}
+/>
                 <Line
                   type="monotone"
                   dataKey="views"
