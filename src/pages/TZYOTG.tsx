@@ -59,6 +59,24 @@ const TZYOTG = () => {
     },
   });
 
+  // Load saved form data on component mount
+  React.useEffect(() => {
+    const savedData = sessionStorage.getItem('tzy_form_data');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        // Set form values
+        Object.keys(parsedData).forEach(key => {
+          if (key !== 'files' && parsedData[key]) {
+            form.setValue(key as keyof FormData, parsedData[key]);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+      }
+    }
+  }, [form]);
+
   const watchTalepIcerigi = form.watch('talep_icerigi');
 
   // Check for spam submissions
@@ -193,11 +211,22 @@ const TZYOTG = () => {
     }
   };
 
+  // Save form data to sessionStorage
+  const saveFormData = (data: FormData) => {
+    sessionStorage.setItem('tzy_form_data', JSON.stringify({
+      ...data,
+      files: files.map(f => ({ name: f.name, size: f.size }))
+    }));
+  };
+
   // Form submission
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     
     try {
+      // Save form data before submission
+      saveFormData(data);
+
       // Check for spam
       const isSpam = await checkSpamSubmission(data.vergi_kimlik_no);
       if (isSpam) {
@@ -213,7 +242,7 @@ const TZYOTG = () => {
       const documentsUrl = await uploadFiles();
 
       // Submit form data
-      const { error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('pre_requests')
         .insert({
           vergi_kimlik_no: data.vergi_kimlik_no,
@@ -225,27 +254,56 @@ const TZYOTG = () => {
           talep_icerigi: data.talep_icerigi,
           documents_url: documentsUrl,
           status: 'pending'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
       // Record submission for spam tracking
       await recordSubmission(data.vergi_kimlik_no);
 
-      toast({
-        title: "Başarılı",
-        description: "Talebiniz başarıyla gönderildi",
-      });
+      // Send email notification
+      try {
+        const emailResponse = await supabase.functions.invoke('send-pre-request-email', {
+          body: {
+            to: data.e_posta,
+            companyName: data.firma_adi,
+            contactPerson: data.iletisim_kisisi,
+            requestId: insertData.id,
+            taxId: data.vergi_kimlik_no
+          }
+        });
 
-      navigate('/tzy?success=true');
+        if (emailResponse.error) {
+          console.error('Email sending failed:', emailResponse.error);
+          // Don't fail the whole process if email fails
+        }
+      } catch (emailError) {
+        console.error('Email function error:', emailError);
+        // Don't fail the whole process if email fails
+      }
+
+      // Mark success in session storage
+      sessionStorage.setItem('tzy_submission_success', JSON.stringify({
+        requestId: insertData.id,
+        timestamp: new Date().toISOString()
+      }));
+
+      // Navigate to success page
+      navigate('/tzy/otg/basarili');
       
     } catch (error) {
       console.error('Submission error:', error);
-      toast({
-        title: "Hata",
-        description: "Talep gönderilirken bir hata oluştu",
-        variant: "destructive"
-      });
+      
+      // Save error details to session storage
+      sessionStorage.setItem('tzy_submission_error', JSON.stringify({
+        message: error.message || 'Bilinmeyen bir hata oluştu',
+        timestamp: new Date().toISOString()
+      }));
+
+      // Navigate to error page
+      navigate('/tzy/otg/basarisiz');
     } finally {
       setIsSubmitting(false);
     }

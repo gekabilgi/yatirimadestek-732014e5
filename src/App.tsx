@@ -27,6 +27,8 @@ import YdoSecureAccess from "./pages/YdoSecureAccess";
 import QNA from "./pages/QNA";
 import TZY from "./pages/TZY";
 import TZYOTG from "./pages/TZYOTG";
+import TZYOTGBasarili from "./pages/TZYOTGBasarili";
+import TZYOTGBasarisiz from "./pages/TZYOTGBasarisiz";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +54,8 @@ const App = () => {
               <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
               <Route path="/tzy" element={<TZY />} />
               <Route path="/tzyotg" element={<TZYOTG />} />
+              <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
+              <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
