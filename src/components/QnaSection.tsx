@@ -7,33 +7,61 @@ import { supabase } from '@/integrations/supabase/client';
 
 const QnaSection = () => {
   const [averageResponseTime, setAverageResponseTime] = useState("Hesaplanıyor...");
+  const [totalQuestions, setTotalQuestions] = useState("0");
+  const [activeExperts, setActiveExperts] = useState("0");
+  const [answeredRate, setAnsweredRate] = useState("0%");
 
   useEffect(() => {
-    const fetchAverageResponseTime = async () => {
+    const fetchStats = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('calculate-avg-response-time');
-        
-        if (error) {
-          console.error('Error fetching average response time:', error);
-          setAverageResponseTime("24 saat");
-          return;
+        // Fetch average response time
+        const { data: avgTimeData, error: avgTimeError } = await supabase.functions.invoke('calculate-avg-response-time');
+        if (!avgTimeError) {
+          setAverageResponseTime(avgTimeData.averageResponseTime || "24 saat");
         }
 
-        setAverageResponseTime(data.averageResponseTime || "24 saat");
+        // Fetch total questions
+        const { count: totalCount, error: totalError } = await supabase
+          .from('soru_cevap')
+          .select('*', { count: 'exact', head: true });
+        
+        if (!totalError) {
+          setTotalQuestions(totalCount?.toLocaleString() || "0");
+        }
+
+        // Fetch active experts (YDO users)
+        const { count: expertsCount, error: expertsError } = await supabase
+          .from('ydo_users')
+          .select('*', { count: 'exact', head: true });
+        
+        if (!expertsError) {
+          setActiveExperts(expertsCount?.toString() || "0");
+        }
+
+        // Fetch answered questions rate
+        const { count: answeredCount, error: answeredError } = await supabase
+          .from('soru_cevap')
+          .select('*', { count: 'exact', head: true })
+          .eq('answered', true);
+        
+        if (!answeredError && totalCount && totalCount > 0) {
+          const rate = Math.round((answeredCount || 0) / totalCount * 100);
+          setAnsweredRate(`%${rate}`);
+        }
+
       } catch (error) {
-        console.error('Error calling average response time function:', error);
-        setAverageResponseTime("24 saat");
+        console.error('Error fetching stats:', error);
       }
     };
 
-    fetchAverageResponseTime();
+    fetchStats();
   }, []);
 
   const stats = [
-    { label: "Toplam Soru", value: "2.450+", icon: MessageSquare },
-    { label: "Aktif Uzman", value: "50+", icon: Users },
+    { label: "Toplam Soru", value: totalQuestions, icon: MessageSquare },
+    { label: "Aktif Uzman", value: activeExperts, icon: Users },
     { label: "Ortalama Yanıt Süresi", value: averageResponseTime, icon: Clock },
-    { label: "Yanıtlanan Sorular", value: "%95", icon: CheckCircle },
+    { label: "Yanıtlanan Sorular", value: answeredRate, icon: CheckCircle },
   ];
 
   return (
