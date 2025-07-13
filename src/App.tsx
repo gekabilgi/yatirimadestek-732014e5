@@ -57,7 +57,7 @@ const App = () => {
               <Route path="/tzyotg" element={<TZYOTG />} />
               <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
               <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
-              <Route path="/tzy/kayitli-talepler/:taxId/:code" element={<TZYKayitliTalepler />} />
+              <Route path="/tzy/kayitli-talepler" element={<TZYKayitliTalepler />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />

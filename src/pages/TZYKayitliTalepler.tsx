@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,22 +22,25 @@ interface PreRequest {
 }
 
 const TZYKayitliTalepler = () => {
-  const { taxId, code } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [requests, setRequests] = useState<PreRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const taxId = searchParams.get('taxId');
+    const code = searchParams.get('code');
+    
     if (!taxId || !code) {
       navigate('/tzyotg');
       return;
     }
     
-    fetchRequests();
-  }, [taxId, code, navigate]);
+    fetchRequests(taxId);
+  }, [searchParams, navigate]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (taxId: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -125,7 +128,7 @@ const TZYKayitliTalepler = () => {
                 Kayıtlı Talepleriniz
               </h1>
               <p className="text-gray-600 mt-2">
-                Vergi Kimlik No: {taxId} ile yapılmış talepler
+                Vergi Kimlik No: {searchParams.get('taxId')} ile yapılmış talepler
               </p>
             </div>
             
