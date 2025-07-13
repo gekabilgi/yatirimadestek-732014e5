@@ -32,7 +32,10 @@ const TZYKayitliTalepler = () => {
     const taxId = searchParams.get('taxId');
     const code = searchParams.get('code');
     
+    console.log('TZY Kayıtlı Talepler - taxId:', taxId, 'code:', code);
+    
     if (!taxId || !code) {
+      console.log('Missing taxId or code, redirecting to /tzyotg');
       navigate('/tzyotg');
       return;
     }
