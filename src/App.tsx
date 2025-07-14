@@ -26,6 +26,7 @@ import SearchSupport from "./pages/SearchSupport";
 import YdoSecureAccess from "./pages/YdoSecureAccess";
 import QNA from "./pages/QNA";
 import TZY from "./pages/TZY";
+import TZYPublicList from "./pages/TZYPublicList";
 import TZYOTG from "./pages/TZYOTG";
 import TZYOTGBasarili from "./pages/TZYOTGBasarili";
 import TZYOTGBasarisiz from "./pages/TZYOTGBasarisiz";
@@ -59,6 +60,7 @@ const App = () => {
               <Route path="/incentive-tools" element={<IncentiveTools />} />
               <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
               <Route path="/tzy" element={<TZY />} />
+              <Route path="/tzyil" element={<TZYPublicList />} />
               <Route path="/tzyotg" element={<TZYOTG />} />
               <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
               <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
