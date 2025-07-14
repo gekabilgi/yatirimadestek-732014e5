@@ -118,7 +118,7 @@ const TZYEmailLogs = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6  mt-16">
         <div>
           <h1 className="text-3xl font-bold">Tedarik Zinciri Yerlileştirme - E-posta Logları</h1>
           <p className="text-muted-foreground">

@@ -142,7 +142,7 @@ const TZYProductList = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6  mt-16">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold">Tedarik Zinciri Yerlileştirme - Ürün Talep Listesi</h1>
