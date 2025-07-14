@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, ArrowUpDown } from 'lucide-react';
+import { Edit, Trash2, Search, ArrowUpDown, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -74,6 +74,58 @@ const TZYPreRequestList = () => {
     navigate(`/admin/tzy-company-edit/${preRequest.vergi_kimlik_no}`, { 
       state: { preRequest } 
     });
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('pre_requests')
+        .update({ status: 'approved' })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Başarılı",
+        description: "Ön talep başarıyla onaylandı.",
+      });
+      
+      fetchPreRequests();
+    } catch (error) {
+      console.error('Error approving pre-request:', error);
+      toast({
+        title: "Hata",
+        description: "Ön talep onaylanırken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    if (!confirm('Bu ön talebi reddetmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('pre_requests')
+        .update({ status: 'rejected' })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Başarılı",
+        description: "Ön talep reddedildi.",
+      });
+      
+      fetchPreRequests();
+    } catch (error) {
+      console.error('Error rejecting pre-request:', error);
+      toast({
+        title: "Hata",
+        description: "Ön talep reddedilirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -199,10 +251,33 @@ const TZYPreRequestList = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
+                            {request.status === 'pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleApprove(request.id)}
+                                  className="text-green-600 hover:text-green-800"
+                                  title="Onayla"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleReject(request.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Reddet"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleEdit(request)}
+                              title="Düzenle"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -211,6 +286,7 @@ const TZYPreRequestList = () => {
                               size="sm"
                               onClick={() => handleDelete(request.id)}
                               className="text-red-600 hover:text-red-800"
+                              title="Sil"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
