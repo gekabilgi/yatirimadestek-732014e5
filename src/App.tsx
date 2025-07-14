@@ -30,6 +30,11 @@ import TZYOTG from "./pages/TZYOTG";
 import TZYOTGBasarili from "./pages/TZYOTGBasarili";
 import TZYOTGBasarisiz from "./pages/TZYOTGBasarisiz";
 import TZYKayitliTalepler from "./pages/TZYKayitliTalepler";
+import TZYPreRequestList from "./pages/admin/TZYPreRequestList";
+import TZYCompanyEdit from "./pages/admin/TZYCompanyEdit";
+import TZYProductAdd from "./pages/admin/TZYProductAdd";
+import TZYProductList from "./pages/admin/TZYProductList";
+import TZYEmailLogs from "./pages/admin/TZYEmailLogs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,6 +118,31 @@ const App = () => {
               <Route path="/admin/glossary-management" element={
                 <ProtectedAdminRoute>
                   <AdminGlossaryManagement />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/tzyotl" element={
+                <ProtectedAdminRoute>
+                  <TZYPreRequestList />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/tzy-company-edit/:taxId" element={
+                <ProtectedAdminRoute>
+                  <TZYCompanyEdit />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/tzyue-:taxId" element={
+                <ProtectedAdminRoute>
+                  <TZYProductAdd />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/tzyutl" element={
+                <ProtectedAdminRoute>
+                  <TZYProductList />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/tzy-email-logs" element={
+                <ProtectedAdminRoute>
+                  <TZYEmailLogs />
                 </ProtectedAdminRoute>
               } />
               <Route path="/program/:id" element={<ProgramDetails />} />
