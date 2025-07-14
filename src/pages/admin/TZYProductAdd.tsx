@@ -13,6 +13,7 @@ import { Save, ArrowLeft } from 'lucide-react';
 
 interface PreRequest {
   id: string;
+  on_request_id: string;
   firma_adi: string;
   vergi_kimlik_no: string;
 }
@@ -79,8 +80,8 @@ const TZYProductAdd = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('pre_requests')
-        .select('id, firma_adi, vergi_kimlik_no')
-        .eq('vergi_kimlik_no', taxId.replace('company_', ''))
+        .select('id, on_request_id, firma_adi, vergi_kimlik_no')
+        .eq('on_request_id', taxId)
         .single();
 
       if (error) throw error;
@@ -228,7 +229,7 @@ const TZYProductAdd = () => {
                 <Label htmlFor="pre_request_id">Ön Talep ID</Label>
                 <Input
                   id="pre_request_id"
-                  value={formData.pre_request_id}
+                  value={preRequest?.on_request_id || ''}
                   disabled
                   className="bg-gray-50"
                 />
