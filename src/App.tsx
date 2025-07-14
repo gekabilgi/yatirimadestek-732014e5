@@ -130,7 +130,7 @@ const App = () => {
                   <TZYCompanyEdit />
                 </ProtectedAdminRoute>
               } />
-              <Route path="/admin/tzyue-:taxId" element={
+              <Route path="/admin/tzyue/:taxId" element={
                 <ProtectedAdminRoute>
                   <TZYProductAdd />
                 </ProtectedAdminRoute>
