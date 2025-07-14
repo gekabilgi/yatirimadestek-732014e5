@@ -12,6 +12,7 @@ import { Upload, Save, Plus } from 'lucide-react';
 
 interface PreRequest {
   id: string;
+  on_request_id: string;
   firma_adi: string;
   unvan: string;
   vergi_kimlik_no: string;
@@ -34,6 +35,7 @@ const TZYCompanyEdit = () => {
   
   const [formData, setFormData] = useState<PreRequest>({
     id: '',
+    on_request_id: '',
     firma_adi: '',
     unvan: '',
     vergi_kimlik_no: '',
@@ -221,10 +223,10 @@ const TZYCompanyEdit = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="id">Ön Talep ID</Label>
+                <Label htmlFor="on_request_id">Ön Talep ID</Label>
                 <Input
-                  id="id"
-                  value={formData.id}
+                  id="on_request_id"
+                  value={formData.on_request_id || 'N/A'}
                   disabled
                   className="bg-gray-50"
                 />
