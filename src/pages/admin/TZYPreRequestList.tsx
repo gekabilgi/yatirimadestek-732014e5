@@ -177,7 +177,7 @@ const TZYPreRequestList = () => {
                   <TableBody>
                     {filteredPreRequests.map((request) => (
                       <TableRow key={request.id}>
-                        <TableCell className="font-medium">{request.id.slice(0, 8)}...</TableCell>
+                        <TableCell className="font-medium">{request.on_request_id || 'N/A'}</TableCell>
                         <TableCell>{request.firma_adi}</TableCell>
                         <TableCell>{request.unvan}</TableCell>
                         <TableCell>{request.vergi_kimlik_no}</TableCell>
