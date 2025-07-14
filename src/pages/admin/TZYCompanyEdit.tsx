@@ -189,7 +189,7 @@ const TZYCompanyEdit = () => {
   };
 
   const handleAddProduct = () => {
-    navigate(`/admin/tzyue-${formData.vergi_kimlik_no}`, {
+    navigate(`/admin/tzyue/${formData.vergi_kimlik_no}`, {
       state: { preRequest: formData }
     });
   };
