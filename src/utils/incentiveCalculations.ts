@@ -89,29 +89,29 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
     if (inputs.taxReductionSupport === 'No') {
       monetaryCap = 300000000; // 300 million TL (increased from 240M)
       investmentCapPercentage = 0.20; // 25% of total fixed investment (increased from 20%)
-      machinerySupportCalculated = totalMachineryCost * 0.20;
-      machinerySupportLimit = totalFixedInvestment * investmentCapPercentage;
-      cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
+      machinerySupportCalculated = totalMachineryCost * 0.30;
+      machinerySupportLimit = totalFixedInvestment * 0.20;
+      //cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
     } else {
       monetaryCap = 240000000; // 240 million TL
       investmentCapPercentage = 0.15; // 20% of total fixed investment
-      machinerySupportCalculated = totalMachineryCost * 0.15;
-      machinerySupportLimit = totalFixedInvestment * investmentCapPercentage;
-      cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
+      machinerySupportCalculated = totalMachineryCost * 0.25;
+      machinerySupportLimit = totalFixedInvestment * 0.15;
+      //cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
     }
   } else if (inputs.incentiveType === 'Strategic Initiative') {
     if (inputs.taxReductionSupport === 'No') {
       monetaryCap = 240000000; // 240 million TL (increased from 180M)
       investmentCapPercentage = 0.20; // 20% of total fixed investment (increased from 15%)
-      machinerySupportCalculated = totalMachineryCost * 0.20;
-      machinerySupportLimit = totalFixedInvestment * investmentCapPercentage;
-      cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
+      machinerySupportCalculated = totalMachineryCost * 0.30;
+      machinerySupportLimit = totalFixedInvestment * 0.20;
+      //cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
     } else {
       monetaryCap = 180000000; // 180 million TL
       investmentCapPercentage = 0.15; // 15% of total fixed investment
-      machinerySupportCalculated = totalMachineryCost * 0.15;
-      machinerySupportLimit = totalFixedInvestment * investmentCapPercentage;
-      cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
+      machinerySupportCalculated = totalMachineryCost * 0.25;
+      machinerySupportLimit = totalFixedInvestment * 0.15;
+      //cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
     }
   }
   
