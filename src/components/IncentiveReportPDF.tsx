@@ -219,8 +219,8 @@ const IncentiveReportPDF: React.FC<IncentiveReportProps> = ({ incentiveResult })
                     
                     {incentiveResult.sector.isTarget && (
                         <View>
-                            <Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text>
                             <Text style={{fontWeight: 'bold', marginBottom: 5, fontSize: 11}}>Hedef Yatırım Destekleri</Text>
+                            <View style={styles.row}><Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Vergi İndirimi (YKO)</Text><Text style={styles.value}>%{supportValues.target.taxDiscount}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Faiz/Kâr Payı Oranı</Text><Text style={styles.value}>{supportValues.target.interestSupport !== "N/A" ? `%${supportValues.target.interestSupport}` : 'N/A'}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Faiz/Kâr Payı Limiti</Text><Text style={styles.value}>{supportValues.target.cap !== "N/A" ? `${parseFloat(supportValues.target.cap).toLocaleString('tr-TR')} TL` : 'N/A'}</Text></View>
@@ -229,8 +229,8 @@ const IncentiveReportPDF: React.FC<IncentiveReportProps> = ({ incentiveResult })
 
                     {incentiveResult.sector.isPriority && (
                         <View style={{marginTop: incentiveResult.sector.isTarget ? 15 : 0}}>
-                            <Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text>
                             <Text style={{fontWeight: 'bold', marginBottom: 5, fontSize: 11}}>Öncelikli Yatırım Destekleri</Text>
+                            <View style={styles.row}><Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Vergi İndirimi (YKO)</Text><Text style={styles.value}>%{supportValues.priority.taxDiscount}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Faiz/Kâr Payı Oranı</Text><Text style={styles.value}>%{supportValues.priority.interestSupport}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Faiz/Kâr Payı Limiti</Text><Text style={styles.value}>{parseFloat(supportValues.priority.cap).toLocaleString('tr-TR')} TL</Text></View>
