@@ -13,14 +13,14 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: 'Noto Sans',
     fontSize: 9,
-    padding: 20,
+    padding: 40,
     color: '#333',
-    lineHeight: 1.2,
+    lineHeight: 1.3,
   },
   header: {
     backgroundColor: '#007bff',
     color: 'white',
-    padding: 8,
+    padding: 12,
     textAlign: 'center',
     marginBottom: 12,
     borderRadius: 3,
