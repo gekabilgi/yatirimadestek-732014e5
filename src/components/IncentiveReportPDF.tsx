@@ -1,10 +1,17 @@
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import { IncentiveResult } from '@/types/incentive';
+
+// Register custom font for Turkish character support
+// Place your font files in public/fonts/ folder
+Font.register({
+  family: 'Noto Sans',
+  src: '/fonts/NotoSans-Regular.ttf', // Update this path when you add your font
+});
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Helvetica',
+    fontFamily: 'Noto Sans',
     fontSize: 11,
     padding: 30,
     color: '#333',
