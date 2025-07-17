@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.primary,
     },
     sectorName: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: 'bold',
         color: colors.primary,
     },
