@@ -12,79 +12,91 @@ Font.register({
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Noto Sans',
-    fontSize: 11,
-    padding: 30,
+    fontSize: 9,
+    padding: 20,
     color: '#333',
+    lineHeight: 1.2,
   },
   header: {
     backgroundColor: '#007bff',
     color: 'white',
-    padding: 15,
+    padding: 8,
     textAlign: 'center',
-    marginBottom: 20,
-    borderRadius: 5,
+    marginBottom: 12,
+    borderRadius: 3,
   },
   title: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   section: {
-    marginBottom: 15,
-    padding: 15,
+    marginBottom: 8,
+    padding: 8,
     border: '1px solid #eee',
-    borderRadius: 8,
+    borderRadius: 3,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 6,
     color: '#007bff',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 7,
+    marginBottom: 3,
     borderBottom: '1px dotted #ccc',
-    paddingBottom: 5,
+    paddingBottom: 2,
   },
   label: {
     color: '#555',
     flex: 1,
+    fontSize: 8,
   },
   value: {
     flex: 1,
     textAlign: 'right',
+    fontSize: 8,
   },
   badge: {
     backgroundColor: '#e3f2fd',
     color: '#1976d2',
-    padding: '3px 8px',
-    borderRadius: 3,
-    fontSize: 9,
-    marginRight: 5,
-    marginBottom: 5,
+    padding: '2px 4px',
+    borderRadius: 2,
+    fontSize: 7,
+    marginRight: 3,
+    marginBottom: 3,
   },
   badgeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   footer: {
     position: 'absolute',
-    bottom: 20,
-    left: 30,
-    right: 30,
+    bottom: 15,
+    left: 20,
+    right: 20,
     textAlign: 'center',
     color: '#aaa',
-    fontSize: 9,
+    fontSize: 7,
   },
   warning: {
     backgroundColor: '#fff3cd',
     border: '1px solid #ffeaa7',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 3,
+    padding: 6,
+    marginBottom: 6,
     color: '#856404',
+    fontSize: 8,
+  },
+  subSection: {
+    marginBottom: 6,
+  },
+  subSectionTitle: {
+    fontWeight: 'bold',
+    marginBottom: 3,
+    fontSize: 9,
   },
 });
 
@@ -199,8 +211,8 @@ const IncentiveReportPDF: React.FC<IncentiveReportPDFProps> = ({ incentiveResult
         <Text style={styles.sectionTitle}>Yatırım Türü Destekleri</Text>
         
         {incentiveResult.sector.isTarget && (
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontWeight: 'bold', marginBottom: 5, fontSize: 12 }}>Hedef Yatırım Destekleri</Text>
+          <View style={styles.subSection}>
+            <Text style={styles.subSectionTitle}>Hedef Yatırım Destekleri</Text>
             <View style={styles.row}>
               <Text style={styles.label}>Vergi İndirim Desteği Yatırıma Katkı Oranı:</Text>
               <Text style={styles.value}>{formatPercentage(supportValues.target.taxDiscount)}</Text>
@@ -225,8 +237,8 @@ const IncentiveReportPDF: React.FC<IncentiveReportPDFProps> = ({ incentiveResult
         )}
 
         {(incentiveResult.sector.isPriority || incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) && (
-          <View>
-            <Text style={{ fontWeight: 'bold', marginBottom: 5, fontSize: 12 }}>Öncelikli / Teknoloji Destekleri</Text>
+          <View style={styles.subSection}>
+            <Text style={styles.subSectionTitle}>Öncelikli / Teknoloji Destekleri</Text>
             <View style={styles.row}>
               <Text style={styles.label}>Vergi İndirim Desteği Yatırıma Katkı Oranı:</Text>
               <Text style={styles.value}>{formatPercentage(supportValues.priority.taxDiscount)}</Text>
