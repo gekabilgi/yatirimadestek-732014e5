@@ -1,4 +1,3 @@
-
 export interface IncentiveCalculatorInputs {
   incentiveType: 'Technology Initiative' | 'Local Development Initiative' | 'Strategic Initiative';
   province: string;
@@ -12,6 +11,7 @@ export interface IncentiveCalculatorInputs {
   supportPreference: 'Interest/Profit Share Support' | 'Machinery Support';
   loanAmount: number;
   loanTermMonths: number;
+  taxReductionSupport: 'Yes' | 'No';
 }
 
 export interface IncentiveCalculatorResults {

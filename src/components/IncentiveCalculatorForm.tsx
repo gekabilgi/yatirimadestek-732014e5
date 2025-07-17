@@ -36,7 +36,8 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     bankInterestRate: 45,
     supportPreference: 'Interest/Profit Share Support',
     loanAmount: 0,
-    loanTermMonths: 60
+    loanTermMonths: 60,
+    taxReductionSupport: 'Yes'
   });
 
   const [selectedInvestment, setSelectedInvestment] = useState<string>('');
@@ -239,6 +240,22 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             <SelectContent>
               <SelectItem value="Interest/Profit Share Support">Faiz/Kar Payı Desteği</SelectItem>
               <SelectItem value="Machinery Support">Makine Desteği</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="taxReductionSupport">Vergi İndirimi Desteğinden Yararlanmayı Düşünüyor musunuz?</Label>
+          <Select 
+            value={formData.taxReductionSupport} 
+            onValueChange={(value) => handleInputChange('taxReductionSupport', value as any)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Vergi indirimi tercihi seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Yes">Evet</SelectItem>
+              <SelectItem value="No">Hayır</SelectItem>
             </SelectContent>
           </Select>
         </div>

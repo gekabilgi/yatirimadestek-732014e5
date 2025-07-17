@@ -74,22 +74,32 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
     ? 120 * SGK_EMPLOYEE_PREMIUM_RATE * inputs.numberOfEmployees
     : 0;
 
-  // Calculate Machinery Support with new logic
+  // Calculate Machinery Support with new logic based on tax reduction preference
   const totalMachineryCost = inputs.importedMachineryCost + inputs.domesticMachineryCost;
   const machinerySupportCalculated = totalMachineryCost * 0.25;
   const machinerySupportLimit = totalFixedInvestment * 0.15;
   let cappedMachinerySupport = Math.min(machinerySupportCalculated, machinerySupportLimit);
   
-  // Apply caps based on incentive type
+  // Apply caps based on incentive type and tax reduction preference
   let monetaryCap = 0;
   let investmentCapPercentage = 0;
   
   if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
-    monetaryCap = 240000000; // 240 million TL
-    investmentCapPercentage = 0.20; // 20% of total fixed investment
+    if (inputs.taxReductionSupport === 'No') {
+      monetaryCap = 300000000; // 300 million TL (increased from 240M)
+      investmentCapPercentage = 0.25; // 25% of total fixed investment (increased from 20%)
+    } else {
+      monetaryCap = 240000000; // 240 million TL
+      investmentCapPercentage = 0.20; // 20% of total fixed investment
+    }
   } else if (inputs.incentiveType === 'Strategic Initiative') {
-    monetaryCap = 180000000; // 180 million TL
-    investmentCapPercentage = 0.15; // 15% of total fixed investment
+    if (inputs.taxReductionSupport === 'No') {
+      monetaryCap = 240000000; // 240 million TL (increased from 180M)
+      investmentCapPercentage = 0.20; // 20% of total fixed investment (increased from 15%)
+    } else {
+      monetaryCap = 180000000; // 180 million TL
+      investmentCapPercentage = 0.15; // 15% of total fixed investment
+    }
   }
   
   // Apply the investment cap percentage
@@ -100,25 +110,39 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
     ? cappedMachinerySupport 
     : 0;
 
-  // Calculate Interest/Profit Share Support - no sector restrictions since sectorCategory is removed
+  // Calculate Interest/Profit Share Support with updated logic based on tax reduction preference
   let interestProfitShareSupportAmount = 0;
   if (inputs.supportPreference === 'Interest/Profit Share Support') {
-    // Calculate support rate based on incentive type
+    // Calculate support rate based on incentive type and tax reduction preference
     let supportRate = 0;
     let maxReductionCap = 0;
     let monetaryCap = 0;
     let investmentCapPercentage = 0;
     
     if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
-      supportRate = Math.min(inputs.bankInterestRate * 0.40, 20); // Cap at 20%
-      maxReductionCap = 20; // 20% maximum
-      monetaryCap = 240000000; // 240 million TL
-      investmentCapPercentage = 0.20; // 20% of total fixed investment
+      if (inputs.taxReductionSupport === 'No') {
+        supportRate = Math.min(inputs.bankInterestRate * 0.40, 25); // Cap at 25% (increased from 20%)
+        maxReductionCap = 25; // 25% maximum (increased from 20%)
+        monetaryCap = 300000000; // 300 million TL (increased from 240M)
+        investmentCapPercentage = 0.25; // 25% of total fixed investment (increased from 20%)
+      } else {
+        supportRate = Math.min(inputs.bankInterestRate * 0.40, 20); // Cap at 20%
+        maxReductionCap = 20; // 20% maximum
+        monetaryCap = 240000000; // 240 million TL
+        investmentCapPercentage = 0.20; // 20% of total fixed investment
+      }
     } else if (inputs.incentiveType === 'Strategic Initiative') {
-      supportRate = Math.min(inputs.bankInterestRate * 0.30, 15); // Cap at 15%
-      maxReductionCap = 15; // 15% maximum
-      monetaryCap = 180000000; // 180 million TL
-      investmentCapPercentage = 0.15; // 15% of total fixed investment
+      if (inputs.taxReductionSupport === 'No') {
+        supportRate = Math.min(inputs.bankInterestRate * 0.30, 20); // Cap at 20% (increased from 15%)
+        maxReductionCap = 20; // 20% maximum (increased from 15%)
+        monetaryCap = 240000000; // 240 million TL (increased from 180M)
+        investmentCapPercentage = 0.20; // 20% of total fixed investment (increased from 15%)
+      } else {
+        supportRate = Math.min(inputs.bankInterestRate * 0.30, 15); // Cap at 15%
+        maxReductionCap = 15; // 15% maximum
+        monetaryCap = 180000000; // 180 million TL
+        investmentCapPercentage = 0.15; // 15% of total fixed investment
+      }
     }
 
     // Calculate total interest amount using loan formula
@@ -144,13 +168,16 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
     );
   }
 
-  // Calculate Investment Contribution with different rates based on incentive type
+  // Calculate Investment Contribution based on tax reduction preference
   const supportAmount = inputs.supportPreference === 'Machinery Support' 
     ? machinerySupportAmount 
     : interestProfitShareSupportAmount;
   
   let taxReductionInvestmentContribution: number;
-  if (inputs.incentiveType === 'Strategic Initiative') {
+  
+  if (inputs.taxReductionSupport === 'No') {
+    taxReductionInvestmentContribution = 0;
+  } else if (inputs.incentiveType === 'Strategic Initiative') {
     taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount) * 0.40;
   } else {
     taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount) * 0.50;

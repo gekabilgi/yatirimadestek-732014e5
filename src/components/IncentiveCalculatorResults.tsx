@@ -39,6 +39,10 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
     }
   };
 
+  const getTaxReductionText = (preference: string): string => {
+    return preference === 'Yes' ? 'Evet' : 'Hayır';
+  };
+
   // Calculate total machinery cost
   const totalMachineryCost = inputs.importedMachineryCost + inputs.domesticMachineryCost;
 
@@ -129,8 +133,26 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
               <span className="text-muted-foreground">Destek Tercihi:</span>
               <div className="font-medium">{getSupportPreferenceText(inputs.supportPreference)}</div>
             </div>
+            <div>
+              <span className="text-muted-foreground">Vergi İndirimi Desteği:</span>
+              <div className="font-medium">{getTaxReductionText(inputs.taxReductionSupport)}</div>
+            </div>
           </div>
         </div>
+
+        {/* Tax Reduction Preference Info */}
+        {inputs.taxReductionSupport === 'No' && (
+          <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+              <div>
+                <p className="text-sm text-yellow-800">
+                  <strong>Bilgi:</strong> Vergi İndirimi Desteği tercih edilmediği için diğer desteklerin (Faiz/Kar Payı ve Makine) üst limitlerinde artış uygulanmıştır.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Support Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
