@@ -196,7 +196,6 @@ const IncentiveReportPDF: React.FC<IncentiveReportProps> = ({ incentiveResult })
                     <View style={styles.row}><Text style={styles.label}>Lokasyon</Text><Text style={styles.value}>{incentiveResult.location.province} / {incentiveResult.location.district}</Text></View>
                     <View style={styles.row}><Text style={styles.label}>Bölge</Text><Text style={styles.value}>{incentiveResult.location.region}. Bölge</Text></View>
                     <View style={styles.row}><Text style={styles.label}>Alt Bölge</Text><Text style={styles.value}>{incentiveResult.location.subregion || 'Yok'}</Text></View>
-                    <View style={styles.row}><Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text></View>
                     <View style={styles.row}><Text style={styles.label}>Min. Yatırım Tutarı</Text><Text style={styles.valueLarge}>{incentiveResult.sector.minInvestment?.toLocaleString('tr-TR')} TL</Text></View>
                 </View>
 
@@ -220,6 +219,7 @@ const IncentiveReportPDF: React.FC<IncentiveReportProps> = ({ incentiveResult })
                     
                     {incentiveResult.sector.isTarget && (
                         <View>
+                            <Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text>
                             <Text style={{fontWeight: 'bold', marginBottom: 5, fontSize: 11}}>Hedef Yatırım Destekleri</Text>
                             <View style={styles.row}><Text style={styles.label}>Vergi İndirimi (YKO)</Text><Text style={styles.value}>%{supportValues.target.taxDiscount}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Faiz/Kâr Payı Oranı</Text><Text style={styles.value}>{supportValues.target.interestSupport !== "N/A" ? `%${supportValues.target.interestSupport}` : 'N/A'}</Text></View>
@@ -229,6 +229,7 @@ const IncentiveReportPDF: React.FC<IncentiveReportProps> = ({ incentiveResult })
 
                     {incentiveResult.sector.isPriority && (
                         <View style={{marginTop: incentiveResult.sector.isTarget ? 15 : 0}}>
+                            <Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text>
                             <Text style={{fontWeight: 'bold', marginBottom: 5, fontSize: 11}}>Öncelikli Yatırım Destekleri</Text>
                             <View style={styles.row}><Text style={styles.label}>Vergi İndirimi (YKO)</Text><Text style={styles.value}>%{supportValues.priority.taxDiscount}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Faiz/Kâr Payı Oranı</Text><Text style={styles.value}>%{supportValues.priority.interestSupport}</Text></View>
