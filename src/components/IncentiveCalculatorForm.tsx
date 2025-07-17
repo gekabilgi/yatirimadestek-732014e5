@@ -179,7 +179,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
         </div>
 
         {formData.province && (
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2">
             <Label htmlFor="investment">Yatırım Konusu</Label>
             <Select 
               value={selectedInvestment} 
@@ -203,6 +203,24 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
                     {investment.investment_name}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {formData.province && (
+          <div className="space-y-2">
+            <Label htmlFor="taxReductionSupport">Vergi İndirimi Desteğinden Yararlanmayı Düşünüyor musunuz?</Label>
+            <Select 
+              value={formData.taxReductionSupport} 
+              onValueChange={(value) => handleInputChange('taxReductionSupport', value as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Vergi indirimi tercihi seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Yes">Evet</SelectItem>
+                <SelectItem value="No">Hayır</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -240,22 +258,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             <SelectContent>
               <SelectItem value="Interest/Profit Share Support">Faiz/Kar Payı Desteği</SelectItem>
               <SelectItem value="Machinery Support">Makine Desteği</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="taxReductionSupport">Vergi İndirimi Desteğinden Yararlanmayı Düşünüyor musunuz?</Label>
-          <Select 
-            value={formData.taxReductionSupport} 
-            onValueChange={(value) => handleInputChange('taxReductionSupport', value as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Vergi indirimi tercihi seçin" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Yes">Evet</SelectItem>
-              <SelectItem value="No">Hayır</SelectItem>
             </SelectContent>
           </Select>
         </div>
