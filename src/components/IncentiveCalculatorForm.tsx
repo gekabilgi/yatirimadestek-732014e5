@@ -80,7 +80,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 
   useEffect(() => {
     const fetchInvestments = async () => {
-      if (!formData.province) {
+      if (!formData.province || formData.incentiveType !== 'Local Development Initiative') {
         setInvestments([]);
         setSelectedInvestment('');
         return;
@@ -109,13 +109,18 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     };
 
     fetchInvestments();
-  }, [formData.province]);
+  }, [formData.province, formData.incentiveType]);
 
   const handleInputChange = (field: keyof IncentiveCalculatorInputs, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Reset investment selection when incentive type changes
+    if (field === 'incentiveType') {
+      setSelectedInvestment('');
+    }
   };
 
   const handleEmployeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,6 +142,9 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
   const shouldShowEmployeeAlert = employeeFieldTouched && formData.numberOfEmployees <= 0;
 
   const isFormValid = formData.province && formData.numberOfEmployees > 0;
+
+  // Check if we should show investment selection
+  const shouldShowInvestmentSelection = formData.province && formData.incentiveType === 'Local Development Initiative';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -178,7 +186,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           </Select>
         </div>
 
-        {formData.province && (
+        {shouldShowInvestmentSelection && (
           <div className="space-y-2">
             <Label htmlFor="investment">Yatırım Konusu</Label>
             <Select 
@@ -208,7 +216,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           </div>
         )}
 
-        {formData.province && (
+        {shouldShowInvestmentSelection && (
           <div className="space-y-2">
             <Label htmlFor="taxReductionSupport">Vergi İndirimi Desteğinden Yararlanmayı Düşünüyor musunuz?</Label>
             <Select 
