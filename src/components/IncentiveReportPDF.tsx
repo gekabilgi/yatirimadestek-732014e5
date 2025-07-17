@@ -24,6 +24,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
     borderRadius: 3,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 16,
@@ -148,16 +151,16 @@ const IncentiveReportPDF: React.FC<IncentiveReportPDFProps> = ({ incentiveResult
         {/* Investment Type Badges */}
         <View style={styles.badgeContainer}>
           {incentiveResult.sector.isTarget && (
-            <Text style={styles.badge}>🎯 Hedef Yatırım</Text>
+            <Text style={styles.badge}>• Hedef Yatırım</Text>
           )}
           {incentiveResult.sector.isPriority && (
-            <Text style={styles.badge}>📌 Öncelikli Yatırım</Text>
+            <Text style={styles.badge}>• Öncelikli Yatırım</Text>
           )}
           {incentiveResult.sector.isHighTech && (
-            <Text style={styles.badge}>💡 Yüksek Teknoloji</Text>
+            <Text style={styles.badge}>• Yüksek Teknoloji</Text>
           )}
           {incentiveResult.sector.isMidHighTech && (
-            <Text style={styles.badge}>🔧 Orta-Yüksek Teknoloji</Text>
+            <Text style={styles.badge}>• Orta-Yüksek Teknoloji</Text>
           )}
         </View>
       </View>
