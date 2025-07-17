@@ -9,6 +9,12 @@ import { IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { ProvinceRegionMap } from '@/types/database';
 
+interface InvestmentByProvince {
+  id: number;
+  province: string;
+  investment_name: string;
+}
+
 interface IncentiveCalculatorFormProps {
   onCalculate: (inputs: IncentiveCalculatorInputs) => void;
   isCalculating: boolean;
@@ -33,8 +39,11 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     loanTermMonths: 60
   });
 
+  const [selectedInvestment, setSelectedInvestment] = useState<string>('');
   const [provinces, setProvinces] = useState<ProvinceRegionMap[]>([]);
+  const [investments, setInvestments] = useState<InvestmentByProvince[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
+  const [isLoadingInvestments, setIsLoadingInvestments] = useState(false);
   const [employeeFieldTouched, setEmployeeFieldTouched] = useState(false);
 
   // Calculate total fixed investment automatically
@@ -67,6 +76,39 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 
     fetchProvinces();
   }, []);
+
+  useEffect(() => {
+    const fetchInvestments = async () => {
+      if (!formData.province) {
+        setInvestments([]);
+        setSelectedInvestment('');
+        return;
+      }
+
+      setIsLoadingInvestments(true);
+      try {
+        const { data, error } = await supabase
+          .from('investments_by_province')
+          .select('*')
+          .eq('province', formData.province)
+          .order('investment_name');
+
+        if (error) {
+          console.error('Error fetching investments:', error);
+          return;
+        }
+
+        setInvestments(data || []);
+        setSelectedInvestment(''); // Reset selection when province changes
+      } catch (error) {
+        console.error('Error fetching investments:', error);
+      } finally {
+        setIsLoadingInvestments(false);
+      }
+    };
+
+    fetchInvestments();
+  }, [formData.province]);
 
   const handleInputChange = (field: keyof IncentiveCalculatorInputs, value: string | number) => {
     setFormData(prev => ({
@@ -134,6 +176,36 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             </SelectContent>
           </Select>
         </div>
+
+        {formData.province && (
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="investment">Yatırım Konusu</Label>
+            <Select 
+              value={selectedInvestment} 
+              onValueChange={setSelectedInvestment}
+              disabled={isLoadingInvestments || investments.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue 
+                  placeholder={
+                    isLoadingInvestments 
+                      ? "Yükleniyor..." 
+                      : investments.length === 0 
+                        ? "Bu il için yatırım konusu bulunamadı"
+                        : "Yatırım konusu seçin"
+                  } 
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {investments.map((investment) => (
+                  <SelectItem key={investment.id} value={investment.investment_name}>
+                    {investment.investment_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="numberOfEmployees">Çalışan Sayısı</Label>

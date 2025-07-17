@@ -330,6 +330,27 @@ export type Database = {
         }
         Relationships: []
       }
+      investments_by_province: {
+        Row: {
+          created_at: string | null
+          id: number
+          investment_name: string
+          province: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          investment_name: string
+          province: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          investment_name?: string
+          province?: string
+        }
+        Relationships: []
+      }
       location_support: {
         Row: {
           alt_bolge: string | null
