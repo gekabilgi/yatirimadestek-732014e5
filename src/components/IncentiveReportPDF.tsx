@@ -1,9 +1,16 @@
 // components/IncentiveReportPDF.tsx
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font } from '@react--pdf/renderer';
 import { IncentiveResult } from '@/types/incentive'; // Adjusted import
 
-// Using built-in fonts that support Turkish characters
+// IMPORTANT: Register a font that supports Turkish characters.
+Font.register({
+  family: 'Noto Sans',
+  fonts: [
+    { src: '/fonts/NotoSans-Regular.ttf' }, // Update path as needed
+    { src: '/fonts/NotoSans-Bold.ttf', fontWeight: 'bold' },
+  ],
+});
 
 // A professional and clean color palette
 const colors = {
@@ -16,7 +23,7 @@ const colors = {
 
 const styles = StyleSheet.create({
     page: {
-        fontFamily: 'Helvetica',
+        fontFamily: 'Noto Sans',
         fontSize: 10,
         padding: 30,
         color: colors.textPrimary,
