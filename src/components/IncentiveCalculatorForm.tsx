@@ -216,7 +216,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           </div>
         )}
 
-        {shouldShowInvestmentSelection && (
+        {formData.province && (
           <div className="space-y-2">
             <Label htmlFor="taxReductionSupport">Vergi İndirimi Desteğinden Yararlanmayı Düşünüyor musunuz?</Label>
             <Select 
