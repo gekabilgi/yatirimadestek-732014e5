@@ -55,14 +55,15 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.primary,
     },
     sectorName: {
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: 'bold',
         color: colors.primary,
     },
     naceCode: {
-        fontSize: 10,
+        fontSize: 11,
         color: colors.textSecondary,
         marginTop: 2,
+        fontWeight: 'bold',
     },
     badgeContainer: {
         flexDirection: 'row',
