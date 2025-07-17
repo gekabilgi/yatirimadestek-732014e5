@@ -128,7 +128,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
 
   // Enhanced PDF generation function with UTF-8 support
 const generatePDF = () => {
-    if (!incentiveResult) return;
+  if (!incentiveResult) return;
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -283,6 +283,7 @@ const generatePDF = () => {
   // Save
   const fileName = `tesvik-raporu-${incentiveResult.sector.nace_code}-${new Date().toISOString().split("T")[0]}.pdf`;
   doc.save(fileName);
+};
 
     
     toast({
