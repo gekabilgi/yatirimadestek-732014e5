@@ -118,11 +118,9 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     if (!incentiveResult) return;
 
     try {
-      const supportValues = getSupportValues(incentiveResult);
       const pdfBlob = await pdf(
         <IncentiveReportPDF 
           incentiveResult={incentiveResult} 
-          supportValues={supportValues} 
         />
       ).toBlob();
       

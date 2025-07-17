@@ -1,6 +1,6 @@
 // components/IncentiveReportPDF.tsx
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Font } from '@react--pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import { IncentiveResult } from '@/types/incentive'; // Adjusted import
 
 // IMPORTANT: Register a font that supports Turkish characters.
