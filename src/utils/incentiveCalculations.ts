@@ -29,7 +29,7 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
   // Validation: Check minimum investment requirement (6,000,000 TL)
   if (totalFixedInvestment < 6000000) {
     validationErrors.push(
-      `Toplam sabit yatırım tutarı minimum 500,000 TL olmalıdır. Mevcut tutar: ${totalFixedInvestment.toLocaleString('tr-TR')} TL`
+      `Toplam sabit yatırım tutarı minimum 6.000.000 TL olmalıdır. Mevcut tutar: ${totalFixedInvestment.toLocaleString('tr-TR')} TL`
     );
   }
 
@@ -191,9 +191,9 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
   if (inputs.taxReductionSupport === 'No') {
     taxReductionInvestmentContribution = 0;
   } else if (inputs.incentiveType === 'Strategic Initiative') {
-    taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount) * 0.40;
+    taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount - inputs.landCost) * 0.40;
   } else {
-    taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount) * 0.50;
+    taxReductionInvestmentContribution = (totalFixedInvestment - supportAmount - inputs.landCost) * 0.50;
   }
 
   return {
