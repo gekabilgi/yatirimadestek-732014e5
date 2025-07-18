@@ -310,7 +310,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               onChange={(e) => handleInputChange('otherExpenses', parseFloat(e.target.value) || 0)}
             />
           </div>
-        </div>
         <div className="space-y-2">
           <Label htmlFor="numberOfEmployees">Çalışan Sayısı</Label>
           <Input
@@ -329,7 +328,9 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               </AlertDescription>
             </Alert>
           )}
-        </div>        
+        </div> 
+        </div>
+       
 
         {/* Total Fixed Investment Display */}
         <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
