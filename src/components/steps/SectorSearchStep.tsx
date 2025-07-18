@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,17 +79,18 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
 
       const formatted = insertDots(clean); // e.g., 05.10.01
 
-      // Try to match both cleaned and formatted versions
+      // Try to match both cleaned and formatted versions - order by nace_kodu for hierarchical sorting
       const result = await supabase
         .from("sector_search")
         .select("*")
         .or(`nace_kodu.ilike.${clean}%,nace_kodu.ilike.${formatted}%`)
+        .order("nace_kodu")
         .order("sektor");
 
       data = result.data;
       error = result.error;
     } else {
-      // Sector name search
+      // Sector name search - order by sektor for alphabetical sorting
       const result = await supabase
         .from("sector_search")
         .select("*")
@@ -142,7 +144,6 @@ const insertDots = (code: string): string => {
   if (code.length >= 2) return `${code.slice(0, 2)}.${code.slice(2)}`;
   return code;
 };
-
 
   const handleSectorSelect = (sector: SectorSearchData) => {
     onSectorSelect(sector);
