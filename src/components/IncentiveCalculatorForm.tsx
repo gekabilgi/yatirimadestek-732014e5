@@ -234,25 +234,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           </div>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="numberOfEmployees">Çalışan Sayısı</Label>
-          <Input
-            id="numberOfEmployees"
-            type="number"
-            min="0"
-            value={formData.numberOfEmployees}
-            onChange={handleEmployeeChange}
-            onBlur={handleEmployeeBlur}
-          />
-          {shouldShowEmployeeAlert && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Çalışan sayısı 0'dan büyük olmalıdır. Lütfen geçerli bir sayı girin.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
+
 
         <div className="space-y-2">
           <Label htmlFor="supportPreference">Destek Tercihi</Label>
@@ -329,6 +311,25 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             />
           </div>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="numberOfEmployees">Çalışan Sayısı</Label>
+          <Input
+            id="numberOfEmployees"
+            type="number"
+            min="0"
+            value={formData.numberOfEmployees}
+            onChange={handleEmployeeChange}
+            onBlur={handleEmployeeBlur}
+          />
+          {shouldShowEmployeeAlert && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Çalışan sayısı 0'dan büyük olmalıdır. Lütfen geçerli bir sayı girin.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>        
 
         {/* Total Fixed Investment Display */}
         <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
