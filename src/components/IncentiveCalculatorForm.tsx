@@ -257,6 +257,25 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
         <h3 className="text-lg font-semibold">Yatırım Maliyetleri (TL)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
+          <Label htmlFor="numberOfEmployees">Çalışan Sayısı</Label>
+          <Input
+            id="numberOfEmployees"
+            type="number"
+            min="0"
+            value={formData.numberOfEmployees}
+            onChange={handleEmployeeChange}
+            onBlur={handleEmployeeBlur}
+          />
+          {shouldShowEmployeeAlert && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Çalışan sayısı 0'dan büyük olmalıdır. Lütfen geçerli bir sayı girin.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div> 
+          <div className="space-y-2">
             <Label htmlFor="landCost">Arsa/Arazi Maliyeti</Label>
             <Input
               id="landCost"
@@ -310,25 +329,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               onChange={(e) => handleInputChange('otherExpenses', parseFloat(e.target.value) || 0)}
             />
           </div>
-        <div className="space-y-2">
-          <Label htmlFor="numberOfEmployees">Çalışan Sayısı</Label>
-          <Input
-            id="numberOfEmployees"
-            type="number"
-            min="0"
-            value={formData.numberOfEmployees}
-            onChange={handleEmployeeChange}
-            onBlur={handleEmployeeBlur}
-          />
-          {shouldShowEmployeeAlert && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Çalışan sayısı 0'dan büyük olmalıdır. Lütfen geçerli bir sayı girin.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div> 
         </div>
        
 
