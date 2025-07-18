@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calculator, AlertCircle } from 'lucide-react';
+import { Calculator, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { ProvinceRegionMap } from '@/types/database';
@@ -46,6 +46,10 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingInvestments, setIsLoadingInvestments] = useState(false);
   const [employeeFieldTouched, setEmployeeFieldTouched] = useState(false);
+  const [loanValidationMessage, setLoanValidationMessage] = useState<{
+    type: 'success' | 'warning' | 'info';
+    message: string;
+  } | null>(null);
 
   // Calculate total fixed investment automatically
   const totalFixedInvestment = useMemo(() => {
@@ -53,6 +57,40 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
            formData.domesticMachineryCost + formData.otherExpenses;
   }, [formData.landCost, formData.constructionCost, formData.importedMachineryCost, 
       formData.domesticMachineryCost, formData.otherExpenses]);
+
+  // Calculate maximum allowed loan amount (70% of total fixed investment)
+  const maxLoanAmount = useMemo(() => {
+    return Math.floor(totalFixedInvestment * 0.7);
+  }, [totalFixedInvestment]);
+
+  // Re-validate loan amount when total fixed investment changes
+  useEffect(() => {
+    if (formData.loanAmount > 0 && totalFixedInvestment > 0) {
+      if (formData.loanAmount > maxLoanAmount) {
+        // Auto-correct to maximum allowed amount
+        setFormData(prev => ({
+          ...prev,
+          loanAmount: maxLoanAmount
+        }));
+        setLoanValidationMessage({
+          type: 'warning',
+          message: `Kredi tutarı otomatik olarak maksimum değere (${maxLoanAmount.toLocaleString('tr-TR')} TL) düzeltildi. Kredi tutarı toplam sabit yatırımın %70'ini geçemez.`
+        });
+      } else {
+        setLoanValidationMessage({
+          type: 'success',
+          message: `Kredi tutarı geçerli. Maksimum kredi tutarı: ${maxLoanAmount.toLocaleString('tr-TR')} TL`
+        });
+      }
+    } else if (formData.loanAmount === 0 && totalFixedInvestment > 0) {
+      setLoanValidationMessage({
+        type: 'info',
+        message: `Maksimum kredi tutarı: ${maxLoanAmount.toLocaleString('tr-TR')} TL (Toplam sabit yatırımın %70'i)`
+      });
+    } else {
+      setLoanValidationMessage(null);
+    }
+  }, [maxLoanAmount, formData.loanAmount, totalFixedInvestment]);
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -133,6 +171,27 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     setEmployeeFieldTouched(true);
   };
 
+  const handleLoanAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value) || 0;
+    
+    if (value > maxLoanAmount && maxLoanAmount > 0) {
+      // Auto-correct to maximum allowed amount
+      handleInputChange('loanAmount', maxLoanAmount);
+      setLoanValidationMessage({
+        type: 'warning',
+        message: `Kredi tutarı otomatik olarak maksimum değere (${maxLoanAmount.toLocaleString('tr-TR')} TL) düzeltildi. Kredi tutarı toplam sabit yatırımın %70'ini geçemez.`
+      });
+    } else {
+      handleInputChange('loanAmount', value);
+      if (value > 0 && maxLoanAmount > 0) {
+        setLoanValidationMessage({
+          type: 'success',
+          message: `Kredi tutarı geçerli. Maksimum kredi tutarı: ${maxLoanAmount.toLocaleString('tr-TR')} TL`
+        });
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onCalculate(formData);
@@ -145,6 +204,32 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 
   // Check if we should show investment selection
   const shouldShowInvestmentSelection = formData.province && formData.incentiveType === 'Local Development Initiative';
+
+  const getValidationIcon = (type: string) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4" />;
+      case 'info':
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return <AlertCircle className="h-4 w-4" />;
+    }
+  };
+
+  const getValidationVariant = (type: string) => {
+    switch (type) {
+      case 'success':
+        return 'default';
+      case 'warning':
+        return 'destructive';
+      case 'info':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -233,8 +318,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
             </Select>
           </div>
         )}
-
-
 
         <div className="space-y-2">
           <Label htmlFor="supportPreference">Destek Tercihi</Label>
@@ -331,7 +414,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           </div>
         </div>
        
-
         {/* Total Fixed Investment Display */}
         <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex justify-between items-center">
@@ -355,8 +437,24 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
                 type="number"
                 min="0"
                 value={formData.loanAmount}
-                onChange={(e) => handleInputChange('loanAmount', parseFloat(e.target.value) || 0)}
+                onChange={handleLoanAmountChange}
               />
+              {loanValidationMessage && (
+                <Alert variant={getValidationVariant(loanValidationMessage.type)} className={
+                  loanValidationMessage.type === 'success' ? 'border-green-200 bg-green-50' :
+                  loanValidationMessage.type === 'warning' ? 'border-orange-200 bg-orange-50' :
+                  'border-blue-200 bg-blue-50'
+                }>
+                  {getValidationIcon(loanValidationMessage.type)}
+                  <AlertDescription className={
+                    loanValidationMessage.type === 'success' ? 'text-green-800' :
+                    loanValidationMessage.type === 'warning' ? 'text-orange-800' :
+                    'text-blue-800'
+                  }>
+                    {loanValidationMessage.message}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             <div className="space-y-2">
