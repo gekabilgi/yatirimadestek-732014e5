@@ -26,8 +26,8 @@ export const calculateIncentives = (inputs: IncentiveCalculatorInputs): Incentiv
   const totalFixedInvestment = inputs.landCost + inputs.constructionCost + 
     inputs.importedMachineryCost + inputs.domesticMachineryCost + inputs.otherExpenses;
 
-  // Validation: Check minimum investment requirement (500,000 TL)
-  if (totalFixedInvestment < 500000) {
+  // Validation: Check minimum investment requirement (6,000,000 TL)
+  if (totalFixedInvestment < 6000000) {
     validationErrors.push(
       `Toplam sabit yatırım tutarı minimum 500,000 TL olmalıdır. Mevcut tutar: ${totalFixedInvestment.toLocaleString('tr-TR')} TL`
     );
