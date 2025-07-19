@@ -68,6 +68,9 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
 
   setIsSearching(true);
   try {
+    // Increment search clicks statistics
+    await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
+    
     const rawInput = searchTerm.trim();
     const isNaceSearch = /\d/.test(rawInput); // Contains number = likely NACE
 

@@ -192,9 +192,17 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onCalculate(formData);
+    try {
+      // Increment calculation clicks statistics
+      await supabase.rpc('increment_stat', { stat_name_param: 'calculation_clicks' });
+      onCalculate(formData);
+    } catch (error) {
+      console.error('Error incrementing stats:', error);
+      // Still proceed with calculation even if stats update fails
+      onCalculate(formData);
+    }
   };
 
   // Only show alert if field has been touched and value is invalid

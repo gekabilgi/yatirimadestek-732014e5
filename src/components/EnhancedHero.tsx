@@ -1,11 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Search, Calculator, FileDown, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const EnhancedHero = () => {
   const navigate = useNavigate();
+  const [totalClicks, setTotalClicks] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('app_statistics')
+          .select('stat_value')
+          .in('stat_name', ['search_clicks', 'calculation_clicks']);
+
+        if (error) {
+          console.error('Error fetching stats:', error);
+          return;
+        }
+
+        const total = data.reduce((sum, stat) => sum + stat.stat_value, 0);
+        setTotalClicks(total);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const handleGetStarted = () => {
     navigate('/incentive-tools');
@@ -18,7 +46,10 @@ const EnhancedHero = () => {
   const stats = [
     { label: "Aktif Destek Çağrısı", value: "150+" },
     { label: "Desteklenen Sektör", value: "1.000+" },
-    { label: "Hesaplama Yapıldı", value: "1.500+" },
+    { 
+      label: "Toplam Arama & Hesaplama", 
+      value: isLoading ? "Yükleniyor..." : `${totalClicks.toLocaleString('tr-TR')}+` 
+    },
   ];
 
   return (

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          stat_name: string
+          stat_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stat_name: string
+          stat_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stat_name?: string
+          stat_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       districts: {
         Row: {
           created_at: string | null
@@ -1212,6 +1236,10 @@ export type Database = {
       }
       expire_old_products: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      increment_stat: {
+        Args: { stat_name_param: string }
         Returns: undefined
       }
       is_admin: {
