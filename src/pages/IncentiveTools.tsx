@@ -1,14 +1,23 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MainNavbar from '@/components/MainNavbar';
 import UnifiedIncentiveQuery from '@/components/UnifiedIncentiveQuery';
 import IncentiveTypeCalculator from '@/components/IncentiveTypeCalculator';
+import { useSearchParams } from 'react-router-dom';
 
 const IncentiveTools = () => {
-  const [activeModule, setActiveModule] = useState<'query' | 'calculator'>('query');
+  const [searchParams] = useSearchParams();
+  const moduleParam = searchParams.get('module') as 'query' | 'calculator';
+  const [activeModule, setActiveModule] = useState<'query' | 'calculator'>(moduleParam || 'query');
+
+  useEffect(() => {
+    if (moduleParam === 'query' || moduleParam === 'calculator') {
+      setActiveModule(moduleParam);
+    }
+  }, [moduleParam]);
 
   return (
     <div className="min-h-screen bg-background">

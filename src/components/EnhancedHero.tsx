@@ -91,7 +91,10 @@ const EnhancedHero = () => {
           {/* Feature Preview Cards */}
           <div className="mt-16">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg hover:shadow-xl transition-all">
+              <Card 
+                className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                onClick={() => navigate('/incentive-tools?module=query')}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="rounded-lg bg-blue-500 p-2 text-white">
@@ -105,7 +108,10 @@ const EnhancedHero = () => {
                 </CardContent>
               </Card>
               
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/50 shadow-lg hover:shadow-xl transition-all">
+              <Card 
+                className="relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/50 shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                onClick={() => navigate('/incentive-tools?module=calculator')}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="rounded-lg bg-green-500 p-2 text-white">
@@ -119,7 +125,10 @@ const EnhancedHero = () => {
                 </CardContent>
               </Card>
               
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-purple-100/50 shadow-lg hover:shadow-xl transition-all sm:col-span-2 lg:col-span-1">
+              <Card 
+                className="relative overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-purple-100/50 shadow-lg hover:shadow-xl transition-all cursor-pointer sm:col-span-2 lg:col-span-1"
+                onClick={() => navigate('/qna')}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="rounded-lg bg-purple-500 p-2 text-white">
