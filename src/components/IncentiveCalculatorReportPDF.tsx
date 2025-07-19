@@ -26,14 +26,14 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: colors.white,
-    padding: 30,
+    padding: 20,
     fontFamily: 'Roboto',
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 12,
     borderBottom: 2,
     borderBottomColor: colors.primary,
-    paddingBottom: 10,
+    paddingBottom: 6,
   },
   title: {
     fontSize: 20,
@@ -51,21 +51,21 @@ const styles = StyleSheet.create({
     color: colors.gray,
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     color: colors.primary,
-    marginBottom: 8,
+    marginBottom: 4,
     borderBottom: 1,
     borderBottomColor: colors.lightGray,
-    paddingBottom: 3,
+    paddingBottom: 2,
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 5,
-    paddingVertical: 2,
+    marginBottom: 2,
+    paddingVertical: 1,
   },
   label: {
     fontSize: 10,
@@ -80,15 +80,15 @@ const styles = StyleSheet.create({
   },
   summaryBox: {
     backgroundColor: colors.lightGray,
-    padding: 10,
+    padding: 6,
     borderRadius: 5,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   summaryTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
     color: colors.primary,
-    marginBottom: 5,
+    marginBottom: 3,
   },
   totalRow: {
     flexDirection: 'row',
@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef3c7',
     borderLeft: 3,
     borderLeftColor: colors.warning,
-    padding: 8,
-    marginBottom: 10,
+    padding: 4,
+    marginBottom: 4,
   },
   warningText: {
     fontSize: 9,
