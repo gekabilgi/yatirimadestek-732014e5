@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertTriangle, Calculator, Download } from 'lucide-react';
 import { IncentiveCalculatorResults as IIncentiveCalculatorResults, IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
+import { pdf } from '@react-pdf/renderer';
+import { IncentiveCalculatorReportPDF } from './IncentiveCalculatorReportPDF';
 
 interface IncentiveCalculatorResultsProps {
   results: IIncentiveCalculatorResults;
@@ -41,6 +43,20 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
 
   const getTaxReductionText = (preference: string): string => {
     return preference === 'Yes' ? 'Evet' : 'Hayır';
+  };
+
+  const generatePDF = async () => {
+    try {
+      const blob = await pdf(<IncentiveCalculatorReportPDF results={results} inputs={inputs} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tesvikler-hesaplama-raporu-${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+    }
   };
 
   // Calculate total machinery cost
@@ -244,7 +260,7 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
             <Calculator className="h-4 w-4 mr-2" />
             Yeni Hesaplama
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={generatePDF}>
             <Download className="h-4 w-4 mr-2" />
             PDF İndir
           </Button>
