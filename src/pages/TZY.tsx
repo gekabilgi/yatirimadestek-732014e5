@@ -189,7 +189,7 @@ const TZY = () => {
               <p className="text-gray-600 mb-6">
                 Firmanızı kaydedin ve büyük projelerde tedarikçi olarak yer alın
               </p>
-              <Link to="/tbg">
+              <Link to="/tzyil">
                 <Button 
                   size="lg" 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
