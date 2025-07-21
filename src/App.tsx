@@ -36,6 +36,7 @@ import TZYCompanyEdit from "./pages/admin/TZYCompanyEdit";
 import TZYProductAdd from "./pages/admin/TZYProductAdd";
 import TZYProductList from "./pages/admin/TZYProductList";
 import TZYEmailLogs from "./pages/admin/TZYEmailLogs";
+import TZYTalepler from "./pages/TZYTalepler";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +66,7 @@ const App = () => {
               <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
               <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
               <Route path="/tzy/kayitli-talepler" element={<TZYKayitliTalepler />} />
+              <Route path="/tzy/talepler/:on_request_id" element={<TZYTalepler />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
