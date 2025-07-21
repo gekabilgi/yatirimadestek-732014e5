@@ -18,11 +18,11 @@ const MainNavbar = () => {
   // Base navigation items available to everyone
   const baseNavItems = [
     { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
-    { name: 'Tedarik Zinciri', href: '/tzy' },
   ];
 
   // Admin-only navigation items
   const adminNavItems = [
+    { name: 'Tedarik Zinciri', href: '/tzy' },
     { name: 'Soru & Cevap', href: '/qna' },
     { name: 'Destek Arama', href: '/searchsupport' },
     { name: 'Yatırım Fırsatları', href: '/yatirim-firsatlari' },
