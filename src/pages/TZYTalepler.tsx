@@ -175,22 +175,23 @@ const TZYTalepler = () => {
     <div className="min-h-screen bg-background">
       <MainNavbar />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Company Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+      {/* Match navbar padding - using max-w-7xl and px-6 to align with navbar */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Company Header - More compact */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
             {companyInfo.logo_url && (
               <img 
                 src={companyInfo.logo_url} 
                 alt={`${companyInfo.firma_adi} Logo`}
-                className="w-16 h-16 object-contain bg-white rounded border"
+                className="w-12 h-12 object-contain bg-white rounded border shadow-sm"
               />
             )}
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-2xl font-bold text-foreground">
                 {companyInfo.firma_adi}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Açık Ürün Talepleri
               </p>
             </div>
@@ -212,58 +213,61 @@ const TZYTalepler = () => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {products.map((product) => {
               const isExpanded = expandedCards.has(product.id);
               const daysUntilDeadline = getDaysUntilDeadline(product.basvuru_son_tarihi);
               
               return (
-                <Card key={product.id} className="border-border">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg font-semibold text-foreground mb-2">
-                          {product.urun_grubu_adi}
-                        </CardTitle>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Talep ID:</span>
-                            <span className="font-medium">{product.id.slice(0, 8)}</span>
-                          </div>
+                <Card key={product.id} className="border-border hover:shadow-md transition-shadow">
+                  <Collapsible>
+                    <div className="p-4">
+                      {/* Card Header - Compact Layout */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-foreground mb-3 truncate">
+                            {product.urun_grubu_adi}
+                          </h3>
                           
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Son Başvuru:</span>
-                            <span className="font-medium">{formatDate(product.basvuru_son_tarihi)}</span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {daysUntilDeadline <= 3 ? (
-                              <Badge variant="destructive" className="text-xs">
-                                {daysUntilDeadline} gün kaldı
-                              </Badge>
-                            ) : daysUntilDeadline <= 7 ? (
-                              <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                                {daysUntilDeadline} gün kaldı
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs">
-                                {daysUntilDeadline} gün kaldı
-                              </Badge>
-                            )}
+                          {/* Responsive Grid - Stacked on mobile, 2 columns on larger screens */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground whitespace-nowrap">Talep ID:</span>
+                              <span className="font-medium truncate">{product.id.slice(0, 8)}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground whitespace-nowrap">Son Başvuru:</span>
+                              <span className="font-medium">{formatDate(product.basvuru_son_tarihi)}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              {daysUntilDeadline <= 3 ? (
+                                <Badge variant="destructive" className="text-xs whitespace-nowrap">
+                                  {daysUntilDeadline} gün kaldı
+                                </Badge>
+                              ) : daysUntilDeadline <= 7 ? (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 whitespace-nowrap">
+                                  {daysUntilDeadline} gün kaldı
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs whitespace-nowrap">
+                                  {daysUntilDeadline} gün kaldı
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      <Collapsible>
+                        
+                        {/* Action Button */}
                         <CollapsibleTrigger asChild>
                           <Button 
                             variant="destructive" 
                             size="sm"
                             onClick={() => toggleCardExpansion(product.id)}
-                            className="ml-4"
+                            className="flex-shrink-0 w-full sm:w-auto"
                           >
                             İNCELE
                             {isExpanded ? (
@@ -273,53 +277,60 @@ const TZYTalepler = () => {
                             )}
                           </Button>
                         </CollapsibleTrigger>
-                        
-                        <CollapsibleContent className="mt-4">
-                          <CardContent className="pt-4 border-t border-border">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="space-y-4">
+                      </div>
+                      
+                      {/* Expandable Content */}
+                      <CollapsibleContent className="mt-4">
+                        <div className="pt-4 border-t border-border">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                 <div className="flex items-center gap-2">
                                   <Award className="w-4 h-4 text-muted-foreground" />
                                   <span className="text-sm text-muted-foreground">İstenilen Yerlilik Oranı:</span>
-                                  <Badge variant="outline">%{product.minimum_yerlilik_orani}</Badge>
                                 </div>
-                                
+                                <Badge variant="outline">%{product.minimum_yerlilik_orani}</Badge>
+                              </div>
+                              
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                 <div className="flex items-center gap-2">
                                   <Calendar className="w-4 h-4 text-muted-foreground" />
                                   <span className="text-sm text-muted-foreground">Tedarikçi Deneyim Süresi:</span>
-                                  <Badge variant="outline">{product.minimum_deneyim} yıl</Badge>
                                 </div>
-                                
+                                <Badge variant="outline">{product.minimum_deneyim} yıl</Badge>
+                              </div>
+                              
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                 <div className="flex items-center gap-2">
                                   <Users className="w-4 h-4 text-muted-foreground" />
                                   <span className="text-sm text-muted-foreground">Minimum Tedarikçi Ölçeği:</span>
-                                  <Badge variant="outline">{product.firma_olcegi}</Badge>
                                 </div>
-                              </div>
-                              
-                              <div className="space-y-4">
-                                <div>
-                                  <h4 className="text-sm font-medium text-foreground mb-2">Ürün Açıklaması:</h4>
-                                  <p className="text-sm text-muted-foreground leading-relaxed">
-                                    {product.urun_aciklamasi}
-                                  </p>
-                                </div>
-                                
-                                <Button 
-                                  variant="destructive" 
-                                  size="lg"
-                                  onClick={() => handleApply(product.id)}
-                                  className="w-full"
-                                >
-                                  BAŞVUR
-                                </Button>
+                                <Badge variant="outline">{product.firma_olcegi}</Badge>
                               </div>
                             </div>
-                          </CardContent>
-                        </CollapsibleContent>
-                      </Collapsible>
+                            
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="text-sm font-medium text-foreground mb-2">Ürün Açıklaması:</h4>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {product.urun_aciklamasi}
+                                </p>
+                              </div>
+                              
+                              <Button 
+                                variant="destructive" 
+                                size="lg"
+                                onClick={() => handleApply(product.id)}
+                                className="w-full"
+                              >
+                                BAŞVUR
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
                     </div>
-                  </CardHeader>
+                  </Collapsible>
                 </Card>
               );
             })}
