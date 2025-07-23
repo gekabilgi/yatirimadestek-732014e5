@@ -884,6 +884,7 @@ export type Database = {
           alt_bolge: number | null
           bolge: number | null
           district: string | null
+          id: number
           osb_status: boolean | null
           province: string | null
           sgk_duration: number | null
@@ -892,6 +893,7 @@ export type Database = {
           alt_bolge?: number | null
           bolge?: number | null
           district?: string | null
+          id?: number
           osb_status?: boolean | null
           province?: string | null
           sgk_duration?: number | null
@@ -900,6 +902,7 @@ export type Database = {
           alt_bolge?: number | null
           bolge?: number | null
           district?: string | null
+          id?: number
           osb_status?: boolean | null
           province?: string | null
           sgk_duration?: number | null
