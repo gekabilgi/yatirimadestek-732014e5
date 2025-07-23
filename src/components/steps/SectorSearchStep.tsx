@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,15 +7,18 @@ import { Search, Target, Star, Zap, Cpu } from 'lucide-react';
 import { SectorSearchData } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { isRegion6Province } from '@/utils/regionUtils';
 
 interface SectorSearchStepProps {
   selectedSector: SectorSearchData | null;
   onSectorSelect: (sector: SectorSearchData) => void;
+  selectedProvince: string;
 }
 
 const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
   selectedSector,
   onSectorSelect,
+  selectedProvince,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SectorSearchData[]>([]);
@@ -57,96 +59,96 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
   };
 
   const handleSearch = async () => {
-  if (!searchTerm.trim()) {
-    toast({
-      title: "Uyarı",
-      description: "Lütfen bir sektör adı veya NACE kodu girin.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  setIsSearching(true);
-  try {
-    // Increment search clicks statistics
-    await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
-    
-    const rawInput = searchTerm.trim();
-    const isNaceSearch = /\d/.test(rawInput); // Contains number = likely NACE
-
-    let data = null;
-    let error = null;
-
-    if (isNaceSearch) {
-      const clean = rawInput.replace(/\./g, ''); // e.g., 051001
-
-      const formatted = insertDots(clean); // e.g., 05.10.01
-
-      // Try to match both cleaned and formatted versions - order by nace_kodu for hierarchical sorting
-      const result = await supabase
-        .from("sector_search")
-        .select("*")
-        .or(`nace_kodu.ilike.${clean}%,nace_kodu.ilike.${formatted}%`)
-        .order("nace_kodu")
-        .order("sektor");
-
-      data = result.data;
-      error = result.error;
-    } else {
-      // Sector name search - order by sektor for alphabetical sorting
-      const result = await supabase
-        .from("sector_search")
-        .select("*")
-        .ilike("sektor", `%${rawInput.toLowerCase()}%`)
-        .order("sektor");
-
-      data = result.data;
-      error = result.error;
+    if (!searchTerm.trim()) {
+      toast({
+        title: "Uyarı",
+        description: "Lütfen bir sektör adı veya NACE kodu girin.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    if (error) {
+    setIsSearching(true);
+    try {
+      // Increment search clicks statistics
+      await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
+      
+      const rawInput = searchTerm.trim();
+      const isNaceSearch = /\d/.test(rawInput); // Contains number = likely NACE
+
+      let data = null;
+      let error = null;
+
+      if (isNaceSearch) {
+        const clean = rawInput.replace(/\./g, ''); // e.g., 051001
+
+        const formatted = insertDots(clean); // e.g., 05.10.01
+
+        // Try to match both cleaned and formatted versions - order by nace_kodu for hierarchical sorting
+        const result = await supabase
+          .from("sector_search")
+          .select("*")
+          .or(`nace_kodu.ilike.${clean}%,nace_kodu.ilike.${formatted}%`)
+          .order("nace_kodu")
+          .order("sektor");
+
+        data = result.data;
+        error = result.error;
+      } else {
+        // Sector name search - order by sektor for alphabetical sorting
+        const result = await supabase
+          .from("sector_search")
+          .select("*")
+          .ilike("sektor", `%${rawInput.toLowerCase()}%`)
+          .order("sektor");
+
+        data = result.data;
+        error = result.error;
+      }
+
+      if (error) {
+        console.error("Search error:", error);
+        toast({
+          title: "Hata",
+          description: "Arama sırasında bir hata oluştu.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSearchResults(data || []);
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "Sonuç Bulunamadı",
+          description: "Girilen kriterlere uygun sektör bulunamadı.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Arama Tamamlandı",
+          description: `${data.length} sektör bulundu.`,
+        });
+      }
+    } catch (error) {
       console.error("Search error:", error);
       toast({
         title: "Hata",
         description: "Arama sırasında bir hata oluştu.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsSearching(false);
     }
+  };
 
-    setSearchResults(data || []);
-
-    if (!data || data.length === 0) {
-      toast({
-        title: "Sonuç Bulunamadı",
-        description: "Girilen kriterlere uygun sektör bulunamadı.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Arama Tamamlandı",
-        description: `${data.length} sektör bulundu.`,
-      });
-    }
-  } catch (error) {
-    console.error("Search error:", error);
-    toast({
-      title: "Hata",
-      description: "Arama sırasında bir hata oluştu.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsSearching(false);
-  }
-};
-
-// 👇 Helper function: insert dots into NACE code
-const insertDots = (code: string): string => {
-  if (code.length >= 6) return `${code.slice(0, 2)}.${code.slice(2, 4)}.${code.slice(4)}`;
-  if (code.length >= 4) return `${code.slice(0, 2)}.${code.slice(2, 4)}`;
-  if (code.length >= 2) return `${code.slice(0, 2)}.${code.slice(2)}`;
-  return code;
-};
+  // 👇 Helper function: insert dots into NACE code
+  const insertDots = (code: string): string => {
+    if (code.length >= 6) return `${code.slice(0, 2)}.${code.slice(2, 4)}.${code.slice(4)}`;
+    if (code.length >= 4) return `${code.slice(0, 2)}.${code.slice(2, 4)}`;
+    if (code.length >= 2) return `${code.slice(0, 2)}.${code.slice(2)}`;
+    return code;
+  };
 
   const handleSectorSelect = (sector: SectorSearchData) => {
     onSectorSelect(sector);
@@ -156,6 +158,44 @@ const insertDots = (code: string): string => {
       title: "Sektör Seçildi",
       description: `${sector.sektor} sektörü seçildi.`,
     });
+  };
+
+  // Check if current province is in Region 6
+  const isProvince6 = selectedProvince && isRegion6Province(selectedProvince);
+
+  // Helper function to render badges with Region 6 logic
+  const renderBadges = (result: SectorSearchData, isSmall: boolean = false) => {
+    const badgeSize = isSmall ? "text-xs" : "text-sm";
+    const iconSize = isSmall ? "h-2.5 w-2.5" : "h-3 w-3";
+    
+    return (
+      <div className="flex gap-2 flex-wrap">
+        {result.hedef_yatirim && (
+          <Badge className={`bg-blue-500 hover:bg-blue-600 text-white ${badgeSize} flex items-center gap-1`}>
+            <Target className={iconSize} />
+            {isSmall ? "Hedef" : "Hedef Yatırım"}
+          </Badge>
+        )}
+        {(result.oncelikli_yatirim || isProvince6) && (
+          <Badge className={`bg-green-500 hover:bg-green-600 text-white ${badgeSize} flex items-center gap-1`}>
+            <Star className={iconSize} />
+            {isSmall ? "Öncelikli" : "Öncelikli Yatırım"}
+          </Badge>
+        )}
+        {result.yuksek_teknoloji && (
+          <Badge className={`bg-orange-500 hover:bg-orange-600 text-white ${badgeSize} flex items-center gap-1`}>
+            <Zap className={iconSize} />
+            {isSmall ? "Yüksek Tek." : "Yüksek Teknoloji"}
+          </Badge>
+        )}
+        {result.orta_yuksek_teknoloji && (
+          <Badge className={`bg-purple-500 hover:bg-purple-600 text-white ${badgeSize} flex items-center gap-1`}>
+            <Cpu className={iconSize} />
+            {isSmall ? "Orta-Yüksek Tek." : "Orta-Yüksek Teknoloji"}
+          </Badge>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -178,6 +218,15 @@ const insertDots = (code: string): string => {
         </Button>
       </div>
 
+      {/* Region 6 notification */}
+      {isProvince6 && (
+        <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+          <p className="text-sm font-medium text-green-800">
+            6. Bölge seçildi - Tüm sektörler öncelikli yatırım kapsamında değerlendirilecektir.
+          </p>
+        </div>
+      )}
+
       {selectedSector && (
         <Card className="bg-primary/5 border-primary">
           <CardContent className="pt-4">
@@ -186,32 +235,7 @@ const insertDots = (code: string): string => {
                 <h4 className="font-semibold text-lg">{selectedSector.sektor}</h4>
                 <Badge variant="outline" className="text-sm">{selectedSector.nace_kodu}</Badge>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {selectedSector.hedef_yatirim && (
-                  <Badge className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1">
-                    <Target className="h-3 w-3" />
-                    Hedef Yatırım
-                  </Badge>
-                )}
-                {selectedSector.oncelikli_yatirim && (
-                  <Badge className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-1">
-                    <Star className="h-3 w-3" />
-                    Öncelikli Yatırım
-                  </Badge>
-                )}
-                {selectedSector.yuksek_teknoloji && (
-                  <Badge className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-1">
-                    <Zap className="h-3 w-3" />
-                    Yüksek Teknoloji
-                  </Badge>
-                )}
-                {selectedSector.orta_yuksek_teknoloji && (
-                  <Badge className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-1">
-                    <Cpu className="h-3 w-3" />
-                    Orta-Yüksek Teknoloji
-                  </Badge>
-                )}
-              </div>
+              {renderBadges(selectedSector)}
               {selectedSector.sartlar && (
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <p className="text-sm font-medium text-blue-800 mb-1">Özel Şartlar:</p>
@@ -237,32 +261,7 @@ const insertDots = (code: string): string => {
                     <h4 className="font-medium">{result.sektor}</h4>
                     <Badge variant="outline">{result.nace_kodu}</Badge>
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {result.hedef_yatirim && (
-                      <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs flex items-center gap-1">
-                        <Target className="h-2.5 w-2.5" />
-                        Hedef
-                      </Badge>
-                    )}
-                    {result.oncelikli_yatirim && (
-                      <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs flex items-center gap-1">
-                        <Star className="h-2.5 w-2.5" />
-                        Öncelikli
-                      </Badge>
-                    )}
-                    {result.yuksek_teknoloji && (
-                      <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-xs flex items-center gap-1">
-                        <Zap className="h-2.5 w-2.5" />
-                        Yüksek Tek.
-                      </Badge>
-                    )}
-                    {result.orta_yuksek_teknoloji && (
-                      <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs flex items-center gap-1">
-                        <Cpu className="h-2.5 w-2.5" />
-                        Orta-Yüksek Tek.
-                      </Badge>
-                    )}
-                  </div>
+                  {renderBadges(result, true)}
                 </div>
               </CardContent>
             </Card>

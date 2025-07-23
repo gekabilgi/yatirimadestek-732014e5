@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import SectorSearchStep from './steps/SectorSearchStep';
@@ -64,6 +63,7 @@ const UnifiedIncentiveQuery: React.FC = () => {
           <SectorSearchStep
             selectedSector={queryData.selectedSector}
             onSectorSelect={handleSectorSelect}
+            selectedProvince={queryData.selectedProvince}
           />
         </CardContent>
       </Card>
