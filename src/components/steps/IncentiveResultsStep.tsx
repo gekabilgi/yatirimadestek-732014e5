@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { pdf } from '@react-pdf/renderer';
 import IncentiveReportPDF from '@/components/IncentiveReportPDF';
 import { isIstanbulMiningInvestment, isResGesInvestment, getGesResOverrideValues } from '@/utils/investmentValidation';
+import { isRegion6Province } from '@/utils/regionUtils';
 
 interface IncentiveResultsStepProps {
   queryData: UnifiedQueryData;
@@ -263,12 +264,16 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       const sgkDuration = await getSgkDuration(queryData.selectedProvince, queryData.selectedDistrict, queryData.osbStatus);
       const altBolge = await getAltBolge(queryData.selectedProvince, queryData.selectedDistrict, queryData.osbStatus);
       
+      // Check if current province is in Region 6
+      const isProvince6 = isRegion6Province(queryData.selectedProvince);
+      
       const result: IncentiveResult = {
         sector: {
           nace_code: queryData.selectedSector.nace_kodu,
           name: queryData.selectedSector.sektor,
-          isTarget: queryData.selectedSector.hedef_yatirim || false,
-          isPriority: queryData.selectedSector.oncelikli_yatirim || false,
+          // For Region 6 provinces, replace Hedef with Öncelikli
+          isTarget: isProvince6 ? false : (queryData.selectedSector.hedef_yatirim || false),
+          isPriority: isProvince6 ? true : (queryData.selectedSector.oncelikli_yatirim || false),
           isHighTech: queryData.selectedSector.yuksek_teknoloji || false,
           isMidHighTech: queryData.selectedSector.orta_yuksek_teknoloji || false,
           conditions: queryData.selectedSector.sartlar || "",

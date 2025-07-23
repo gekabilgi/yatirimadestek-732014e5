@@ -170,17 +170,27 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
     
     return (
       <div className="flex gap-2 flex-wrap">
-        {result.hedef_yatirim && (
-          <Badge className={`bg-blue-500 hover:bg-blue-600 text-white ${badgeSize} flex items-center gap-1`}>
-            <Target className={iconSize} />
-            {isSmall ? "Hedef" : "Hedef Yatırım"}
-          </Badge>
-        )}
-        {(result.oncelikli_yatirim || isProvince6) && (
+        {/* For Region 6 provinces, show Öncelikli instead of Hedef */}
+        {isProvince6 ? (
           <Badge className={`bg-green-500 hover:bg-green-600 text-white ${badgeSize} flex items-center gap-1`}>
             <Star className={iconSize} />
             {isSmall ? "Öncelikli" : "Öncelikli Yatırım"}
           </Badge>
+        ) : (
+          <>
+            {result.hedef_yatirim && (
+              <Badge className={`bg-blue-500 hover:bg-blue-600 text-white ${badgeSize} flex items-center gap-1`}>
+                <Target className={iconSize} />
+                {isSmall ? "Hedef" : "Hedef Yatırım"}
+              </Badge>
+            )}
+            {result.oncelikli_yatirim && (
+              <Badge className={`bg-green-500 hover:bg-green-600 text-white ${badgeSize} flex items-center gap-1`}>
+                <Star className={iconSize} />
+                {isSmall ? "Öncelikli" : "Öncelikli Yatırım"}
+              </Badge>
+            )}
+          </>
         )}
         {result.yuksek_teknoloji && (
           <Badge className={`bg-orange-500 hover:bg-orange-600 text-white ${badgeSize} flex items-center gap-1`}>
