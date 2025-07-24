@@ -36,7 +36,7 @@ const formSchema = z.object({
   firma_adi: z.string().min(1, 'Firma adı zorunludur').max(255, 'Firma adı 255 karakterden uzun olamaz'),
   iletisim_kisisi: z.string().min(1, 'İletişim kişisi zorunludur').max(255, 'İletişim kişisi 255 karakterden uzun olamaz'),
   unvan: z.string().min(1, 'Unvan zorunludur').max(255, 'Unvan 255 karakterden uzun olamaz'),
-  firma_olcegi: z.enum(['Micro', 'Small', 'Medium', 'Large'], { required_error: 'Firma ölçeği seçmelisiniz' }),
+  firma_olcegi: z.enum(['Mikro', 'Küçük', 'Orta', 'Büyük'], { required_error: 'Firma ölçeği seçmelisiniz' }),
   telefon: z.string()
     .length(10, 'Telefon numarası 10 haneli olmalıdır')
     .regex(/^\d+$/, 'Sadece rakam girmelisiniz')
@@ -458,10 +458,10 @@ const TZYSupplierApplication = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Micro">Mikro</SelectItem>
-                          <SelectItem value="Small">Küçük</SelectItem>
-                          <SelectItem value="Medium">Orta</SelectItem>
-                          <SelectItem value="Large">Büyük</SelectItem>
+                          <SelectItem value="Mikro">Mikro</SelectItem>
+                          <SelectItem value="Küçük">Küçük</SelectItem>
+                          <SelectItem value="Orta">Orta</SelectItem>
+                          <SelectItem value="Büyük">Büyük</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
