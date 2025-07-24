@@ -37,6 +37,10 @@ import TZYProductAdd from "./pages/admin/TZYProductAdd";
 import TZYProductList from "./pages/admin/TZYProductList";
 import TZYEmailLogs from "./pages/admin/TZYEmailLogs";
 import TZYTalepler from "./pages/TZYTalepler";
+import TZYSupplierApplication from "./pages/TZYSupplierApplication";
+import TZYSupplierApplicationSuccess from "./pages/TZYSupplierApplicationSuccess";
+import TZYSupplierApplicationError from "./pages/TZYSupplierApplicationError";
+import TZYSupplierApplications from "./pages/admin/TZYSupplierApplications";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,6 +71,9 @@ const App = () => {
               <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
               <Route path="/tzy/kayitli-talepler" element={<TZYKayitliTalepler />} />
               <Route path="/tzy/talepler/:on_request_id" element={<TZYTalepler />} />
+              <Route path="/tzy/talepler/basvuru/:on_request_id/:product_id" element={<TZYSupplierApplication />} />
+              <Route path="/tzy/supplier-application/success" element={<TZYSupplierApplicationSuccess />} />
+              <Route path="/tzy/supplier-application/error" element={<TZYSupplierApplicationError />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
@@ -147,6 +154,11 @@ const App = () => {
               <Route path="/admin/tzy-email-logs" element={
                 <ProtectedAdminRoute>
                   <TZYEmailLogs />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/tzy-supplier-applications" element={
+                <ProtectedAdminRoute>
+                  <TZYSupplierApplications />
                 </ProtectedAdminRoute>
               } />
               <Route path="/program/:id" element={<ProgramDetails />} />

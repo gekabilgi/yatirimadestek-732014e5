@@ -119,8 +119,8 @@ const TZYTalepler = () => {
   };
 
   const handleApply = (productId: string) => {
-    // Navigate to future application page
-    navigate(`/tzy/basvuru/${productId}`);
+    // Navigate to supplier application page
+    navigate(`/tzy/talepler/basvuru/${on_request_id}/${productId}`);
   };
 
   const formatDate = (dateString: string) => {
