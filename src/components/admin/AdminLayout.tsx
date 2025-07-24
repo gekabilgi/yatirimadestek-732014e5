@@ -45,6 +45,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       subItems: [
         { name: 'Ön Talep Listesi', href: '/admin/tzyotl' },
         { name: 'Ürün Talep Listesi', href: '/admin/tzyutl' },
+        { name: 'Tedarikçi Başvuru Listesi', href: '/admin/tzy-supplier-applications' },
         { name: 'E-posta Logları', href: '/admin/tzy-email-logs' }
       ]
     },
