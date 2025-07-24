@@ -1020,42 +1020,60 @@ export type Database = {
       supplier_applications: {
         Row: {
           created_at: string | null
+          dosyalar_url: string | null
           e_posta: string
           firma_adi: string
           firma_olcegi: string
+          firma_websitesi: string | null
           id: string
           il: string
           iletisim_kisisi: string
+          minimum_yerlilik_orani: number | null
+          notlar: string | null
+          on_request_id: string | null
           product_id: string
           status: string | null
+          tedarikci_deneyim_suresi: number | null
           telefon: string
           unvan: string
           vergi_kimlik_no: string
         }
         Insert: {
           created_at?: string | null
+          dosyalar_url?: string | null
           e_posta: string
           firma_adi: string
           firma_olcegi: string
+          firma_websitesi?: string | null
           id?: string
           il: string
           iletisim_kisisi: string
+          minimum_yerlilik_orani?: number | null
+          notlar?: string | null
+          on_request_id?: string | null
           product_id: string
           status?: string | null
+          tedarikci_deneyim_suresi?: number | null
           telefon: string
           unvan: string
           vergi_kimlik_no: string
         }
         Update: {
           created_at?: string | null
+          dosyalar_url?: string | null
           e_posta?: string
           firma_adi?: string
           firma_olcegi?: string
+          firma_websitesi?: string | null
           id?: string
           il?: string
           iletisim_kisisi?: string
+          minimum_yerlilik_orani?: number | null
+          notlar?: string | null
+          on_request_id?: string | null
           product_id?: string
           status?: string | null
+          tedarikci_deneyim_suresi?: number | null
           telefon?: string
           unvan?: string
           vergi_kimlik_no?: string
