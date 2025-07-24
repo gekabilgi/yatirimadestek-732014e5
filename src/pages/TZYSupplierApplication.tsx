@@ -280,6 +280,9 @@ const TZYSupplierApplication = () => {
       const filesUrl = await uploadFiles();
 
       // Submit application
+      // Format phone number to match database constraint: XXX XXX XX XX
+      const formattedPhone = data.telefon.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4');
+      
       const { error } = await supabase
         .from('supplier_applications')
         .insert({
@@ -290,7 +293,7 @@ const TZYSupplierApplication = () => {
           iletisim_kisisi: data.iletisim_kisisi,
           unvan: data.unvan,
           firma_olcegi: data.firma_olcegi,
-          telefon: data.telefon,
+          telefon: formattedPhone,
           e_posta: data.e_posta,
           firma_websitesi: data.firma_websitesi || null,
           il: data.il,
