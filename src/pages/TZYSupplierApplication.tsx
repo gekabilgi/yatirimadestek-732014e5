@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, FileText, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import MainNavbar from '@/components/MainNavbar';
 
 // Turkish provinces
 const PROVINCES = [
@@ -349,332 +350,335 @@ const TZYSupplierApplication = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
-            Tedarikçi Başvuru Formu
-          </CardTitle>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-lg mb-2">Ürün Bilgileri</h3>
-            <p><strong>Ürün Grubu:</strong> {productInfo.urun_grubu_adi}</p>
-            <p><strong>Açıklama:</strong> {productInfo.urun_aciklamasi}</p>
-            <p><strong>Firma:</strong> {productInfo.pre_requests.firma_adi}</p>
-            <p><strong>Son Başvuru Tarihi:</strong> {new Date(productInfo.basvuru_son_tarihi).toLocaleDateString('tr-TR')}</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Tax ID */}
+    <div className="min-h-screen bg-background">
+      <MainNavbar />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">
+              Tedarikçi Başvuru Formu
+            </CardTitle>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-lg mb-2">Ürün Bilgileri</h3>
+              <p><strong>Ürün Grubu:</strong> {productInfo.urun_grubu_adi}</p>
+              <p><strong>Açıklama:</strong> {productInfo.urun_aciklamasi}</p>
+              <p><strong>Firma:</strong> {productInfo.pre_requests.firma_adi}</p>
+              <p><strong>Son Başvuru Tarihi:</strong> {new Date(productInfo.basvuru_son_tarihi).toLocaleDateString('tr-TR')}</p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Tax ID */}
+                  <FormField
+                    control={form.control}
+                    name="vergi_kimlik_no"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vergi Kimlik Numarası *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="10 veya 11 haneli"
+                            onChange={(e) => {
+                              field.onChange(e);
+                              checkExistingCompany(e.target.value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Load Previous Info Button */}
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={loadPreviousInfo}
+                      disabled={!canLoadPrevious}
+                      className="w-full"
+                    >
+                      Önceki Bilgilerimi Yükle
+                    </Button>
+                  </div>
+
+                  {/* Company Name */}
+                  <FormField
+                    control={form.control}
+                    name="firma_adi"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Firma Adı *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Contact Person */}
+                  <FormField
+                    control={form.control}
+                    name="iletisim_kisisi"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İletişim Kişisi *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Title */}
+                  <FormField
+                    control={form.control}
+                    name="unvan"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unvan *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Company Scale */}
+                  <FormField
+                    control={form.control}
+                    name="firma_olcegi"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Firma Ölçeği *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Mikro">Mikro</SelectItem>
+                            <SelectItem value="Küçük">Küçük</SelectItem>
+                            <SelectItem value="Orta">Orta</SelectItem>
+                            <SelectItem value="Büyük">Büyük</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Phone */}
+                  <FormField
+                    control={form.control}
+                    name="telefon"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefon *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="5XX XXX XX XX (0 olmadan)"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Email */}
+                  <FormField
+                    control={form.control}
+                    name="e_posta"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>E-posta *</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Website */}
+                  <FormField
+                    control={form.control}
+                    name="firma_websitesi"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Firma Websitesi</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Province */}
+                  <FormField
+                    control={form.control}
+                    name="il"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İl *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="İl seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="max-h-[200px]">
+                            {PROVINCES.map((province) => (
+                              <SelectItem key={province} value={province}>
+                                {province}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Localization Rate */}
+                  <FormField
+                    control={form.control}
+                    name="minimum_yerlilik_orani"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum Sertifikalı Yerlilik Oranı (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" min="0" max="100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Experience */}
+                  <FormField
+                    control={form.control}
+                    name="tedarikci_deneyim_suresi"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bu Üründe Deneyim Süresi (Yıl)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" min="0" max="100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Notes */}
                 <FormField
                   control={form.control}
-                  name="vergi_kimlik_no"
+                  name="notlar"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vergi Kimlik Numarası *</FormLabel>
+                      <FormLabel>Notlar / Ek Bilgiler</FormLabel>
                       <FormControl>
-                        <Input
+                        <Textarea
                           {...field}
-                          placeholder="10 veya 11 haneli"
-                          onChange={(e) => {
-                            field.onChange(e);
-                            checkExistingCompany(e.target.value);
-                          }}
+                          placeholder="Ek bilgiler..."
+                          className="min-h-[100px]"
                         />
                       </FormControl>
+                      <div className="text-sm text-gray-500 text-right">
+                        {field.value?.length || 0}/1000
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Load Previous Info Button */}
-                <div className="flex items-end">
+                {/* File Upload */}
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Destekleyici Dosyalar
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      multiple
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept=".pdf,.jpeg,.jpg,.png,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.ai,.psd,.crd,.txt,.csv"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="cursor-pointer flex flex-col items-center"
+                    >
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">
+                        Dosya yüklemek için tıklayın
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        Toplam boyut: 50MB, Formatlar: PDF, JPG, PNG, DOC, XLS, PPT vb.
+                      </span>
+                    </label>
+                  </div>
+
+                  {files.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Seçilen Dosyalar:</h4>
+                      {files.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="h-4 w-4" />
+                            <span className="text-sm">{file.name}</span>
+                            <span className="text-xs text-gray-500">
+                              ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex space-x-4">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-red-500 hover:bg-red-600"
+                  >
+                    {isSubmitting ? 'Gönderiliyor...' : 'BAŞVUR'}
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={loadPreviousInfo}
-                    disabled={!canLoadPrevious}
-                    className="w-full"
+                    onClick={clearForm}
+                    disabled={isSubmitting}
+                    className="flex-1"
                   >
-                    Önceki Bilgilerimi Yükle
+                    Formu Temizle
                   </Button>
                 </div>
-
-                {/* Company Name */}
-                <FormField
-                  control={form.control}
-                  name="firma_adi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Firma Adı *</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Contact Person */}
-                <FormField
-                  control={form.control}
-                  name="iletisim_kisisi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>İletişim Kişisi *</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Title */}
-                <FormField
-                  control={form.control}
-                  name="unvan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unvan *</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Company Scale */}
-                <FormField
-                  control={form.control}
-                  name="firma_olcegi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Firma Ölçeği *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seçiniz" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Mikro">Mikro</SelectItem>
-                          <SelectItem value="Küçük">Küçük</SelectItem>
-                          <SelectItem value="Orta">Orta</SelectItem>
-                          <SelectItem value="Büyük">Büyük</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Phone */}
-                <FormField
-                  control={form.control}
-                  name="telefon"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefon *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="5XX XXX XX XX (0 olmadan)"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Email */}
-                <FormField
-                  control={form.control}
-                  name="e_posta"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-posta *</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Website */}
-                <FormField
-                  control={form.control}
-                  name="firma_websitesi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Firma Websitesi</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Province */}
-                <FormField
-                  control={form.control}
-                  name="il"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>İl *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="İl seçiniz" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="max-h-[200px]">
-                          {PROVINCES.map((province) => (
-                            <SelectItem key={province} value={province}>
-                              {province}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Localization Rate */}
-                <FormField
-                  control={form.control}
-                  name="minimum_yerlilik_orani"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minimum Sertifikalı Yerlilik Oranı (%)</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" min="0" max="100" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Experience */}
-                <FormField
-                  control={form.control}
-                  name="tedarikci_deneyim_suresi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bu Üründe Deneyim Süresi (Yıl)</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" min="0" max="100" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Notes */}
-              <FormField
-                control={form.control}
-                name="notlar"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notlar / Ek Bilgiler</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Ek bilgiler..."
-                        className="min-h-[100px]"
-                      />
-                    </FormControl>
-                    <div className="text-sm text-gray-500 text-right">
-                      {field.value?.length || 0}/1000
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* File Upload */}
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Destekleyici Dosyalar
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                  <input
-                    type="file"
-                    id="file-upload"
-                    multiple
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept=".pdf,.jpeg,.jpg,.png,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.ai,.psd,.crd,.txt,.csv"
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-600">
-                      Dosya yüklemek için tıklayın
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">
-                      Toplam boyut: 50MB, Formatlar: PDF, JPG, PNG, DOC, XLS, PPT vb.
-                    </span>
-                  </label>
-                </div>
-
-                {files.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Seçilen Dosyalar:</h4>
-                    {files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="text-sm">{file.name}</span>
-                          <span className="text-xs text-gray-500">
-                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex space-x-4">
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 bg-red-500 hover:bg-red-600"
-                >
-                  {isSubmitting ? 'Gönderiliyor...' : 'BAŞVUR'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={clearForm}
-                  disabled={isSubmitting}
-                  className="flex-1"
-                >
-                  Formu Temizle
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
