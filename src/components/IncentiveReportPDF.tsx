@@ -233,9 +233,14 @@ const IncentiveReportPDF: React.FC<IncentiveReportProps> = ({ incentiveResult })
                         </View>
                     )}
 
-                    {incentiveResult.sector.isPriority && (
+                    {(incentiveResult.sector.isPriority || incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) && (
                         <View style={{marginTop: incentiveResult.sector.isTarget ? 15 : 0}}>
-                            <Text style={{fontWeight: 'bold', marginBottom: 5, fontSize: 11}}>Öncelikli Yatırım Destekleri</Text>
+                            <Text style={{fontWeight: 'bold', marginBottom: 5, fontSize: 11}}>
+                              {incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech 
+                                ? "Öncelikli ve Yüksek/Orta-Yüksek Teknoloji Yatırım Destekleri"
+                                : "Öncelikli Yatırım Destekleri"
+                              }
+                            </Text>
                             <View style={styles.row}><Text style={styles.label}>SGK Destek Süresi</Text><Text style={styles.value}>{incentiveResult.location.sgk_duration}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Vergi İndirimi (YKO)</Text><Text style={styles.value}>%{supportValues.priority.taxDiscount}</Text></View>
                             <View style={styles.row}><Text style={styles.label}>Faiz/Kâr Payı Oranı</Text><Text style={styles.value}>%{supportValues.priority.interestSupport}</Text></View>
