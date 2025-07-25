@@ -198,7 +198,7 @@ const TZYSupplierApplications = () => {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto px-4 py-8 mt-12">
+      <div className="container mx-auto px-4 py-8 mt-14">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold">
