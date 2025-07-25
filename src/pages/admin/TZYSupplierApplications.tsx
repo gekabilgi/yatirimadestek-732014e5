@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, FileText, Download, Eye, ExternalLink } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
   Table,
   TableBody,
@@ -187,229 +188,233 @@ const TZYSupplierApplications = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
+      <AdminLayout>
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">
-            Tedarikçi Başvuruları
-          </CardTitle>
-          <div className="flex space-x-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Firma adı, VKN, kişi adı veya e-posta ile ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+    <AdminLayout>
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">
+              Tedarikçi Başvuruları
+            </CardTitle>
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Firma adı, VKN, kişi adı veya e-posta ile ara..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Durum Filtresi" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Durumlar</SelectItem>
+                  <SelectItem value="submitted">Gönderildi</SelectItem>
+                  <SelectItem value="reviewing">İnceleniyor</SelectItem>
+                  <SelectItem value="approved">Onaylandı</SelectItem>
+                  <SelectItem value="rejected">Reddedildi</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Durum Filtresi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="submitted">Gönderildi</SelectItem>
-                <SelectItem value="reviewing">İnceleniyor</SelectItem>
-                <SelectItem value="approved">Onaylandı</SelectItem>
-                <SelectItem value="rejected">Reddedildi</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Firma Bilgileri</TableHead>
-                  <TableHead>Ürün</TableHead>
-                  <TableHead>İletişim</TableHead>
-                  <TableHead>Durum</TableHead>
-                  <TableHead>Tarih</TableHead>
-                  <TableHead>İşlemler</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredApplications.map((application) => (
-                  <TableRow key={application.id}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">{application.firma_adi}</div>
-                        <div className="text-sm text-gray-500">
-                          VKN: {application.vergi_kimlik_no}
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Firma Bilgileri</TableHead>
+                    <TableHead>Ürün</TableHead>
+                    <TableHead>İletişim</TableHead>
+                    <TableHead>Durum</TableHead>
+                    <TableHead>Tarih</TableHead>
+                    <TableHead>İşlemler</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredApplications.map((application) => (
+                    <TableRow key={application.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">{application.firma_adi}</div>
+                          <div className="text-sm text-gray-500">
+                            VKN: {application.vergi_kimlik_no}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {application.firma_olcegi} Ölçek
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {application.firma_olcegi} Ölçek
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {application.products?.urun_grubu_adi}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Talep Eden: {application.products?.pre_requests?.firma_adi}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">
-                          {application.products?.urun_grubu_adi}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div>{application.iletisim_kisisi}</div>
+                          <div className="text-sm text-gray-500">{application.unvan}</div>
+                          <div className="text-sm text-gray-500">{application.e_posta}</div>
+                          <div className="text-sm text-gray-500">{application.telefon}</div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          Talep Eden: {application.products?.pre_requests?.firma_adi}
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={application.status}
+                          onValueChange={(value) => updateApplicationStatus(application.id, value)}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            {getStatusBadge(application.status)}
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="submitted">Gönderildi</SelectItem>
+                            <SelectItem value="reviewing">İnceleniyor</SelectItem>
+                            <SelectItem value="approved">Onaylandı</SelectItem>
+                            <SelectItem value="rejected">Reddedildi</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {new Date(application.created_at).toLocaleDateString('tr-TR')}
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div>{application.iletisim_kisisi}</div>
-                        <div className="text-sm text-gray-500">{application.unvan}</div>
-                        <div className="text-sm text-gray-500">{application.e_posta}</div>
-                        <div className="text-sm text-gray-500">{application.telefon}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={application.status}
-                        onValueChange={(value) => updateApplicationStatus(application.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          {getStatusBadge(application.status)}
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="submitted">Gönderildi</SelectItem>
-                          <SelectItem value="reviewing">İnceleniyor</SelectItem>
-                          <SelectItem value="approved">Onaylandı</SelectItem>
-                          <SelectItem value="rejected">Reddedildi</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {new Date(application.created_at).toLocaleDateString('tr-TR')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedApplication(application)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Başvuru Detayları</DialogTitle>
+                                <DialogDescription>
+                                  {selectedApplication?.firma_adi} - {selectedApplication?.products?.urun_grubu_adi}
+                                </DialogDescription>
+                              </DialogHeader>
+                              {selectedApplication && (
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold">Firma Bilgileri</h4>
+                                      <p><strong>Firma Adı:</strong> {selectedApplication.firma_adi}</p>
+                                      <p><strong>VKN:</strong> {selectedApplication.vergi_kimlik_no}</p>
+                                      <p><strong>Firma Ölçeği:</strong> {selectedApplication.firma_olcegi}</p>
+                                      <p><strong>İl:</strong> {selectedApplication.il}</p>
+                                      {selectedApplication.firma_websitesi && (
+                                        <p><strong>Website:</strong> 
+                                          <a 
+                                            href={selectedApplication.firma_websitesi} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:underline ml-1"
+                                          >
+                                            {selectedApplication.firma_websitesi}
+                                            <ExternalLink className="inline h-3 w-3 ml-1" />
+                                          </a>
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold">İletişim Bilgileri</h4>
+                                      <p><strong>İletişim Kişisi:</strong> {selectedApplication.iletisim_kisisi}</p>
+                                      <p><strong>Unvan:</strong> {selectedApplication.unvan}</p>
+                                      <p><strong>Telefon:</strong> {selectedApplication.telefon}</p>
+                                      <p><strong>E-posta:</strong> {selectedApplication.e_posta}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold">Teknik Bilgiler</h4>
+                                      {selectedApplication.minimum_yerlilik_orani && (
+                                        <p><strong>Yerlilik Oranı:</strong> %{selectedApplication.minimum_yerlilik_orani}</p>
+                                      )}
+                                      {selectedApplication.tedarikci_deneyim_suresi && (
+                                        <p><strong>Deneyim Süresi:</strong> {selectedApplication.tedarikci_deneyim_suresi} yıl</p>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold">Başvuru Bilgileri</h4>
+                                      <p><strong>Durum:</strong> {getStatusBadge(selectedApplication.status)}</p>
+                                      <p><strong>Başvuru Tarihi:</strong> {new Date(selectedApplication.created_at).toLocaleString('tr-TR')}</p>
+                                    </div>
+                                  </div>
+
+                                  {selectedApplication.notlar && (
+                                    <div>
+                                      <h4 className="font-semibold">Notlar</h4>
+                                      <p className="text-sm bg-gray-50 p-3 rounded">{selectedApplication.notlar}</p>
+                                    </div>
+                                  )}
+
+                                  {selectedApplication.dosyalar_url && (
+                                    <div>
+                                      <h4 className="font-semibold">Destekleyici Dosyalar</h4>
+                                      <Button
+                                        onClick={() => downloadFiles(selectedApplication.dosyalar_url!)}
+                                        variant="outline"
+                                        size="sm"
+                                      >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Dosyaları İndir
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+
+                          {application.dosyalar_url && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setSelectedApplication(application)}
+                              onClick={() => downloadFiles(application.dosyalar_url!)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <FileText className="h-4 w-4" />
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Başvuru Detayları</DialogTitle>
-                              <DialogDescription>
-                                {selectedApplication?.firma_adi} - {selectedApplication?.products?.urun_grubu_adi}
-                              </DialogDescription>
-                            </DialogHeader>
-                            {selectedApplication && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h4 className="font-semibold">Firma Bilgileri</h4>
-                                    <p><strong>Firma Adı:</strong> {selectedApplication.firma_adi}</p>
-                                    <p><strong>VKN:</strong> {selectedApplication.vergi_kimlik_no}</p>
-                                    <p><strong>Firma Ölçeği:</strong> {selectedApplication.firma_olcegi}</p>
-                                    <p><strong>İl:</strong> {selectedApplication.il}</p>
-                                    {selectedApplication.firma_websitesi && (
-                                      <p><strong>Website:</strong> 
-                                        <a 
-                                          href={selectedApplication.firma_websitesi} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="text-blue-500 hover:underline ml-1"
-                                        >
-                                          {selectedApplication.firma_websitesi}
-                                          <ExternalLink className="inline h-3 w-3 ml-1" />
-                                        </a>
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold">İletişim Bilgileri</h4>
-                                    <p><strong>İletişim Kişisi:</strong> {selectedApplication.iletisim_kisisi}</p>
-                                    <p><strong>Unvan:</strong> {selectedApplication.unvan}</p>
-                                    <p><strong>Telefon:</strong> {selectedApplication.telefon}</p>
-                                    <p><strong>E-posta:</strong> {selectedApplication.e_posta}</p>
-                                  </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h4 className="font-semibold">Teknik Bilgiler</h4>
-                                    {selectedApplication.minimum_yerlilik_orani && (
-                                      <p><strong>Yerlilik Oranı:</strong> %{selectedApplication.minimum_yerlilik_orani}</p>
-                                    )}
-                                    {selectedApplication.tedarikci_deneyim_suresi && (
-                                      <p><strong>Deneyim Süresi:</strong> {selectedApplication.tedarikci_deneyim_suresi} yıl</p>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold">Başvuru Bilgileri</h4>
-                                    <p><strong>Durum:</strong> {getStatusBadge(selectedApplication.status)}</p>
-                                    <p><strong>Başvuru Tarihi:</strong> {new Date(selectedApplication.created_at).toLocaleString('tr-TR')}</p>
-                                  </div>
-                                </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-                                {selectedApplication.notlar && (
-                                  <div>
-                                    <h4 className="font-semibold">Notlar</h4>
-                                    <p className="text-sm bg-gray-50 p-3 rounded">{selectedApplication.notlar}</p>
-                                  </div>
-                                )}
-
-                                {selectedApplication.dosyalar_url && (
-                                  <div>
-                                    <h4 className="font-semibold">Destekleyici Dosyalar</h4>
-                                    <Button
-                                      onClick={() => downloadFiles(selectedApplication.dosyalar_url!)}
-                                      variant="outline"
-                                      size="sm"
-                                    >
-                                      <Download className="h-4 w-4 mr-2" />
-                                      Dosyaları İndir
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-
-                        {application.dosyalar_url && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => downloadFiles(application.dosyalar_url!)}
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {filteredApplications.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                {searchTerm || statusFilter !== 'all' ? 'Filtreye uygun başvuru bulunamadı' : 'Henüz başvuru bulunmuyor'}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              {filteredApplications.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  {searchTerm || statusFilter !== 'all' ? 'Filtreye uygun başvuru bulunamadı' : 'Henüz başvuru bulunmuyor'}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
   );
 };
 
