@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calculator, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Calculator, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { ProvinceRegionMap } from '@/types/database';
@@ -311,7 +312,21 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 
         {formData.province && (
           <div className="space-y-2">
-            <Label htmlFor="taxReductionSupport">Vergi İndirimi Desteğinden Yararlanmayı Düşünüyor musunuz?</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="taxReductionSupport">Vergi İndirimi Desteğinden Yararlanmayı Düşünüyor musunuz?</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      Firma tescil tarihi teşvik belgesi düzenlenmesi için yapılan müracaat tarihinden en fazla bir yıl öncesinde olan yatırımcılar tercih edebilir.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Select 
               value={formData.taxReductionSupport} 
               onValueChange={(value) => handleInputChange('taxReductionSupport', value as any)}
