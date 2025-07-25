@@ -1,11 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const TZYSupplierApplicationError = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { on_request_id, product_id, error } = location.state || {};
+
+  // Redirect to form if no context provided
+  useEffect(() => {
+    if (!on_request_id || !product_id) {
+      navigate('/tzy');
+    }
+  }, [on_request_id, product_id, navigate]);
+
+  const handleBackClick = () => {
+    if (on_request_id && product_id) {
+      navigate(`/tzy/talepler/basvuru/${on_request_id}/${product_id}`);
+    } else {
+      navigate('/tzy');
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -24,6 +41,14 @@ const TZYSupplierApplicationError = () => {
             Lütfen tekrar deneyiniz veya daha sonra tekrar deneyiniz.
           </p>
           
+          {error && (
+            <div className="bg-red-50 p-3 rounded-lg mt-4">
+              <p className="text-sm text-red-700">
+                <strong>Hata detayı:</strong> {error}
+              </p>
+            </div>
+          )}
+          
           <div className="bg-yellow-50 p-4 rounded-lg">
             <h3 className="font-semibold mb-2">Kontrol Edilecek Noktalar:</h3>
             <ul className="text-sm text-gray-700 text-left space-y-1">
@@ -36,12 +61,12 @@ const TZYSupplierApplicationError = () => {
 
           <div className="flex space-x-4 pt-4">
             <Button 
-              onClick={() => navigate(-1)}
+              onClick={handleBackClick}
               variant="outline"
               className="flex-1"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Geri Dön
+              Forma Dön
             </Button>
             <Button 
               onClick={() => window.location.reload()}

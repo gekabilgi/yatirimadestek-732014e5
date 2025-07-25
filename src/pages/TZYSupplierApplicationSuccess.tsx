@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const TZYSupplierApplicationSuccess = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { on_request_id, product_id } = location.state || {};
+
+  // Redirect to main page if no context provided
+  useEffect(() => {
+    if (!on_request_id || !product_id) {
+      navigate('/tzy');
+    }
+  }, [on_request_id, product_id, navigate]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">

@@ -66,6 +66,76 @@ const TZYSupplierApplication = () => {
   const [productInfo, setProductInfo] = useState<any>(null);
   const [lastSubmissionCheck, setLastSubmissionCheck] = useState<Date | null>(null);
 
+  // Storage key for form persistence
+  const storageKey = `tzy_supplier_form_${on_request_id}_${product_id}`;
+
+  // Save form data to localStorage
+  const saveFormData = () => {
+    if (!on_request_id || !product_id) return;
+    
+    const formData = form.getValues();
+    const fileData = files.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: file.type
+    }));
+    
+    const dataToSave = {
+      formData,
+      files: fileData,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+  };
+
+  // Restore form data from localStorage
+  const restoreFormData = () => {
+    if (!on_request_id || !product_id) return;
+    
+    try {
+      const savedData = localStorage.getItem(storageKey);
+      if (!savedData) return;
+      
+      const { formData, files: savedFiles, timestamp } = JSON.parse(savedData);
+      
+      // Don't restore data older than 24 hours
+      if (Date.now() - timestamp > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(storageKey);
+        return;
+      }
+      
+      // Restore form fields
+      Object.keys(formData).forEach(key => {
+        if (formData[key]) {
+          form.setValue(key as keyof FormData, formData[key]);
+        }
+      });
+      
+      // Show info about restored files (can't restore actual File objects)
+      if (savedFiles && savedFiles.length > 0) {
+        toast({
+          title: 'Form Verileri Geri Yüklendi',
+          description: `${savedFiles.length} dosya seçimi kaydedilmişti. Lütfen dosyaları tekrar seçiniz.`,
+        });
+      } else {
+        toast({
+          title: 'Form Verileri Geri Yüklendi',
+          description: 'Önceki form verileriniz geri yüklendi.',
+        });
+      }
+    } catch (error) {
+      console.error('Error restoring form data:', error);
+      localStorage.removeItem(storageKey);
+    }
+  };
+
+  // Clear saved form data
+  const clearSavedData = () => {
+    if (!on_request_id || !product_id) return;
+    localStorage.removeItem(storageKey);
+  };
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -83,7 +153,7 @@ const TZYSupplierApplication = () => {
     },
   });
 
-  // Fetch product information
+  // Fetch product information and restore form data
   useEffect(() => {
     const fetchProductInfo = async () => {
       if (!product_id) return;
@@ -105,10 +175,28 @@ const TZYSupplierApplication = () => {
       }
       
       setProductInfo(data);
+      
+      // Restore form data after product info is loaded
+      setTimeout(() => {
+        restoreFormData();
+      }, 100);
     };
 
     fetchProductInfo();
   }, [product_id, toast]);
+
+  // Save form data on every change
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      saveFormData();
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch, files]);
+
+  // Save files when they change
+  useEffect(() => {
+    saveFormData();
+  }, [files]);
 
   // Check for existing company data when tax ID changes
   const checkExistingCompany = async (taxId: string) => {
@@ -311,13 +399,18 @@ const TZYSupplierApplication = () => {
       // Record submission for spam protection
       await recordSubmission();
 
+      // Clear saved form data on successful submission
+      clearSavedData();
+
       toast({
         title: 'Başarılı',
         description: 'Başvurunuz başarıyla gönderildi',
       });
 
-      // Redirect to success page
-      navigate('/tzy/supplier-application/success');
+      // Redirect to success page with context
+      navigate('/tzy/supplier-application/success', { 
+        state: { on_request_id, product_id } 
+      });
 
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -326,8 +419,10 @@ const TZYSupplierApplication = () => {
         description: 'Başvuru gönderilirken hata oluştu',
         variant: 'destructive',
       });
-      // Redirect to error page
-      navigate('/tzy/supplier-application/error');
+      // Redirect to error page with context
+      navigate('/tzy/supplier-application/error', { 
+        state: { on_request_id, product_id, error: error.message } 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -337,6 +432,7 @@ const TZYSupplierApplication = () => {
     form.reset();
     setFiles([]);
     setCanLoadPrevious(false);
+    clearSavedData();
   };
 
   if (!productInfo) {
