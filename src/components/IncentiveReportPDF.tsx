@@ -196,7 +196,11 @@ const IncentiveReportPDF: React.FC<IncentiveReportProps> = ({ incentiveResult })
             <Text style={styles.naceCode}>NACE Kodu: {incentiveResult.sector.nace_code}</Text>
             <View style={styles.badgeContainer}>
                 {incentiveResult.sector.isTarget && <Text style={[styles.badge, { backgroundColor: '#e65100' }]}>Hedef Yatırım</Text>}
-                {incentiveResult.sector.isPriority && <Text style={[styles.badge, { backgroundColor: '#43a047' }]}>Öncelikli Yatırım</Text>}
+                {(incentiveResult.sector.isPriority || incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech) && (
+                    <Text style={[styles.badge, { backgroundColor: '#43a047' }]}>
+                        {incentiveResult.sector.isHighTech || incentiveResult.sector.isMidHighTech ? 'Öncelikli ve Yüksek/Orta-Yüksek Teknoloji' : 'Öncelikli Yatırım'}
+                    </Text>
+                )}
             </View>
         </View>
         
