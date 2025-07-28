@@ -12,7 +12,8 @@ import {
   Calendar,
   Building,
   BarChart3,
-  Book
+  Book,
+  Home
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RecentActivities } from './RecentActivities';
