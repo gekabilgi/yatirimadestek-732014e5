@@ -71,7 +71,7 @@ const EnhancedHero = () => {
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl lg:text-7xl xl:text-8xl animate-fade-in">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl animate-fade-in">
             Yatırımlarda Devlet
             <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">
               {" "}Destekleri
@@ -79,17 +79,17 @@ const EnhancedHero = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-8 text-xl leading-8 text-gray-600 max-w-4xl mx-auto animate-fade-in font-medium">
+          <p className="mt-6 text-base sm:text-lg md:text-xl leading-7 sm:leading-8 text-gray-600 max-w-4xl mx-auto animate-fade-in font-medium px-4">
             Yeni teşvik sisteminde size uygun destekleri bulun, teşvik tutarlarını hesaplayın ve 
             yatırım kararlarınızı en doğru verilerle optimize edin.
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center animate-fade-in px-4">
             <Button 
               size="lg"
               onClick={handleGetStarted}
-              className="bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
+              className="bg-primary hover:bg-primary/90 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl w-full sm:w-auto"
             >
               Hemen Başlayın
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -98,7 +98,7 @@ const EnhancedHero = () => {
               variant="outline" 
               size="lg" 
               onClick={handleMevzuatIncele}
-              className="px-8 py-4 text-lg font-semibold border-2 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300 rounded-xl"
+              className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold border-2 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300 rounded-xl w-full sm:w-auto"
             >
               <FileDown className="mr-2 h-5 w-5" />
               Mevzuat İncele
@@ -106,15 +106,15 @@ const EnhancedHero = () => {
           </div>
 
           {/* Stats */}
-          <div className="mt-16 animate-fade-in">
+          <div className="mt-12 sm:mt-16 animate-fade-in px-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {stats.map((stat, index) => (
                 <Card key={index} className="card-elevated bg-white/80 backdrop-blur-sm border-0 hover:bg-white/90 transition-all duration-300">
-                  <CardContent className="p-8 text-center">
-                    <div className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-3">
+                  <CardContent className="p-4 sm:p-6 md:p-8 text-center">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2 sm:mb-3">
                       {stat.value}
                     </div>
-                    <div className="text-sm text-gray-600 font-medium">
+                    <div className="text-xs sm:text-sm text-gray-600 font-medium">
                       {stat.label}
                     </div>
                   </CardContent>
@@ -124,20 +124,20 @@ const EnhancedHero = () => {
           </div>
 
           {/* Feature Preview Cards */}
-          <div className="mt-20 animate-fade-in">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 max-w-7xl mx-auto">
+          <div className="mt-16 sm:mt-20 animate-fade-in px-4">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 max-w-7xl mx-auto">
               <Card 
-                className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl xl:col-span-2"
+                className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-xl sm:rounded-2xl xl:col-span-2"
                 onClick={() => navigate('/incentive-tools?module=query')}
               >
-                <CardContent className="p-8">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="rounded-xl bg-blue-500 p-3 text-white shadow-md group-hover:scale-110 transition-transform duration-300">
-                      <Search className="h-6 w-6" />
+                <CardContent className="p-4 sm:p-6 md:p-8">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                    <div className="rounded-lg sm:rounded-xl bg-blue-500 p-2 sm:p-3 text-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <Search className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <h3 className="font-bold text-xl text-gray-900">Sektör Sorgusu</h3>
+                    <h3 className="font-bold text-lg sm:text-xl text-gray-900 text-center sm:text-left">Sektör Sorgusu</h3>
                   </div>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center sm:text-left">
                     Sektörünüze özel teşvik imkanlarını keşfedin
                   </p>
                 </CardContent>

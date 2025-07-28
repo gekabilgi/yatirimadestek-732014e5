@@ -61,12 +61,12 @@ const MainNavbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className="relative px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-all duration-200 rounded-lg hover:bg-primary/5 whitespace-nowrap group"
+                className="relative px-2 py-2 text-xs xl:text-sm font-medium text-gray-700 hover:text-primary transition-all duration-200 rounded-lg hover:bg-primary/5 whitespace-nowrap group"
               >
                 {item.name}
                 <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200 rounded-full"></span>
@@ -75,16 +75,16 @@ const MainNavbar = () => {
           </div>
 
           {/* Auth Buttons - Desktop */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden lg:flex items-center space-x-2">
             {user && isAdmin ? (
               <div className="flex items-center space-x-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="h-10 px-4 gap-2">
+                    <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
                       <div className="flex items-center justify-center w-6 h-6 bg-primary/10 rounded-full">
                         <User className="h-3 w-3 text-primary" />
                       </div>
-                      <span className="hidden lg:inline text-sm font-medium">Admin</span>
+                      <span className="hidden xl:inline text-sm font-medium">Admin</span>
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -105,7 +105,7 @@ const MainNavbar = () => {
               </div>
             ) : (
               <Link to="/admin/login">
-                <Button variant="outline" className="h-10 px-4 gap-2">
+                <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
                   <User className="h-4 w-4 mr-2" />
                   <span className="text-sm font-medium">Admin Girişi</span>
                 </Button>
@@ -114,7 +114,7 @@ const MainNavbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <Button variant="ghost" size="sm" onClick={toggleMenu} className="p-2 hover:bg-primary/5">
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -123,7 +123,7 @@ const MainNavbar = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden animate-slide-up">
+          <div className="lg:hidden animate-slide-up">
             <div className="px-4 pt-4 pb-6 space-y-2 border-t bg-white/95 backdrop-blur-sm">
               {navItems.map((item) => (
                 <Link

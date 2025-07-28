@@ -176,22 +176,22 @@ const TZYTalepler = () => {
       <MainNavbar />
       
       {/* Match navbar padding - using max-w-7xl and px-6 to align with navbar */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Company Header - More compact */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
             {companyInfo.logo_url && (
               <img 
                 src={companyInfo.logo_url} 
                 alt={`${companyInfo.firma_adi} Logo`}
-                className="w-12 h-12 object-contain bg-white rounded border shadow-sm"
+                className="w-10 h-10 sm:w-12 sm:h-12 object-contain bg-white rounded border shadow-sm"
               />
             )}
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                 {companyInfo.firma_adi}
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Açık Ürün Talepleri
               </p>
             </div>
@@ -202,10 +202,10 @@ const TZYTalepler = () => {
         {products.length === 0 ? (
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-foreground mb-2">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
               Açık Talep Bulunamadı
             </h2>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-sm sm:text-base text-muted-foreground mb-6 px-4">
               Bu firma için henüz açık ürün talebi bulunmuyor veya tüm talepler süresi dolmuş.
             </p>
             <Button onClick={() => navigate('/tzy')} variant="outline">
@@ -213,7 +213,7 @@ const TZYTalepler = () => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {products.map((product) => {
               const isExpanded = expandedCards.has(product.id);
               const daysUntilDeadline = getDaysUntilDeadline(product.basvuru_son_tarihi);
@@ -221,20 +221,20 @@ const TZYTalepler = () => {
               return (
                 <Card key={product.id} className="border-border hover:shadow-md transition-shadow">
                   <Collapsible>
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                       {/* Card Header - Compact Layout */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex flex-col gap-3 sm:gap-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-foreground mb-3 truncate">
+                          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 sm:mb-3">
                             {product.urun_grubu_adi}
                           </h3>
                           
                           {/* Responsive Grid - Stacked on mobile, 2 columns on larger screens */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
                             <div className="flex items-center gap-2 min-w-0">
                               <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                               <span className="text-muted-foreground whitespace-nowrap">Talep ID:</span>
-                              <span className="font-medium truncate">{product.id.slice(0, 8)}</span>
+                              <span className="font-medium truncate text-xs">{product.id.slice(0, 8)}</span>
                             </div>
                             
                             <div className="flex items-center gap-2 min-w-0">

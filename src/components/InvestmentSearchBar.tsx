@@ -109,7 +109,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -117,17 +117,17 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
               placeholder="Yatırım fırsatlarında ara..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-11 text-base"
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 h-11 justify-center"
           >
             <Filter className="w-4 h-4" />
             Filtreler
@@ -138,7 +138,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
             )}
           </Button>
           
-          <Button onClick={handleSearch}>
+          <Button onClick={handleSearch} className="h-11">
             Ara
           </Button>
         </div>

@@ -189,46 +189,38 @@ const InvestmentOpportunities = () => {
         </div>
 
         <Card className={`mb-4 sm:mb-6 bg-white shadow-sm ${isMobile ? 'mx-0' : ''}`}>
-          <CardHeader className={`${isMobile ? 'pb-2 px-3 pt-3' : 'pb-4'}`}>
-            <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 items-start lg:items-center justify-between">
-              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-4 w-full lg:w-auto">
+          <CardHeader className={`${isMobile ? 'pb-3 px-4 pt-4' : 'pb-4'}`}>
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex-1 flex flex-col gap-3 w-full">
                 <div className="relative flex-1 min-w-0">
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     placeholder="Yatırım konusu, sektör veya anahtar kelime ara..."
                     value={filters.keyword || ''}
                     onChange={(e) => handleSearch({ ...filters, keyword: e.target.value })}
-                    className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
-                      isMobile ? 'pl-9 h-10 text-sm' : 'pl-10 h-12'
-                    }`}
+                    className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 pl-10 h-11 text-base"
                   />
                 </div>
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`bg-white border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap ${
-                    isMobile ? 'h-10 px-3 text-sm' : 'h-12 px-4 sm:px-6'
-                  }`}
+                  className="bg-white border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap h-11 px-4 text-base w-full sm:w-auto"
                 >
-                  <Filter className={`mr-2 ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                  <Filter className="mr-2 h-4 w-4" />
                   Filtreler
                 </Button>
               </div>
             </div>
 
             {showFilters && (
-              <div className={`grid gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-100 mt-2 sm:mt-4 ${
-                isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-              }`}>
+              <div className="grid gap-3 pt-4 border-t border-gray-100 mt-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
-                  <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>İl</Label>
+                  <Label className="font-medium text-gray-700 text-sm">İl</Label>
                   <Input
                     placeholder="İl seçin"
                     value={filters.province || ''}
                     onChange={(e) => handleSearch({ ...filters, province: e.target.value })}
-                    className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
-                      isMobile ? 'h-9 text-sm' : 'h-10'
-                    }`}
+                    className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 h-10 text-sm"
                   />
                 </div>
                 
