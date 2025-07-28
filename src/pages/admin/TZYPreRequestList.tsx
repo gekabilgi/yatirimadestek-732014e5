@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, ArrowUpDown, Check, X, FileText } from 'lucide-react';
+import { Edit, Trash2, Search, ArrowUpDown, Check, X, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface PreRequest {
   id: string;
@@ -34,6 +35,7 @@ const TZYPreRequestList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -156,6 +158,16 @@ const TZYPreRequestList = () => {
     }
   };
 
+  const toggleRowExpansion = (id: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
+
   const filteredPreRequests = preRequests.filter(request =>
     request.firma_adi.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.unvan.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -215,85 +227,124 @@ const TZYPreRequestList = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <SortableHeader field="id">Ön Talep ID</SortableHeader>
+                      <TableHead>Detay</TableHead>
+                      <SortableHeader field="on_request_id">Ön Talep ID</SortableHeader>
                       <SortableHeader field="firma_adi">Firma Adı</SortableHeader>
-                      <SortableHeader field="unvan">Ünvan</SortableHeader>
-                      <SortableHeader field="vergi_kimlik_no">Vergi Kimlik No</SortableHeader>
-                      <SortableHeader field="iletisim_kisisi">İletişim Kişisi</SortableHeader>
-                      <TableHead>Telefon</TableHead>
                       <TableHead>E-posta</TableHead>
                       <SortableHeader field="status">Durum</SortableHeader>
-                      <SortableHeader field="created_at">Oluşturulma Tarihi</SortableHeader>
                       <TableHead>İşlemler</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredPreRequests.map((request) => (
-                      <TableRow key={request.id}>
-                        <TableCell className="font-medium">{request.on_request_id || 'N/A'}</TableCell>
-                        <TableCell>{request.firma_adi}</TableCell>
-                        <TableCell>{request.unvan}</TableCell>
-                        <TableCell>{request.vergi_kimlik_no}</TableCell>
-                        <TableCell>{request.iletisim_kisisi}</TableCell>
-                        <TableCell>{request.telefon}</TableCell>
-                        <TableCell>{request.e_posta}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {request.status === 'approved' ? 'Onaylandı' :
-                             request.status === 'pending' ? 'Beklemede' : 'Reddedildi'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(request.created_at).toLocaleDateString('tr-TR')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            {request.status === 'pending' && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleApprove(request.id)}
-                                  className="text-green-600 hover:text-green-800"
-                                  title="Onayla"
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleReject(request.id)}
-                                  className="text-red-600 hover:text-red-800"
-                                  title="Reddet"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
+                      <React.Fragment key={request.id}>
+                        <TableRow className="hover:bg-gray-50">
+                          <TableCell>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => handleEdit(request)}
-                              title="Düzenle"
+                              onClick={() => toggleRowExpansion(request.id)}
+                              className="p-1"
                             >
-                              <Edit className="h-4 w-4" />
+                              {expandedRows.has(request.id) ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(request.id)}
-                              className="text-red-600 hover:text-red-800"
-                              title="Sil"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                          </TableCell>
+                          <TableCell className="font-medium">{request.on_request_id || 'N/A'}</TableCell>
+                          <TableCell className="font-medium">{request.firma_adi}</TableCell>
+                          <TableCell>{request.e_posta}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {request.status === 'approved' ? 'Onaylandı' :
+                               request.status === 'pending' ? 'Beklemede' : 'Reddedildi'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              {request.status === 'pending' && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleApprove(request.id)}
+                                    className="text-green-600 hover:text-green-800"
+                                    title="Onayla"
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleReject(request.id)}
+                                    className="text-red-600 hover:text-red-800"
+                                    title="Reddet"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(request)}
+                                title="Düzenle"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(request.id)}
+                                className="text-red-600 hover:text-red-800"
+                                title="Sil"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {expandedRows.has(request.id) && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="bg-gray-50 p-0">
+                              <div className="p-4 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Ünvan</label>
+                                    <p className="text-sm">{request.unvan}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Vergi Kimlik No</label>
+                                    <p className="text-sm">{request.vergi_kimlik_no}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">İletişim Kişisi</label>
+                                    <p className="text-sm">{request.iletisim_kisisi}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Telefon</label>
+                                    <p className="text-sm">{request.telefon}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Oluşturulma Tarihi</label>
+                                    <p className="text-sm">{new Date(request.created_at).toLocaleDateString('tr-TR')}</p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Talep İçeriği</label>
+                                  <p className="text-sm mt-1 p-3 bg-white rounded border">{request.talep_icerigi}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     ))}
                   </TableBody>
                 </Table>

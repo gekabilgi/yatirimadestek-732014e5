@@ -188,28 +188,23 @@ const TZYProductList = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <SortableHeader field="id">Ürün Talep ID</SortableHeader>
                       <SortableHeader field="urun_grubu_adi">Ürün/Ürün Grubu Adı</SortableHeader>
                       <SortableHeader field="firma_adi">Firma Adı</SortableHeader>
-                      <TableHead>Vergi Kimlik No</TableHead>
                       <SortableHeader field="basvuru_son_tarihi">Başvuru Son Tarihi</SortableHeader>
                       <TableHead>Min. Yerlilik Oranı</TableHead>
                       <TableHead>Min. Deneyim</TableHead>
                       <TableHead>Firma Ölçeği</TableHead>
                       <SortableHeader field="status">Durum</SortableHeader>
-                      <SortableHeader field="created_at">Oluşturulma Tarihi</SortableHeader>
                       <TableHead>İşlemler</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredProducts.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.id.slice(0, 8)}...</TableCell>
                         <TableCell className="max-w-xs truncate" title={product.urun_grubu_adi}>
                           {product.urun_grubu_adi}
                         </TableCell>
                         <TableCell>{product.pre_requests?.firma_adi}</TableCell>
-                        <TableCell>{product.pre_requests?.vergi_kimlik_no}</TableCell>
                         <TableCell>
                           {new Date(product.basvuru_son_tarihi).toLocaleDateString('tr-TR', {
                             year: 'numeric',
@@ -231,9 +226,6 @@ const TZYProductList = () => {
                             {product.status === 'active' ? 'Aktif' :
                              product.status === 'expired' ? 'Süresi Doldu' : 'Pasif'}
                           </span>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(product.created_at).toLocaleDateString('tr-TR')}
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
