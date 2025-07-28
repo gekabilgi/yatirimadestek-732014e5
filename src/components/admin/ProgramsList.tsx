@@ -134,7 +134,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Existing Support Programs ({programs.length})</CardTitle>
+          <CardTitle>Destek Programları ({programs.length})</CardTitle>
           <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
             Add New Program
