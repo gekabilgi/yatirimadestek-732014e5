@@ -121,7 +121,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
     return (
       <Card className="space-y-6 mt-16">
         <CardHeader>
-          <CardTitle>Existing Support Programs</CardTitle>
+          <CardTitle>Destek Programları</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">Loading programs...</div>
@@ -137,17 +137,17 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           <CardTitle>Destek Programları ({programs.length})</CardTitle>
           <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
-            Add New Program
+            Yeni Destek Ekle
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         {programs.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p>No support programs found.</p>
+            <p>Destek programı bulunamadı.</p>
             <Button onClick={onCreateNew} variant="outline" className="mt-4">
               <Plus className="w-4 h-4 mr-2" />
-              Create your first program
+             Destek Programını Oluştur
             </Button>
           </div>
         ) : (
@@ -155,12 +155,12 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Program Name</TableHead>
-                  <TableHead>Institution</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Deadline</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Program Adı</TableHead>
+                  <TableHead>Kurum</TableHead>
+                  <TableHead>Durum</TableHead>
+                  <TableHead>Son Başvuru</TableHead>
+                  <TableHead>Oluşturma Tarihi</TableHead>
+                  <TableHead>İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
