@@ -37,12 +37,7 @@ const IncentiveTools = () => {
           <p className="mt-6 text-xl text-gray-600 max-w-4xl mx-auto font-medium">
             Teşvik araçlarını kullanarak yeni teşvik sisteminde size uygun olabilecek destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
           </p>
-          <div className="mt-8 text-center">
-            <span className="inline-flex items-center rounded-full bg-gradient-to-r from-primary/10 to-blue-600/10 px-6 py-3 text-sm font-semibold text-primary border border-primary/20 shadow-sm">
-              <span className="mr-3 h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-              Türkiye Yüzyılı Kalkınma Hamlesi
-            </span>
-          </div>
+          
         </div>
       </section>
       
