@@ -66,20 +66,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container min-h-screen bg-gray-50">
       <AdminTopbar 
         isMobileMenuOpen={isMobileMenuOpen}
         toggleMobileMenu={toggleMobileMenu}
         onLogout={handleLogout}
       />
       
-      <div className="flex">
+      <div className="flex pt-16">
         {/* Sidebar */}
         <div className={cn(
           "md:flex md:w-72 md:flex-col",
           isMobileMenuOpen ? "block" : "hidden"
         )}>
-          <div className="flex flex-col flex-grow pt-6 bg-white border-r border-border overflow-y-auto shadow-sm">
+          <div className="flex flex-col flex-grow pt-6 bg-white border-r border-border overflow-y-auto shadow-sm min-h-screen">
             <div className="flex items-center flex-shrink-0 px-6 pb-4">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
@@ -178,8 +178,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         {/* Main content */}
         <div className="flex flex-col flex-1">
-          <main className="dashboard-content">
+          <main className="flex-1 p-6 lg:p-8 bg-gray-50 min-h-screen">
+            <div className="max-w-7xl mx-auto">
             {children}
+            </div>
           </main>
         </div>
       </div>

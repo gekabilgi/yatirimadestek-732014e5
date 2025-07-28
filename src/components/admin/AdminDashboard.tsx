@@ -103,15 +103,15 @@ const AdminDashboard = () => {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="animate-fade-in">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
         <p className="text-lg text-gray-600">Sistem durumu ve hızlı erişim paneli</p>
       </div>
 
       {/* Soru & Cevap Durumu */}
-      <Card className="card-modern animate-fade-in">
+      <Card className="card-modern">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-xl">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -147,7 +147,7 @@ const AdminDashboard = () => {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="card-modern hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold text-gray-700">Fizibilite Raporları</CardTitle>
@@ -208,7 +208,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Quick Actions */}
         <div className="lg:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

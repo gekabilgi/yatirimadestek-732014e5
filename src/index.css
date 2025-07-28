@@ -214,15 +214,15 @@
 
   /* Dashboard Layout */
   .dashboard-container {
-    @apply min-h-screen bg-slate-50/50;
+    @apply min-h-screen bg-gray-50;
   }
 
   .dashboard-content {
-    @apply flex-1 space-y-6 p-6 lg:p-8;
+    @apply flex-1 space-y-6 p-6 lg:p-8 pt-20;
   }
 
   .dashboard-header {
-    @apply border-b bg-background px-6 py-4;
+    @apply border-b bg-background px-6 py-4 fixed top-0 w-full z-50;
   }
 
   /* Responsive Grid */
