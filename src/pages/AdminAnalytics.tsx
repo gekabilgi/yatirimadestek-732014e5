@@ -115,14 +115,33 @@ const AdminAnalytics = () => {
       <div className="p-6 space-y-6">
 
         <Tabs defaultValue="google-analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="google-analytics" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Google Analytics
+          <TabsList className="grid w-full grid-cols-2 h-auto p-2 bg-gradient-to-r from-slate-50 to-purple-50/30 border-2 border-slate-200/50 rounded-2xl shadow-lg backdrop-blur-sm">
+            <TabsTrigger 
+              value="google-analytics" 
+              className="relative flex items-center justify-center gap-3 px-6 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-blue-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-blue-600 data-[state=inactive]:hover:bg-white/50 group"
+            >
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md group-data-[state=active]:from-blue-600 group-data-[state=active]:to-blue-700 group-data-[state=active]:shadow-lg transition-all duration-300">
+                <Globe className="h-6 w-6" />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-bold">Google Analytics</span>
+                <span className="text-xs opacity-75">Web Analitikleri</span>
+              </div>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
             </TabsTrigger>
-            <TabsTrigger value="system-analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Sistem Analitikleri
+            
+            <TabsTrigger 
+              value="system-analytics" 
+              className="relative flex items-center justify-center gap-3 px-6 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-green-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/50 group"
+            >
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md group-data-[state=active]:from-green-600 group-data-[state=active]:to-green-700 group-data-[state=active]:shadow-lg transition-all duration-300">
+                <BarChart3 className="h-6 w-6" />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-bold">Sistem Analitikleri</span>
+                <span className="text-xs opacity-75">Uygulama Verileri</span>
+              </div>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500/10 to-blue-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
             </TabsTrigger>
           </TabsList>
 
