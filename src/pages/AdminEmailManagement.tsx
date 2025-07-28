@@ -84,17 +84,3 @@ const AdminEmailManagement = () => {
 };
 
 export default AdminEmailManagement;
-              <YdoUserManagement />
-            </TabsContent>
-            
-            <TabsContent value="admin-emails" className="mt-0">
-              <QnaAdminEmailManagement />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
-    </AdminLayout>
-  );
-};
-
-export default AdminEmailManagement;
