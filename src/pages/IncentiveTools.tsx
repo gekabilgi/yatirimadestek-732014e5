@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,16 +47,16 @@ const IncentiveTools = () => {
       </section>
       
       {/* Incentive Tools Section */}
-      <div className="container mx-auto py-12">
+      <div className="container mx-auto py-6">
         <div className="mb-12">
           <Card className="card-elevated border-0 animate-fade-in">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-3 pt-6">
               <CardTitle className="text-center text-3xl font-bold">Teşvik Araçları</CardTitle>
               <p className="text-center text-lg text-gray-600 mt-2">
                 İhtiyacınıza uygun modülü seçerek işlemlerinizi gerçekleştirebilirsiniz.
               </p>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4">
               <div className="flex flex-col sm:flex-row gap-6 justify-center mb-10">
                 <Button
                   variant={activeModule === 'query' ? 'default' : 'outline'}
