@@ -23,7 +23,7 @@ const IncentiveTools = () => {
       <MainNavbar />
       
       {/* Page Header */}
-      <section className="relative py-16 sm:py-20">
+      <section className="relative py-8 sm:py-14">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
         </div>
@@ -47,7 +47,7 @@ const IncentiveTools = () => {
       </section>
       
       {/* Incentive Tools Section */}
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-3">
         <div className="mb-12">
           <Card className="card-elevated border-0 animate-fade-in">
             <CardHeader className="pb-3 pt-6">
