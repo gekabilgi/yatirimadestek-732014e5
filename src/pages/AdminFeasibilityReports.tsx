@@ -440,32 +440,74 @@ const AdminFeasibilityReports = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex justify-center mt-6">
+                  <div className="flex justify-center mt-6 border-t pt-4">
                     <Pagination>
-                      <PaginationContent>
+                      <PaginationContent className="gap-1">
                         <PaginationItem>
                           <PaginationPrevious 
                             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            className={`${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-50'} h-8 px-3`}
                           />
                         </PaginationItem>
                         
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(page)}
-                              isActive={currentPage === page}
-                              className="cursor-pointer"
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        ))}
+                        {(() => {
+                          const range = [];
+                          const showEllipsis = totalPages > 7;
+                          
+                          if (!showEllipsis) {
+                            for (let i = 1; i <= totalPages; i++) {
+                              range.push(i);
+                            }
+                          } else {
+                            range.push(1);
+                            
+                            if (currentPage > 4) {
+                              range.push('ellipsis-start');
+                            }
+                            
+                            const start = Math.max(2, currentPage - 1);
+                            const end = Math.min(totalPages - 1, currentPage + 1);
+                            
+                            for (let i = start; i <= end; i++) {
+                              if (!range.includes(i)) {
+                                range.push(i);
+                              }
+                            }
+                            
+                            if (currentPage < totalPages - 3) {
+                              range.push('ellipsis-end');
+                            }
+                            
+                            if (!range.includes(totalPages)) {
+                              range.push(totalPages);
+                            }
+                          }
+                          
+                          return range.map((page, index) => (
+                            <PaginationItem key={index}>
+                              {page === 'ellipsis-start' || page === 'ellipsis-end' ? (
+                                <PaginationEllipsis className="h-8 w-8" />
+                              ) : (
+                                <PaginationLink
+                                  onClick={() => setCurrentPage(page as number)}
+                                  isActive={currentPage === page}
+                                  className={`cursor-pointer h-8 w-8 ${
+                                    currentPage === page 
+                                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                      : 'hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {page}
+                                </PaginationLink>
+                              )}
+                            </PaginationItem>
+                          ));
+                        })()}
                         
                         <PaginationItem>
                           <PaginationNext 
                             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            className={`${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-50'} h-8 px-3`}
                           />
                         </PaginationItem>
                       </PaginationContent>
