@@ -188,12 +188,12 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-4 sm:space-y-6 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-2">
           <Label htmlFor="province">İl</Label>
           <Select value={selectedProvince} onValueChange={handleProvinceChange} disabled={isLoadingProvinces}>
-            <SelectTrigger>
+            <SelectTrigger className="h-11">
               <SelectValue placeholder={isLoadingProvinces ? "Yükleniyor..." : "İl seçiniz..."} />
             </SelectTrigger>
             <SelectContent>
@@ -213,7 +213,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
             onValueChange={handleDistrictChange}
             disabled={!selectedProvince || isLoadingDistricts}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-11">
               <SelectValue placeholder={
                 !selectedProvince 
                   ? "Önce il seçiniz" 
@@ -240,17 +240,17 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         <RadioGroup 
           value={osbStatus || ''} 
           onValueChange={(value) => handleOsbStatusChange(value as "İÇİ" | "DIŞI")}
-          className="flex flex-col space-y-2"
+          className="flex flex-col space-y-3"
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <RadioGroupItem value="İÇİ" id="osb-ici" />
-            <Label htmlFor="osb-ici" className="font-normal">
+            <Label htmlFor="osb-ici" className="font-normal text-sm sm:text-base">
               OSB/Endüstri Bölgesi İçinde
             </Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <RadioGroupItem value="DIŞI" id="osb-disi" />
-            <Label htmlFor="osb-disi" className="font-normal">
+            <Label htmlFor="osb-disi" className="font-normal text-sm sm:text-base">
               OSB/Endüstri Bölgesi Dışında
             </Label>
           </div>
@@ -258,32 +258,32 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
       </div>
 
       {selectedProvince && (
-        <div className="p-3 bg-muted rounded-lg">
+        <div className="p-3 sm:p-4 bg-muted rounded-lg">
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="secondary">{getProvinceRegion(selectedProvince)}. Bölge</Badge>
-            <span className="text-sm text-muted-foreground">
+            <Badge variant="secondary" className="text-xs sm:text-sm">{getProvinceRegion(selectedProvince)}. Bölge</Badge>
+            <span className="text-xs sm:text-sm text-muted-foreground">
               <strong>{selectedProvince}</strong> ili
             </span>
             {selectedDistrict && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 - <strong>{selectedDistrict}</strong> ilçesi
               </span>
             )}
             {osbStatus && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 - OSB {osbStatus}
               </span>
             )}
             {isLoadingAltBolge && (
-              <Badge variant="outline">Alt bölge yükleniyor...</Badge>
+              <Badge variant="outline" className="text-xs">Alt bölge yükleniyor...</Badge>
             )}
             {altBolge && !isLoadingAltBolge && (
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs sm:text-sm">
                 {altBolge}
               </Badge>
             )}
             {!altBolge && !isLoadingAltBolge && osbStatus && (
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs sm:text-sm">
                 Alt bölge bulunamadı
               </Badge>
             )}

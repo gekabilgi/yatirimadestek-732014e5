@@ -54,12 +54,12 @@ const UnifiedIncentiveQuery: React.FC = () => {
                      queryData.osbStatus;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
       <Card>
         <CardHeader>
-          <CardTitle>Sektör Seçimi</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Sektör Seçimi</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <SectorSearchStep
             selectedSector={queryData.selectedSector}
             onSectorSelect={handleSectorSelect}
@@ -71,9 +71,9 @@ const UnifiedIncentiveQuery: React.FC = () => {
       {queryData.selectedSector && (
         <Card>
           <CardHeader>
-            <CardTitle>Lokasyon Bilgileri</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Lokasyon Bilgileri</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <LocationSelectionStep
               selectedProvince={queryData.selectedProvince}
               selectedDistrict={queryData.selectedDistrict}

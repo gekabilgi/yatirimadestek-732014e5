@@ -209,29 +209,29 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 w-full">
         <Input
           placeholder="NACE kodu veya sektör adı girin... (örn: 13.10.01, 131001, 13.1, 131, Tekstil)"
           value={searchTerm}
           onChange={handleInputChange}
           onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          className="flex-1"
+          className="flex-1 h-11 text-sm sm:text-base"
         />
         <Button 
           onClick={handleSearch} 
           disabled={isSearching}
-          className="whitespace-nowrap"
+          className="whitespace-nowrap h-11 px-4 sm:px-6 w-full sm:w-auto"
         >
-          <Search className="h-4 w-4 mr-2" />
+          <Search className="h-4 w-4 mr-1 sm:mr-2" />
           {isSearching ? 'Aranıyor...' : 'Ara'}
         </Button>
       </div>
 
       {/* Region 6 notification */}
       {isProvince6 && (
-        <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-          <p className="text-sm font-medium text-green-800">
+        <div className="p-3 sm:p-4 bg-green-50 rounded-lg border border-green-200">
+          <p className="text-xs sm:text-sm font-medium text-green-800">
             6. Bölge seçildi - Tüm sektörler öncelikli yatırım kapsamında değerlendirilecektir.
           </p>
         </div>
@@ -239,17 +239,17 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
 
       {selectedSector && (
         <Card className="bg-primary/5 border-primary">
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 px-4 sm:px-6">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-lg">{selectedSector.sektor}</h4>
-                <Badge variant="outline" className="text-sm">{selectedSector.nace_kodu}</Badge>
+                <h4 className="font-semibold text-sm sm:text-base lg:text-lg pr-2">{selectedSector.sektor}</h4>
+                <Badge variant="outline" className="text-xs sm:text-sm flex-shrink-0">{selectedSector.nace_kodu}</Badge>
               </div>
               {renderBadges(selectedSector)}
               {selectedSector.sartlar && (
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-sm font-medium text-blue-800 mb-1">Özel Şartlar:</p>
-                  <p className="text-sm text-blue-700">{selectedSector.sartlar}</p>
+                <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs sm:text-sm font-medium text-blue-800 mb-1">Özel Şartlar:</p>
+                  <p className="text-xs sm:text-sm text-blue-700">{selectedSector.sartlar}</p>
                 </div>
               )}
             </div>
@@ -258,18 +258,18 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
       )}
 
       {searchResults.length > 0 && (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
           {searchResults.map((result) => (
             <Card 
               key={result.id} 
               className="cursor-pointer hover:bg-accent transition-colors"
               onClick={() => handleSectorSelect(result)}
             >
-              <CardContent className="pt-4">
+              <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{result.sektor}</h4>
-                    <Badge variant="outline">{result.nace_kodu}</Badge>
+                    <h4 className="font-medium text-sm sm:text-base pr-2">{result.sektor}</h4>
+                    <Badge variant="outline" className="text-xs flex-shrink-0">{result.nace_kodu}</Badge>
                   </div>
                   {renderBadges(result, true)}
                 </div>
