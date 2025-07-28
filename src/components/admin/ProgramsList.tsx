@@ -131,7 +131,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
   }
 
   return (
-    <Card className="space-y-6 mt-16">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Existing Support Programs ({programs.length})</CardTitle>

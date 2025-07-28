@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -105,11 +106,13 @@ const AdminAnalytics = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 mt-16">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Analytics Dashboard</h2>
-          <p className="text-gray-600">Website analitikleri ve sistem performansı</p>
-        </div>
+      <AdminPageHeader
+        title="Analytics Dashboard"
+        description="Website analitikleri ve sistem performansı"
+        icon={BarChart3}
+      />
+      
+      <div className="p-6 space-y-6">
 
         <Tabs defaultValue="google-analytics" className="w-full">
           <TabsList className="grid w-full grid-cols-2">

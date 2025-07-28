@@ -3,9 +3,10 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Users, DollarSign, Calendar, Target, MapPin, Building } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Calendar, Target, MapPin, Building, BarChart3 } from 'lucide-react';
 
 interface FeasibilityReport {
   id: string;
@@ -110,11 +111,13 @@ const FeasibilityStatistics = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6  mt-16">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fizibilite İstatistikleri</h1>
-          <p className="text-gray-600">Yatırım fırsatları ve fizibilite raporları istatistikleri</p>
-        </div>
+      <AdminPageHeader
+        title="Fizibilite İstatistikleri"
+        description="Yatırım fırsatları ve fizibilite raporları istatistikleri"
+        icon={BarChart3}
+      />
+      
+      <div className="p-6 space-y-6">
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

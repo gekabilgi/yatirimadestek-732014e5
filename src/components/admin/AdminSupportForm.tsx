@@ -273,19 +273,14 @@ export const AdminSupportForm = ({ onSubmit, onCancel, editingProgram, isLoading
   };
 
   return (
-    <div className="space-y-8 mt-16">
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-4">
-          {onCancel && (
-            <Button variant="ghost" onClick={onCancel}>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
-          <CardTitle className="text-xl text-gray-900">
-            {editingProgram ? 'Edit Support Program' : 'Add New Support Program'}
-          </CardTitle>
-        </div>
+        {onCancel && (
+          <Button variant="ghost" onClick={onCancel} className="w-fit">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Geri Dön
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -507,6 +502,5 @@ export const AdminSupportForm = ({ onSubmit, onCancel, editingProgram, isLoading
         </form>
       </CardContent>
     </Card>
-      </div>
   );
 };

@@ -1,25 +1,27 @@
 
 import React from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import QnaQuestionManagement from '@/components/admin/QnaQuestionManagement';
 import QnaAdminEmailManagement from '@/components/admin/QnaAdminEmailManagement';
 import QnaEmailLogsManagement from '@/components/admin/QnaEmailLogsManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare } from 'lucide-react';
 
 const QAManagement = () => {
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 sm:p-8 lg:p-12 mt-16">
-        <div className="max-w-7xl mx-auto space-y-4">
-          <div className="mb-6">
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">
-              Q&A Management
-            </h1>
-            <p className="text-gray-600 mt-2 text-sm lg:text-base">Manage Q&A system and admin email notifications</p>
-          </div>
+      <AdminPageHeader
+        title="Q&A Management"
+        description="Manage Q&A system and admin email notifications"
+        icon={MessageSquare}
+      />
+      
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
           
           <Tabs defaultValue="questions" className="w-full">
-            <div className="px-2 lg:px-0 mb-4">
+            <div className="mb-6">
               <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-none lg:flex">
                 <TabsTrigger value="questions" className="text-xs lg:text-sm">Sorular</TabsTrigger>
                 <TabsTrigger value="emails" className="text-xs lg:text-sm">Admin E-postalar</TabsTrigger>
@@ -28,15 +30,15 @@ const QAManagement = () => {
             </div>
             
             <div>
-              <TabsContent value="questions" className="px-2 lg:px-0 mt-0">
+              <TabsContent value="questions" className="mt-0">
                 <QnaQuestionManagement />
               </TabsContent>
               
-              <TabsContent value="emails" className="px-2 lg:px-0 mt-0">
+              <TabsContent value="emails" className="mt-0">
                 <QnaAdminEmailManagement />
               </TabsContent>
               
-              <TabsContent value="email-logs" className="px-2 lg:px-0 mt-0">
+              <TabsContent value="email-logs" className="mt-0">
                 <QnaEmailLogsManagement />
               </TabsContent>
             </div>

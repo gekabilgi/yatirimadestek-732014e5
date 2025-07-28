@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { AdminSupportForm } from './AdminSupportForm';
 import { ProgramsList } from './ProgramsList';
+import { AdminPageHeader } from './AdminPageHeader';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { SupportProgram } from '@/types/support';
 import { uploadProgramFiles, deleteFileFromStorage } from '@/utils/fileUpload';
+import { Target } from 'lucide-react';
 
 type AdminView = 'list' | 'create' | 'edit' | 'clone';
 
@@ -180,26 +182,57 @@ export const SupportProgramsManagement = () => {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'list':
-        return <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />;
+        return (
+          <>
+            <AdminPageHeader
+              title="Destek Programları"
+              description="Destek programlarını yönetin ve düzenleyin"
+              icon={Target}
+            />
+            <div className="p-6">
+              <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />
+            </div>
+          </>
+        );
       case 'create':
       case 'edit':
       case 'clone':
         return (
-          <AdminSupportForm 
-            onSubmit={handleSubmit} 
-            onCancel={handleCancel}
-            editingProgram={editingProgram}
-            isLoading={isLoading} 
-          />
+          <>
+            <AdminPageHeader
+              title={currentView === 'edit' ? 'Destek Programını Düzenle' : currentView === 'clone' ? 'Destek Programını Kopyala' : 'Yeni Destek Programı'}
+              description={currentView === 'edit' ? 'Mevcut destek programını güncelleyin' : currentView === 'clone' ? 'Mevcut programı kopyalayarak yeni program oluşturun' : 'Yeni bir destek programı oluşturun'}
+              icon={Target}
+            />
+            <div className="p-6">
+              <AdminSupportForm 
+                onSubmit={handleSubmit} 
+                onCancel={handleCancel}
+                editingProgram={editingProgram}
+                isLoading={isLoading} 
+              />
+            </div>
+          </>
         );
       default:
-        return <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />;
+        return (
+          <>
+            <AdminPageHeader
+              title="Destek Programları"
+              description="Destek programlarını yönetin ve düzenleyin"
+              icon={Target}
+            />
+            <div className="p-6">
+              <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />
+            </div>
+          </>
+        );
     }
   };
 
   return (
-    <div>
+    <>
       {renderCurrentView()}
-    </div>
+    </>
   );
 };

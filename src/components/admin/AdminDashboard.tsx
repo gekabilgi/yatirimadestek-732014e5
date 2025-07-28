@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RecentActivities } from './RecentActivities';
+import { AdminPageHeader } from './AdminPageHeader';
 
 const AdminDashboard = () => {
   const { data: qnaStats } = useQuery({
@@ -103,12 +104,14 @@ const AdminDashboard = () => {
   });
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-lg text-gray-600">Sistem durumu ve hızlı erişim paneli</p>
-      </div>
+    <>
+      <AdminPageHeader
+        title="Dashboard"
+        description="Sistem durumu ve hızlı erişim paneli"
+        icon={Home}
+      />
+      
+      <div className="p-6 space-y-8 animate-fade-in">
 
       {/* Soru & Cevap Durumu */}
       <Card className="card-modern">
@@ -329,7 +332,8 @@ const AdminDashboard = () => {
           <RecentActivities />
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
