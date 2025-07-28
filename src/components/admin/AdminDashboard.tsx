@@ -102,93 +102,104 @@ const AdminDashboard = () => {
   });
 
   return (
-    <div className="space-y-6 mt-16">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">Sistem durumu ve hızlı erişim</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="animate-fade-in">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+        <p className="text-lg text-gray-600">Sistem durumu ve hızlı erişim paneli</p>
       </div>
 
       {/* Soru & Cevap Durumu */}
-      <Card>
+      <Card className="card-modern animate-fade-in">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <MessageSquare className="h-5 w-5 text-blue-600" />
+            </div>
             Soru & Cevap Durumu
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{qnaStats?.total || 0}</div>
-              <p className="text-sm text-muted-foreground">Toplam Soru</p>
-              <p className="text-xs text-muted-foreground">Sistem geneli</p>
+            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl">
+              <div className="text-3xl font-bold text-blue-600 mb-1">{qnaStats?.total || 0}</div>
+              <p className="text-sm font-semibold text-gray-700">Toplam Soru</p>
+              <p className="text-xs text-gray-500 mt-1">Sistem geneli</p>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{qnaStats?.answered || 0}</div>
-              <p className="text-sm text-muted-foreground">Cevaplanmış</p>
-              <p className="text-xs text-muted-foreground">YDO tarafından</p>
+            <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl">
+              <div className="text-3xl font-bold text-green-600 mb-1">{qnaStats?.answered || 0}</div>
+              <p className="text-sm font-semibold text-gray-700">Cevaplanmış</p>
+              <p className="text-xs text-gray-500 mt-1">YDO tarafından</p>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{qnaStats?.sentToUser || 0}</div>
-              <p className="text-sm text-muted-foreground">Sorana Gönderilen</p>
-              <p className="text-xs text-muted-foreground">Onaylanmış cevaplar</p>
+            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl">
+              <div className="text-3xl font-bold text-purple-600 mb-1">{qnaStats?.sentToUser || 0}</div>
+              <p className="text-sm font-semibold text-gray-700">Sorana Gönderilen</p>
+              <p className="text-xs text-gray-500 mt-1">Onaylanmış cevaplar</p>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{qnaStats?.pending || 0}</div>
-              <p className="text-sm text-muted-foreground">Bekleyen</p>
-              <p className="text-xs text-muted-foreground">Yanıt bekliyor</p>
+            <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl">
+              <div className="text-3xl font-bold text-orange-600 mb-1">{qnaStats?.pending || 0}</div>
+              <p className="text-sm font-semibold text-gray-700">Bekleyen</p>
+              <p className="text-xs text-gray-500 mt-1">Yanıt bekliyor</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+        <Card className="card-modern hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fizibilite Raporları</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-gray-700">Fizibilite Raporları</CardTitle>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FileText className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{feasibilityStats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-gray-900 mb-1">{feasibilityStats?.total || 0}</div>
+            <p className="text-xs text-gray-500">
               Bu ay {feasibilityStats?.thisMonth || 0} yeni
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-modern hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Destek Programları</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-gray-700">Destek Programları</CardTitle>
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Building className="h-4 w-4 text-green-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{supportProgramStats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">Aktif program</p>
+            <div className="text-3xl font-bold text-gray-900 mb-1">{supportProgramStats?.total || 0}</div>
+            <p className="text-xs text-gray-500">Aktif program</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-modern hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sözlük Terimleri</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-gray-700">Sözlük Terimleri</CardTitle>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Users className="h-4 w-4 text-purple-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{glossaryStats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">Tanımlanmış terim</p>
+            <div className="text-3xl font-bold text-gray-900 mb-1">{glossaryStats?.total || 0}</div>
+            <p className="text-xs text-gray-500">Tanımlanmış terim</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-modern hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Yatırım İstatistikleri</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-gray-700">Yatırım İstatistikleri</CardTitle>
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <TrendingUp className="h-4 w-4 text-orange-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold">
+            <div className="text-2xl font-bold text-gray-900 mb-1">
               {feasibilityStats?.totalInvestment?.toLocaleString('tr-TR') || 0} TL
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               {feasibilityStats?.totalEmployment || 0} kişi istihdam
             </p>
           </CardContent>
@@ -196,22 +207,27 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
         {/* Left Column - Quick Actions */}
         <div className="lg:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-lg">Fizibilite Raporları</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                  </div>
+                  Fizibilite Raporları
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm text-gray-600">Yatırım fizibilite raporlarını yönetin</p>
-                <div className="flex gap-2">
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">Yatırım fizibilite raporlarını yönetin</p>
+                <div className="flex gap-3">
                   <Link to="/admin/feasibility-reports">
-                    <Button size="sm">Raporları Yönet</Button>
+                    <Button size="sm" className="btn-primary">Raporları Yönet</Button>
                   </Link>
                   <Link to="/admin/feasibility-statistics">
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" className="btn-outline">
                       <BarChart3 className="h-4 w-4 mr-1" />
                       İstatistikler
                     </Button>
@@ -220,62 +236,87 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-lg">Soru & Cevap</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                    <MessageSquare className="h-5 w-5 text-green-600" />
+                  </div>
+                  Soru & Cevap
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm text-gray-600">Kullanıcı sorularını yönetin</p>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">Kullanıcı sorularını yönetin</p>
                 <Link to="/admin/qa-management">
-                  <Button size="sm">Soruları Yönet</Button>
+                  <Button size="sm" className="btn-primary">Soruları Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-lg">Destek Programları</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                    <Building className="h-5 w-5 text-purple-600" />
+                  </div>
+                  Destek Programları
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm text-gray-600">Destek programlarını düzenleyin</p>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">Destek programlarını düzenleyin</p>
                 <Link to="/admin/support-programs">
-                  <Button size="sm">Programları Yönet</Button>
+                  <Button size="sm" className="btn-primary">Programları Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-lg">Yatırımcı Sözlüğü</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+                    <Book className="h-5 w-5 text-orange-600" />
+                  </div>
+                  Yatırımcı Sözlüğü
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm text-gray-600">Terim tanımlarını yönetin</p>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">Terim tanımlarını yönetin</p>
                 <Link to="/admin/glossary-management">
-                  <Button size="sm">Sözlüğü Yönet</Button>
+                  <Button size="sm" className="btn-primary">Sözlüğü Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-lg">E-posta Yönetimi</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
+                    <Mail className="h-5 w-5 text-red-600" />
+                  </div>
+                  E-posta Yönetimi
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm text-gray-600">E-posta ayarlarını düzenleyin</p>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">E-posta ayarlarını düzenleyin</p>
                 <Link to="/admin/email-management">
-                  <Button size="sm">E-postaları Yönet</Button>
+                  <Button size="sm" className="btn-primary">E-postaları Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-lg">Analytics</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  Analytics
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm text-gray-600">Sistem analitiklerini görüntüleyin</p>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">Sistem analitiklerini görüntüleyin</p>
                 <Link to="/admin/analytics">
-                  <Button size="sm">Analytics</Button>
+                  <Button size="sm" className="btn-primary">Analytics</Button>
                 </Link>
               </CardContent>
             </Card>

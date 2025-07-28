@@ -66,7 +66,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dashboard-container">
       <AdminTopbar 
         isMobileMenuOpen={isMobileMenuOpen}
         toggleMobileMenu={toggleMobileMenu}
@@ -76,15 +76,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <div className="flex">
         {/* Sidebar */}
         <div className={cn(
-          "md:flex md:w-64 md:flex-col",
+          "md:flex md:w-72 md:flex-col",
           isMobileMenuOpen ? "block" : "hidden"
         )}>
-          <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4">
-              <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
+          <div className="flex flex-col flex-grow pt-6 bg-white border-r border-border overflow-y-auto shadow-sm">
+            <div className="flex items-center flex-shrink-0 px-6 pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
+                  <Settings className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Admin Panel</h2>
+              </div>
             </div>
-            <div className="mt-5 flex-grow flex flex-col">
-              <nav className="flex-1 px-2 pb-4 space-y-1">
+            <div className="flex-grow flex flex-col">
+              <nav className="flex-1 px-4 pb-6 space-y-2">
                 {navigation.map((item) => {
                   if (item.subItems) {
                     const isExpanded = expandedMenu === item.name;
@@ -97,28 +102,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                           onClick={() => setExpandedMenu(isExpanded ? null : item.name)}
                           className={cn(
                             isActive
-                              ? 'bg-primary text-white'
-                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                            'group flex items-center justify-between w-full px-2 py-2 text-sm font-medium rounded-md'
+                              ? 'bg-primary text-white shadow-sm'
+                              : 'text-gray-700 hover:bg-primary/5 hover:text-primary',
+                            'group flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200'
                           )}
                         >
                           <div className="flex items-center">
                             <item.icon
                               className={cn(
-                                isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500',
-                                'mr-3 flex-shrink-0 h-6 w-6'
+                                isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary',
+                                'mr-3 flex-shrink-0 h-5 w-5'
                               )}
                             />
                             {item.name}
                           </div>
                           {isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                           ) : (
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4 transition-transform duration-200" />
                           )}
                         </button>
                         {isExpanded && (
-                          <div className="ml-6 mt-1 space-y-1">
+                          <div className="ml-8 mt-2 space-y-1 animate-slide-up">
                             {item.subItems.map((subItem) => {
                               const isSubActive = location.pathname === subItem.href;
                               return (
@@ -127,9 +132,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                                   to={subItem.href}
                                   className={cn(
                                     isSubActive
-                                      ? 'bg-primary text-white'
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                                    'block px-2 py-2 text-sm rounded-md'
+                                      ? 'bg-primary/10 text-primary border-l-2 border-primary'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-2 border-transparent',
+                                    'block px-3 py-2 text-sm rounded-r-md transition-all duration-200'
                                   )}
                                   onClick={() => setIsMobileMenuOpen(false)}
                                 >
@@ -149,16 +154,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                         to={item.href}
                         className={cn(
                           isActive
-                            ? 'bg-primary text-white'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                          'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'text-gray-700 hover:bg-primary/5 hover:text-primary',
+                          'group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200'
                         )}
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         <item.icon
                           className={cn(
-                            isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500',
-                            'mr-3 flex-shrink-0 h-6 w-6'
+                            isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary',
+                            'mr-3 flex-shrink-0 h-5 w-5'
                           )}
                         />
                         {item.name}
@@ -173,7 +178,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         {/* Main content */}
         <div className="flex flex-col flex-1">
-          <main className="flex-1 p-6">
+          <main className="dashboard-content">
             {children}
           </main>
         </div>

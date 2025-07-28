@@ -20,71 +20,82 @@ const IncentiveTools = () => {
   }, [moduleParam]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       <MainNavbar />
       
       {/* Page Header */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+      <section className="relative py-16 sm:py-20">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
+        </div>
+        <div className="container relative mx-auto px-4 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl animate-fade-in">
             9903 Yatırım Teşvik
-            <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">
               {" "}Sistemi
             </span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="mt-6 text-xl text-gray-600 max-w-4xl mx-auto font-medium">
             Teşvik araçlarını kullanarak yeni teşvik sisteminde size uygun olabilecek destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
           </p>
-        </div>
-        <div className="mt-6 text-center">
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-              <span className="mr-2 h-2 w-2 rounded-full bg-green-500"></span>
+          <div className="mt-8 text-center">
+            <span className="inline-flex items-center rounded-full bg-gradient-to-r from-primary/10 to-blue-600/10 px-6 py-3 text-sm font-semibold text-primary border border-primary/20 shadow-sm">
+              <span className="mr-3 h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
               Türkiye Yüzyılı Kalkınma Hamlesi
             </span>
           </div>
+        </div>
       </section>
       
       {/* Incentive Tools Section */}
-      <div className="container mx-auto py-8">
-        <div className="mb-8">
-          <Card className="shadow-lg">
+      <div className="container mx-auto py-12">
+        <div className="mb-12">
+          <Card className="card-elevated border-0 animate-fade-in">
             <CardHeader className="pb-4">
-              <CardTitle className="text-center text-2xl">Teşvik Araçları</CardTitle>
-              <p className="text-center text-gray-600">
+              <CardTitle className="text-center text-3xl font-bold">Teşvik Araçları</CardTitle>
+              <p className="text-center text-lg text-gray-600 mt-2">
                 İhtiyacınıza uygun modülü seçerek işlemlerinizi gerçekleştirebilirsiniz.
               </p>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row gap-6 justify-center mb-10">
                 <Button
                   variant={activeModule === 'query' ? 'default' : 'outline'}
                   onClick={() => setActiveModule('query')}
-                  className="flex items-center gap-2"
-                  size="lg"
+                  className={`flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 ${
+                    activeModule === 'query' 
+                      ? 'shadow-lg hover:shadow-xl' 
+                      : 'hover:bg-primary/5 hover:border-primary/30'
+                  }`}
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-5 w-5" />
                   Sektör Bazlı Teşvik Sorgusu
                 </Button>
                 <Button
                   variant={activeModule === 'calculator' ? 'default' : 'outline'}
                   onClick={() => setActiveModule('calculator')}
-                  className="flex items-center gap-2"
-                  size="lg"
+                  className={`flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 ${
+                    activeModule === 'calculator' 
+                      ? 'shadow-lg hover:shadow-xl' 
+                      : 'hover:bg-primary/5 hover:border-primary/30'
+                  }`}
                 >
-                  <Calculator className="h-4 w-4" />
+                  <Calculator className="h-5 w-5" />
                   Türkiye Yüzyılı Teşvikleri Hesaplama
                 </Button>
               </div>
 
-              <div className="w-full">
+              <div className="w-full animate-fade-in">
                 {activeModule === 'query' && (
                   <div>
-                    <div className="flex items-center gap-2 mb-6 justify-center">
-                      <Search className="h-5 w-5" />
-                      <h2 className="text-xl font-semibold">Yüksek Teknoloji, Orta-Yüksek Teknoloji, Hedef Sektörler, Öncelikli Sektörler Teşvik Sorgusu</h2>
+                    <div className="flex items-center gap-3 mb-8 justify-center">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Search className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-center">Yüksek Teknoloji, Orta-Yüksek Teknoloji, Hedef Sektörler, Öncelikli Sektörler Teşvik Sorgusu</h2>
                     </div>
                     
-                    <div className="max-w-6xl mx-auto space-y-6">
+                    <div className="max-w-7xl mx-auto space-y-8">
                       <UnifiedIncentiveQuery />
                     </div>
                   </div>
@@ -92,9 +103,11 @@ const IncentiveTools = () => {
 
                 {activeModule === 'calculator' && (
                   <div>
-                    <div className="flex items-center gap-2 mb-6 justify-center">
-                      <Calculator className="h-5 w-5" />
-                      <h2 className="text-xl font-semibold">Teknoloji Hamlesi, Yerel Kalkınma Hamlesi ve Stratejik Hamle Kapsamında Teşvik Hesaplama</h2>
+                    <div className="flex items-center gap-3 mb-8 justify-center">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Calculator className="h-6 w-6 text-green-600" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-center">Teknoloji Hamlesi, Yerel Kalkınma Hamlesi ve Stratejik Hamle Kapsamında Teşvik Hesaplama</h2>
                     </div>
                     <IncentiveTypeCalculator />
                   </div>

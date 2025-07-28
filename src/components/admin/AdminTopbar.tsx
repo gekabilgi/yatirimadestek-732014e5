@@ -41,7 +41,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
   };
 
   return (
-    <div className="bg-white border-b shadow-sm h-16 flex items-center justify-between px-4 lg:px-6 flex-no-wrap fixed top-0 w-full z-50">
+    <div className="dashboard-header h-16 flex items-center justify-between px-4 lg:px-6 fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
       {/* Left section - Menu toggle and page title */}
       <div className="flex items-center space-x-4">
         {/* Mobile menu toggle */}
@@ -49,61 +49,62 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
           variant="ghost"
           size="sm"
           onClick={toggleMobileMenu}
-          className="lg:hidden p-2"
+          className="lg:hidden p-2 hover:bg-primary/5"
         >
           {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
         
         {/* Page title */}
         <div className="flex items-center space-x-2">
-          <h1 className="text-lg lg:text-xl font-semibold text-gray-900">{getPageTitle()}</h1>
+          <h1 className="text-lg lg:text-xl font-bold text-gray-900">{getPageTitle()}</h1>
         </div>
       </div>
 
       {/* Right section - Home, Search, notifications, user menu */}
-      <div className="flex items-center space-x-2 lg:space-x-4">
+      <div className="flex items-center space-x-3">
         {/* Home button */}
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={handleHomeClick}
-          className="p-2"
+          className="p-2 hover:bg-primary/5"
           title="Ana Sayfaya Dön"
         >
           <Home className="h-4 w-4" />
         </Button>
 
         {/* Search button - hidden on small screens */}
-        <Button variant="ghost" size="sm" className="hidden md:flex p-2">
+        <Button variant="ghost" size="sm" className="hidden md:flex p-2 hover:bg-primary/5">
           <Search className="h-4 w-4" />
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="sm" className="relative p-2">
+        <Button variant="ghost" size="sm" className="relative p-2 hover:bg-primary/5">
           <Bell className="h-4 w-4" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs flex items-center justify-center">
-            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+          <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse">
+            <span className="absolute inset-0 h-3 w-3 bg-red-500 rounded-full animate-ping opacity-75"></span>
+            <span className="relative block h-3 w-3 bg-red-500 rounded-full"></span>
           </span>
         </Button>
 
         {/* Settings - hidden on small screens */}
-        <Button variant="ghost" size="sm" className="hidden md:flex p-2">
+        <Button variant="ghost" size="sm" className="hidden md:flex p-2 hover:bg-primary/5">
           <Settings className="h-4 w-4" />
         </Button>
 
         {/* User avatar and info */}
-        <div className="flex items-center space-x-2 lg:space-x-3">
-          <Avatar className="h-8 w-8 lg:h-9 lg:w-9">
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-9 w-9 ring-2 ring-primary/10">
             <AvatarImage src="" alt="Admin" />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs lg:text-sm">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
               {getUserInitials()}
             </AvatarFallback>
           </Avatar>
           
           {/* User info - hidden on mobile and small tablets */}
           <div className="hidden lg:flex flex-col">
-            <span className="text-sm font-medium text-gray-900">Admin</span>
-            <span className="text-xs text-gray-500">{user?.email}</span>
+            <span className="text-sm font-semibold text-gray-900">Admin</span>
+            <span className="text-xs text-gray-500 truncate max-w-32">{user?.email}</span>
           </div>
         </div>
 
@@ -112,7 +113,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
           variant="ghost"
           size="sm"
           onClick={onLogout}
-          className="p-2 text-gray-600 hover:text-red-600"
+          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
         >
           <LogOut className="h-4 w-4" />
         </Button>
