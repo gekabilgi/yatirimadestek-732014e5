@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Search, Calculator, FileDown, MessageSquare } from 'lucide-react';
+import { ArrowRight, Search, Calculator, FileDown, MessageSquare, Building2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -125,9 +125,9 @@ const EnhancedHero = () => {
 
           {/* Feature Preview Cards */}
           <div className="mt-20 animate-fade-in">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 max-w-7xl mx-auto">
               <Card 
-                className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl"
+                className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl xl:col-span-2"
                 onClick={() => navigate('/incentive-tools?module=query')}
               >
                 <CardContent className="p-8">
@@ -144,7 +144,7 @@ const EnhancedHero = () => {
               </Card>
               
               <Card 
-                className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl"
+                className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl xl:col-span-2"
                 onClick={() => navigate('/incentive-tools?module=calculator')}
               >
                 <CardContent className="p-8">
@@ -161,7 +161,7 @@ const EnhancedHero = () => {
               </Card>
               
               <Card 
-                className="group relative overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-purple-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer sm:col-span-2 lg:col-span-1 rounded-2xl"
+                className="group relative overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-purple-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl xl:col-span-2"
                 onClick={() => navigate('/qna')}
               >
                 <CardContent className="p-8">
@@ -173,6 +173,57 @@ const EnhancedHero = () => {
                   </div>
                   <p className="text-gray-600 leading-relaxed">
                     Uzmanlarımızdan yanıtlanmış soruları inceleyin
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card 
+                className="group relative overflow-hidden border-0 bg-gradient-to-br from-orange-50 to-orange-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl xl:col-span-2"
+                onClick={() => navigate('/searchsupport')}
+              >
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="rounded-xl bg-orange-500 p-3 text-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <Search className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-bold text-xl text-gray-900">Destek Arama</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Size uygun destek programlarını bulun
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card 
+                className="group relative overflow-hidden border-0 bg-gradient-to-br from-teal-50 to-teal-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl xl:col-span-2"
+                onClick={() => navigate('/tzy')}
+              >
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="rounded-xl bg-teal-500 p-3 text-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <Building2 className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-bold text-xl text-gray-900">Tedarik Zinciri</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Yerli tedarikçiler ile buluşun
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card 
+                className="group relative overflow-hidden border-0 bg-gradient-to-br from-indigo-50 to-indigo-100/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl xl:col-span-2"
+                onClick={() => navigate('/yatirim-firsatlari')}
+              >
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="rounded-xl bg-indigo-500 p-3 text-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <TrendingUp className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-bold text-xl text-gray-900">Yatırım Fırsatları</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Fizibilite raporları ve fırsatları keşfedin
                   </p>
                 </CardContent>
               </Card>
