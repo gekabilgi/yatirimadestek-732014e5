@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, ArrowUpDown, Plus } from 'lucide-react';
+import { Edit, Trash2, Search, ArrowUpDown, Plus, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -142,22 +143,21 @@ const TZYProductList = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6  mt-16">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold">Tedarik Zinciri Yerlileştirme - Ürün Talep Listesi</h1>
-            <p className="text-muted-foreground">
-              Gönderilen tüm ürün taleplerini görüntüleyin ve yönetin.
-            </p>
-          </div>
-          <Button
-            onClick={() => navigate('/admin/tzyotl')}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Yeni Ürün Ekle</span>
-          </Button>
-        </div>
+      <AdminPageHeader
+        title="Ürün Talep Listesi"
+        description="Tedarik zinciri yerlileştirme ürün taleplerini görüntüleyin ve yönetin"
+        icon={Package}
+      >
+        <Button
+          onClick={() => navigate('/admin/tzyotl')}
+          className="flex items-center space-x-2"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Yeni Ürün Ekle</span>
+        </Button>
+      </AdminPageHeader>
+      
+      <div className="p-6 space-y-6">
 
         <Card>
           <CardHeader>

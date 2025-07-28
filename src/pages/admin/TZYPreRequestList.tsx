@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, ArrowUpDown, Check, X } from 'lucide-react';
+import { Edit, Trash2, Search, ArrowUpDown, Check, X, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -177,13 +178,13 @@ const TZYPreRequestList = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6  mt-16">
-        <div>
-          <h1 className="text-3xl font-bold">Tedarik Zinciri Yerlileştirme - Ön Talep Listesi</h1>
-          <p className="text-muted-foreground">
-            Gönderilen tüm ön talepleri görüntüleyin ve yönetin.
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Ön Talep Listesi"
+        description="Tedarik zinciri yerlileştirme ön taleplerini görüntüleyin ve yönetin"
+        icon={FileText}
+      />
+      
+      <div className="p-6 space-y-6">
 
         <Card>
           <CardHeader>

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, FileText, Download, Eye, ExternalLink } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Search, FileText, Download, Eye, ExternalLink, Users } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -198,12 +199,15 @@ const TZYSupplierApplications = () => {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto px-4 py-8 mt-14">
+      <AdminPageHeader
+        title="Tedarikçi Başvuruları"
+        description="Tedarik zinciri yerlileştirme tedarikçi başvurularını görüntüleyin ve yönetin"
+        icon={Users}
+      />
+      
+      <div className="p-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">
-              Tedarikçi Başvuruları
-            </CardTitle>
             <div className="flex space-x-4">
               <div className="flex-1">
                 <div className="relative">

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, ArrowUpDown, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { Search, ArrowUpDown, Mail, AlertCircle, CheckCircle, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -118,13 +119,13 @@ const TZYEmailLogs = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6  mt-16">
-        <div>
-          <h1 className="text-3xl font-bold">Tedarik Zinciri Yerlileştirme - E-posta Logları</h1>
-          <p className="text-muted-foreground">
-            Tedarik zinciri yerlileştirme modülünden gönderilen tüm e-postaları görüntüleyin.
-          </p>
-        </div>
+      <AdminPageHeader
+        title="TZY E-posta Logları"
+        description="Tedarik zinciri yerlileştirme modülünden gönderilen e-posta loglarını görüntüleyin"
+        icon={Mail}
+      />
+      
+      <div className="p-6 space-y-6">
 
         <Card>
           <CardHeader>

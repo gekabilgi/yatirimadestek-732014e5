@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Save, Plus } from 'lucide-react';
+import { Upload, Save, Plus, Building2 } from 'lucide-react';
 
 interface PreRequest {
   id: string;
@@ -208,13 +209,13 @@ const TZYCompanyEdit = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 mt-16">
-        <div>
-          <h1 className="text-3xl font-bold">Firma Bilgileri Düzenle</h1>
-          <p className="text-muted-foreground">
-            Firma bilgilerini güncelleyin ve ürün ekleme işlemlerine erişin.
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Firma Bilgileri Düzenle"
+        description="Firma bilgilerini güncelleyin ve ürün ekleme işlemlerine erişin"
+        icon={Building2}
+      />
+      
+      <div className="p-6 space-y-6">
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card>

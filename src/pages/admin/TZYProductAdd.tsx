@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Package } from 'lucide-react';
 
 interface PreRequest {
   id: string;
@@ -199,25 +200,22 @@ const TZYProductAdd = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6  mt-16">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/admin/tzyutl')}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Geri Dön</span>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">
-              {preRequest?.firma_adi} - Tedarik Zinciri Yerlileştirme Ürün {isEditMode ? 'Düzenle' : 'Ekleme'}
-            </h1>
-            <p className="text-muted-foreground">
-              {isEditMode ? 'Ürün bilgilerini güncelleyin' : 'Yeni ürün talep bilgilerini girin'}
-            </p>
-          </div>
-        </div>
+      <AdminPageHeader
+        title={`${preRequest?.firma_adi} - Ürün ${isEditMode ? 'Düzenle' : 'Ekleme'}`}
+        description={isEditMode ? 'Ürün bilgilerini güncelleyin' : 'Yeni ürün talep bilgilerini girin'}
+        icon={Package}
+      >
+        <Button
+          variant="outline"
+          onClick={() => navigate('/admin/tzyutl')}
+          className="flex items-center space-x-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Geri Dön</span>
+        </Button>
+      </AdminPageHeader>
+      
+      <div className="p-6 space-y-6">
 
         <div className="grid gap-6">
           <Card>
