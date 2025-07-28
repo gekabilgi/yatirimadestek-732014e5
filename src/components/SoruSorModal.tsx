@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -112,11 +111,11 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Yatırım Desteği Hakkında Soru Sor</DialogTitle>
+          <DialogTitle className="text-xl sm:text-2xl">Yatırım Desteği Hakkında Soru Sor</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Ad Soyad *</Label>
               <Input
@@ -141,7 +140,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Telefon Numarası</Label>
               <Input
@@ -187,7 +186,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
               checked={formData.kvkkAccepted}
               onCheckedChange={(checked) => handleInputChange('kvkkAccepted', checked === true)}
             />
-            <Label htmlFor="kvkk" className="text-sm leading-5">
+            <Label htmlFor="kvkk" className="text-xs sm:text-sm leading-5">
               Kişisel verilerimin işlenmesine yönelik{' '}
               <a href="#" className="text-primary underline">
                 KVKK Aydınlatma Metni
@@ -196,19 +195,19 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
             </Label>
           </div>
 
-          <div className="flex gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="flex-1"
+              className="flex-1 h-11"
             >
               İptal
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1"
+              className="flex-1 h-11"
             >
               {loading ? (
                 "Gönderiliyor..."

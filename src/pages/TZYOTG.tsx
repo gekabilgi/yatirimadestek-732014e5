@@ -317,20 +317,20 @@ const TZYOTG = () => {
     <div className="min-h-screen bg-background">
       <MainNavbar />
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Link to="/tzy" className="inline-flex items-center text-primary hover:text-primary/80 mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Geri Dön
           </Link>
-          <div className="flex items-center space-x-3 mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-4">
             <Building2 className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Tedarik Zinciri Yerlileştirme
             </h1>
           </div>
-          <p className="text-lg text-gray-600">
+          <p className="text-base sm:text-lg text-gray-600">
             Ön Talep Girişi - Tedarikçi bulmak için talebinizi oluşturun
           </p>
         </div>
@@ -348,11 +348,11 @@ const TZYOTG = () => {
           
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                 
                 {/* VKN Field with Fetch Button */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="sm:col-span-2">
                     <FormField
                       control={form.control}
                       name="vergi_kimlik_no"
@@ -385,7 +385,7 @@ const TZYOTG = () => {
                 </div>
 
                 {/* Company Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <FormField
                     control={form.control}
                     name="firma_adi"
