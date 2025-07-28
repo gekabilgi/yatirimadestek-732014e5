@@ -43,9 +43,9 @@ const IncentiveTools = () => {
       
       {/* Incentive Tools Section */}
       <div className="container mx-auto py-3">
-        <div className="mb-12">
+        <div className="mb-6">
           <Card className="card-elevated border-0 animate-fade-in">
-            <CardHeader className="pb-3 pt-6">
+            <CardHeader className="pb-3 pt-3">
               <CardTitle className="text-center text-3xl font-bold">Teşvik Araçları</CardTitle>
               <p className="text-center text-lg text-gray-600 mt-2">
                 İhtiyacınıza uygun modülü seçerek işlemlerinizi gerçekleştirebilirsiniz.
