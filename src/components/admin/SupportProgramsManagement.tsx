@@ -183,56 +183,29 @@ export const SupportProgramsManagement = () => {
     switch (currentView) {
       case 'list':
         return (
-          <>
-            <AdminPageHeader
-              title="Destek Programları"
-              description="Destek programlarını yönetin ve düzenleyin"
-              icon={Target}
-            />
-            <div className="p-6">
-              <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />
-            </div>
-          </>
+          <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />
         );
       case 'create':
       case 'edit':
       case 'clone':
         return (
-          <>
-            <AdminPageHeader
-              title={currentView === 'edit' ? 'Destek Programını Düzenle' : currentView === 'clone' ? 'Destek Programını Kopyala' : 'Yeni Destek Programı'}
-              description={currentView === 'edit' ? 'Mevcut destek programını güncelleyin' : currentView === 'clone' ? 'Mevcut programı kopyalayarak yeni program oluşturun' : 'Yeni bir destek programı oluşturun'}
-              icon={Target}
-            />
-            <div className="p-6">
-              <AdminSupportForm 
-                onSubmit={handleSubmit} 
-                onCancel={handleCancel}
-                editingProgram={editingProgram}
-                isLoading={isLoading} 
-              />
-            </div>
-          </>
+          <AdminSupportForm 
+            onSubmit={handleSubmit} 
+            onCancel={handleCancel}
+            editingProgram={editingProgram}
+            isLoading={isLoading} 
+          />
         );
       default:
         return (
-          <>
-            <AdminPageHeader
-              title="Destek Programları"
-              description="Destek programlarını yönetin ve düzenleyin"
-              icon={Target}
-            />
-            <div className="p-6">
-              <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />
-            </div>
-          </>
+          <ProgramsList onEdit={handleEdit} onCreateNew={handleCreateNew} onClone={handleClone} />
         );
     }
   };
 
   return (
-    <>
+    <div className="space-y-6">
       {renderCurrentView()}
-    </>
+    </div>
   );
 };
