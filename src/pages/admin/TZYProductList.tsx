@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, ArrowUpDown, Plus, Package } from 'lucide-react';
+import { Edit, Trash2, Search, ArrowUpDown, Plus, Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Product {
   id: string;
@@ -36,6 +37,7 @@ const TZYProductList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -121,6 +123,16 @@ const TZYProductList = () => {
     }
   };
 
+  const toggleRowExpansion = (id: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
+
   const filteredProducts = products.filter(product =>
     product.urun_grubu_adi.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.pre_requests?.firma_adi.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -188,65 +200,110 @@ const TZYProductList = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Detay</TableHead>
+                      <TableHead>Ürün ID</TableHead>
                       <SortableHeader field="urun_grubu_adi">Ürün/Ürün Grubu Adı</SortableHeader>
                       <SortableHeader field="firma_adi">Firma Adı</SortableHeader>
-                      <SortableHeader field="basvuru_son_tarihi">Başvuru Son Tarihi</SortableHeader>
-                      <TableHead>Min. Yerlilik Oranı</TableHead>
-                      <TableHead>Min. Deneyim</TableHead>
-                      <TableHead>Firma Ölçeği</TableHead>
                       <SortableHeader field="status">Durum</SortableHeader>
                       <TableHead>İşlemler</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="max-w-xs truncate" title={product.urun_grubu_adi}>
-                          {product.urun_grubu_adi}
-                        </TableCell>
-                        <TableCell>{product.pre_requests?.firma_adi}</TableCell>
-                        <TableCell>
-                          {new Date(product.basvuru_son_tarihi).toLocaleDateString('tr-TR', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </TableCell>
-                        <TableCell>{product.minimum_yerlilik_orani}%</TableCell>
-                        <TableCell>{product.minimum_deneyim} yıl</TableCell>
-                        <TableCell>{product.firma_olcegi}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            product.status === 'active' ? 'bg-green-100 text-green-800' :
-                            product.status === 'expired' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {product.status === 'active' ? 'Aktif' :
-                             product.status === 'expired' ? 'Süresi Doldu' : 'Pasif'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
+                      <React.Fragment key={product.id}>
+                        <TableRow className="hover:bg-gray-50">
+                          <TableCell>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => handleEdit(product)}
+                              onClick={() => toggleRowExpansion(product.id)}
+                              className="p-1"
                             >
-                              <Edit className="h-4 w-4" />
+                              {expandedRows.has(product.id) ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(product.id)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{product.id.slice(0, 8)}</TableCell>
+                          <TableCell className="max-w-xs truncate font-medium" title={product.urun_grubu_adi}>
+                            {product.urun_grubu_adi}
+                          </TableCell>
+                          <TableCell className="font-medium">{product.pre_requests?.firma_adi}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              product.status === 'active' ? 'bg-green-100 text-green-800' :
+                              product.status === 'expired' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {product.status === 'active' ? 'Aktif' :
+                               product.status === 'expired' ? 'Süresi Doldu' : 'Pasif'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(product)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(product.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {expandedRows.has(product.id) && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="bg-gray-50 p-0">
+                              <div className="p-4 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Başvuru Son Tarihi</label>
+                                    <p className="text-sm">
+                                      {new Date(product.basvuru_son_tarihi).toLocaleDateString('tr-TR', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Min. Yerlilik Oranı</label>
+                                    <p className="text-sm">{product.minimum_yerlilik_orani}%</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Min. Deneyim</label>
+                                    <p className="text-sm">{product.minimum_deneyim} yıl</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Firma Ölçeği</label>
+                                    <p className="text-sm">{product.firma_olcegi}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-600">Oluşturulma Tarihi</label>
+                                    <p className="text-sm">{new Date(product.created_at).toLocaleDateString('tr-TR')}</p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Ürün Açıklaması</label>
+                                  <p className="text-sm mt-1 p-3 bg-white rounded border">{product.urun_aciklamasi}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     ))}
                   </TableBody>
                 </Table>
