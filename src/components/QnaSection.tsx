@@ -121,7 +121,7 @@ const QnaSection = () => {
               <ul className="space-y-3 text-gray-600">
                 <li className="flex items-start gap-2">
                   <span className="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-semibold">1</span>
-                  Yukarıdaki "Soru Sor" butonuna tıklayarak form ile sorunuzu gönderin
+                  Yukarıdaki "Soru Sor\" butonuna tıklayarak form ile sorunuzu gönderin
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-semibold">2</span>
