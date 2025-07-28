@@ -111,22 +111,3 @@ const QAManagement = () => {
 };
 
 export default QAManagement;
-                <QnaQuestionManagement />
-              </TabsContent>
-              
-              <TabsContent value="emails" className="mt-0">
-                <QnaAdminEmailManagement />
-              </TabsContent>
-              
-              <TabsContent value="email-logs" className="mt-0">
-                <QnaEmailLogsManagement />
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-      </div>
-    </AdminLayout>
-  );
-};
-
-export default QAManagement;
