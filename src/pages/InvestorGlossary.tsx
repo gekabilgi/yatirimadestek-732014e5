@@ -8,7 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
 import MainNavbar from '@/components/MainNavbar';
+import StandardHero from '@/components/StandardHero';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { BookOpen } from 'lucide-react';
 
 interface GlossaryTerm {
   id: string;
@@ -128,15 +130,16 @@ const InvestorGlossary = () => {
       {/* Main Navigation */}
       <MainNavbar />
       
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Yatırımcı Sözlüğü</h1>
-            <p className="text-gray-600">Yatırım teşvikleri ve prosedürleri ile ilgili terimler</p>
-          </div>
-        </div>
-      </div>
+      <StandardHero
+        title="Yatırımcı Sözlüğü"
+        description="Yatırım teşvikleri ve prosedürleri ile ilgili terimleri keşfedin ve öğrenin."
+        badge={{
+          text: "Terim Sözlüğü",
+          icon: BookOpen
+        }}
+        gradient="orange"
+        compact
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">

@@ -66,20 +66,9 @@ const QnaSection = () => {
   ];
 
   return (
-    <section className="py-16 bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <section className="py-12 bg-gradient-to-br from-blue-50 via-white to-green-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-4">
-            Uzmanlarımıza 
-            <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-              {" "}Soru Sorun
-            </span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Yatırım destekleri, teşvik sistemleri ve başvuru süreçleri hakkında merak ettiklerinizi 
-            alanında uzman ekibimize sorabilirsiniz. Sorularınız en kısa sürede yanıtlanacaktır.
-          </p>
-          
+        <div className="text-center mb-8">
           <SoruSorModal />
         </div>
 

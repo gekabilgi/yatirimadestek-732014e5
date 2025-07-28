@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calculator } from 'lucide-react';
+import { Search, Calculator, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MainNavbar from '@/components/MainNavbar';
+import StandardHero from '@/components/StandardHero';
 import UnifiedIncentiveQuery from '@/components/UnifiedIncentiveQuery';
 import IncentiveTypeCalculator from '@/components/IncentiveTypeCalculator';
 import { useSearchParams } from 'react-router-dom';
@@ -22,27 +23,19 @@ const IncentiveTools = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       <MainNavbar />
       
-      {/* Page Header */}
-      <section className="relative py-8 sm:py-14">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-        </div>
-        <div className="container relative mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl animate-fade-in">
-            9903 Yatırım Teşvik
-            <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              {" "}Sistemi
-            </span>
-          </h1>
-          <p className="mt-6 text-xl text-gray-600 max-w-4xl mx-auto font-medium">
-            Teşvik araçlarını kullanarak yeni teşvik sisteminde size uygun olabilecek destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın.
-          </p>
-          
-        </div>
-      </section>
+      <StandardHero
+        title="9903 Yatırım Teşvik Sistemi"
+        description="Teşvik araçlarını kullanarak yeni teşvik sisteminde size uygun olabilecek destekleri bulun, bilgi amaçlı sunulan teşvik tutarlarını hesaplayın."
+        badge={{
+          text: "Türkiye Yüzyılı Kalkınma Hamlesi",
+          icon: TrendingUp
+        }}
+        gradient="blue"
+        compact
+      />
       
       {/* Incentive Tools Section */}
-      <div className="container mx-auto py-3">
+      <div className="container mx-auto py-6">
         <div className="mb-6">
           <Card className="card-elevated border-0 animate-fade-in">
             <CardHeader className="pb-3 pt-3">

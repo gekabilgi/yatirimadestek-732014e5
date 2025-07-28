@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, FileText, List, UserCheck, Search, Handshake, CheckCircle } from 'lucide-react';
+import { Building2, FileText, List, UserCheck, Search, Handshake, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import MainNavbar from '@/components/MainNavbar';
+import StandardHero from '@/components/StandardHero';
 
 const TZY = () => {
   const flowSteps = [
@@ -56,18 +57,15 @@ const TZY = () => {
     <div className="min-h-screen bg-background">
       <MainNavbar />
       
-      {/* Hero Banner */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">
-            Tedarik Zinciri Yerlileştirme
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-4xl mx-auto animate-fade-in">
-            Yerli tedarikçiler ile alıcı firmaları buluşturan, ekonomik büyümeyi destekleyen 
-            dijital platform. Güvenilir iş ortaklıkları kurun, yerel ekonomiyi güçlendirin.
-          </p>
-        </div>
-      </section>
+      <StandardHero
+        title="Tedarik Zinciri Yerlileştirme"
+        description="Yerli tedarikçiler ile alıcı firmaları buluşturan, ekonomik büyümeyi destekleyen dijital platform. Güvenilir iş ortaklıkları kurun, yerel ekonomiyi güçlendirin."
+        badge={{
+          text: "Dijital Eşleştirme Platformu",
+          icon: LinkIcon
+        }}
+        gradient="blue"
+      />
 
       {/* Modern Flow Diagram */}
       <section className="py-16 bg-gray-50/50">

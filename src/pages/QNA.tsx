@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import MainNavbar from "@/components/MainNavbar";
+import StandardHero from "@/components/StandardHero";
 import QnaSection from "@/components/QnaSection";
 import AnsweredQuestionsSection from "@/components/AnsweredQuestionsSection";
 import SoruSorModal from "@/components/SoruSorModal";
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Users } from 'lucide-react';
 
 const QNA = () => {
   const [showStickyButton, setShowStickyButton] = useState(false);
@@ -27,6 +28,18 @@ const QNA = () => {
   return (
     <div className="min-h-screen bg-background">
       <MainNavbar />
+      
+      <StandardHero
+        title="Uzmanlarımıza Soru Sorun"
+        description="Yatırım destekleri, teşvik sistemleri ve başvuru süreçleri hakkında merak ettiklerinizi alanında uzman ekibimize sorabilirsiniz."
+        badge={{
+          text: "Uzman Destek Sistemi",
+          icon: Users
+        }}
+        gradient="green"
+        compact
+      />
+      
       <div data-qna-section>
         <QnaSection />
       </div>

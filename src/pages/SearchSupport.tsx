@@ -5,6 +5,8 @@ import { SearchFilters, SupportProgram } from '@/types/support';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import MainNavbar from '@/components/MainNavbar';
+import StandardHero from '@/components/StandardHero';
+import { Target } from 'lucide-react';
 
 const SearchSupport = () => {
   const [programs, setPrograms] = useState<SupportProgram[]>([]);
@@ -120,11 +122,20 @@ const SearchSupport = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />
+      
+      <StandardHero
+        title="Destek Programları"
+        description="Size uygun destek programlarını bulun ve başvuru süreçlerinizi kolaylaştırın."
+        badge={{
+          text: "Aktif Destek Çağrıları",
+          icon: Target
+        }}
+        gradient="purple"
+        compact
+      />
+      
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            Destek Programları
-          </h1>
           <SearchBar onSearch={handleSearch} filters={filters} />
         </div>
       </div>

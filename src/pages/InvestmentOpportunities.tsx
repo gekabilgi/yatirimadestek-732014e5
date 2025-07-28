@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, TrendingUp } from 'lucide-react';
 import MainNavbar from '@/components/MainNavbar';
+import StandardHero from '@/components/StandardHero';
 import { InvestmentOpportunityRow } from '@/components/InvestmentOpportunityRow';
 import { InvestmentOpportunityMobileCard } from '@/components/InvestmentOpportunityMobileCard';
 import { InvestmentSearchBar, InvestmentFilters } from '@/components/InvestmentSearchBar';
@@ -169,14 +170,19 @@ const InvestmentOpportunities = () => {
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />
       
+      <StandardHero
+        title="Yatırım Fırsatları"
+        description="Fizibilite raporları ve yatırım fırsatlarını keşfedin, size uygun projeleri bulun."
+        badge={{
+          text: "Fizibilite Raporları",
+          icon: TrendingUp
+        }}
+        gradient="teal"
+        compact
+      />
+      
       <div className={`mx-auto px-2 sm:px-4 py-4 sm:py-8 ${isMobile ? 'max-w-full' : 'max-w-6xl'}`}>
-        <div className="mb-4 sm:mb-8">
-          <h1 className={`font-bold text-gray-900 mb-2 ${isMobile ? 'text-xl' : 'text-3xl'}`}>
-            Yatırım Fırsatları
-          </h1>
-          <p className={`text-gray-600 mb-2 sm:mb-4 ${isMobile ? 'text-sm' : ''}`}>
-            Fizibilite raporları ve yatırım fırsatları
-          </p>
+        <div className="mb-4 sm:mb-6">
           <p className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
             Toplam {allReports.length} sonuç bulundu
           </p>
