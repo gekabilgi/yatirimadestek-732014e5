@@ -11,7 +11,8 @@ import {
   TrendingUp, 
   Calendar,
   Building,
-  BarChart3
+  BarChart3,
+  Book
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RecentActivities } from './RecentActivities';
