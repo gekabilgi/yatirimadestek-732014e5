@@ -211,7 +211,7 @@ const AnsweredQuestionsSection = () => {
                           <div className="h-4 w-4 bg-green-500 rounded-full flex items-center justify-center">
                             <div className="h-2 w-2 bg-white rounded-full"></div>
                           </div>
-                          Yanıt
+                          Cevap
                         </h3>
                         <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
                           <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
