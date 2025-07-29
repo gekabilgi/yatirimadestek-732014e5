@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/types/qna';
 
@@ -13,6 +14,7 @@ const AnsweredQuestionsSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [totalAnsweredCount, setTotalAnsweredCount] = useState(0);
+  const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchAnsweredQuestions();
@@ -76,6 +78,18 @@ const AnsweredQuestionsSection = () => {
 
   const toggleExpanded = (questionId: string) => {
     setExpandedCard(expandedCard === questionId ? null : questionId);
+  };
+
+  const toggleAnswerExpansion = (questionId: string) => {
+    setExpandedAnswers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        newSet.add(questionId);
+      }
+      return newSet;
+    });
   };
 
   if (loading) {
@@ -214,9 +228,33 @@ const AnsweredQuestionsSection = () => {
                           Cevap
                         </h3>
                         <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
-                          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                            {question.answer}
-                          </p>
+                          <div className="relative">
+                            <p className={`text-gray-800 leading-relaxed whitespace-pre-wrap ${
+                              expandedAnswers.has(question.id) ? '' : 'line-clamp-2'
+                            }`}>
+                              {question.answer}
+                            </p>
+                            {question.answer.length > 150 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleAnswerExpansion(question.id)}
+                                className="mt-2 text-green-700 hover:text-green-800 hover:bg-green-100 p-1 h-auto font-medium"
+                              >
+                                {expandedAnswers.has(question.id) ? (
+                                  <>
+                                    <ChevronUp className="h-4 w-4 mr-1" />
+                                    Daha az göster
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="h-4 w-4 mr-1" />
+                                    Devamını oku
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
