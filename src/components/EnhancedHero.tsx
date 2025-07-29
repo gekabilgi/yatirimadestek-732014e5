@@ -48,7 +48,7 @@ const EnhancedHero = () => {
     { label: "Desteklenen Sektör", value: "1.000+" },
     { 
       label: "Toplam Destek Arama & Hesaplama", 
-      value: isLoading ? "Yükleniyor..." : `${totalClicks.toLocaleString('tr-TR')}+` 
+      value: isLoading ? "Yükleniyor..." : `${totalClicks.toLocaleString('tr-TR')}` 
     },
   ];
 
