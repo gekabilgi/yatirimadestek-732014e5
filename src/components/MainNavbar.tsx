@@ -24,14 +24,14 @@ const MainNavbar = () => {
 
   // Base navigation items available to everyone
   const baseNavItems = [
-    { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
+    { name: 'Destek Arama', href: '/searchsupport' },
   ];
 
   // Admin-only navigation items
   const adminNavItems = [
-    { name: 'Tedarik Zinciri', href: '/tzy' },
+    { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
     { name: 'Soru & Cevap', href: '/qna' },
-    { name: 'Destek Arama', href: '/searchsupport' },
+    { name: 'Tedarik Zinciri', href: '/tzy' },
     { name: 'Yatırım Fırsatları', href: '/yatirim-firsatlari' },
     { name: 'Yatırımcı Sözlüğü', href: '/investor-glossary' },
   ];
