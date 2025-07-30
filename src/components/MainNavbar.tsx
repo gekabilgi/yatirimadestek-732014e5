@@ -34,6 +34,7 @@ const MainNavbar = () => {
     { name: 'Tedarik Zinciri', href: '/tzy' },
     { name: 'Yatırım Fırsatları', href: '/yatirim-firsatlari' },
     { name: 'Yatırımcı Sözlüğü', href: '/investor-glossary' },
+    { name: 'Başvuru Süreci', href: '/basvuru-sureci' },
   ];
 
   // Combine nav items based on user role

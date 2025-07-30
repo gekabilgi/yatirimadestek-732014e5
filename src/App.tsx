@@ -74,6 +74,7 @@ const App = () => {
               <Route path="/tzy/talepler/basvuru/:on_request_id/:product_id" element={<TZYSupplierApplication />} />
               <Route path="/tzy/supplier-application/success" element={<TZYSupplierApplicationSuccess />} />
               <Route path="/tzy/supplier-application/error" element={<TZYSupplierApplicationError />} />
+              <Route path="/basvuru-sureci" element={<ApplicationProcess />} />
               <Route path="/qna" element={
                 <ProtectedAdminRoute>
                   <QNA />
