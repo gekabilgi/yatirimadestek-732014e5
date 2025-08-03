@@ -20,7 +20,7 @@ const IncentiveTools = () => {
   }, [moduleParam]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-x-hidden bg-grid-pattern-combined">
       <MainNavbar />
       
       <StandardHero

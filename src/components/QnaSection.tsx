@@ -66,7 +66,7 @@ const QnaSection = () => {
   ];
 
   return (
-    <section className="py-12 bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <section className="py-12 bg-gradient-to-br from-blue-50 via-white to-green-50 bg-grid-pattern-subtle">
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <SoruSorModal />

@@ -34,10 +34,9 @@ const StandardHero: React.FC<StandardHeroProps> = ({
   const paddingClass = compact ? 'py-12 sm:py-16' : 'py-16 sm:py-20';
 
   return (
-    <section className={`relative overflow-hidden bg-gradient-to-r ${gradientClasses[gradient]} text-white ${paddingClass}`}>
+    <section className={`relative overflow-hidden bg-gradient-to-r ${gradientClasses[gradient]} text-white ${paddingClass} bg-grid-pattern-white`}>
       {/* Background Pattern */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
         <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-white/10 opacity-20 blur-[100px]"></div>
       </div>
       
