@@ -340,6 +340,11 @@ const ApplicationProcess = () => {
       
       {/* Official Government Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        {/* Enhanced Background Grid Pattern */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff15_1px,transparent_1px),linear-gradient(to_bottom,#ffffff15_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4px_4px]"></div>
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Ministry Header */}
           <div className="flex items-center justify-between mb-6">
@@ -367,6 +372,11 @@ const ApplicationProcess = () => {
 
       {/* Process Flow */}
       <section className="py-16 bg-gray-50">
+        {/* Enhanced Background Grid for Process Section */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000004_1px,transparent_1px),linear-gradient(to_bottom,#00000004_1px,transparent_1px)] bg-[size:6px_6px]"></div>
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Row - Steps 1, 2, 3 */}
           <div className="relative mb-16">
@@ -439,6 +449,10 @@ const ApplicationProcess = () => {
 
       {/* Download Section */}
       <section className="py-16 bg-white">
+        {/* Subtle Grid for Download Section */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000006_1px,transparent_1px),linear-gradient(to_bottom,#00000006_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+        </div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Detaylı Süreç Rehberi
