@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { formatLargeNumber, formatCurrencyCompact } from '@/utils/numberFormatting';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -127,22 +128,22 @@ const AdminDashboard = () => {
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl">
-              <div className="text-2xl font-bold text-blue-600 mb-1">{qnaStats?.total || 0}</div>
+              <div className="text-xl font-bold text-blue-600 mb-1">{formatLargeNumber(qnaStats?.total || 0)}</div>
               <p className="text-xs font-semibold text-gray-700">Toplam Soru</p>
               <p className="text-xs text-gray-500 mt-1 line-clamp-1">Sistem geneli</p>
             </div>
             <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl">
-              <div className="text-2xl font-bold text-green-600 mb-1">{qnaStats?.answered || 0}</div>
+              <div className="text-xl font-bold text-green-600 mb-1">{formatLargeNumber(qnaStats?.answered || 0)}</div>
               <p className="text-xs font-semibold text-gray-700">Cevaplanmış</p>
               <p className="text-xs text-gray-500 mt-1 line-clamp-1">YDO tarafından</p>
             </div>
             <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl">
-              <div className="text-2xl font-bold text-purple-600 mb-1">{qnaStats?.sentToUser || 0}</div>
-              <p className="text-xs font-semibold text-gray-700 line-clamp-1">Sorana Gönderilen</p>
+              <div className="text-xl font-bold text-purple-600 mb-1">{formatLargeNumber(qnaStats?.sentToUser || 0)}</div>
+              <p className="text-xs font-semibold text-gray-700 line-clamp-1">Gönderilen</p>
               <p className="text-xs text-gray-500 mt-1 line-clamp-1">Onaylanmış cevaplar</p>
             </div>
             <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl">
-              <div className="text-2xl font-bold text-orange-600 mb-1">{qnaStats?.pending || 0}</div>
+              <div className="text-xl font-bold text-orange-600 mb-1">{formatLargeNumber(qnaStats?.pending || 0)}</div>
               <p className="text-xs font-semibold text-gray-700">Bekleyen</p>
               <p className="text-xs text-gray-500 mt-1 line-clamp-1">Yanıt bekliyor</p>
             </div>
@@ -160,9 +161,9 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{feasibilityStats?.total || 0}</div>
+            <div className="text-xl font-bold text-gray-900 mb-1">{formatLargeNumber(feasibilityStats?.total || 0)}</div>
             <p className="text-xs text-gray-500 line-clamp-1">
-              Bu ay {feasibilityStats?.thisMonth || 0} yeni
+              Bu ay {formatLargeNumber(feasibilityStats?.thisMonth || 0)} yeni
             </p>
           </CardContent>
         </Card>
@@ -175,7 +176,7 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{supportProgramStats?.total || 0}</div>
+            <div className="text-xl font-bold text-gray-900 mb-1">{formatLargeNumber(supportProgramStats?.total || 0)}</div>
             <p className="text-xs text-gray-500 line-clamp-1">Aktif program</p>
           </CardContent>
         </Card>
@@ -188,7 +189,7 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{glossaryStats?.total || 0}</div>
+            <div className="text-xl font-bold text-gray-900 mb-1">{formatLargeNumber(glossaryStats?.total || 0)}</div>
             <p className="text-xs text-gray-500 line-clamp-1">Tanımlanmış terim</p>
           </CardContent>
         </Card>
@@ -201,11 +202,11 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
-              {feasibilityStats?.totalInvestment?.toLocaleString('tr-TR') || 0} TL
+            <div className="text-lg font-bold text-gray-900 mb-1 break-words">
+              {formatCurrencyCompact(feasibilityStats?.totalInvestment || 0)}
             </div>
-            <p className="text-xs text-gray-500">
-              {feasibilityStats?.totalEmployment || 0} kişi istihdam
+            <p className="text-xs text-gray-500 line-clamp-1">
+              {formatLargeNumber(feasibilityStats?.totalEmployment || 0)} kişi istihdam
             </p>
           </CardContent>
         </Card>
@@ -227,11 +228,11 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-gray-600 line-clamp-2">Yatırım fizibilite raporlarını yönetin</p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
-                  <Link to="/admin/feasibility-reports" className="flex-1">
+                <div className="flex flex-col gap-2 w-full">
+                  <Link to="/admin/feasibility-reports" className="w-full">
                     <Button size="sm" className="btn-primary w-full">Raporları Yönet</Button>
                   </Link>
-                  <Link to="/admin/feasibility-statistics" className="flex-1">
+                  <Link to="/admin/feasibility-statistics" className="w-full">
                     <Button size="sm" variant="outline" className="btn-outline w-full">
                       <BarChart3 className="h-4 w-4 mr-1" />
                       İstatistikler

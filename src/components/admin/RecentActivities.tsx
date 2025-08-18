@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { truncateText } from '@/utils/numberFormatting';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,11 +60,11 @@ const RecentActivities = () => {
           switch (item.action) {
             case 'submitted':
               type = 'question_submitted';
-              description = `Yeni soru gönderildi: "${(item.soru_cevap as any)?.question?.substring(0, 50)}..."`;
+              description = `Yeni soru gönderildi: "${truncateText((item.soru_cevap as any)?.question || '', 40)}"`;
               break;
             case 'answered':
               type = 'question_answered';
-              description = `Soru yanıtlandı: "${(item.soru_cevap as any)?.question?.substring(0, 50)}..."`;
+              description = `Soru yanıtlandı: "${truncateText((item.soru_cevap as any)?.question || '', 40)}"`;
               break;
             default:
               description = `${item.action}: ${item.notes || 'Detay yok'}`;
@@ -92,8 +93,8 @@ const RecentActivities = () => {
           activities.push({
             id: item.id,
             type: 'email_sent',
-            description: `E-posta gönderildi: ${item.email_subject}`,
-            user_name: item.recipient_email,
+            description: `E-posta gönderildi: ${truncateText(item.email_subject || '', 40)}`,
+            user_name: truncateText(item.recipient_email || '', 20),
             user_role: 'system',
             timestamp: item.sent_date,
           });
@@ -112,7 +113,7 @@ const RecentActivities = () => {
           activities.push({
             id: item.id,
             type: 'program_added',
-            description: `Yeni destek programı eklendi: ${item.title}`,
+            description: `Yeni destek programı: ${truncateText(item.title || '', 35)}`,
             user_role: 'admin',
             timestamp: item.created_at,
           });
@@ -131,7 +132,7 @@ const RecentActivities = () => {
           activities.push({
             id: item.id,
             type: 'glossary_added',
-            description: `Yeni sözlük terimi eklendi: ${item.term}`,
+            description: `Yeni sözlük terimi: ${truncateText(item.term || '', 35)}`,
             user_role: 'admin',
             timestamp: item.created_at,
           });
@@ -150,7 +151,7 @@ const RecentActivities = () => {
           activities.push({
             id: item.id,
             type: 'report_added',
-            description: `Yeni fizibilite raporu eklendi: ${item.yatirim_konusu}`,
+            description: `Yeni fizibilite raporu: ${truncateText(item.yatirim_konusu || '', 35)}`,
             user_role: 'admin',
             timestamp: item.created_at,
           });
@@ -231,36 +232,36 @@ const RecentActivities = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4 max-h-96 overflow-y-auto scrollbar-hide">
+        <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
           {activities?.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                 {getActivityIcon(activity.type)}
               </div>
               
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-900 font-medium line-clamp-2">
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-sm text-gray-900 font-medium line-clamp-2 leading-tight">
                   {activity.description}
                 </p>
                 
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 flex-wrap">
                   {activity.user_name && (
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-gray-600 truncate max-w-[100px]">
                       {activity.user_name}
                     </span>
                   )}
                   
                   <Badge 
                     variant="secondary" 
-                    className={`text-xs ${getRoleBadgeColor(activity.user_role || 'user')}`}
+                    className={`text-xs py-0 px-1 ${getRoleBadgeColor(activity.user_role || 'user')}`}
                   >
                     {activity.user_role === 'admin' ? 'Admin' : 
                      activity.user_role === 'ydo' ? 'YDO' :
-                     activity.user_role === 'system' ? 'Sistem' : 'Kullanıcı'}
+                     activity.user_role === 'system' ? 'Sistem' : 'User'}
                   </Badge>
                   
-                  <span className="text-xs text-gray-500">
-                    {format(new Date(activity.timestamp), 'dd.MM.yyyy HH:mm')}
+                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                    {format(new Date(activity.timestamp), 'dd.MM HH:mm')}
                   </span>
                 </div>
               </div>
