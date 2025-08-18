@@ -82,37 +82,39 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 lg:gap-2">
+        <div className="flex-1 lg:flex-auto">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Destek programlarında ara..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="pl-10 h-11 text-base"
+              className="pl-10 h-11 text-base w-full"
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex gap-2 lg:gap-2 lg:flex-shrink-0">
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 h-11 justify-center"
+            className="flex items-center gap-2 h-11 flex-1 lg:flex-none lg:min-w-[120px] justify-center"
           >
             <Filter className="w-4 h-4" />
-            Filtreler
+            <span className="hidden sm:inline">Filtreler</span>
+            <span className="sm:hidden">Filtre</span>
             {(selectedTags.length > 0 || institution) && (
-              <Badge variant="secondary" className="ml-1">
+              <Badge variant="secondary" className="ml-1 text-xs">
                 {selectedTags.length + (institution ? 1 : 0)}
               </Badge>
             )}
           </Button>
           
-          <Button onClick={handleSearch} className="h-11">
-            Ara
+          <Button onClick={handleSearch} className="h-11 flex-1 lg:flex-none lg:min-w-[80px]">
+            <span className="hidden sm:inline">Ara</span>
+            <Search className="w-4 h-4 sm:hidden" />
           </Button>
         </div>
       </div>
