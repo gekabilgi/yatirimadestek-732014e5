@@ -950,6 +950,13 @@ export type Database = {
             foreignKeyName: "qna_audit_trail_soru_cevap_id_fkey"
             columns: ["soru_cevap_id"]
             isOneToOne: false
+            referencedRelation: "public_qna_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qna_audit_trail_soru_cevap_id_fkey"
+            columns: ["soru_cevap_id"]
+            isOneToOne: false
             referencedRelation: "soru_cevap"
             referencedColumns: ["id"]
           },
@@ -996,6 +1003,13 @@ export type Database = {
           transmission_status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "qna_email_logs_soru_cevap_id_fkey"
+            columns: ["soru_cevap_id"]
+            isOneToOne: false
+            referencedRelation: "public_qna_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "qna_email_logs_soru_cevap_id_fkey"
             columns: ["soru_cevap_id"]
@@ -1478,6 +1492,39 @@ export type Database = {
           id?: string | null
           logo_url?: string | null
           status?: string | null
+        }
+        Relationships: []
+      }
+      public_qna_view: {
+        Row: {
+          answer: string | null
+          answer_date: string | null
+          category: string | null
+          created_at: string | null
+          id: string | null
+          province: string | null
+          question: string | null
+          question_number: number | null
+        }
+        Insert: {
+          answer?: string | null
+          answer_date?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string | null
+          province?: string | null
+          question?: string | null
+          question_number?: number | null
+        }
+        Update: {
+          answer?: string | null
+          answer_date?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string | null
+          province?: string | null
+          question?: string | null
+          question_number?: number | null
         }
         Relationships: []
       }
