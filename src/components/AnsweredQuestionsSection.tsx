@@ -1,9 +1,16 @@
 
+/**
+ * SECURITY NOTE: This component now uses the secure public_qna_view instead of 
+ * direct access to the soru_cevap table. The view excludes ALL personal data
+ * (names, emails, phone numbers) to protect customer privacy while still 
+ * providing public access to approved Q&A content.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/types/qna';
