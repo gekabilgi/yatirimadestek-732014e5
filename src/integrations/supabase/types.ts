@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -66,6 +66,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      document_tags: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
       }
       exchange_rates: {
         Row: {
@@ -375,6 +420,134 @@ export type Database = {
         }
         Relationships: []
       }
+      karar_chunks: {
+        Row: {
+          chunk_id: string | null
+          content: string | null
+          embedding: string | null
+          end_char: number | null
+          id: number
+          start_char: number | null
+        }
+        Insert: {
+          chunk_id?: string | null
+          content?: string | null
+          embedding?: string | null
+          end_char?: number | null
+          id?: number
+          start_char?: number | null
+        }
+        Update: {
+          chunk_id?: string | null
+          content?: string | null
+          embedding?: string | null
+          end_char?: number | null
+          id?: number
+          start_char?: number | null
+        }
+        Relationships: []
+      }
+      legal_document_tags: {
+        Row: {
+          created_at: string | null
+          document_id: string | null
+          id: string
+          tag_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          tag_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          tag_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_document_tags_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_document_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "document_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_documents: {
+        Row: {
+          category_id: number | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          document_number: string | null
+          document_type: string
+          external_url: string | null
+          file_url: string | null
+          id: string
+          keywords: string | null
+          ministry: string | null
+          publication_date: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          category_id?: number | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          document_number?: string | null
+          document_type: string
+          external_url?: string | null
+          file_url?: string | null
+          id?: string
+          keywords?: string | null
+          ministry?: string | null
+          publication_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          category_id?: number | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          document_number?: string | null
+          document_type?: string
+          external_url?: string | null
+          file_url?: string | null
+          id?: string
+          keywords?: string | null
+          ministry?: string | null
+          publication_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_documents_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "document_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_support: {
         Row: {
           alt_bolge: string | null
@@ -608,6 +781,13 @@ export type Database = {
           urun_grubu_adi?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "products_pre_request_id_fkey"
+            columns: ["pre_request_id"]
+            isOneToOne: false
+            referencedRelation: "approved_pre_requests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_pre_request_id_fkey"
             columns: ["pre_request_id"]
@@ -1244,20 +1424,82 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      approved_pre_requests: {
+        Row: {
+          created_at: string | null
+          firma_adi: string | null
+          firma_kisa_adi: string | null
+          id: string | null
+          logo_url: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          firma_adi?: string | null
+          firma_kisa_adi?: string | null
+          id?: string | null
+          logo_url?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          firma_adi?: string | null
+          firma_kisa_adi?: string | null
+          id?: string | null
+          logo_url?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       check_submission_spam: {
         Args: {
+          p_cooldown_minutes?: number
           p_identifier: string
           p_submission_type: string
-          p_cooldown_minutes?: number
         }
         Returns: boolean
       }
       expire_old_products: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       increment_stat: {
         Args: { stat_name_param: string }
@@ -1267,18 +1509,74 @@ export type Database = {
         Args: { user_id?: string }
         Returns: boolean
       }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
+      }
       log_qna_audit: {
         Args: {
-          p_soru_cevap_id: string
           p_action: string
-          p_user_role?: string
           p_notes?: string
+          p_soru_cevap_id: string
+          p_user_role?: string
         }
         Returns: undefined
       }
       record_submission: {
         Args: { p_identifier: string; p_submission_type: string }
         Returns: undefined
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
     }
     Enums: {
