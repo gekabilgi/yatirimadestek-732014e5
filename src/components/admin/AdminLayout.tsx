@@ -49,6 +49,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         { name: 'E-posta Logları', href: '/admin/tzy-email-logs' }
       ]
     },
+    {
+      name: 'Ayarlar',
+      href: '/admin/settings',
+      icon: Settings,
+      subItems: [
+        { name: 'Teşvik Hesaplama Ayarları', href: '/admin/settings/incentive-calculation' },
+      ]
+    },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   ];
 

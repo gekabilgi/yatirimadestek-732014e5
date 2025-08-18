@@ -19,6 +19,7 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
 import AdminEmailManagement from "./pages/AdminEmailManagement";
 import AdminGlossaryManagement from "./pages/AdminGlossaryManagement";
+import AdminIncentiveSettings from "./pages/AdminIncentiveSettings";
 import InvestorGlossary from "./pages/InvestorGlossary";
 import ApplicationProcess from "./pages/ApplicationProcess";
 import ProgramDetails from "./pages/ProgramDetails";
@@ -131,6 +132,11 @@ const App = () => {
               <Route path="/admin/glossary-management" element={
                 <ProtectedAdminRoute>
                   <AdminGlossaryManagement />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/settings/incentive-calculation" element={
+                <ProtectedAdminRoute>
+                  <AdminIncentiveSettings />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/tzyotl" element={

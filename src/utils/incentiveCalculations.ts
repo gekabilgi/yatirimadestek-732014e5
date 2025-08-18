@@ -18,7 +18,7 @@ const getProvinceRegion = (province: string): number => {
   return regionMap[province] || 1;
 };
 
-export const calculateIncentives = (inputs: IncentiveCalculatorInputs): IncentiveCalculatorResults => {
+export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Promise<IncentiveCalculatorResults> => {
   const validationErrors: string[] = [];
   const warningMessages: string[] = [];
   

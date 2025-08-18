@@ -14,7 +14,7 @@ const IncentiveTypeCalculator: React.FC = () => {
   const handleCalculate = async (inputs: IncentiveCalculatorInputs) => {
     setIsCalculating(true);
     try {
-      const results = calculateIncentives(inputs);
+      const results = await calculateIncentives(inputs);
       setCalculationResults(results);
       setCalculationInputs(inputs);
     } catch (error) {
