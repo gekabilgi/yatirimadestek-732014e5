@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FormattedCurrencyInput } from '@/components/ui/formatted-currency-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -383,56 +384,46 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
         </div> 
           <div className="space-y-2">
             <Label htmlFor="landCost">Arsa/Arazi Maliyeti</Label>
-            <Input
+            <FormattedCurrencyInput
               id="landCost"
-              type="number"
-              min="0"
               value={formData.landCost}
-              onChange={(e) => handleInputChange('landCost', parseFloat(e.target.value) || 0)}
+              onChange={(value) => handleInputChange('landCost', value)}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="constructionCost">İnşaat Maliyeti</Label>
-            <Input
+            <FormattedCurrencyInput
               id="constructionCost"
-              type="number"
-              min="0"
               value={formData.constructionCost}
-              onChange={(e) => handleInputChange('constructionCost', parseFloat(e.target.value) || 0)}
+              onChange={(value) => handleInputChange('constructionCost', value)}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="importedMachineryCost">İthal Makine Maliyeti</Label>
-            <Input
+            <FormattedCurrencyInput
               id="importedMachineryCost"
-              type="number"
-              min="0"
               value={formData.importedMachineryCost}
-              onChange={(e) => handleInputChange('importedMachineryCost', parseFloat(e.target.value) || 0)}
+              onChange={(value) => handleInputChange('importedMachineryCost', value)}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="domesticMachineryCost">Yerli Makine Maliyeti</Label>
-            <Input
+            <FormattedCurrencyInput
               id="domesticMachineryCost"
-              type="number"
-              min="0"
               value={formData.domesticMachineryCost}
-              onChange={(e) => handleInputChange('domesticMachineryCost', parseFloat(e.target.value) || 0)}
+              onChange={(value) => handleInputChange('domesticMachineryCost', value)}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="otherExpenses">Diğer Giderler</Label>
-            <Input
+            <FormattedCurrencyInput
               id="otherExpenses"
-              type="number"
-              min="0"
               value={formData.otherExpenses}
-              onChange={(e) => handleInputChange('otherExpenses', parseFloat(e.target.value) || 0)}
+              onChange={(value) => handleInputChange('otherExpenses', value)}
             />
           </div>
         </div>
@@ -455,12 +446,10 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="loanAmount">Kredi Tutarı (TL)</Label>
-              <Input
+              <FormattedCurrencyInput
                 id="loanAmount"
-                type="number"
-                min="0"
                 value={formData.loanAmount}
-                onChange={handleLoanAmountChange}
+                onChange={(value) => handleInputChange('loanAmount', value)}
               />
               {loanValidationMessage && (
                 <Alert variant={getValidationVariant(loanValidationMessage.type)} className={
