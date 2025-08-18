@@ -1,5 +1,5 @@
 import React from 'react';
-import { DivideIcon as LucideIcon } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 
 interface StandardHeroProps {
   title: string;
@@ -7,7 +7,7 @@ interface StandardHeroProps {
   description?: string;
   badge?: {
     text: string;
-    icon?: typeof LucideIcon;
+    icon?: LucideIcon;
   };
   gradient?: 'blue' | 'green' | 'purple' | 'orange' | 'teal';
   children?: React.ReactNode;
