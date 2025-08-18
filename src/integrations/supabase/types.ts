@@ -1642,6 +1642,14 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      test_public_access_to_personal_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          personal_data_accessible: boolean
+          records_exposed: number
+          security_test_result: string
+        }[]
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
