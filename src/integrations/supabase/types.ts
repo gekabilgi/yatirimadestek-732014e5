@@ -1469,6 +1469,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_approved_pre_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          firma_adi: string
+          firma_kisa_adi: string
+          id: string
+          logo_url: string
+          status: string
+        }[]
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
