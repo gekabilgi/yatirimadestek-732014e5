@@ -125,26 +125,26 @@ const AdminDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl">
-              <div className="text-3xl font-bold text-blue-600 mb-1">{qnaStats?.total || 0}</div>
-              <p className="text-sm font-semibold text-gray-700">Toplam Soru</p>
-              <p className="text-xs text-gray-500 mt-1">Sistem geneli</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl">
+              <div className="text-2xl font-bold text-blue-600 mb-1">{qnaStats?.total || 0}</div>
+              <p className="text-xs font-semibold text-gray-700">Toplam Soru</p>
+              <p className="text-xs text-gray-500 mt-1 line-clamp-1">Sistem geneli</p>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl">
-              <div className="text-3xl font-bold text-green-600 mb-1">{qnaStats?.answered || 0}</div>
-              <p className="text-sm font-semibold text-gray-700">Cevaplanmış</p>
-              <p className="text-xs text-gray-500 mt-1">YDO tarafından</p>
+            <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl">
+              <div className="text-2xl font-bold text-green-600 mb-1">{qnaStats?.answered || 0}</div>
+              <p className="text-xs font-semibold text-gray-700">Cevaplanmış</p>
+              <p className="text-xs text-gray-500 mt-1 line-clamp-1">YDO tarafından</p>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl">
-              <div className="text-3xl font-bold text-purple-600 mb-1">{qnaStats?.sentToUser || 0}</div>
-              <p className="text-sm font-semibold text-gray-700">Sorana Gönderilen</p>
-              <p className="text-xs text-gray-500 mt-1">Onaylanmış cevaplar</p>
+            <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl">
+              <div className="text-2xl font-bold text-purple-600 mb-1">{qnaStats?.sentToUser || 0}</div>
+              <p className="text-xs font-semibold text-gray-700 line-clamp-1">Sorana Gönderilen</p>
+              <p className="text-xs text-gray-500 mt-1 line-clamp-1">Onaylanmış cevaplar</p>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl">
-              <div className="text-3xl font-bold text-orange-600 mb-1">{qnaStats?.pending || 0}</div>
-              <p className="text-sm font-semibold text-gray-700">Bekleyen</p>
-              <p className="text-xs text-gray-500 mt-1">Yanıt bekliyor</p>
+            <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl">
+              <div className="text-2xl font-bold text-orange-600 mb-1">{qnaStats?.pending || 0}</div>
+              <p className="text-xs font-semibold text-gray-700">Bekleyen</p>
+              <p className="text-xs text-gray-500 mt-1 line-clamp-1">Yanıt bekliyor</p>
             </div>
           </div>
         </CardContent>
@@ -160,8 +160,8 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900 mb-1">{feasibilityStats?.total || 0}</div>
-            <p className="text-xs text-gray-500">
+            <div className="text-2xl font-bold text-gray-900 mb-1">{feasibilityStats?.total || 0}</div>
+            <p className="text-xs text-gray-500 line-clamp-1">
               Bu ay {feasibilityStats?.thisMonth || 0} yeni
             </p>
           </CardContent>
@@ -175,8 +175,8 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900 mb-1">{supportProgramStats?.total || 0}</div>
-            <p className="text-xs text-gray-500">Aktif program</p>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{supportProgramStats?.total || 0}</div>
+            <p className="text-xs text-gray-500 line-clamp-1">Aktif program</p>
           </CardContent>
         </Card>
 
@@ -188,8 +188,8 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900 mb-1">{glossaryStats?.total || 0}</div>
-            <p className="text-xs text-gray-500">Tanımlanmış terim</p>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{glossaryStats?.total || 0}</div>
+            <p className="text-xs text-gray-500 line-clamp-1">Tanımlanmış terim</p>
           </CardContent>
         </Card>
 
@@ -225,14 +225,14 @@ const AdminDashboard = () => {
                   Fizibilite Raporları
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">Yatırım fizibilite raporlarını yönetin</p>
-                <div className="flex gap-3">
-                  <Link to="/admin/feasibility-reports">
-                    <Button size="sm" className="btn-primary">Raporları Yönet</Button>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600 line-clamp-2">Yatırım fizibilite raporlarını yönetin</p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+                  <Link to="/admin/feasibility-reports" className="flex-1">
+                    <Button size="sm" className="btn-primary w-full">Raporları Yönet</Button>
                   </Link>
-                  <Link to="/admin/feasibility-statistics">
-                    <Button size="sm" variant="outline" className="btn-outline">
+                  <Link to="/admin/feasibility-statistics" className="flex-1">
+                    <Button size="sm" variant="outline" className="btn-outline w-full">
                       <BarChart3 className="h-4 w-4 mr-1" />
                       İstatistikler
                     </Button>
@@ -250,10 +250,10 @@ const AdminDashboard = () => {
                   Soru & Cevap
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">Kullanıcı sorularını yönetin</p>
-                <Link to="/admin/qa-management">
-                  <Button size="sm" className="btn-primary">Soruları Yönet</Button>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600 line-clamp-2">Kullanıcı sorularını yönetin</p>
+                <Link to="/admin/qa-management" className="block">
+                  <Button size="sm" className="btn-primary w-full">Soruları Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -267,10 +267,10 @@ const AdminDashboard = () => {
                   Destek Programları
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">Destek programlarını düzenleyin</p>
-                <Link to="/admin/support-programs">
-                  <Button size="sm" className="btn-primary">Programları Yönet</Button>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600 line-clamp-2">Destek programlarını düzenleyin</p>
+                <Link to="/admin/support-programs" className="block">
+                  <Button size="sm" className="btn-primary w-full">Programları Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -284,10 +284,10 @@ const AdminDashboard = () => {
                   Yatırımcı Sözlüğü
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">Terim tanımlarını yönetin</p>
-                <Link to="/admin/glossary-management">
-                  <Button size="sm" className="btn-primary">Sözlüğü Yönet</Button>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600 line-clamp-2">Terim tanımlarını yönetin</p>
+                <Link to="/admin/glossary-management" className="block">
+                  <Button size="sm" className="btn-primary w-full">Sözlüğü Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -301,10 +301,10 @@ const AdminDashboard = () => {
                   E-posta Yönetimi
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">E-posta ayarlarını düzenleyin</p>
-                <Link to="/admin/email-management">
-                  <Button size="sm" className="btn-primary">E-postaları Yönet</Button>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600 line-clamp-2">E-posta ayarlarını düzenleyin</p>
+                <Link to="/admin/email-management" className="block">
+                  <Button size="sm" className="btn-primary w-full">E-postaları Yönet</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -318,10 +318,10 @@ const AdminDashboard = () => {
                   Analytics
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">Sistem analitiklerini görüntüleyin</p>
-                <Link to="/admin/analytics">
-                  <Button size="sm" className="btn-primary">Analytics</Button>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600 line-clamp-2">Sistem analitiklerini görüntüleyin</p>
+                <Link to="/admin/analytics" className="block">
+                  <Button size="sm" className="btn-primary w-full">Analytics</Button>
                 </Link>
               </CardContent>
             </Card>
