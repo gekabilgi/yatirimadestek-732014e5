@@ -23,12 +23,11 @@ const AnsweredQuestionsSection = () => {
 
   const fetchAnsweredQuestions = async () => {
     try {
+      // SECURITY FIX: Use secure view instead of direct table access
+      // This prevents exposure of personal data (names, emails, phones)
       const { data, error } = await supabase
-        .from('soru_cevap')
+        .from('public_qna_view')
         .select('*')
-        .eq('sent_to_user', true)
-        .eq('answer_status', 'approved')
-        .not('answer', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -36,7 +35,28 @@ const AnsweredQuestionsSection = () => {
         return;
       }
 
-      setQuestions(data || []);
+      // Transform the secure view data to match the expected Question type
+      const transformedData = data?.map(item => ({
+        ...item,
+        // Personal data fields are intentionally excluded from the secure view
+        full_name: 'Anonim Kullanıcı', // Anonymous user for privacy
+        email: 'Gizli', // Hidden for privacy
+        phone: null,
+        answered: true,
+        sent_to_user: true,
+        sent_to_ydo: true,
+        answer_status: 'approved' as const,
+        return_status: null,
+        admin_notes: null,
+        answered_by_user_id: null,
+        approved_by_admin_id: null,
+        return_reason: null,
+        admin_sent: null,
+        return_date: null,
+        answered_by_full_name: null
+      })) || [];
+
+      setQuestions(transformedData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -46,13 +66,13 @@ const AnsweredQuestionsSection = () => {
 
   const fetchTotalAnsweredCount = async () => {
     try {
+      // SECURITY FIX: Use secure view for count to avoid exposing personal data
       const { count, error } = await supabase
-        .from('soru_cevap')
-        .select('*', { count: 'exact', head: true })
-        .eq('sent_to_user', true);
+        .from('public_qna_view')
+        .select('*', { count: 'exact', head: true });
 
       if (error) {
-        console.error('Error fetching total answered count:', error);
+        console.error('Error fetching count:', error);
         return;
       }
 
