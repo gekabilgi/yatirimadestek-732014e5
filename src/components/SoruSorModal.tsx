@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send } from 'lucide-react';
+import { MessageSquare, Send, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const PROVINCES = [
@@ -30,6 +31,8 @@ interface SoruSorModalProps {
 const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { user, session } = useAuth();
+  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -39,12 +42,25 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
     kvkkAccepted: false
   });
 
+  // SECURITY: Auto-fill authenticated user's email
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({ ...prev, email: user.email }));
+    }
+  }, [user]);
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // SECURITY: Check authentication first
+    if (!user || !session) {
+      toast.error('Soru gönderebilmek için giriş yapmalısınız.');
+      return;
+    }
     
     if (!formData.kvkkAccepted) {
       toast.error('KVKK sözleşmesini kabul etmeniz gerekmektedir.');
@@ -56,29 +72,75 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
       return;
     }
 
+    // SECURITY: Validate that email matches authenticated user
+    if (formData.email !== user.email) {
+      toast.error('Sadece kendi e-posta adresinizi kullanabilirsiniz.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Use the edge function to submit the question to bypass RLS
-      const { data, error } = await supabase.functions.invoke('send-qna-notifications', {
+      // Check for spam submissions
+      const { data: spamCheck } = await supabase.rpc('check_submission_spam', {
+        p_identifier: formData.email,
+        p_submission_type: 'qna_submission',
+        p_cooldown_minutes: 60
+      });
+
+      if (spamCheck) {
+        toast.error('Çok sık soru gönderiyorsunuz. Lütfen 1 saat bekleyip tekrar deneyin.');
+        setLoading(false);
+        return;
+      }
+
+      // Insert the question directly - RLS will enforce user ownership
+      const { error: insertError } = await supabase
+        .from('soru_cevap')
+        .insert({
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone || null,
+          province: formData.province,
+          question: formData.question,
+          category: null,
+          answered: false,
+          sent_to_ydo: false,
+          sent_to_user: false
+        });
+
+      if (insertError) {
+        console.error('Error inserting question:', insertError);
+        toast.error('Soru gönderilirken bir hata oluştu. Lütfen tekrar deneyiniz.');
+        return;
+      }
+
+      // Record the submission for spam prevention
+      await supabase.rpc('record_submission', {
+        p_identifier: formData.email,
+        p_submission_type: 'qna_submission'
+      });
+
+      // Send notifications via edge function
+      const { error: emailError } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
-          type: 'submit_question',
-          questionData: {
-            full_name: formData.fullName,
-            email: formData.email,
-            phone: formData.phone || null,
-            province: formData.province,
-            question: formData.question
-          }
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone || '',
+          province: formData.province,
+          question: formData.question
         }
       });
 
-      if (error) throw error;
+      if (emailError) {
+        console.error('Error sending email notifications:', emailError);
+        // Don't show error to user as question was saved successfully
+      }
 
       toast.success('Sorunuz başarıyla gönderildi. En kısa sürede yanıtlanacaktır.');
       setFormData({
         fullName: '',
-        email: '',
+        email: user?.email || '',
         phone: '',
         province: '',
         question: '',
@@ -114,6 +176,19 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
           <DialogTitle className="text-xl sm:text-2xl">Yatırım Desteği Hakkında Soru Sor</DialogTitle>
         </DialogHeader>
         
+        {/* SECURITY: Show authentication requirement */}
+        {!user && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 text-amber-800">
+              <Lock className="h-4 w-4" />
+              <p className="text-sm font-medium">Giriş Gerekli</p>
+            </div>
+            <p className="text-sm text-amber-700 mt-1">
+              Soru gönderebilmek için önce giriş yapmalısınız.
+            </p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
@@ -124,6 +199,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
                 onChange={(e) => handleInputChange('fullName', e.target.value)}
                 placeholder="Adınızı ve soyadınızı giriniz"
                 required
+                disabled={!user}
               />
             </div>
             
@@ -136,7 +212,14 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="ornek@email.com"
                 required
+                disabled // SECURITY: Always disabled - auto-filled from auth
+                className="bg-muted"
               />
+              {user && (
+                <p className="text-xs text-muted-foreground">
+                  Giriş yaptığınız e-posta adresi otomatik olarak kullanılmaktadır.
+                </p>
+              )}
             </div>
           </div>
 
@@ -148,12 +231,17 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="05XX XXX XX XX"
+                disabled={!user}
               />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="province">İl *</Label>
-              <Select value={formData.province} onValueChange={(value) => handleInputChange('province', value)}>
+              <Select 
+                value={formData.province} 
+                onValueChange={(value) => handleInputChange('province', value)}
+                disabled={!user}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="İl seçiniz" />
                 </SelectTrigger>
@@ -177,6 +265,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
               placeholder="Yatırım destekleri hakkında merak ettiğiniz konuları detaylı bir şekilde yazınız..."
               rows={6}
               required
+              disabled={!user}
             />
           </div>
 
@@ -185,6 +274,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
               id="kvkk"
               checked={formData.kvkkAccepted}
               onCheckedChange={(checked) => handleInputChange('kvkkAccepted', checked === true)}
+              disabled={!user}
             />
             <Label htmlFor="kvkk" className="text-xs sm:text-sm leading-5">
               Kişisel verilerimin işlenmesine yönelik{' '}
@@ -206,11 +296,16 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || !user}
               className="flex-1 h-11"
             >
               {loading ? (
                 "Gönderiliyor..."
+              ) : !user ? (
+                <>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Giriş Gerekli
+                </>
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />

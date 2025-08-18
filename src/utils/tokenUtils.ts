@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface YdoTokenPayload {
@@ -29,17 +28,13 @@ export function decodeTokenSafe(token: string): YdoTokenPayload | null {
     // Parse JSON
     const payload = JSON.parse(jsonStr) as YdoTokenPayload;
     
-    console.log('✅ Safe token decoding successful:', {
-      email: payload.email,
-      province: `"${payload.province}"`,
-      provinceLength: payload.province?.length,
-      exp: payload.exp,
-      iat: payload.iat
-    });
+    // SECURITY: Removed sensitive token logging - only log essential info
+    console.log('Token decoding successful');
     
     return payload;
   } catch (error) {
-    console.error('❌ Safe token decoding failed:', error);
+    // SECURITY: Log error without exposing token data
+    console.error('Token decoding failed');
     return null;
   }
 }
@@ -53,7 +48,8 @@ export const generateYdoToken = (email: string, province: string): string => {
     iat: Math.floor(Date.now() / 1000)
   };
   
-  console.log('Generating token with payload:', payload);
+  // SECURITY: Removed sensitive payload logging
+  console.log('Generating token...');
   
   const jsonString = JSON.stringify(payload);
   
@@ -66,7 +62,7 @@ export const generateYdoToken = (email: string, province: string): string => {
     console.log('Token generated successfully');
     return encoded;
   } catch (error) {
-    console.error('Token generation error:', error);
+    console.error('Token generation error occurred');
     // Ultra-simple fallback
     return btoa(jsonString);
   }
@@ -74,16 +70,11 @@ export const generateYdoToken = (email: string, province: string): string => {
 
 // Legacy function for backward compatibility - now uses the safe decoder
 export const verifyYdoToken = (token: string): YdoTokenPayload | null => {
-  console.log('🔍 TOKEN VERIFICATION START');
-  console.log('🌍 Environment:', {
-    userAgent: navigator.userAgent,
-    isMobile: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent),
-    tokenExists: !!token,
-    tokenLength: token?.length || 0
-  });
+  // SECURITY: Removed sensitive environment and token logging
+  console.log('Token verification starting...');
 
   if (!token || token.trim() === '') {
-    console.error('❌ Token is empty');
+    console.error('Token is empty');
     return null;
   }
 
@@ -91,23 +82,23 @@ export const verifyYdoToken = (token: string): YdoTokenPayload | null => {
   const payload = decodeTokenSafe(token);
   
   if (!payload) {
-    console.error('❌ Token decoding failed');
+    console.error('Token decoding failed');
     return null;
   }
   
   // Check expiration
   const currentTime = Math.floor(Date.now() / 1000);
   if (payload.exp < currentTime) {
-    console.error('❌ Token expired');
+    console.error('Token expired');
     return null;
   }
   
   // Validate required fields
   if (!payload.email || !payload.province) {
-    console.error('❌ Missing required fields');
+    console.error('Missing required fields');
     return null;
   }
   
-  console.log('✅ TOKEN VERIFICATION SUCCESS');
+  console.log('Token verification successful');
   return payload;
 };
