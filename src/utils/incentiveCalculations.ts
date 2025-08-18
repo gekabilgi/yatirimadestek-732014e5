@@ -22,6 +22,10 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
   const validationErrors: string[] = [];
   const warningMessages: string[] = [];
   
+  // Fetch current SGK premium rates from admin settings
+  const { adminSettingsService } = await import('@/services/adminSettingsService');
+  const settings = await adminSettingsService.getIncentiveCalculationSettings();
+  
   // Calculate total fixed investment
   const totalFixedInvestment = inputs.landCost + inputs.constructionCost + 
     inputs.importedMachineryCost + inputs.domesticMachineryCost + inputs.otherExpenses;
@@ -66,12 +70,12 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
 
   // Calculate SGK Employer Premium Support
   const sgkEmployerPremiumSupport = isRegion6
-    ? 144 * SGK_EMPLOYER_PREMIUM_RATE * inputs.numberOfEmployees
-    : 96 * (SGK_EMPLOYER_PREMIUM_RATE / 2) * inputs.numberOfEmployees;
+    ? 144 * settings.sgk_employer_premium_rate * inputs.numberOfEmployees
+    : 96 * (settings.sgk_employer_premium_rate / 2) * inputs.numberOfEmployees;
 
   // Calculate SGK Employee Premium Support (only for Region 6)
   const sgkEmployeePremiumSupport = isRegion6
-    ? 120 * SGK_EMPLOYEE_PREMIUM_RATE * inputs.numberOfEmployees
+    ? 120 * settings.sgk_employee_premium_rate * inputs.numberOfEmployees
     : 0;
 
   // Calculate Machinery Support with new logic based on tax reduction preference
