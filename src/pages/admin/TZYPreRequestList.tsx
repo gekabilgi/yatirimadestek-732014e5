@@ -26,7 +26,7 @@ interface PreRequest {
   firma_kisa_adi: string;
 }
 
-type SortField = 'id' | 'firma_adi' | 'unvan' | 'vergi_kimlik_no' | 'iletisim_kisisi' | 'status' | 'created_at';
+type SortField = 'id' | 'on_request_id' | 'firma_adi' | 'unvan' | 'vergi_kimlik_no' | 'iletisim_kisisi' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
 const TZYPreRequestList = () => {

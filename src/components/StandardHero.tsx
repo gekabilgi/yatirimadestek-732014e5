@@ -7,7 +7,7 @@ interface StandardHeroProps {
   description?: string;
   badge?: {
     text: string;
-    icon?: LucideIcon;
+    icon?: typeof LucideIcon;
   };
   gradient?: 'blue' | 'green' | 'purple' | 'orange' | 'teal';
   children?: React.ReactNode;

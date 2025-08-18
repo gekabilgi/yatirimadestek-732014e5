@@ -4,7 +4,7 @@ import { DivideIcon as LucideIcon } from 'lucide-react';
 interface AdminPageHeaderProps {
   title: string;
   description?: string;
-  icon?: LucideIcon;
+  icon?: typeof LucideIcon;
   children?: React.ReactNode;
 }
 
