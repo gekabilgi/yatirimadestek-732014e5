@@ -207,6 +207,9 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
                 <div>
                   <span className="text-sm text-muted-foreground">Faiz/Kar Payı Desteği</span>
                   <div className="font-medium">{formatCurrency(results.interestProfitShareSupportAmount)}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Toplam Faiz: {formatCurrency(results.totalInterestAmount)}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -236,9 +239,15 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
               </div>
             )}
             {results.interestProfitShareSupportAmount > 0 && (
-              <div className="flex justify-between">
-                <span>Faiz/Kar Payı Desteği:</span>
-                <span className="font-medium">{formatCurrency(results.interestProfitShareSupportAmount)}</span>
+              <div>
+                <div className="flex justify-between">
+                  <span>Faiz/Kar Payı Desteği:</span>
+                  <span className="font-medium">{formatCurrency(results.interestProfitShareSupportAmount)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground ml-4">
+                  <span>Toplam Faiz Tutarı:</span>
+                  <span>{formatCurrency(results.totalInterestAmount)}</span>
+                </div>
               </div>
             )}
             <hr className="my-2" />

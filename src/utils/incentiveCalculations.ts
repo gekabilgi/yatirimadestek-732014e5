@@ -149,6 +149,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       sgkEmployeePremiumSupport: 0,
       machinerySupportAmount: 0,
       interestProfitShareSupportAmount: 0,
+      totalInterestAmount: 0,
       taxReductionInvestmentContribution: 0,
       vatCustomsExemption: 'MEVCUT',
       isEligible: false,
@@ -222,6 +223,8 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
 
   // Calculate Interest/Profit Share Support with updated logic based on tax reduction preference
   let interestProfitShareSupportAmount = 0;
+  let totalInterestAmount = 0;
+  
   if (inputs.supportPreference === 'Interest/Profit Share Support') {
     // Calculate support rate based on incentive type and tax reduction preference
     let supportRate = 0;
@@ -264,12 +267,12 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     );
     
     // Calculate total interest including BSMV and KKDF
-    const totalInterest = paymentPlan.reduce((total, payment) => 
+    totalInterestAmount = paymentPlan.reduce((total, payment) => 
       total + payment.faizTutari + payment.bsmv + payment.kkdf, 0
     );
     
     // Preliminary support amount based on detailed interest calculation
-    const preliminarySupportAmount = totalInterest * (supportRate / 100);
+    const preliminarySupportAmount = totalInterestAmount * (supportRate / 100);
     
     // Apply caps
     const investmentCap = totalFixedInvestment * investmentCapPercentage;
@@ -300,6 +303,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     sgkEmployeePremiumSupport,
     machinerySupportAmount,
     interestProfitShareSupportAmount,
+    totalInterestAmount,
     taxReductionInvestmentContribution,
     vatCustomsExemption: 'MEVCUT',
     isEligible: true,

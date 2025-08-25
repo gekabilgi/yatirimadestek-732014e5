@@ -20,6 +20,7 @@ export interface IncentiveCalculatorResults {
   sgkEmployeePremiumSupport: number;
   machinerySupportAmount: number;
   interestProfitShareSupportAmount: number;
+  totalInterestAmount: number;
   taxReductionInvestmentContribution: number;
   vatCustomsExemption: string;
   isEligible: boolean;
