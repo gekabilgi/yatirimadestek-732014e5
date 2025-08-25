@@ -1,9 +1,102 @@
 
 import { IncentiveCalculatorInputs, IncentiveCalculatorResults } from '@/types/incentiveCalculator';
 
+// Payment plan interface for detailed loan calculations
+interface OdemeDetayi {
+  taksitNo: number;
+  taksitTutari: number;
+  anaparaOdemesi: number;
+  faizTutari: number;
+  bsmv: number;
+  kkdf: number;
+  kalanAnapara: number;
+}
+
+// Banking constants for Turkish loan calculations
+const BSMV_ORANI = 0.05; // Banka ve Sigorta Muameleleri Vergisi oranı (%5)
+const KKDF_ORANI = 0.00; // Kaynak Kullanımını Destekleme Fonu oranı (%0)
+const YILDAKI_AY_SAYISI = 12; // Bir yıldaki ay sayısı
+
 const SGK_EMPLOYER_PREMIUM_RATE = 4355.92;
 const SGK_EMPLOYEE_PREMIUM_RATE = 3640.77;
 const REGION_6_PROVINCES = ['Ağrı', 'Ardahan', 'Batman', 'Bingöl', 'Bitlis', 'Diyarbakır', 'Elazığ', 'Erzincan', 'Erzurum', 'Hakkari', 'Iğdır', 'Kars', 'Mardin', 'Muş', 'Siirt', 'Şırnak', 'Tunceli', 'Van'];
+
+/**
+ * Detailed Turkish loan payment plan calculator
+ * @param anapara Total loan amount
+ * @param yillikFaizOrani Annual interest rate (as decimal, e.g., 0.45 for 45%)
+ * @param vadeAy Total term in months
+ * @param options Optional tax rates for BSMV and KKDF
+ * @returns Array of monthly payment details
+ */
+const aylikKrediPlaniHesapla = (
+  anapara: number,
+  yillikFaizOrani: number,
+  vadeAy: number,
+  options?: { bsmvOrani?: number; kkdfOrani?: number }
+): OdemeDetayi[] => {
+  const bsmvOrani = options?.bsmvOrani ?? BSMV_ORANI;
+  const kkdfOrani = options?.kkdfOrani ?? KKDF_ORANI;
+  const aylikFaizOrani = yillikFaizOrani / YILDAKI_AY_SAYISI;
+  const taksitSayisi = vadeAy;
+
+  if (aylikFaizOrani === 0) {
+    // Zero interest rate - simple division
+    const taksitTutari = anapara / taksitSayisi;
+    const plan: OdemeDetayi[] = [];
+    for (let i = 1; i <= taksitSayisi; i++) {
+      plan.push({
+        taksitNo: i,
+        taksitTutari: taksitTutari,
+        anaparaOdemesi: taksitTutari,
+        faizTutari: 0,
+        bsmv: 0,
+        kkdf: 0,
+        kalanAnapara: anapara - (i * taksitTutari)
+      });
+    }
+    return plan;
+  }
+
+  // Annuity formula for monthly payment calculation
+  const r = aylikFaizOrani;
+  const n = taksitSayisi;
+  const taksitTutari = anapara * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+
+  const odemePlani: OdemeDetayi[] = [];
+  let kalanAnapara = anapara;
+
+  for (let i = 1; i <= taksitSayisi; i++) {
+    const faizTutari = kalanAnapara * aylikFaizOrani;
+    const bsmv = faizTutari * bsmvOrani;
+    const kkdf = faizTutari * kkdfOrani;
+
+    let anaparaOdemesi: number;
+    let guncelTaksitTutari = taksitTutari;
+
+    if (i === taksitSayisi) {
+      // Final payment - pay remaining principal to handle rounding differences
+      anaparaOdemesi = kalanAnapara;
+      guncelTaksitTutari = anaparaOdemesi + faizTutari + bsmv + kkdf;
+      kalanAnapara = 0;
+    } else {
+      anaparaOdemesi = taksitTutari - faizTutari - bsmv - kkdf;
+      kalanAnapara -= anaparaOdemesi;
+    }
+
+    odemePlani.push({
+      taksitNo: i,
+      taksitTutari: guncelTaksitTutari,
+      anaparaOdemesi: anaparaOdemesi,
+      faizTutari: faizTutari,
+      bsmv: bsmv,
+      kkdf: kkdf,
+      kalanAnapara: Math.max(0, kalanAnapara), // Ensure non-negative
+    });
+  }
+
+  return odemePlani;
+};
 
 // Province region mapping
 const getProvinceRegion = (province: string): number => {
@@ -162,19 +255,20 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       }
     }
 
-    // Calculate total interest amount using loan formula
-    const monthlyRate = (inputs.bankInterestRate / 100) / 12;
-    const loanTermMonths = inputs.loanTermMonths;
+    // Calculate detailed payment plan using Turkish banking methodology
+    const yillikFaizOrani = inputs.bankInterestRate / 100; // Convert percentage to decimal
+    const paymentPlan = aylikKrediPlaniHesapla(
+      inputs.loanAmount,
+      yillikFaizOrani,
+      inputs.loanTermMonths
+    );
     
-    // Monthly payment calculation: PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
-    const monthlyPayment = inputs.loanAmount * 
-      (monthlyRate * Math.pow(1 + monthlyRate, loanTermMonths)) / 
-      (Math.pow(1 + monthlyRate, loanTermMonths) - 1);
+    // Calculate total interest including BSMV and KKDF
+    const totalInterest = paymentPlan.reduce((total, payment) => 
+      total + payment.faizTutari + payment.bsmv + payment.kkdf, 0
+    );
     
-    // Total interest = (Monthly Payment * Term) - Loan Amount
-    const totalInterest = (monthlyPayment * loanTermMonths) - inputs.loanAmount;
-    
-    // Preliminary support amount
+    // Preliminary support amount based on detailed interest calculation
     const preliminarySupportAmount = totalInterest * (supportRate / 100);
     
     // Apply caps
