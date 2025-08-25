@@ -268,7 +268,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     
     // Calculate total interest including BSMV and KKDF
     totalInterestAmount = paymentPlan.reduce((total, payment) => 
-      total + payment.faizTutari + payment.bsmv + payment.kkdf, 0
+      total + payment.faizTutari, 0
     );
     
     // Preliminary support amount based on detailed interest calculation
