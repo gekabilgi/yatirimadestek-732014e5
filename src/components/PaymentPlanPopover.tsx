@@ -12,7 +12,7 @@ interface PaymentPlanPopoverProps {
 
 export const PaymentPlanPopover: React.FC<PaymentPlanPopoverProps> = ({ paymentPlan }) => {
   const formatCurrency = (amount: number): string => {
-    return `${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+    return `${amount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}`;
   };
 
   return (
