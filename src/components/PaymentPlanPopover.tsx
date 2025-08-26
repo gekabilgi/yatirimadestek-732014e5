@@ -12,7 +12,7 @@ interface PaymentPlanPopoverProps {
 
 export const PaymentPlanPopover: React.FC<PaymentPlanPopoverProps> = ({ paymentPlan }) => {
   const formatCurrency = (amount: number): string => {
-    return `${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} TL`;
+    return `${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
   };
 
   return (
@@ -33,12 +33,12 @@ export const PaymentPlanPopover: React.FC<PaymentPlanPopoverProps> = ({ paymentP
             <TableHeader>
               <TableRow className="bg-muted/30">
                 <TableHead className="text-center text-xs py-2">Taksit</TableHead>
-                <TableHead className="text-right text-xs py-2">Taksit Tutarı</TableHead>
-                <TableHead className="text-right text-xs py-2">Anapara</TableHead>
-                <TableHead className="text-right text-xs py-2">Faiz</TableHead>
-                <TableHead className="text-right text-xs py-2">BSMV</TableHead>
-                <TableHead className="text-right text-xs py-2">KKDF</TableHead>
-                <TableHead className="text-right text-xs py-2">Kalan</TableHead>
+                <TableHead className="text-right text-xs py-2">Taksit Tutarı (TL)</TableHead>
+                <TableHead className="text-right text-xs py-2">Anapara (TL)</TableHead>
+                <TableHead className="text-right text-xs py-2">Faiz (TL)</TableHead>
+                <TableHead className="text-right text-xs py-2">BSMV (TL)</TableHead>
+                <TableHead className="text-right text-xs py-2">KKDF (TL)</TableHead>
+                <TableHead className="text-right text-xs py-2">Kalan (TL)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
