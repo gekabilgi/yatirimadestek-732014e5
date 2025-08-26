@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertTriangle, Calculator, Download } from 'lucide-react';
+import { PaymentPlanPopover } from './PaymentPlanPopover';
 import { IncentiveCalculatorResults as IIncentiveCalculatorResults, IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
 import { pdf } from '@react-pdf/renderer';
 import { IncentiveCalculatorReportPDF } from './IncentiveCalculatorReportPDF';
@@ -207,9 +208,11 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
                 <div>
                   <span className="text-sm text-muted-foreground">Faiz/Kar Payı Desteği</span>
                   <div className="font-medium">{formatCurrency(results.interestProfitShareSupportAmount)}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Toplam Faiz: {formatCurrency(results.totalInterestAmount)}
-                  </div>
+                  {results.paymentPlan && (
+                    <div className="mt-2">
+                      <PaymentPlanPopover paymentPlan={results.paymentPlan} />
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -239,15 +242,9 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
               </div>
             )}
             {results.interestProfitShareSupportAmount > 0 && (
-              <div>
-                <div className="flex justify-between">
-                  <span>Faiz/Kar Payı Desteği:</span>
-                  <span className="font-medium">{formatCurrency(results.interestProfitShareSupportAmount)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground ml-4">
-                  <span>Toplam Faiz Tutarı:</span>
-                  <span>{formatCurrency(results.totalInterestAmount)}</span>
-                </div>
+              <div className="flex justify-between">
+                <span>Faiz/Kar Payı Desteği:</span>
+                <span className="font-medium">{formatCurrency(results.interestProfitShareSupportAmount)}</span>
               </div>
             )}
             <hr className="my-2" />

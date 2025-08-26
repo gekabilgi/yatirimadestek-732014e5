@@ -1,16 +1,8 @@
 
-import { IncentiveCalculatorInputs, IncentiveCalculatorResults } from '@/types/incentiveCalculator';
+import { IncentiveCalculatorInputs, IncentiveCalculatorResults, PaymentPlanDetail } from '@/types/incentiveCalculator';
 
-// Payment plan interface for detailed loan calculations
-interface OdemeDetayi {
-  taksitNo: number;
-  taksitTutari: number;
-  anaparaOdemesi: number;
-  faizTutari: number;
-  bsmv: number;
-  kkdf: number;
-  kalanAnapara: number;
-}
+// Use the PaymentPlanDetail type from the main types file
+type OdemeDetayi = PaymentPlanDetail;
 
 // Banking constants for Turkish loan calculations
 const BSMV_ORANI = 0.05; // Banka ve Sigorta Muameleleri Vergisi oranı (%5)
@@ -308,6 +300,12 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     vatCustomsExemption: 'MEVCUT',
     isEligible: true,
     validationErrors: [],
-    warningMessages
+    warningMessages,
+    paymentPlan: inputs.supportPreference === 'Interest/Profit Share Support' ? 
+      aylikKrediPlaniHesapla(
+        inputs.loanAmount,
+        inputs.bankInterestRate / 100,
+        inputs.loanTermMonths
+      ) : undefined
   };
 };

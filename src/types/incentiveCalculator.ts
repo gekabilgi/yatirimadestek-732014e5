@@ -14,6 +14,16 @@ export interface IncentiveCalculatorInputs {
   taxReductionSupport: 'Yes' | 'No';
 }
 
+export interface PaymentPlanDetail {
+  taksitNo: number;
+  taksitTutari: number;
+  anaparaOdemesi: number;
+  faizTutari: number;
+  bsmv: number;
+  kkdf: number;
+  kalanAnapara: number;
+}
+
 export interface IncentiveCalculatorResults {
   totalFixedInvestment: number;
   sgkEmployerPremiumSupport: number;
@@ -26,6 +36,7 @@ export interface IncentiveCalculatorResults {
   isEligible: boolean;
   validationErrors: string[];
   warningMessages?: string[];
+  paymentPlan?: PaymentPlanDetail[];
 }
 
 export interface AdminParameters {
