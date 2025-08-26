@@ -20,13 +20,13 @@ export const PaymentPlanPopover: React.FC<PaymentPlanPopoverProps> = ({ paymentP
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm">
           <Eye className="h-4 w-4 mr-2" />
-          Ödeme Planını Görüntüle
+          Örnek Ödeme Planını Görüntüle
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[600px] p-0" align="center">
         <div className="p-3 border-b bg-gradient-to-r from-primary/5 to-primary/10">
-          <h3 className="font-semibold text-base">Aylık Ödeme Planı</h3>
-          <p className="text-xs text-muted-foreground">Detaylı kredi ödeme planı ve faiz dağılımı</p>
+          <h3 className="font-semibold text-base">Örnek Aylık Ödeme Planı</h3>
+          <p className="text-xs text-muted-foreground">Örnek Detaylı kredi ödeme planı ve faiz dağılımı</p>
         </div>
         <ScrollArea className="h-[350px]">
           <Table>
