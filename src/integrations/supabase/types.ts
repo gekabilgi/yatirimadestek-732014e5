@@ -1471,26 +1471,26 @@ export type Database = {
       approved_pre_requests: {
         Row: {
           created_at: string | null
-          firma_adi: string | null
           firma_kisa_adi: string | null
           id: string | null
           logo_url: string | null
+          on_request_id: string | null
           status: string | null
         }
         Insert: {
           created_at?: string | null
-          firma_adi?: string | null
           firma_kisa_adi?: string | null
           id?: string | null
           logo_url?: string | null
+          on_request_id?: string | null
           status?: string | null
         }
         Update: {
           created_at?: string | null
-          firma_adi?: string | null
           firma_kisa_adi?: string | null
           id?: string | null
           logo_url?: string | null
+          on_request_id?: string | null
           status?: string | null
         }
         Relationships: []
@@ -1550,10 +1550,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           created_at: string
-          firma_adi: string
           firma_kisa_adi: string
           id: string
           logo_url: string
+          on_request_id: string
           status: string
         }[]
       }
