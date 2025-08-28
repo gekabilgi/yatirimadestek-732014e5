@@ -265,13 +265,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
 
     console.log("Faiz Tutarı: ", totalInterestAmount)
     // Preliminary support amount based on detailed interest calculation
-      let preliminarySupportAmount = 0;
-    if (supportRate < 20){
-        preliminarySupportAmount = totalInterestAmount * 0.4;
-      }else{
-      preliminarySupportAmount = totalInterestAmount * (supportRate / 100);
-      }
-    
+    const preliminarySupportAmount = totalInterestAmount * (supportRate / 100);
 
     console.log("%40 Faiz İnidirimi Tutarı: ", preliminarySupportAmount)
     
@@ -282,7 +276,8 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       investmentCap
     );
   }
-
+ console.log("Faiz Desteği Tutarı (TL): ", interestProfitShareSupportAmount)
+    
   // Calculate Investment Contribution based on tax reduction preference
   const supportAmount = inputs.supportPreference === 'Machinery Support' 
     ? machinerySupportAmount 
