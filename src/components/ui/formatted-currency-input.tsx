@@ -82,18 +82,18 @@ const FormattedCurrencyInput = React.forwardRef<HTMLInputElement, FormattedCurre
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Allow backspace, delete, arrow keys, tab, enter
-      if ([8, 9, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
-        return;
-      }
+      // Allow backspace, delete, arrow keys, tab, enter, and digits
+      const allowedKeys = [8, 9, 13, 46, 37, 38, 39, 40]; // Backspace, Tab, Enter, Delete, Arrow keys
+      const isDigit = e.keyCode >= 48 && e.keyCode <= 57; // 0-9
+      const isNumpadDigit = e.keyCode >= 96 && e.keyCode <= 105; // Numpad 0-9
       
       // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
       if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
         return;
       }
       
-      // Only allow numeric input
-      if (e.keyCode < 48 || e.keyCode > 57) {
+      // Allow special keys and digits
+      if (!allowedKeys.includes(e.keyCode) && !isDigit && !isNumpadDigit) {
         e.preventDefault();
       }
     };
