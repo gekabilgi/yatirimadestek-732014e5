@@ -216,6 +216,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
   // Calculate Interest/Profit Share Support with updated logic based on tax reduction preference
   let interestProfitShareSupportAmount = 0;
   let totalInterestAmount = 0;
+  let preliminarySupportAmount =0;
   
   if (inputs.supportPreference === 'Interest/Profit Share Support') {
     // Calculate support rate based on incentive type and tax reduction preference
@@ -226,7 +227,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     
     if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
       if (inputs.taxReductionSupport === 'No') {
-        supportRate = Math.min(inputs.bankInterestRate * 0.40, 25); // Cap at 25% (increased from 20%)
+        supportRate = Math.min(inputs.bankInterestRate * 0.40, 20); // Cap at 20%
         maxReductionCap = 25; // 25% maximum (increased from 20%)
         monetaryCap = 300000000; // 300 million TL (increased from 240M)
         investmentCapPercentage = 0.25; // 25% of total fixed investment (increased from 20%)
@@ -238,7 +239,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       }
     } else if (inputs.incentiveType === 'Strategic Initiative') {
       if (inputs.taxReductionSupport === 'No') {
-        supportRate = Math.min(inputs.bankInterestRate * 0.30, 20); // Cap at 20% (increased from 15%)
+        supportRate = Math.min(inputs.bankInterestRate * 0.30, 15); // Cap at 15%
         maxReductionCap = 20; // 20% maximum (increased from 15%)
         monetaryCap = 240000000; // 240 million TL (increased from 180M)
         investmentCapPercentage = 0.20; // 20% of total fixed investment (increased from 15%)
@@ -257,7 +258,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       yillikFaizOrani,
       inputs.loanTermMonths
     );
-    
+    console.log( "yillik FaizOrani: ", yillikFaizOrani)
     // Calculate total interest including BSMV and KKDF
     totalInterestAmount = paymentPlan.reduce((total, payment) => 
       total + payment.faizTutari, 0
@@ -265,7 +266,12 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
 
     console.log("Faiz Tutarı: ", totalInterestAmount)
     // Preliminary support amount based on detailed interest calculation
-    const preliminarySupportAmount = totalInterestAmount * (supportRate / 100);
+    if (supportRate < 20){
+      preliminarySupportAmount = totalInterestAmount * 0.4;
+    } else {
+      preliminarySupportAmount = totalInterestAmount * (0.2 / yillikFaizOrani);
+    }
+    
 
     console.log("%40 Faiz İnidirimi Tutarı: ", preliminarySupportAmount)
     
