@@ -276,7 +276,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       investmentCap
     );
   }
-
+  console.log("Faiz Desteği Tutarı: ", interestProfitShareSupportAmount)
   // Calculate Investment Contribution based on tax reduction preference
   const supportAmount = inputs.supportPreference === 'Machinery Support' 
     ? machinerySupportAmount 
