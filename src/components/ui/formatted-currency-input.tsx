@@ -3,8 +3,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { 
   formatCurrencyInput, 
-  parseCurrencyInput, 
-  calculateCursorPosition,
+  parseCurrencyInput,
   isValidCurrencyInput 
 } from "@/utils/currencyUtils";
 
@@ -18,27 +17,30 @@ const FormattedCurrencyInput = React.forwardRef<HTMLInputElement, FormattedCurre
   ({ className, value = '', onChange, onFormattedChange, ...props }, ref) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [displayValue, setDisplayValue] = React.useState<string>('');
-    const [lastCursorPosition, setLastCursorPosition] = React.useState<number>(0);
+    const isTypingRef = React.useRef(false);
 
     // Combine refs
     React.useImperativeHandle(ref, () => inputRef.current!, []);
 
     // Initialize display value
     React.useEffect(() => {
-      const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : (value || 0);
-      if (numericValue > 0) {
-        setDisplayValue(formatCurrencyInput(numericValue));
-      } else {
-        setDisplayValue('');
+      if (!isTypingRef.current) {
+        const numericValue = typeof value === 'string' ? parseInt(value) || 0 : Math.floor(value || 0);
+        if (numericValue > 0) {
+          setDisplayValue(formatCurrencyInput(numericValue));
+        } else {
+          setDisplayValue('');
+        }
       }
     }, [value]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      isTypingRef.current = true;
       const inputValue = e.target.value;
-      const cursorPosition = e.target.selectionStart || 0;
-
-      // Validate input - only allow digits, dots, and commas
+      
+      // Validate input - only allow digits and dots
       if (inputValue !== '' && !isValidCurrencyInput(inputValue)) {
+        isTypingRef.current = false;
         return;
       }
 
@@ -47,49 +49,64 @@ const FormattedCurrencyInput = React.forwardRef<HTMLInputElement, FormattedCurre
         setDisplayValue('');
         onChange?.(0);
         onFormattedChange?.('');
+        isTypingRef.current = false;
         return;
       }
 
-      // Parse the input to get numeric value
-      const numericValue = parseCurrencyInput(inputValue);
+      // Extract only digits to prevent cursor issues
+      const digitsOnly = inputValue.replace(/\D/g, '');
       
-      // Format the numeric value
+      // Parse to get numeric value
+      const numericValue = parseInt(digitsOnly) || 0;
+      
+      // Format the value
       const formattedValue = formatCurrencyInput(numericValue);
       
-      // Calculate new cursor position
-      const newCursorPosition = calculateCursorPosition(
-        displayValue,
-        formattedValue,
-        cursorPosition
-      );
-
-      // Update state
+      // Store cursor position before update
+      const cursorPos = e.target.selectionStart || 0;
+      
+      // Update display value
       setDisplayValue(formattedValue);
-      setLastCursorPosition(newCursorPosition);
       
       // Call callbacks
       onChange?.(numericValue);
       onFormattedChange?.(formattedValue);
+
+      // Set cursor to end after formatting to avoid jumping
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.setSelectionRange(formattedValue.length, formattedValue.length);
+        }
+        isTypingRef.current = false;
+      }, 0);
     };
 
-    // Set cursor position after render
-    React.useEffect(() => {
-      if (inputRef.current && lastCursorPosition > 0) {
-        requestAnimationFrame(() => {
-          if (inputRef.current) {
-            inputRef.current.setSelectionRange(lastCursorPosition, lastCursorPosition);
-          }
-        });
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Allow backspace, delete, arrow keys, tab, enter
+      if ([8, 9, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
+        return;
       }
-    }, [displayValue, lastCursorPosition]);
+      
+      // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+        return;
+      }
+      
+      // Only allow numeric input
+      if (e.keyCode < 48 || e.keyCode > 57) {
+        e.preventDefault();
+      }
+    };
 
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
       e.preventDefault();
       const pastedText = e.clipboardData.getData('text');
       
-      // Try to parse the pasted value
-      const numericValue = parseCurrencyInput(pastedText);
-      if (!isNaN(numericValue)) {
+      // Extract only digits from pasted content
+      const digitsOnly = pastedText.replace(/\D/g, '');
+      const numericValue = parseInt(digitsOnly) || 0;
+      
+      if (numericValue > 0) {
         const formattedValue = formatCurrencyInput(numericValue);
         setDisplayValue(formattedValue);
         onChange?.(numericValue);
@@ -98,6 +115,8 @@ const FormattedCurrencyInput = React.forwardRef<HTMLInputElement, FormattedCurre
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      isTypingRef.current = false;
+      
       // Ensure proper formatting on blur
       if (displayValue) {
         const numericValue = parseCurrencyInput(displayValue);
@@ -119,6 +138,7 @@ const FormattedCurrencyInput = React.forwardRef<HTMLInputElement, FormattedCurre
         type="text"
         value={displayValue}
         onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         onBlur={handleBlur}
         placeholder="0"
