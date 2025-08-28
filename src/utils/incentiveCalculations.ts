@@ -226,7 +226,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     
     if (inputs.incentiveType === 'Technology Initiative' || inputs.incentiveType === 'Local Development Initiative') {
       if (inputs.taxReductionSupport === 'No') {
-        supportRate = Math.min(inputs.bankInterestRate * 0.40, 25); // Cap at 25% (increased from 20%)
+        supportRate = Math.min(inputs.bankInterestRate * 0.40, 20); // Cap at 25% (increased from 20%)
         maxReductionCap = 25; // 25% maximum (increased from 20%)
         monetaryCap = 300000000; // 300 million TL (increased from 240M)
         investmentCapPercentage = 0.25; // 25% of total fixed investment (increased from 20%)
@@ -238,7 +238,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       }
     } else if (inputs.incentiveType === 'Strategic Initiative') {
       if (inputs.taxReductionSupport === 'No') {
-        supportRate = Math.min(inputs.bankInterestRate * 0.30, 20); // Cap at 20% (increased from 15%)
+        supportRate = Math.min(inputs.bankInterestRate * 0.30, 15); // Cap at 20% (increased from 15%)
         maxReductionCap = 20; // 20% maximum (increased from 15%)
         monetaryCap = 240000000; // 240 million TL (increased from 180M)
         investmentCapPercentage = 0.20; // 20% of total fixed investment (increased from 15%)
@@ -276,7 +276,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       investmentCap
     );
   }
-  console.log("Faiz Desteği Tutarı: ", interestProfitShareSupportAmount)
+
   // Calculate Investment Contribution based on tax reduction preference
   const supportAmount = inputs.supportPreference === 'Machinery Support' 
     ? machinerySupportAmount 
