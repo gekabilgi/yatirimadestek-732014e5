@@ -265,9 +265,15 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
 
     console.log("Faiz Tutarı: ", totalInterestAmount)
     // Preliminary support amount based on detailed interest calculation
-    const preliminarySupportAmount = totalInterestAmount * (supportRate / 100);
+      let preliminarySupportAmount = 0;
+    if (supportRate < 20){
+        preliminarySupportAmount = totalInterestAmount * 0.4;
+      }else{
+      preliminarySupportAmount = totalInterestAmount * (supportRate / 100);
+      }
+    
 
-    console.log("%40 Faiz İnidirimi Tutarı: ", preliminarySupportAmount,"Destek Oranı (%): ", supportRate)
+    console.log("%40 Faiz İnidirimi Tutarı: ", preliminarySupportAmount)
     
     // Apply caps
     const investmentCap = totalFixedInvestment * investmentCapPercentage;
