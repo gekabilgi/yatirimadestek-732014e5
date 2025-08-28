@@ -121,7 +121,7 @@ const FormattedCurrencyInput = React.forwardRef<HTMLInputElement, FormattedCurre
         onChange={handleInputChange}
         onPaste={handlePaste}
         onBlur={handleBlur}
-        placeholder="0,00"
+        placeholder="0"
         className={cn(className)}
       />
     );
