@@ -262,9 +262,12 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     totalInterestAmount = paymentPlan.reduce((total, payment) => 
       total + payment.faizTutari, 0
     );
-    
+
+    console.log("Faiz Tutarı: ", totalInterestAmount)
     // Preliminary support amount based on detailed interest calculation
     const preliminarySupportAmount = totalInterestAmount * (supportRate / 100);
+
+    console.log("%40 Faiz İnidirimi Tutarı: ", preliminarySupportAmount)
     
     // Apply caps
     const investmentCap = totalFixedInvestment * investmentCapPercentage;
