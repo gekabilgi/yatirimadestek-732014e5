@@ -5,6 +5,7 @@ import LocationSelectionStep from './steps/LocationSelectionStep';
 import IncentiveResultsStep from './steps/IncentiveResultsStep';
 import { SectorSearchData } from '@/types/database';
 import { IncentiveResult } from '@/types/incentive';
+import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
 
 export interface UnifiedQueryData {
   selectedSector: SectorSearchData | null;
@@ -23,6 +24,7 @@ const UnifiedIncentiveQuery: React.FC = () => {
   
   const [incentiveResult, setIncentiveResult] = useState<IncentiveResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const { incrementCounter } = useRealtimeCounters('search_clicks');
 
   const updateQueryData = (updates: Partial<UnifiedQueryData>) => {
     setQueryData(prev => ({ ...prev, ...updates }));
@@ -91,6 +93,7 @@ const UnifiedIncentiveQuery: React.FC = () => {
           setIncentiveResult={setIncentiveResult}
           isCalculating={isCalculating}
           setIsCalculating={setIsCalculating}
+          onSuccessfulQuery={incrementCounter}
         />
       )}
     </div>

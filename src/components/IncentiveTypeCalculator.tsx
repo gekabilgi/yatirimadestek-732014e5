@@ -5,11 +5,13 @@ import { IncentiveCalculatorForm } from './IncentiveCalculatorForm';
 import { IncentiveCalculatorResults } from './IncentiveCalculatorResults';
 import { IncentiveCalculatorInputs, IncentiveCalculatorResults as IIncentiveCalculatorResults } from '@/types/incentiveCalculator';
 import { calculateIncentives } from '@/utils/incentiveCalculations';
+import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
 
 const IncentiveTypeCalculator: React.FC = () => {
   const [calculationResults, setCalculationResults] = useState<IIncentiveCalculatorResults | null>(null);
   const [calculationInputs, setCalculationInputs] = useState<IncentiveCalculatorInputs | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const { incrementCounter } = useRealtimeCounters('calculation_clicks');
 
   const handleCalculate = async (inputs: IncentiveCalculatorInputs) => {
     setIsCalculating(true);
@@ -17,6 +19,11 @@ const IncentiveTypeCalculator: React.FC = () => {
       const results = await calculateIncentives(inputs);
       setCalculationResults(results);
       setCalculationInputs(inputs);
+      
+      // Increment counter on successful calculation
+      if (results.isEligible) {
+        await incrementCounter();
+      }
     } catch (error) {
       console.error('Calculation error:', error);
     } finally {

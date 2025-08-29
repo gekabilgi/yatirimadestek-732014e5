@@ -21,6 +21,7 @@ interface IncentiveResultsStepProps {
   setIncentiveResult: (result: IncentiveResult | null) => void;
   isCalculating: boolean;
   setIsCalculating: (calculating: boolean) => void;
+  onSuccessfulQuery?: () => Promise<void>;
 }
 
 const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
@@ -29,6 +30,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
   setIncentiveResult,
   isCalculating,
   setIsCalculating,
+  onSuccessfulQuery,
 }) => {
   // Helper function to format percentage - fixed to not multiply by 100
   const formatPercentage = (value: string): string => {
@@ -302,6 +304,11 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       };
 
       setIncentiveResult(result);
+      
+      // Call onSuccessfulQuery callback to increment counter
+      if (onSuccessfulQuery) {
+        await onSuccessfulQuery();
+      }
       
       toast({
         title: "Hesaplama Tamamlandı",

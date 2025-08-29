@@ -1,39 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ArrowRight, Search, Calculator, FileDown, MessageSquare, Building2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { RealtimeStatsCard } from '@/components/RealtimeStatsCard';
 
 const EnhancedHero = () => {
   const navigate = useNavigate();
-  const [totalClicks, setTotalClicks] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('app_statistics')
-          .select('stat_value')
-          .in('stat_name', ['search_clicks', 'calculation_clicks']);
-
-        if (error) {
-          console.error('Error fetching stats:', error);
-          return;
-        }
-
-        const total = data.reduce((sum, stat) => sum + stat.stat_value, 0);
-        setTotalClicks(total);
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
 
   const handleGetStarted = () => {
     navigate('/incentive-tools');
@@ -43,13 +16,9 @@ const EnhancedHero = () => {
     window.open('https://sanayi.gov.tr/mevzuat/diger/mc0403018201', '_blank');
   };
 
-  const stats = [
+  const staticStats = [
     { label: "Aktif Destek Çağrısı", value: "150+" },
-    { label: "Desteklenen Sektör", value: "1.000+" },
-    { 
-      label: "Toplam Destek Arama & Hesaplama", 
-      value: isLoading ? "Yükleniyor..." : `${totalClicks.toLocaleString('tr-TR')}` 
-    },
+    { label: "Desteklenen Sektör", value: "1.000+" }
   ];
 
   return (
@@ -108,7 +77,7 @@ const EnhancedHero = () => {
           {/* Stats */}
           <div className="mt-12 sm:mt-16 animate-fade-in px-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {stats.map((stat, index) => (
+              {staticStats.map((stat, index) => (
                 <Card key={index} className="card-elevated bg-white/80 backdrop-blur-sm border-0 hover:bg-white/90 transition-all duration-300">
                   <CardContent className="p-4 sm:p-6 md:p-8 text-center">
                     <div className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2 sm:mb-3">
@@ -120,6 +89,10 @@ const EnhancedHero = () => {
                   </CardContent>
                 </Card>
               ))}
+              <RealtimeStatsCard 
+                label="Toplam Destek Arama & Hesaplama"
+                statName={['search_clicks', 'calculation_clicks']}
+              />
             </div>
           </div>
 
