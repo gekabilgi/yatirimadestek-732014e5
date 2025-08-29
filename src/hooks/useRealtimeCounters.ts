@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CounterData {
@@ -16,8 +16,8 @@ export const useRealtimeCounters = (statName: string | string[]) => {
     error: null
   });
 
-  const statNames = Array.isArray(statName) ? statName : [statName];
-  const localStorageKey = Array.isArray(statName) ? statName.join('_') : statName;
+  const statNames = useMemo(() => Array.isArray(statName) ? statName : [statName], [statName]);
+  const localStorageKey = useMemo(() => Array.isArray(statName) ? statName.join('_') : statName, [statName]);
 
   // Get local count from localStorage
   const getLocalCount = useCallback(() => {
