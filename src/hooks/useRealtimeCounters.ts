@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CounterData {
@@ -18,16 +18,7 @@ export const useRealtimeCounters = (statName: string | string[]) => {
 
   const statNames = useMemo(() => Array.isArray(statName) ? statName : [statName], [statName]);
   const localStorageKey = useMemo(() => Array.isArray(statName) ? statName.join('_') : statName, [statName]);
-
-  // Get local count from localStorage
-  const getLocalCount = useCallback(() => {
-    try {
-      const stored = localStorage.getItem(`counter_${localStorageKey}`);
-      return stored ? parseInt(stored, 10) : 0;
-    } catch {
-      return 0;
-    }
-  }, [localStorageKey]);
+  const initializedRef = useRef(false);
 
   // Set local count to localStorage
   const setLocalCount = useCallback((count: number) => {
@@ -39,66 +30,68 @@ export const useRealtimeCounters = (statName: string | string[]) => {
     }
   }, [localStorageKey]);
 
-  // Fetch initial global count
-  const fetchGlobalCount = useCallback(async () => {
-    try {
-      if (statNames.length === 1) {
-        const { data: result, error } = await supabase
-          .from('app_statistics')
-          .select('stat_value')
-          .eq('stat_name', statNames[0])
-          .single();
+  // Initialize counts - stable function that doesn't depend on other callbacks
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-        if (error) {
-          if (error.code === 'PGRST116') {
+    const initializeCounts = async () => {
+      try {
+        setData(prev => ({ ...prev, isLoading: true, error: null }));
+        
+        // Get local count
+        const stored = localStorage.getItem(`counter_${localStorageKey}`);
+        const localCount = stored ? parseInt(stored, 10) : 0;
+        
+        // Fetch global count
+        let globalCount = 0;
+        if (statNames.length === 1) {
+          const { data: result, error } = await supabase
+            .from('app_statistics')
+            .select('stat_value')
+            .eq('stat_name', statNames[0])
+            .single();
+
+          if (error && error.code === 'PGRST116') {
             // No data found, create initial record
-            const { error: insertError } = await supabase
+            await supabase
               .from('app_statistics')
               .insert({ stat_name: statNames[0], stat_value: 0 });
-            
-            if (insertError) throw insertError;
-            return 0;
+            globalCount = 0;
+          } else if (error) {
+            throw error;
+          } else {
+            globalCount = result?.stat_value || 0;
           }
-          throw error;
+        } else {
+          // Handle multiple stat names (sum them)
+          const { data: results, error } = await supabase
+            .from('app_statistics')
+            .select('stat_value')
+            .in('stat_name', statNames);
+
+          if (error) throw error;
+          globalCount = results.reduce((sum, stat) => sum + (stat.stat_value || 0), 0);
         }
-
-        return result?.stat_value || 0;
-      } else {
-        // Handle multiple stat names (sum them)
-        const { data: results, error } = await supabase
-          .from('app_statistics')
-          .select('stat_value')
-          .in('stat_name', statNames);
-
-        if (error) throw error;
-
-        return results.reduce((sum, stat) => sum + (stat.stat_value || 0), 0);
+        
+        setData({
+          localCount,
+          globalCount,
+          isLoading: false,
+          error: null
+        });
+      } catch (error) {
+        console.error('Error fetching global count:', error);
+        setData(prev => ({ 
+          ...prev, 
+          isLoading: false, 
+          error: 'Failed to load counter' 
+        }));
       }
-    } catch (error) {
-      console.error('Error fetching global count:', error);
-      setData(prev => ({ ...prev, error: 'Failed to load counter' }));
-      return 0;
-    }
-  }, [statNames]);
-
-  // Initialize counts
-  useEffect(() => {
-    const initializeCounts = async () => {
-      setData(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      const localCount = getLocalCount();
-      const globalCount = await fetchGlobalCount();
-      
-      setData(prev => ({
-        ...prev,
-        localCount,
-        globalCount,
-        isLoading: false
-      }));
     };
 
     initializeCounts();
-  }, [getLocalCount, fetchGlobalCount]);
+  }, [statNames, localStorageKey]);
 
   // Set up realtime subscription
   useEffect(() => {
@@ -111,15 +104,33 @@ export const useRealtimeCounters = (statName: string | string[]) => {
           schema: 'public',
           table: 'app_statistics'
         },
-        (payload) => {
+        async (payload) => {
           if (payload.new?.stat_value !== undefined && statNames.includes(payload.new.stat_name)) {
             // Refetch total when any of our stat names change
-            fetchGlobalCount().then(count => {
+            try {
+              let globalCount = 0;
+              if (statNames.length === 1) {
+                const { data: result } = await supabase
+                  .from('app_statistics')
+                  .select('stat_value')
+                  .eq('stat_name', statNames[0])
+                  .single();
+                globalCount = result?.stat_value || 0;
+              } else {
+                const { data: results } = await supabase
+                  .from('app_statistics')
+                  .select('stat_value')
+                  .in('stat_name', statNames);
+                globalCount = results?.reduce((sum, stat) => sum + (stat.stat_value || 0), 0) || 0;
+              }
+              
               setData(prev => ({
                 ...prev,
-                globalCount: count
+                globalCount
               }));
-            });
+            } catch (error) {
+              console.error('Error refetching global count:', error);
+            }
           }
         }
       )
@@ -128,7 +139,7 @@ export const useRealtimeCounters = (statName: string | string[]) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [statNames, fetchGlobalCount]);
+  }, [statNames]);
 
   // Increment counter function (only works with single stat name)
   const incrementCounter = useCallback(async () => {
