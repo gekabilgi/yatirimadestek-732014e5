@@ -154,14 +154,23 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
   const isRegion6 = REGION_6_PROVINCES.includes(inputs.province);
   const provinceRegion = getProvinceRegion(inputs.province);
 
+  // Get appropriate SGK rates based on investment type
+  const sgkEmployerRate = inputs.investmentType === 'İmalat' 
+    ? settings.sgk_employer_premium_rate_manufacturing 
+    : settings.sgk_employer_premium_rate_other;
+    
+  const sgkEmployeeRate = inputs.investmentType === 'İmalat' 
+    ? settings.sgk_employee_premium_rate_manufacturing 
+    : settings.sgk_employee_premium_rate_other;
+
   // Calculate SGK Employer Premium Support
   const sgkEmployerPremiumSupport = isRegion6
-    ? 144 * settings.sgk_employer_premium_rate * inputs.numberOfEmployees
-    : 96 * (settings.sgk_employer_premium_rate / 2) * inputs.numberOfEmployees;
+    ? 144 * sgkEmployerRate * inputs.numberOfEmployees
+    : 96 * (sgkEmployerRate / 2) * inputs.numberOfEmployees;
 
   // Calculate SGK Employee Premium Support (only for Region 6)
   const sgkEmployeePremiumSupport = isRegion6
-    ? 120 * settings.sgk_employee_premium_rate * inputs.numberOfEmployees
+    ? 120 * sgkEmployeeRate * inputs.numberOfEmployees
     : 0;
 
   // Calculate Machinery Support with new logic based on tax reduction preference

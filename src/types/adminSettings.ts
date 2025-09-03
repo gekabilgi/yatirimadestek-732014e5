@@ -9,8 +9,10 @@ export interface AdminSetting {
 }
 
 export interface IncentiveCalculationSettings {
-  sgk_employer_premium_rate: number;
-  sgk_employee_premium_rate: number;
+  sgk_employer_premium_rate_manufacturing: number;
+  sgk_employer_premium_rate_other: number;
+  sgk_employee_premium_rate_manufacturing: number;
+  sgk_employee_premium_rate_other: number;
 }
 
 export interface AdminParameters {

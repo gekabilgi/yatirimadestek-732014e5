@@ -12,8 +12,10 @@ import { IncentiveCalculationSettings } from '@/types/adminSettings';
 
 const AdminIncentiveSettings = () => {
   const [settings, setSettings] = useState<IncentiveCalculationSettings>({
-    sgk_employer_premium_rate: 4355.92,
-    sgk_employee_premium_rate: 3640.77,
+    sgk_employer_premium_rate_manufacturing: 4355.92,
+    sgk_employer_premium_rate_other: 4095.87,
+    sgk_employee_premium_rate_manufacturing: 3640.77,
+    sgk_employee_premium_rate_other: 3420.64,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -102,33 +104,63 @@ const AdminIncentiveSettings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sgk_employer_premium_rate">
-                  SGK İşveren Primi Oranı (TL)
-                </Label>
-                <Input
-                  id="sgk_employer_premium_rate"
-                  type="number"
-                  step="0.01"
-                  value={settings.sgk_employer_premium_rate}
-                  onChange={(e) => handleInputChange('sgk_employer_premium_rate', e.target.value)}
-                  placeholder="4355.92"
-                />
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-md font-medium mb-4">SGK İşveren Primi Oranı (TL)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sgk_employer_premium_rate_manufacturing">İmalat</Label>
+                    <Input
+                      id="sgk_employer_premium_rate_manufacturing"
+                      type="number"
+                      step="0.01"
+                      value={settings.sgk_employer_premium_rate_manufacturing}
+                      onChange={(e) => handleInputChange('sgk_employer_premium_rate_manufacturing', e.target.value)}
+                      placeholder="4355.92"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="sgk_employer_premium_rate_other">Diğer</Label>
+                    <Input
+                      id="sgk_employer_premium_rate_other"
+                      type="number"
+                      step="0.01"
+                      value={settings.sgk_employer_premium_rate_other}
+                      onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
+                      placeholder="4095.87"
+                    />
+                  </div>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="sgk_employee_premium_rate">
-                  SGK Çalışan Primi Oranı (TL)
-                </Label>
-                <Input
-                  id="sgk_employee_premium_rate"
-                  type="number"
-                  step="0.01"
-                  value={settings.sgk_employee_premium_rate}
-                  onChange={(e) => handleInputChange('sgk_employee_premium_rate', e.target.value)}
-                  placeholder="3640.77"
-                />
+
+              <div>
+                <h4 className="text-md font-medium mb-4">SGK Çalışan Primi Oranı (TL)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sgk_employee_premium_rate_manufacturing">İmalat</Label>
+                    <Input
+                      id="sgk_employee_premium_rate_manufacturing"
+                      type="number"
+                      step="0.01"
+                      value={settings.sgk_employee_premium_rate_manufacturing}
+                      onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
+                      placeholder="3640.77"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="sgk_employee_premium_rate_other">Diğer</Label>
+                    <Input
+                      id="sgk_employee_premium_rate_other"
+                      type="number"
+                      step="0.01"
+                      value={settings.sgk_employee_premium_rate_other}
+                      onChange={(e) => handleInputChange('sgk_employee_premium_rate_other', e.target.value)}
+                      placeholder="3420.64"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             

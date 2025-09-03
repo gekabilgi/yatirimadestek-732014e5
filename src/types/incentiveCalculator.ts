@@ -1,5 +1,6 @@
 export interface IncentiveCalculatorInputs {
   incentiveType: 'Technology Initiative' | 'Local Development Initiative' | 'Strategic Initiative';
+  investmentType: 'İmalat' | 'Diğer';
   province: string;
   numberOfEmployees: number;
   landCost: number;

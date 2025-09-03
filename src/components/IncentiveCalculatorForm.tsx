@@ -28,6 +28,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 }) => {
   const [formData, setFormData] = useState<IncentiveCalculatorInputs>({
     incentiveType: 'Technology Initiative',
+    investmentType: 'İmalat',
     province: '',
     numberOfEmployees: 0,
     landCost: 0,
@@ -243,7 +244,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
           <Label htmlFor="incentiveType">Teşvik Türü</Label>
           <Select 
@@ -257,6 +258,22 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               <SelectItem value="Technology Initiative">Teknoloji Hamlesi</SelectItem>
               <SelectItem value="Local Development Initiative">Yerel Kalkınma Hamlesi</SelectItem>
               <SelectItem value="Strategic Initiative">Stratejik Hamle</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="investmentType">Yatırım Türü</Label>
+          <Select 
+            value={formData.investmentType} 
+            onValueChange={(value) => handleInputChange('investmentType', value as any)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Yatırım türü seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="İmalat">İmalat</SelectItem>
+              <SelectItem value="Diğer">Diğer</SelectItem>
             </SelectContent>
           </Select>
         </div>
