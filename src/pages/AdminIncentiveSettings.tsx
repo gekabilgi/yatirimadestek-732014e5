@@ -95,21 +95,21 @@ const AdminIncentiveSettings = () => {
         description="SGK prim oranları ve diğer hesaplama parametrelerini yönetin"
         icon={Settings}
       />
-      <div className="p-6 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>SGK Prim Oranları</CardTitle>
-            <CardDescription>
+      <div className="p-6">
+        <Card className="max-w-4xl mx-auto">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl">SGK Prim Oranları</CardTitle>
+            <CardDescription className="text-sm">
               Teşvik hesaplamalarında kullanılan SGK işveren ve çalışan prim oranlarını düzenleyin.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-6">
               <div>
-                <h4 className="text-md font-medium mb-4">SGK İşveren Sigorta Primi(TL)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sgk_employer_premium_rate_manufacturing">İmalat</Label>
+                <h4 className="text-lg font-semibold mb-4">SGK İşveren Sigorta Primi(TL)</h4>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="sgk_employer_premium_rate_manufacturing" className="font-medium">İmalat</Label>
                     <Input
                       id="sgk_employer_premium_rate_manufacturing"
                       type="number"
@@ -117,11 +117,12 @@ const AdminIncentiveSettings = () => {
                       value={settings.sgk_employer_premium_rate_manufacturing}
                       onChange={(e) => handleInputChange('sgk_employer_premium_rate_manufacturing', e.target.value)}
                       placeholder="4355.92"
+                      className="text-center font-mono text-lg h-12"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="sgk_employer_premium_rate_other">Diğer</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="sgk_employer_premium_rate_other" className="font-medium">Diğer</Label>
                     <Input
                       id="sgk_employer_premium_rate_other"
                       type="number"
@@ -129,14 +130,15 @@ const AdminIncentiveSettings = () => {
                       value={settings.sgk_employer_premium_rate_other}
                       onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
                       placeholder="4095.87"
+                      className="text-center font-mono text-lg h-12"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-md font-medium mb-4">SGK Çalışan Sigorta Primi (TL)</h4>
-                <div className="space-y-2">
+                <h4 className="text-lg font-semibold mb-4">SGK Çalışan Sigorta Primi (TL)</h4>
+                <div className="max-w-sm">
                   <Input
                     id="sgk_employee_premium_rate_manufacturing"
                     type="number"
@@ -144,27 +146,23 @@ const AdminIncentiveSettings = () => {
                     value={settings.sgk_employee_premium_rate_manufacturing}
                     onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
                     placeholder="3640.77"
+                    className="text-center font-mono text-lg h-12"
                   />
                 </div>
               </div>
             </div>
             
-            <div className="flex justify-end pt-4">
-              <Button onClick={handleSave} disabled={isSaving}>
+            <div className="flex justify-end pt-6">
+              <Button 
+                onClick={handleSave} 
+                disabled={isSaving}
+                className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+              >
                 {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
               </Button>
             </div>
           </CardContent>
         </Card>
-        
-        <div className="text-sm text-muted-foreground bg-muted p-4 rounded-lg">
-          <p className="font-medium mb-2">Bilgi:</p>
-          <ul className="space-y-1">
-            <li>• Bu değerler teşvik hesaplamalarında kullanılır</li>
-            <li>• Değişiklikler tüm yeni hesaplamalarda etkili olur</li>
-            <li>• Mevcut hesaplamalar etkilenmez</li>
-          </ul>
-        </div>
       </div>
     </AdminLayout>
   );
