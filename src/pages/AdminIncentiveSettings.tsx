@@ -95,74 +95,86 @@ const AdminIncentiveSettings = () => {
         description="SGK prim oranları ve diğer hesaplama parametrelerini yönetin"
         icon={Settings}
       />
-      <div className="p-6">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl">SGK Prim Oranları</CardTitle>
-            <CardDescription className="text-sm">
-              Teşvik hesaplamalarında kullanılan SGK işveren ve çalışan prim oranlarını düzenleyin.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-lg font-semibold mb-4">SGK İşveren Sigorta Primi(TL)</h4>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="sgk_employer_premium_rate_manufacturing" className="font-medium">İmalat</Label>
-                    <Input
-                      id="sgk_employer_premium_rate_manufacturing"
-                      type="number"
-                      step="0.01"
-                      value={settings.sgk_employer_premium_rate_manufacturing}
-                      onChange={(e) => handleInputChange('sgk_employer_premium_rate_manufacturing', e.target.value)}
-                      placeholder="4355.92"
-                      className="text-center font-mono text-lg h-12"
-                    />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="sgk_employer_premium_rate_other" className="font-medium">Diğer</Label>
-                    <Input
-                      id="sgk_employer_premium_rate_other"
-                      type="number"
-                      step="0.01"
-                      value={settings.sgk_employer_premium_rate_other}
-                      onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
-                      placeholder="4095.87"
-                      className="text-center font-mono text-lg h-12"
-                    />
-                  </div>
+      <div className="p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">SGK Prim Oranları</h1>
+            <p className="text-gray-600">Teşvik hesaplamalarında kullanılan SGK işveren ve çalışan prim oranlarını düzenleyin.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* SGK İşveren Sigorta Primi */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+              <div className="text-center mb-6">
+                <div className="bg-gray-50 rounded-xl py-3 px-4 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">SGK İşveren Sigorta Primi(TL)</h3>
                 </div>
               </div>
-
-              <div>
-                <h4 className="text-lg font-semibold mb-4">SGK Çalışan Sigorta Primi (TL)</h4>
-                <div className="max-w-sm">
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="text-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">İmalat</span>
+                  </div>
                   <Input
-                    id="sgk_employee_premium_rate_manufacturing"
                     type="number"
                     step="0.01"
-                    value={settings.sgk_employee_premium_rate_manufacturing}
-                    onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
-                    placeholder="3640.77"
-                    className="text-center font-mono text-lg h-12"
+                    value={settings.sgk_employer_premium_rate_manufacturing}
+                    onChange={(e) => handleInputChange('sgk_employer_premium_rate_manufacturing', e.target.value)}
+                    placeholder="4355,92"
+                    className="text-center text-lg font-mono h-12 rounded-xl border-gray-200"
+                  />
+                </div>
+                
+                <div>
+                  <div className="text-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Diğer</span>
+                  </div>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={settings.sgk_employer_premium_rate_other}
+                    onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
+                    placeholder="4095,87"
+                    className="text-center text-lg font-mono h-12 rounded-xl border-gray-200"
                   />
                 </div>
               </div>
             </div>
-            
-            <div className="flex justify-end pt-6">
-              <Button 
-                onClick={handleSave} 
-                disabled={isSaving}
-                className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium"
-              >
-                {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
-              </Button>
+
+            {/* SGK Çalışan Sigorta Primi */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+              <div className="text-center mb-6">
+                <div className="bg-gray-50 rounded-xl py-3 px-4 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">SGK Çalışan Sigorta Primi (TL)</h3>
+                </div>
+              </div>
+              
+              <div className="flex justify-center">
+                <div className="w-full max-w-xs">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={settings.sgk_employee_premium_rate_manufacturing}
+                    onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
+                    placeholder="3640,77"
+                    className="text-center text-lg font-mono h-12 rounded-xl border-gray-200"
+                  />
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          <div className="flex justify-end mt-8">
+            <Button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl text-lg"
+            >
+              {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+            </Button>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
