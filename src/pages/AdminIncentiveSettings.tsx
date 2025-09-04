@@ -112,7 +112,7 @@ const AdminIncentiveSettings = () => {
                 <div className="text-center mb-6">
                   <div className="bg-gray-200 rounded-full px-6 py-3 inline-block border border-gray-400">
                     <h4 className="text-lg font-semibold text-gray-900">
-                      SGK İşveren Sigorta Primi(TL)
+                      SGK İşveren Sigorta Primi (TL)
                     </h4>
                   </div>
                 </div>
