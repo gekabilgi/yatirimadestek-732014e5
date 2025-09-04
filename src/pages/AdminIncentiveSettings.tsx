@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,8 @@ const AdminIncentiveSettings = () => {
     sgk_employer_premium_rate_manufacturing: 4355.92,
     sgk_employer_premium_rate_other: 4095.87,
     sgk_employee_premium_rate_manufacturing: 3640.77,
-    sgk_employee_premium_rate_other: 3420.64,
+    // Note: The 'other' employee rate is unused in this UI, but kept in state for API consistency.
+    sgk_employee_premium_rate_other: 3420.64, 
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,12 +64,18 @@ const AdminIncentiveSettings = () => {
   };
 
   const handleInputChange = (key: keyof IncentiveCalculationSettings, value: string) => {
-    const numericValue = parseFloat(value) || 0;
+    // Allow empty string for clearing input, otherwise parse to float
+    const numericValue = value === '' ? 0 : parseFloat(value.replace(',', '.')) || 0;
     setSettings(prev => ({
       ...prev,
       [key]: numericValue,
     }));
   };
+  
+  // Helper to format number with comma for display
+  const formatValue = (value: number) => {
+    return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
   if (isLoading) {
     return (
@@ -96,102 +103,85 @@ const AdminIncentiveSettings = () => {
         icon={Settings}
       />
       <div className="p-6">
-        <div className="max-w-5xl mx-auto">
-          {/* Main Container */}
-          <div className="bg-gray-100 rounded-3xl p-8 border border-gray-300 shadow-sm">
-            {/* Header */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">SGK Prim Oranları</h2>
-              <p className="text-gray-600">Teşvik hesaplamalarında kullanılan SGK işveren ve çalışan prim oranlarını düzenleyin.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* SGK İşveren Sigorta Primi Section */}
-              <div className="bg-white rounded-3xl p-6 border-2 border-gray-400 shadow-sm">
-                {/* Header */}
-                <div className="text-center mb-6">
-                  <div className="bg-gray-200 rounded-full px-6 py-3 inline-block border border-gray-400">
-                    <h4 className="text-lg font-semibold text-gray-900">
-                      SGK İşveren Sigorta Primi (₺)
-                    </h4>
-                  </div>
-                </div>
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>SGK Prim Oranları</CardTitle>
+              <CardDescription>
+                Teşvik hesaplamalarında kullanılan SGK işveren ve çalışan prim oranlarını düzenleyin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
                 
-                {/* İmalat and Diğer side by side */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="bg-gray-200 rounded-full px-4 py-2 text-center border border-gray-400">
-                      <Label className="text-sm font-medium text-gray-700">
-                        İmalat
-                      </Label>
-                    </div>
-                    <div className="bg-gray-200 rounded-2xl border-2 border-gray-400 p-4">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={settings.sgk_employer_premium_rate_manufacturing}
-                        onChange={(e) => handleInputChange('sgk_employer_premium_rate_manufacturing', e.target.value)}
-                        className="text-center text-lg font-semibold border-0 bg-transparent focus:ring-0 focus:outline-none"
-                      />
+                {/* SGK İşveren Sigorta Primi */}
+                <div className="flex flex-col">
+                  <div className="z-10 self-center bg-white px-2">
+                    <div className="border rounded-md px-4 py-2">
+                       <h3 className="font-semibold text-gray-700 whitespace-nowrap">SGK İşveren Sigorta Primi (TL)</h3>
                     </div>
                   </div>
-                  
-                  <div className="space-y-3">
-                    <div className="bg-gray-200 rounded-full px-4 py-2 text-center border border-gray-400">
-                      <Label className="text-sm font-medium text-gray-700">
-                        Diğer
-                      </Label>
-                    </div>
-                    <div className="bg-gray-200 rounded-2xl border-2 border-gray-400 p-4">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={settings.sgk_employer_premium_rate_other}
-                        onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
-                        className="text-center text-lg font-semibold border-0 bg-transparent focus:ring-0 focus:outline-none"
-                      />
+                  <div className="border rounded-lg p-4 -mt-4 pt-8">
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <div className="border rounded-md text-center py-1">
+                            <Label htmlFor="imalat">İmalat</Label>
+                         </div>
+                         <div className="border rounded-md">
+                           <Input
+                             id="imalat"
+                             type="text"
+                             value={formatValue(settings.sgk_employer_premium_rate_manufacturing)}
+                             onChange={(e) => handleInputChange('sgk_employer_premium_rate_manufacturing', e.target.value)}
+                             className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                           />
+                         </div>
+                       </div>
+                       <div className="space-y-2">
+                         <div className="border rounded-md text-center py-1">
+                            <Label htmlFor="diger">Diğer</Label>
+                         </div>
+                         <div className="border rounded-md">
+                           <Input
+                             id="diger"
+                             type="text"
+                             value={formatValue(settings.sgk_employer_premium_rate_other)}
+                             onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
+                             className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                           />
+                         </div>
+                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* SGK Çalışan Sigorta Primi Section - Single Input */}
-              <div className="bg-white rounded-3xl p-6 border-2 border-gray-400 shadow-sm">
-                {/* Header */}
-                <div className="text-center mb-6">
-                  <div className="bg-gray-200 rounded-full px-6 py-3 inline-block border border-gray-400">
-                    <h4 className="text-lg font-semibold text-gray-900">
-                      SGK Çalışan Sigorta Primi (₺)
-                    </h4>
+                {/* SGK Çalışan Sigorta Primi */}
+                <div className="flex flex-col">
+                  <div className="z-10 self-center bg-white px-2">
+                    <div className="border rounded-md px-4 py-2">
+                       <h3 className="font-semibold text-gray-700 whitespace-nowrap">SGK Çalışan Sigorta Primi (TL)</h3>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg p-4 -mt-4 pt-8">
+                     <div className="border rounded-md max-w-xs mx-auto">
+                        <Input
+                          type="text"
+                          value={formatValue(settings.sgk_employee_premium_rate_manufacturing)}
+                          onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
+                          className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
+                     </div>
                   </div>
                 </div>
-                
-                {/* Single Input Field */}
-                <div className="space-y-3">
-                  <div className="bg-gray-200 rounded-2xl border-2 border-gray-400 p-4">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.sgk_employee_premium_rate_manufacturing}
-                      onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
-                      className="text-center text-lg font-semibold border-0 bg-transparent focus:ring-0 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Save Button */}
-            <div className="flex justify-end pt-8">
-              <Button 
-                onClick={handleSave} 
-                disabled={isSaving}
-                className="px-8 py-3 h-12 text-lg bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
-              </Button>
-            </div>
-          </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end pt-6">
+                <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </AdminLayout>
