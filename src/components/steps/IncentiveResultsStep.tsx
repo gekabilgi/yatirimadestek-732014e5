@@ -564,11 +564,11 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
           )}
 
           <div className="flex justify-center gap-4">
-            <Button onClick={refreshSearch} variant="outline">
+            <Button onClick={refreshSearch} variant="outline" className="flex-1 sm:flex-none text-sm px-3 py-2">
               <Calculator className="h-4 w-4 mr-2" />
               Yeni Sorgulama
             </Button>
-            <Button onClick={generatePDF}>
+            <Button onClick={generatePDF} className="flex-1 sm:flex-none text-sm px-3 py-2">
               <Download className="h-4 w-4 mr-2" />
               PDF İndir
             </Button>
