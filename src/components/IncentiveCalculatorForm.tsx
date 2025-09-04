@@ -263,7 +263,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="investmentType">Yatırım Türü</Label>
+          <Label htmlFor="investmentType">Yatırımın Sektörü</Label>
           <Select 
             value={formData.investmentType} 
             onValueChange={(value) => handleInputChange('investmentType', value as any)}
