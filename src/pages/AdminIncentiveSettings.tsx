@@ -118,7 +118,7 @@ const AdminIncentiveSettings = () => {
                 <div className="flex flex-col">
                   <div className="z-10 self-center bg-white px-2">
                     <div className="border rounded-md px-4 py-2">
-                       <h3 className="font-semibold text-gray-700 whitespace-nowrap">SGK İşveren Sigorta Primi (TL)</h3>
+                       <h5 className="font-semibold text-gray-700 whitespace-nowrap">SGK İşveren Sigorta Primi (TL)</h3>
                     </div>
                   </div>
                   <div className="border rounded-lg p-4 -mt-4 pt-8">
@@ -159,7 +159,7 @@ const AdminIncentiveSettings = () => {
                 <div className="flex flex-col">
                   <div className="z-10 self-center bg-white px-2">
                     <div className="border rounded-md px-4 py-2">
-                       <h3 className="font-semibold text-gray-700 whitespace-nowrap">SGK Çalışan Sigorta Primi (TL)</h3>
+                       <h5 className="font-semibold text-gray-700 whitespace-nowrap">SGK Çalışan Sigorta Primi (TL)</h3>
                     </div>
                   </div>
                   <div className="border rounded-lg p-4 -mt-4 pt-8">
