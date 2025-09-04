@@ -106,7 +106,7 @@ const AdminIncentiveSettings = () => {
           <CardContent className="space-y-4">
             <div className="space-y-6">
               <div>
-                <h4 className="text-md font-medium mb-4">SGK İşveren Primi Oranı (TL)</h4>
+                <h4 className="text-md font-medium mb-4">SGK İşveren Sigorta Primi(TL)</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sgk_employer_premium_rate_manufacturing">İmalat</Label>
@@ -135,31 +135,16 @@ const AdminIncentiveSettings = () => {
               </div>
 
               <div>
-                <h4 className="text-md font-medium mb-4">SGK Çalışan Primi Oranı (TL)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sgk_employee_premium_rate_manufacturing">İmalat</Label>
-                    <Input
-                      id="sgk_employee_premium_rate_manufacturing"
-                      type="number"
-                      step="0.01"
-                      value={settings.sgk_employee_premium_rate_manufacturing}
-                      onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
-                      placeholder="3640.77"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="sgk_employee_premium_rate_other">Diğer</Label>
-                    <Input
-                      id="sgk_employee_premium_rate_other"
-                      type="number"
-                      step="0.01"
-                      value={settings.sgk_employee_premium_rate_other}
-                      onChange={(e) => handleInputChange('sgk_employee_premium_rate_other', e.target.value)}
-                      placeholder="3420.64"
-                    />
-                  </div>
+                <h4 className="text-md font-medium mb-4">SGK Çalışan Sigorta Primi (TL)</h4>
+                <div className="space-y-2">
+                  <Input
+                    id="sgk_employee_premium_rate_manufacturing"
+                    type="number"
+                    step="0.01"
+                    value={settings.sgk_employee_premium_rate_manufacturing}
+                    onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
+                    placeholder="3640.77"
+                  />
                 </div>
               </div>
             </div>
