@@ -14,6 +14,7 @@ import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, Shield
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/types/qna';
+import { useToast } from '@/hooks/use-toast';
 
 const AnsweredQuestionsSection = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -41,7 +42,11 @@ const AnsweredQuestionsSection = () => {
       if (error) {
         console.error('Error fetching answered questions:', error);
         console.error('Error details:', error.message, error.details, error.hint);
-        toast.error(`Sorular yüklenirken hata oluştu: ${error.message}`);
+        toast({
+          title: "Hata",
+          description: `Sorular yüklenirken hata oluştu: ${error.message}`,
+          variant: "destructive",
+        });
         return;
       }
 
@@ -73,7 +78,11 @@ const AnsweredQuestionsSection = () => {
       setQuestions(transformedData);
     } catch (error) {
       console.error('Error:', error);
-      toast.error(`Beklenmeyen hata: ${error.message}`);
+      toast({
+        title: "Hata",
+        description: `Beklenmeyen hata: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

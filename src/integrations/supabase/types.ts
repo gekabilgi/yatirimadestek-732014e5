@@ -1542,6 +1542,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_old_sensitive_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       expire_old_products: {
         Args: Record<PropertyKey, never>
         Returns: undefined
