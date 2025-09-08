@@ -141,28 +141,6 @@ const AdminIncentiveSettings = () => {
                          <div className="border rounded-md text-center py-1">
                             <Label htmlFor="diger">Diğer</Label>
                          </div>
-                         <div className="border rounded-md">
-                           <Input
-                             id="diger"
-                             type="text"
-                             value={formatValue(settings.sgk_employer_premium_rate_other)}
-                             onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
-                             className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                           />
-                         </div>
-                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SGK Çalışan Sigorta Primi */}
-                <div className="flex flex-col">
-                  <div className="z-10 self-center bg-white px-2">
-                    <div className="border rounded-md px-4 py-2">
-                       <h5 className="font-semibold text-gray-700 whitespace-nowrap">SGK Çalışan Sigorta Primi (TL)</h5>
-                    </div>
-                  </div>
-                  <div className="border rounded-lg p-4 -mt-4 pt-8">
                      <div className="border rounded-md max-w-xs mx-auto">
                         <Input
                           type="text"
