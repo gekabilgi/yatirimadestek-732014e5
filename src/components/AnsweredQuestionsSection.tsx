@@ -14,7 +14,7 @@ import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, Shield
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/types/qna';
-import { useToast } from '@/hooks/use-toast';
+import { useToast, toast } from '@/hooks/use-toast';
 
 const AnsweredQuestionsSection = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
