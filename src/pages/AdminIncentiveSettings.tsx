@@ -169,3 +169,5 @@ const AdminIncentiveSettings = () => {
 export default AdminIncentiveSettings;
   )
 }
+  )
+}
