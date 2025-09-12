@@ -127,6 +127,14 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
               <span className="text-muted-foreground">KDV ve Gümrük Muafiyeti:</span>
               <Badge className="ml-2 bg-green-500 text-white">{results.vatCustomsExemption}</Badge>
             </div>
+            <div>
+              <span className="text-muted-foreground">KDV Muafiyeti Tutarı:</span>
+              <div className="font-semibold text-lg">{formatCurrency(results.vatExemptionAmount)}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Gümrük Vergisi Muafiyeti:</span>
+              <div className="font-semibold text-lg">{formatCurrency(results.customsExemptionAmount)}</div>
+            </div>
           </div>
         </div>
 
@@ -172,7 +180,7 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
         )}
 
         {/* Support Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">SGK Destekleri</CardTitle>
@@ -217,6 +225,25 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">KDV ve Gümrük Muafiyetleri</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <span className="text-sm text-muted-foreground">KDV Muafiyeti</span>
+                <div className="font-medium">{formatCurrency(results.vatExemptionAmount)}</div>
+              </div>
+              <div>
+                <span className="text-sm text-muted-foreground">Gümrük Vergisi Muafiyeti</span>
+                <div className="font-medium">{formatCurrency(results.customsExemptionAmount)}</div>
+              </div>
+              <div className="text-xs text-muted-foreground mt-2">
+                * Makine yatırımları için hesaplanan muafiyet tutarları
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Total Support Summary */}
@@ -247,6 +274,14 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
                 <span className="font-medium">{formatCurrency(results.interestProfitShareSupportAmount)}</span>
               </div>
             )}
+            <div className="flex justify-between">
+              <span>KDV Muafiyeti:</span>
+              <span className="font-medium">{formatCurrency(results.vatExemptionAmount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Gümrük Vergisi Muafiyeti:</span>
+              <span className="font-medium">{formatCurrency(results.customsExemptionAmount)}</span>
+            </div>
             <hr className="my-2" />
             <div className="flex justify-between font-semibold text-base">
               <span>Toplam Parasal Destek:</span>
@@ -257,6 +292,10 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
                 results.machinerySupportAmount + 
                 results.interestProfitShareSupportAmount
               )}</span>
+            </div>
+            <div className="flex justify-between font-semibold text-base">
+              <span>Toplam Vergi Muafiyeti:</span>
+              <span>{formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}</span>
             </div>
           </div>
         </div>

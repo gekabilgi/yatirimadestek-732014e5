@@ -34,6 +34,8 @@ export interface IncentiveCalculatorResults {
   totalInterestAmount: number;
   taxReductionInvestmentContribution: number;
   vatCustomsExemption: string;
+  vatExemptionAmount: number;
+  customsExemptionAmount: number;
   isEligible: boolean;
   validationErrors: string[];
   warningMessages?: string[];

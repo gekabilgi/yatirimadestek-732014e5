@@ -10,7 +10,9 @@ export const adminSettingsService = {
         'sgk_employer_premium_rate_manufacturing', 
         'sgk_employer_premium_rate_other',
         'sgk_employee_premium_rate_manufacturing', 
-        'sgk_employee_premium_rate_other'
+        'sgk_employee_premium_rate_other',
+        'vat_rate',
+        'customs_duty_rate'
       ])
       .eq('category', 'incentive_calculation');
 
@@ -22,6 +24,8 @@ export const adminSettingsService = {
         sgk_employer_premium_rate_other: 4095.87,
         sgk_employee_premium_rate_manufacturing: 3640.77,
         sgk_employee_premium_rate_other: 3420.64,
+        vat_rate: 20.0,
+        customs_duty_rate: 2.0,
       };
     }
 
@@ -30,6 +34,8 @@ export const adminSettingsService = {
       sgk_employer_premium_rate_other: 4095.87, // default
       sgk_employee_premium_rate_manufacturing: 3640.77, // default
       sgk_employee_premium_rate_other: 3420.64, // default
+      vat_rate: 20.0, // default
+      customs_duty_rate: 2.0, // default
     };
 
     data?.forEach((setting: AdminSetting) => {
@@ -41,6 +47,10 @@ export const adminSettingsService = {
         settings.sgk_employee_premium_rate_manufacturing = setting.setting_value;
       } else if (setting.setting_key === 'sgk_employee_premium_rate_other') {
         settings.sgk_employee_premium_rate_other = setting.setting_value;
+      } else if (setting.setting_key === 'vat_rate') {
+        settings.vat_rate = setting.setting_value;
+      } else if (setting.setting_key === 'customs_duty_rate') {
+        settings.customs_duty_rate = setting.setting_value;
       }
     });
 
@@ -64,6 +74,14 @@ export const adminSettingsService = {
       {
         setting_key: 'sgk_employee_premium_rate_other',
         setting_value: settings.sgk_employee_premium_rate_other,
+      },
+      {
+        setting_key: 'vat_rate',
+        setting_value: settings.vat_rate,
+      },
+      {
+        setting_key: 'customs_duty_rate',
+        setting_value: settings.customs_duty_rate,
       },
     ];
 

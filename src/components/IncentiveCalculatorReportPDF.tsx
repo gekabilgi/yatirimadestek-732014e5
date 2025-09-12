@@ -220,6 +220,14 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
               <Text style={styles.label}>KDV ve Gümrük Muafiyeti:</Text>
               <Text style={styles.value}>{results.vatCustomsExemption}</Text>
             </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>KDV Muafiyeti Tutarı:</Text>
+              <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Gümrük Vergisi Muafiyeti:</Text>
+              <Text style={styles.value}>{formatCurrency(results.customsExemptionAmount)}</Text>
+            </View>
           </View>
         </View>
 
@@ -309,6 +317,22 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
               </View>
             )}
           </View>
+
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryTitle}>KDV ve Gümrük Muafiyetleri</Text>
+            <View style={styles.row}>
+              <Text style={styles.label}>KDV Muafiyeti:</Text>
+              <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Gümrük Vergisi Muafiyeti:</Text>
+              <Text style={styles.value}>{formatCurrency(results.customsExemptionAmount)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Toplam Vergi Muafiyeti:</Text>
+              <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Total Support Summary */}
@@ -339,9 +363,21 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
                 <Text style={styles.value}>{formatCurrency(results.interestProfitShareSupportAmount)}</Text>
               </View>
             )}
+            <View style={styles.row}>
+              <Text style={styles.label}>KDV Muafiyeti:</Text>
+              <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Gümrük Vergisi Muafiyeti:</Text>
+              <Text style={styles.value}>{formatCurrency(results.customsExemptionAmount)}</Text>
+            </View>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Toplam Parasal Destek:</Text>
               <Text style={styles.totalValue}>{formatCurrency(totalSupport)}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Toplam Vergi Muafiyeti:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}</Text>
             </View>
           </View>
         </View>

@@ -134,6 +134,11 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     validationErrors.push('Faiz/Kar Payı Desteği için kredi vadesi 0\'dan büyük olmalıdır.');
   }
 
+  // Calculate VAT and Customs Duty exemptions
+  const machineryCostForExemptions = inputs.importedMachineryCost + inputs.domesticMachineryCost;
+  const vatExemptionAmount = machineryCostForExemptions * (settings.vat_rate / 100);
+  const customsExemptionAmount = inputs.importedMachineryCost * (settings.customs_duty_rate / 100);
+
   if (validationErrors.length > 0) {
     return {
       totalFixedInvestment,
@@ -144,6 +149,8 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
       totalInterestAmount: 0,
       taxReductionInvestmentContribution: 0,
       vatCustomsExemption: 'MEVCUT',
+      vatExemptionAmount,
+      customsExemptionAmount,
       isEligible: false,
       validationErrors,
       warningMessages
@@ -317,6 +324,8 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     totalInterestAmount,
     taxReductionInvestmentContribution,
     vatCustomsExemption: 'MEVCUT',
+    vatExemptionAmount,
+    customsExemptionAmount,
     isEligible: true,
     validationErrors: [],
     warningMessages,

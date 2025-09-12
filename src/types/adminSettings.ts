@@ -13,6 +13,8 @@ export interface IncentiveCalculationSettings {
   sgk_employer_premium_rate_other: number;
   sgk_employee_premium_rate_manufacturing: number;
   sgk_employee_premium_rate_other: number;
+  vat_rate: number;
+  customs_duty_rate: number;
 }
 
 export interface AdminParameters {

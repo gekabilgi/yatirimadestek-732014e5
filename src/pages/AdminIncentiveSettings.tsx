@@ -16,7 +16,9 @@ const AdminIncentiveSettings = () => {
     sgk_employer_premium_rate_other: 4095.87,
     sgk_employee_premium_rate_manufacturing: 3640.77,
     // Note: The 'other' employee rate is unused in this UI, but kept in state for API consistency.
-    sgk_employee_premium_rate_other: 3420.64, 
+    sgk_employee_premium_rate_other: 3420.64,
+    vat_rate: 20.0,
+    customs_duty_rate: 2.0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -106,9 +108,9 @@ const AdminIncentiveSettings = () => {
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle>SGK Prim Oranları</CardTitle>
+              <CardTitle>Teşvik Hesaplama Parametreleri</CardTitle>
               <CardDescription>
-                Teşvik hesaplamalarında kullanılan SGK işveren ve çalışan prim oranlarını düzenleyin.
+                SGK prim oranları, KDV ve gümrük vergisi oranlarını düzenleyin. Bu parametreler tüm teşvik hesaplamalarında kullanılır.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -194,9 +196,50 @@ const AdminIncentiveSettings = () => {
                          </div>
                       </div>
                     </div>
-                  </div>
+                   </div>
 
-                </div>
+                   {/* VAT and Customs Duty Rates */}
+                   <div className="flex flex-col">
+                     <div className="z-10 self-center bg-white px-2">
+                       <div className="border rounded-md px-4 py-2">
+                          <h5 className="font-semibold text-gray-700 whitespace-nowrap">KDV ve Gümrük Vergisi Oranları (%)</h5>
+                       </div>
+                     </div>
+                     <div className="border rounded-lg p-4 -mt-4 pt-8">
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <div className="border rounded-md text-center py-1">
+                               <Label htmlFor="vat_rate">KDV Oranı</Label>
+                            </div>
+                            <div className="border rounded-md">
+                              <Input
+                                id="vat_rate"
+                                type="text"
+                                value={formatValue(settings.vat_rate)}
+                                onChange={(e) => handleInputChange('vat_rate', e.target.value)}
+                                className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="border rounded-md text-center py-1">
+                               <Label htmlFor="customs_duty_rate">Gümrük Vergisi Oranı</Label>
+                            </div>
+                            <div className="border rounded-md">
+                              <Input
+                                id="customs_duty_rate"
+                                type="text"
+                                value={formatValue(settings.customs_duty_rate)}
+                                onChange={(e) => handleInputChange('customs_duty_rate', e.target.value)}
+                                className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                              />
+                            </div>
+                          </div>
+                       </div>
+                     </div>
+                   </div>
+
+                 </div>
               </CardContent>
               <CardFooter className="flex justify-end pt-6">
                   <Button onClick={handleSave} disabled={isSaving}>
