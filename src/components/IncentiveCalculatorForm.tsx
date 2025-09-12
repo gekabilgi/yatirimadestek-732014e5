@@ -27,7 +27,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
   isCalculating
 }) => {
   const [formData, setFormData] = useState<IncentiveCalculatorInputs>({
-    incentiveType: 'Technology Initiative',
+    incentiveType: 'Local Development Initiative',
     investmentType: 'İmalat',
     province: '',
     numberOfEmployees: 0,
@@ -258,7 +258,7 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
               <SelectItem value="Local Development Initiative">Yerel Kalkınma Hamlesi</SelectItem>
               <SelectItem value="Technology Initiative">Teknoloji Hamlesi</SelectItem>
               <SelectItem value="Strategic Initiative">Stratejik Hamle</SelectItem>
-            </SelectContent>
+            </SelectContent> 
           </Select>
         </div>
 
