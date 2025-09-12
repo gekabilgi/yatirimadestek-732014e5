@@ -216,18 +216,7 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
               <Text style={styles.label}>Toplam Makine Maliyeti:</Text>
               <Text style={styles.value}>{formatCurrency(totalMachineryCost)}</Text>
             </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>KDV ve Gümrük Muafiyeti:</Text>
-              <Text style={styles.value}>{results.vatCustomsExemption}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>KDV Muafiyeti Tutarı:</Text>
-              <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount)}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Gümrük Vergisi Muafiyeti:</Text>
-              <Text style={styles.value}>{formatCurrency(results.customsExemptionAmount)}</Text>
-            </View>
+            
           </View>
         </View>
 
