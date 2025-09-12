@@ -319,18 +319,32 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
           </View>
 
           <View style={styles.summaryBox}>
-            <Text style={styles.summaryTitle}>KDV ve Gümrük Muafiyetleri</Text>
+            <Text style={styles.summaryTitle}>KDV ve Gümrük Vergi Muafiyetleri</Text>
             <View style={styles.row}>
-              <Text style={styles.label}>KDV Muafiyeti:</Text>
+              <Text style={styles.label}>İthal Makine Tutarı:</Text>
+              <Text style={styles.value}>{formatCurrency(inputs.importedMachineryCost)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Yerli Makine Tutarı:</Text>
+              <Text style={styles.value}>{formatCurrency(inputs.domesticMachineryCost)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Toplam Makine Tutarı:</Text>
+              <Text style={styles.value}>{formatCurrency(inputs.importedMachineryCost + inputs.domesticMachineryCost)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>KDV Muafiyeti (%20):</Text>
               <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount)}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Gümrük Vergisi Muafiyeti:</Text>
+              <Text style={styles.label}>Gümrük Vergisi Muafiyeti (%2):</Text>
               <Text style={styles.value}>{formatCurrency(results.customsExemptionAmount)}</Text>
             </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Toplam Vergi Muafiyeti:</Text>
-              <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}</Text>
+            <View style={[styles.row, { backgroundColor: colors.lightGray, padding: 3, marginTop: 3 }]}>
+              <Text style={[styles.label, { fontWeight: 'bold', color: colors.primary }]}>Toplam Vergi Muafiyeti:</Text>
+              <Text style={[styles.value, { fontWeight: 'bold', color: colors.success }]}>
+                {formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}
+              </Text>
             </View>
           </View>
         </View>
