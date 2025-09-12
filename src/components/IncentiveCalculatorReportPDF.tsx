@@ -216,19 +216,7 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
               <Text style={styles.label}>Toplam Makine Maliyeti:</Text>
               <Text style={styles.value}>{formatCurrency(totalMachineryCost)}</Text>
             </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>KDV ve Gümrük Muafiyeti:</Text>
-              <Text style={styles.value}>{results.vatCustomsExemption}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>KDV Muafiyeti Tutarı:</Text>
-              <Text style={styles.value}>{formatCurrency(results.vatExemptionAmount)}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Gümrük Vergisi Muafiyeti:</Text>
-              <Text style={styles.value}>{formatCurrency(results.customsExemptionAmount)}</Text>
-            </View>
-          </View>
+           </View>
         </View>
 
         {/* Input Details */}
@@ -329,7 +317,12 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
               <Text style={styles.label}>Gümrük Vergisi Muafiyeti (%2):</Text>
               <Text style={styles.value}>{formatCurrency(results.customsExemptionAmount)}</Text>
             </View>
-            
+            <View style={[styles.row, { backgroundColor: colors.lightGray, padding: 3, marginTop: 3 }]}>
+              <Text style={[styles.label, { fontWeight: 'bold', color: colors.primary }]}>Toplam Vergi Muafiyeti:</Text>
+              <Text style={[styles.value, { fontWeight: 'bold', color: colors.success }]}>
+                {formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}
+              </Text>
+            </View>
           </View>
         </View>
 
