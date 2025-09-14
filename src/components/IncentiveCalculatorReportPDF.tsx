@@ -366,10 +366,7 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
               <Text style={styles.totalLabel}>Toplam Parasal Destek:</Text>
               <Text style={styles.totalValue}>{formatCurrency(totalSupport)}</Text>
             </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Toplam Vergi Muafiyeti:</Text>
-              <Text style={styles.totalValue}>{formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}</Text>
-            </View>
+           
           </View>
         </View>
 
