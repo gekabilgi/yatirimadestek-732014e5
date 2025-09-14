@@ -293,10 +293,7 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
                 results.interestProfitShareSupportAmount
               )}</span>
             </div>
-            <div className="flex justify-between font-semibold text-base">
-              <span>Toplam Vergi Muafiyeti:</span>
-              <span>{formatCurrency(results.vatExemptionAmount + results.customsExemptionAmount)}</span>
-            </div>
+            
           </div>
         </div>
 
