@@ -93,12 +93,7 @@ const aylikKrediPlaniHesapla = (
 // Province region mapping
 const getProvinceRegion = (province: string): number => {
   const regionMap: { [key: string]: number } = {
-    'İstanbul': 1, 'Ankara': 1, 'İzmir': 1, 'Kocaeli': 1, 'Bursa': 1, 'Eskişehir': 1, 'Antalya': 1,
-    'Adana': 2, 'Denizli': 2, 'Gaziantep': 2, 'Hatay': 2, 'İçel (Mersin)': 2, 'Kayseri': 2, 'Konya': 2, 'Manisa': 2, 'Muğla': 2, 'Sakarya': 2, 'Samsun': 2, 'Tekirdağ': 2, 'Trabzon': 2,
-    'Afyonkarahisar': 3, 'Amasya': 3, 'Artvin': 3, 'Aydın': 3, 'Balıkesir': 3, 'Bartın': 3, 'Bolu': 3, 'Burdur': 3, 'Çanakkale': 3, 'Çankırı': 3, 'Çorum': 3, 'Düzce': 3, 'Edirne': 3, 'Giresun': 3, 'Gümüşhane': 3, 'Isparta': 3, 'Karabük': 3, 'Karaman': 3, 'Kastamonu': 3, 'Kırklareli': 3, 'Kütahya': 3, 'Nevşehir': 3, 'Ordu': 3, 'Rize': 3, 'Sinop': 3, 'Tokat': 3, 'Uşak': 3, 'Yalova': 3, 'Zonguldak': 3,
-    'Aksaray': 4, 'Bayburt': 4, 'Bilecik': 4, 'Erzincan': 4, 'Erzurum': 4, 'Kars': 4, 'Kırıkkale': 4, 'Kırşehir': 4, 'Niğde': 4, 'Sivas': 4, 'Yozgat': 4,
-    'Adıyaman': 5, 'Kahramanmaraş': 5, 'Malatya': 5, 'Osmaniye': 5, 'Şanlıurfa': 5, 'Van': 5,
-    'Ağrı': 6, 'Ardahan': 6, 'Batman': 6, 'Bingöl': 6, 'Bitlis': 6, 'Diyarbakır': 6, 'Elazığ': 6, 'Hakkari': 6, 'Iğdır': 6, 'Mardin': 6, 'Muş': 6, 'Siirt': 6, 'Şırnak': 6, 'Tunceli': 6
+    'Ankara' : 1, 'Antalya' : 1, 'Bursa' : 1, 'Eskişehir' : 1, 'İstanbul' : 1, 'İzmir' : 1, 'Kocaeli' : 1, 'Muğla' : 1, 'Aydın' : 2, 'Balıkesir' : 2, 'Bolu' : 2, 'Çanakkale' : 2, 'Denizli' : 2, 'Edirne' : 2, 'Kayseri' : 2, 'Konya' : 2, 'Manisa' : 2, 'Mersin' : 2, 'Sakarya' : 2, 'Tekirdağ' : 2, 'Yalova' : 2, 'Adana' : 3, 'Bilecik' : 3, 'Burdur' : 3, 'Düzce' : 3, 'Gaziantep' : 3, 'Isparta' : 3, 'Karabük' : 3, 'Karaman' : 3, 'Kırıkkale' : 3, 'Kırklareli' : 3, 'Kütahya' : 3, 'Nevşehir' : 3, 'Rize' : 3, 'Samsun' : 3, 'Trabzon' : 3, 'Uşak' : 3, 'Zonguldak' : 3, 'Afyonkarahisar' : 4, 'Aksaray' : 4, 'Amasya' : 4, 'Artvin' : 4, 'Çorum' : 4, 'Elâzığ' : 4, 'Erzincan' : 4, 'Kastamonu' : 4, 'Kırşehir' : 4, 'Malatya' : 4, 'Sivas' : 4, 'Bartın' : 5, 'Bayburt' : 5, 'Çankırı' : 5, 'Erzurum' : 5, 'Giresun' : 5, 'Hatay' : 5, 'Kahramanmaraş' : 5, 'Kilis' : 5, 'Niğde' : 5, 'Ordu' : 5, 'Osmaniye' : 5, 'Sinop' : 5, 'Tokat' : 5, 'Tunceli' : 5, 'Yozgat' : 5, 'Adıyaman' : 6, 'Ağrı' : 6, 'Ardahan' : 6, 'Batman' : 6, 'Bingöl' : 6, 'Bitlis' : 6, 'Diyarbakır' : 6, 'Gümüşhane' : 6, 'Hakkâri' : 6, 'Iğdır' : 6, 'Kars' : 6, 'Mardin' : 6, 'Muş' : 6, 'Siirt' : 6, 'Şanlıurfa' : 6, 'Şırnak' : 6, 'Van' : 6
   };
   return regionMap[province] || 1;
 };
