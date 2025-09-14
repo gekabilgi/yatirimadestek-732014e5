@@ -307,7 +307,7 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
           </View>
 
           <View style={styles.summaryBox}>
-            <Text style={styles.summaryTitle}>KDV ve Gümrük Vergi Muafiyetleri</Text>
+            <Text style={styles.summaryTitle}>KDV İstisnası ve Gümrük Vergi Muafiyeti Destekleri</Text>
             
             <View style={styles.row}>
               <Text style={styles.label}>KDV Muafiyeti (%20):</Text>
