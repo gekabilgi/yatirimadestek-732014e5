@@ -1,5 +1,6 @@
 
 import { IncentiveCalculatorInputs, IncentiveCalculatorResults, PaymentPlanDetail } from '@/types/incentiveCalculator';
+import { isRegion6Province } from '@/utils/regionUtils';
 
 // Use the PaymentPlanDetail type from the main types file
 type OdemeDetayi = PaymentPlanDetail;
@@ -11,7 +12,6 @@ const YILDAKI_AY_SAYISI = 12; // Bir yıldaki ay sayısı
 
 const SGK_EMPLOYER_PREMIUM_RATE = 4355.92;
 const SGK_EMPLOYEE_PREMIUM_RATE = 3640.77;
-const REGION_6_PROVINCES = ['Ağrı', 'Ardahan', 'Batman', 'Bingöl', 'Bitlis', 'Diyarbakır', 'Elazığ', 'Erzincan', 'Erzurum', 'Hakkari', 'Iğdır', 'Kars', 'Mardin', 'Muş', 'Siirt', 'Şırnak', 'Tunceli', 'Van'];
 
 /**
  * Detailed Turkish loan payment plan calculator
@@ -153,7 +153,7 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
   }
 
   // Determine if province is in Region 6
-  const isRegion6 = REGION_6_PROVINCES.includes(inputs.province);
+  const isRegion6 = isRegion6Province(inputs.province);
   const provinceRegion = getProvinceRegion(inputs.province);
 
   // Get appropriate SGK rates based on investment type
