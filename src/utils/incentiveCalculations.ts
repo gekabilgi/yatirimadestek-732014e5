@@ -106,6 +106,9 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
   const { adminSettingsService } = await import('@/services/adminSettingsService');
   const settings = await adminSettingsService.getIncentiveCalculationSettings();
   
+  // Check if sub-region support is enabled
+  const isSubRegionSupportEnabled = settings.sub_region_support_enabled === 1;
+  
   // Calculate total fixed investment
   const totalFixedInvestment = inputs.landCost + inputs.constructionCost + 
     inputs.importedMachineryCost + inputs.domesticMachineryCost + inputs.otherExpenses;
@@ -152,9 +155,17 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     };
   }
 
-  // Determine if province is in Region 6
-  const isRegion6 = isRegion6Province(inputs.province);
+  // Determine if province is in Region 6 or apply sub-region logic
+  let isRegion6 = isRegion6Province(inputs.province);
   const provinceRegion = getProvinceRegion(inputs.province);
+  
+  // Apply sub-region logic if enabled
+  if (isSubRegionSupportEnabled && inputs.district && inputs.osbStatus) {
+    // Region 4 or 5 with OSB Inside → apply Region 6 rules
+    if ((provinceRegion === 4 || provinceRegion === 5) && inputs.osbStatus === 'inside') {
+      isRegion6 = true;
+    }
+  }
 
   // Get appropriate SGK rates based on investment type
   const sgkEmployerRate = inputs.investmentType === 'İmalat' 
@@ -165,14 +176,36 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     ? settings.sgk_employee_premium_rate_manufacturing 
     : settings.sgk_employee_premium_rate_other;
 
-  // Calculate SGK Employer Premium Support
+  // Calculate SGK Employer Premium Support with sub-region logic
+  let sgkEmployerDurationMonths = 96; // Default
+  let sgkEmployeeDurationMonths = 0; // Default
+  
+  if (isRegion6) {
+    if (isSubRegionSupportEnabled && inputs.district && inputs.osbStatus) {
+      // Sub-region support enabled - different rules
+      if (provinceRegion === 6) {
+        sgkEmployerDurationMonths = 168; // 14 years for actual Region 6
+        sgkEmployeeDurationMonths = 120; // 10 years for Region 6
+      } else if ((provinceRegion === 4 || provinceRegion === 5) && inputs.osbStatus === 'inside') {
+        sgkEmployerDurationMonths = 144; // 12 years for Region 4/5 OSB Inside
+        sgkEmployeeDurationMonths = 0; // No employee support for Region 4/5
+      }
+    } else {
+      // Standard Region 6 rules (legacy mode)
+      sgkEmployerDurationMonths = 144; // 12 years
+      sgkEmployeeDurationMonths = 120; // 10 years
+    }
+  } else {
+    sgkEmployerDurationMonths = 96; // 8 years for other regions
+    sgkEmployeeDurationMonths = 0;
+  }
+
   const sgkEmployerPremiumSupport = isRegion6
-    ? 144 * sgkEmployerRate * inputs.numberOfEmployees
+    ? sgkEmployerDurationMonths * sgkEmployerRate * inputs.numberOfEmployees
     : 96 * (sgkEmployerRate / 2) * inputs.numberOfEmployees;
 
-  // Calculate SGK Employee Premium Support (only for Region 6)
-  const sgkEmployeePremiumSupport = isRegion6
-    ? 120 * sgkEmployeeRate * inputs.numberOfEmployees
+  const sgkEmployeePremiumSupport = sgkEmployeeDurationMonths > 0
+    ? sgkEmployeeDurationMonths * sgkEmployeeRate * inputs.numberOfEmployees
     : 0;
 
   // Calculate Machinery Support with new logic based on tax reduction preference

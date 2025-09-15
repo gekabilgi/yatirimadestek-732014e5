@@ -12,9 +12,10 @@ export const adminSettingsService = {
         'sgk_employee_premium_rate_manufacturing', 
         'sgk_employee_premium_rate_other',
         'vat_rate',
-        'customs_duty_rate'
+        'customs_duty_rate',
+        'sub_region_support_enabled'
       ])
-      .eq('category', 'incentive_calculation');
+      .in('category', ['incentive_calculation', 'incentive_calculations']);
 
     if (error) {
       console.error('Error fetching incentive calculation settings:', error);
@@ -26,6 +27,7 @@ export const adminSettingsService = {
         sgk_employee_premium_rate_other: 3420.64,
         vat_rate: 20.0,
         customs_duty_rate: 2.0,
+        sub_region_support_enabled: 0,
       };
     }
 
@@ -36,6 +38,7 @@ export const adminSettingsService = {
       sgk_employee_premium_rate_other: 3420.64, // default
       vat_rate: 20.0, // default
       customs_duty_rate: 2.0, // default
+      sub_region_support_enabled: 0, // default
     };
 
     data?.forEach((setting: AdminSetting) => {
@@ -51,6 +54,8 @@ export const adminSettingsService = {
         settings.vat_rate = setting.setting_value;
       } else if (setting.setting_key === 'customs_duty_rate') {
         settings.customs_duty_rate = setting.setting_value;
+      } else if (setting.setting_key === 'sub_region_support_enabled') {
+        settings.sub_region_support_enabled = setting.setting_value;
       }
     });
 
@@ -82,6 +87,10 @@ export const adminSettingsService = {
       {
         setting_key: 'customs_duty_rate',
         setting_value: settings.customs_duty_rate,
+      },
+      {
+        setting_key: 'sub_region_support_enabled',
+        setting_value: settings.sub_region_support_enabled,
       },
     ];
 

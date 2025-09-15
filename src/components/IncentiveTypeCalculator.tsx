@@ -1,17 +1,36 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IncentiveCalculatorForm } from './IncentiveCalculatorForm';
+import EnhancedIncentiveCalculatorForm from './EnhancedIncentiveCalculatorForm';
 import { IncentiveCalculatorResults } from './IncentiveCalculatorResults';
 import { IncentiveCalculatorInputs, IncentiveCalculatorResults as IIncentiveCalculatorResults } from '@/types/incentiveCalculator';
 import { calculateIncentives } from '@/utils/incentiveCalculations';
 import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
+import { adminSettingsService } from '@/services/adminSettingsService';
 
 const IncentiveTypeCalculator: React.FC = () => {
   const [calculationResults, setCalculationResults] = useState<IIncentiveCalculatorResults | null>(null);
   const [calculationInputs, setCalculationInputs] = useState<IncentiveCalculatorInputs | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isSubRegionEnabled, setIsSubRegionEnabled] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const { incrementCounter } = useRealtimeCounters('calculation_clicks');
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const settings = await adminSettingsService.getIncentiveCalculationSettings();
+      setIsSubRegionEnabled(settings.sub_region_support_enabled === 1);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
 
   const handleCalculate = async (inputs: IncentiveCalculatorInputs) => {
     setIsCalculating(true);
@@ -43,10 +62,23 @@ const IncentiveTypeCalculator: React.FC = () => {
           <CardTitle>Türkiye Yüzyılı Teşvikleri Hesaplama</CardTitle>
         </CardHeader>
         <CardContent>
-          <IncentiveCalculatorForm 
-            onCalculate={handleCalculate}
-            isCalculating={isCalculating}
-          />
+          {isLoadingSettings ? (
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="h-32 bg-gray-200 rounded"></div>
+            </div>
+          ) : isSubRegionEnabled ? (
+            <EnhancedIncentiveCalculatorForm 
+              onCalculate={handleCalculate}
+              isCalculating={isCalculating}
+              isSubRegionEnabled={isSubRegionEnabled}
+            />
+          ) : (
+            <IncentiveCalculatorForm 
+              onCalculate={handleCalculate}
+              isCalculating={isCalculating}
+            />
+          )}
         </CardContent>
       </Card>
 

@@ -15,6 +15,7 @@ export interface IncentiveCalculationSettings {
   sgk_employee_premium_rate_other: number;
   vat_rate: number;
   customs_duty_rate: number;
+  sub_region_support_enabled: number;
 }
 
 export interface AdminParameters {

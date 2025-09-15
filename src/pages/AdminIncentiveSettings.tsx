@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Settings } from 'lucide-react';
 import { adminSettingsService } from '@/services/adminSettingsService';
@@ -19,6 +20,7 @@ const AdminIncentiveSettings = () => {
     sgk_employee_premium_rate_other: 3420.64,
     vat_rate: 20.0,
     customs_duty_rate: 2.0,
+    sub_region_support_enabled: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -237,9 +239,39 @@ const AdminIncentiveSettings = () => {
                           </div>
                        </div>
                      </div>
-                   </div>
+                    </div>
 
-                 </div>
+                    {/* Sub-Region Support Setting */}
+                    <div className="flex flex-col md:col-span-2">
+                      <div className="z-10 self-center bg-white px-2">
+                        <div className="border rounded-md px-4 py-2">
+                           <h5 className="font-semibold text-gray-700 whitespace-nowrap">Alt Bölge Desteği</h5>
+                        </div>
+                      </div>
+                      <div className="border rounded-lg p-4 -mt-4 pt-8">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-2">
+                            <Label htmlFor="sub_region_support">Alt Bölge Desteği Durumu</Label>
+                            <p className="text-sm text-gray-600">
+                              Teşvik hesaplamalarında alt bölge mantığını kullanmak için etkinleştirin. 
+                              Bu özellik etkinleştirildiğinde, il seçiminden sonra ilçe ve OSB durumu soruları görünecektir.
+                            </p>
+                          </div>
+                          <Switch
+                            id="sub_region_support"
+                            checked={settings.sub_region_support_enabled === 1}
+                            onCheckedChange={(checked) => 
+                              setSettings(prev => ({
+                                ...prev,
+                                sub_region_support_enabled: checked ? 1 : 0
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
               </CardContent>
               <CardFooter className="flex justify-end pt-6">
                   <Button onClick={handleSave} disabled={isSaving}>
