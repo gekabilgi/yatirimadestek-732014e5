@@ -290,7 +290,9 @@ export const IncentiveCalculatorResults: React.FC<IncentiveCalculatorResultsProp
                 results.sgkEmployeePremiumSupport + 
                 results.taxReductionInvestmentContribution + 
                 results.machinerySupportAmount + 
-                results.interestProfitShareSupportAmount
+                results.interestProfitShareSupportAmount +
+                results.customsExemptionAmount +
+                results.vatExemptionAmount
               )}</span>
             </div>
             
