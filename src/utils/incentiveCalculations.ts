@@ -155,9 +155,9 @@ const determineAltRegionAndMonths = (
   
   if (provinceRegion === 5) {
     if (isOther) {
-      return { altRegion: 5, months: 144, multiplier: 0.5 };
+      return { altRegion: 5, months: 96, multiplier: 0.5 };
     } else {
-      return isInside ? { altRegion: 6, months: 168, multiplier: 1.0 } : { altRegion: 6, months: 144, multiplier: 1.0 };
+      return isInside ? { altRegion: 6, months: 144, multiplier: 1.0 } : { altRegion: 5, months: 96, multiplier: 0.5 };
     }
   }
   
