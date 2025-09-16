@@ -103,7 +103,10 @@ const isOtherDistrict = (district: string): boolean => {
   return district === "Other" || district === "Diğer" || district === "other";
 };
 
-// Helper function to determine Alt Region and months based on the enhanced rules
+/**
+ * Enhanced function to determine Alt Region and months based on province region, district, and OSB status
+ * This implements the comprehensive table-based logic for all regions 1-6
+ */
 const determineAltRegionAndMonths = (
   provinceRegion: number, 
   district: string | undefined, 
@@ -117,40 +120,53 @@ const determineAltRegionAndMonths = (
   const isOther = isOtherDistrict(district);
   const isInside = osbStatus === 'inside';
 
-  switch (provinceRegion) {
-    case 4:
-      if (!isOther && (isInside || !isInside)) {
-        // Case A & B: District ≠ "Other", any OSB status → Alt Region 5
-        return { altRegion: 5, months: 96, multiplier: 0.5 };
-      } else if (isOther && isInside) {
-        // Case C: District = "Other" AND OSB Inside → Alt Region 6
-        return { altRegion: 6, months: 144, multiplier: 1.0 };
-      }
-      // Default fallback for Region 4
-      return { altRegion: 5, months: 96, multiplier: 0.5 };
-
-    case 5:
-      if (!isOther) {
-        // Case A & B: District ≠ "Other", any OSB status → Alt Region 6
-        return { altRegion: 6, months: 144, multiplier: 1.0 };
-      } else if (isOther && isInside) {
-        // Case C: District = "Other" AND OSB Inside → Alt Region 6
-        return { altRegion: 6, months: 144, multiplier: 1.0 };
-      } else if (isOther && !isInside) {
-        // Case D: District = "Other" AND OSB Outside → Alt Region 5
-        return { altRegion: 5, months: 96, multiplier: 0.5 };
-      }
-      // Default fallback for Region 5
-      return { altRegion: 6, months: 144, multiplier: 1.0 };
-
-    case 6:
-      // All cases for Region 6 → Alt Region 6, 168 months
-      return { altRegion: 6, months: 168, multiplier: 1.0 };
-
-    default:
-      // For other regions (1, 2, 3), use standard logic
-      return { altRegion: provinceRegion, months: 96, multiplier: 0.5 };
+  // Complete logic based on the comprehensive region table
+  if (provinceRegion === 1) {
+    if (isOther) {
+      return { altRegion: 1, months: 96, multiplier: 0.5 };
+    } else {
+      return isInside ? { altRegion: 3, months: 96, multiplier: 0.5 } : { altRegion: 2, months: 96, multiplier: 0.5 };
+    }
   }
+  
+  if (provinceRegion === 2) {
+    if (isOther) {
+      return { altRegion: 2, months: 96, multiplier: 0.5 };
+    } else {
+      return isInside ? { altRegion: 4, months: 96, multiplier: 0.5 } : { altRegion: 3, months: 96, multiplier: 0.5 };
+    }
+  }
+  
+  if (provinceRegion === 3) {
+    if (isOther) {
+      return { altRegion: 3, months: 96, multiplier: 0.5 };
+    } else {
+      return isInside ? { altRegion: 5, months: 144, multiplier: 0.5 } : { altRegion: 4, months: 96, multiplier: 0.5 };
+    }
+  }
+  
+  if (provinceRegion === 4) {
+    if (isOther) {
+      return { altRegion: 4, months: 96, multiplier: 0.5 };
+    } else {
+      return isInside ? { altRegion: 6, months: 168, multiplier: 1.0 } : { altRegion: 5, months: 144, multiplier: 0.5 };
+    }
+  }
+  
+  if (provinceRegion === 5) {
+    if (isOther) {
+      return { altRegion: 5, months: 144, multiplier: 0.5 };
+    } else {
+      return isInside ? { altRegion: 6, months: 168, multiplier: 1.0 } : { altRegion: 6, months: 144, multiplier: 1.0 };
+    }
+  }
+  
+  if (provinceRegion === 6) {
+    return isInside ? { altRegion: 6, months: 168, multiplier: 1.0 } : { altRegion: 6, months: 144, multiplier: 1.0 };
+  }
+
+  // Fallback for any unexpected cases
+  return { altRegion: provinceRegion, months: 96, multiplier: 0.5 };
 };
 
 export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Promise<IncentiveCalculatorResults> => {
