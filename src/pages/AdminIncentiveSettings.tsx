@@ -23,7 +23,10 @@ const AdminIncentiveSettings = () => {
     sub_region_support_enabled: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingEmployer, setSavingEmployer] = useState(false);
+  const [savingEmployee, setSavingEmployee] = useState(false);
+  const [savingTaxes, setSavingTaxes] = useState(false);
+  const [savingSubRegion, setSavingSubRegion] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,23 +50,103 @@ const AdminIncentiveSettings = () => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveEmployerRates = async () => {
     try {
-      setIsSaving(true);
-      await adminSettingsService.updateIncentiveCalculationSettings(settings);
+      setSavingEmployer(true);
+      await adminSettingsService.updateEmployerPremiumRates(
+        settings.sgk_employer_premium_rate_manufacturing,
+        settings.sgk_employer_premium_rate_other
+      );
       toast({
         title: "Başarılı",
-        description: "Teşvik hesaplama ayarları güncellendi.",
+        description: "SGK İşveren Sigorta Primi oranları güncellendi.",
       });
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('Error saving employer rates:', error);
       toast({
         title: "Hata",
-        description: "Ayarlar kaydedilirken bir hata oluştu.",
+        description: "İşveren prim oranları kaydedilirken bir hata oluştu.",
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setSavingEmployer(false);
+    }
+  };
+
+  const handleSaveEmployeeRates = async () => {
+    try {
+      setSavingEmployee(true);
+      await adminSettingsService.updateEmployeePremiumRates(
+        settings.sgk_employee_premium_rate_manufacturing,
+        settings.sgk_employee_premium_rate_other
+      );
+      toast({
+        title: "Başarılı",
+        description: "SGK Çalışan Sigorta Primi oranları güncellendi.",
+      });
+    } catch (error) {
+      console.error('Error saving employee rates:', error);
+      toast({
+        title: "Hata",
+        description: "Çalışan prim oranları kaydedilirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingEmployee(false);
+    }
+  };
+
+  const handleSaveTaxRates = async () => {
+    try {
+      setSavingTaxes(true);
+      await adminSettingsService.updateTaxRates(
+        settings.vat_rate,
+        settings.customs_duty_rate
+      );
+      toast({
+        title: "Başarılı",
+        description: "KDV ve Gümrük Vergisi oranları güncellendi.",
+      });
+    } catch (error) {
+      console.error('Error saving tax rates:', error);
+      toast({
+        title: "Hata",
+        description: "Vergi oranları kaydedilirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingTaxes(false);
+    }
+  };
+
+  const handleSubRegionToggle = async (checked: boolean) => {
+    const newValue = checked ? 1 : 0;
+    setSettings(prev => ({
+      ...prev,
+      sub_region_support_enabled: newValue
+    }));
+
+    try {
+      setSavingSubRegion(true);
+      await adminSettingsService.updateSubRegionSupport(newValue);
+      toast({
+        title: "Başarılı",
+        description: `Alt Bölge Desteği ${checked ? 'etkinleştirildi' : 'devre dışı bırakıldı'}.`,
+      });
+    } catch (error) {
+      console.error('Error saving sub-region support:', error);
+      // Revert the state on error
+      setSettings(prev => ({
+        ...prev,
+        sub_region_support_enabled: checked ? 0 : 1
+      }));
+      toast({
+        title: "Hata",
+        description: "Alt Bölge Desteği ayarı kaydedilirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingSubRegion(false);
     }
   };
 
@@ -155,9 +238,18 @@ const AdminIncentiveSettings = () => {
                             />
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
+                       </div>
+                     </div>
+                     <div className="mt-4 flex justify-end">
+                       <Button 
+                         onClick={handleSaveEmployerRates} 
+                         disabled={savingEmployer}
+                         size="sm"
+                       >
+                         {savingEmployer ? 'Kaydediliyor...' : 'Kaydet'}
+                       </Button>
+                     </div>
+                   </div>
 
                   {/* SGK Çalışan Sigorta Primi */}
                   <div className="flex flex-col">
@@ -196,9 +288,18 @@ const AdminIncentiveSettings = () => {
                              />
                            </div>
                          </div>
-                      </div>
+                       </div>
+                     </div>
+                     <div className="mt-4 flex justify-end">
+                       <Button 
+                         onClick={handleSaveEmployeeRates} 
+                         disabled={savingEmployee}
+                         size="sm"
+                       >
+                         {savingEmployee ? 'Kaydediliyor...' : 'Kaydet'}
+                       </Button>
+                     </div>
                     </div>
-                   </div>
 
                    {/* VAT and Customs Duty Rates */}
                    <div className="flex flex-col">
@@ -237,9 +338,18 @@ const AdminIncentiveSettings = () => {
                               />
                             </div>
                           </div>
-                       </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-end">
+                        <Button 
+                          onClick={handleSaveTaxRates} 
+                          disabled={savingTaxes}
+                          size="sm"
+                        >
+                          {savingTaxes ? 'Kaydediliyor...' : 'Kaydet'}
+                        </Button>
+                      </div>
                      </div>
-                    </div>
 
                     {/* Sub-Region Support Setting */}
                     <div className="flex flex-col md:col-span-2">
@@ -257,27 +367,18 @@ const AdminIncentiveSettings = () => {
                               Bu özellik etkinleştirildiğinde, il seçiminden sonra ilçe ve OSB durumu soruları görünecektir.
                             </p>
                           </div>
-                          <Switch
-                            id="sub_region_support"
-                            checked={settings.sub_region_support_enabled === 1}
-                            onCheckedChange={(checked) => 
-                              setSettings(prev => ({
-                                ...prev,
-                                sub_region_support_enabled: checked ? 1 : 0
-                              }))
-                            }
-                          />
+                           <Switch
+                             id="sub_region_support"
+                             checked={settings.sub_region_support_enabled === 1}
+                             onCheckedChange={handleSubRegionToggle}
+                             disabled={savingSubRegion}
+                           />
                         </div>
                       </div>
                     </div>
 
-                  </div>
+                   </div>
               </CardContent>
-              <CardFooter className="flex justify-end pt-6">
-                  <Button onClick={handleSave} disabled={isSaving}>
-                      {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
-                  </Button>
-              </CardFooter>
             </Card>
           </div>
         </div>

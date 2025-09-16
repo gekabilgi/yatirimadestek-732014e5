@@ -106,6 +106,71 @@ export const adminSettingsService = {
     }
   },
 
+  async updateEmployerPremiumRates(manufacturing: number, other: number): Promise<void> {
+    const updates = [
+      { setting_key: 'sgk_employer_premium_rate_manufacturing', setting_value: manufacturing },
+      { setting_key: 'sgk_employer_premium_rate_other', setting_value: other },
+    ];
+
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update({ setting_value: update.setting_value })
+        .eq('setting_key', update.setting_key);
+
+      if (error) {
+        throw new Error(`Failed to update ${update.setting_key}: ${error.message}`);
+      }
+    }
+  },
+
+  async updateEmployeePremiumRates(manufacturing: number, other: number): Promise<void> {
+    const updates = [
+      { setting_key: 'sgk_employee_premium_rate_manufacturing', setting_value: manufacturing },
+      { setting_key: 'sgk_employee_premium_rate_other', setting_value: other },
+    ];
+
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update({ setting_value: update.setting_value })
+        .eq('setting_key', update.setting_key);
+
+      if (error) {
+        throw new Error(`Failed to update ${update.setting_key}: ${error.message}`);
+      }
+    }
+  },
+
+  async updateTaxRates(vatRate: number, customsRate: number): Promise<void> {
+    const updates = [
+      { setting_key: 'vat_rate', setting_value: vatRate },
+      { setting_key: 'customs_duty_rate', setting_value: customsRate },
+    ];
+
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update({ setting_value: update.setting_value })
+        .eq('setting_key', update.setting_key);
+
+      if (error) {
+        throw new Error(`Failed to update ${update.setting_key}: ${error.message}`);
+      }
+    }
+  },
+
+  async updateSubRegionSupport(enabled: number): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ setting_value: enabled })
+      .eq('setting_key', 'sub_region_support_enabled');
+
+    if (error) {
+      throw new Error(`Failed to update sub_region_support_enabled: ${error.message}`);
+    }
+  },
+
   async getAllSettings(): Promise<AdminSetting[]> {
     const { data, error } = await supabase
       .from('admin_settings')
