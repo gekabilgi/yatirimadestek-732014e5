@@ -98,6 +98,61 @@ const getProvinceRegion = (province: string): number => {
   return regionMap[province] || 1;
 };
 
+// Helper function to detect "Other" districts
+const isOtherDistrict = (district: string): boolean => {
+  return district === "Other" || district === "Diğer" || district === "other";
+};
+
+// Helper function to determine Alt Region and months based on the enhanced rules
+const determineAltRegionAndMonths = (
+  provinceRegion: number, 
+  district: string | undefined, 
+  osbStatus: string | undefined
+): { altRegion: number; months: number; multiplier: number } => {
+  if (!district || !osbStatus) {
+    // Fallback to original logic if sub-region data is missing
+    return { altRegion: provinceRegion, months: provinceRegion === 6 ? 168 : 96, multiplier: provinceRegion === 6 ? 1.0 : 0.5 };
+  }
+
+  const isOther = isOtherDistrict(district);
+  const isInside = osbStatus === 'inside';
+
+  switch (provinceRegion) {
+    case 4:
+      if (!isOther && (isInside || !isInside)) {
+        // Case A & B: District ≠ "Other", any OSB status → Alt Region 5
+        return { altRegion: 5, months: 96, multiplier: 0.5 };
+      } else if (isOther && isInside) {
+        // Case C: District = "Other" AND OSB Inside → Alt Region 6
+        return { altRegion: 6, months: 144, multiplier: 1.0 };
+      }
+      // Default fallback for Region 4
+      return { altRegion: 5, months: 96, multiplier: 0.5 };
+
+    case 5:
+      if (!isOther) {
+        // Case A & B: District ≠ "Other", any OSB status → Alt Region 6
+        return { altRegion: 6, months: 144, multiplier: 1.0 };
+      } else if (isOther && isInside) {
+        // Case C: District = "Other" AND OSB Inside → Alt Region 6
+        return { altRegion: 6, months: 144, multiplier: 1.0 };
+      } else if (isOther && !isInside) {
+        // Case D: District = "Other" AND OSB Outside → Alt Region 5
+        return { altRegion: 5, months: 96, multiplier: 0.5 };
+      }
+      // Default fallback for Region 5
+      return { altRegion: 6, months: 144, multiplier: 1.0 };
+
+    case 6:
+      // All cases for Region 6 → Alt Region 6, 168 months
+      return { altRegion: 6, months: 168, multiplier: 1.0 };
+
+    default:
+      // For other regions (1, 2, 3), use standard logic
+      return { altRegion: provinceRegion, months: 96, multiplier: 0.5 };
+  }
+};
+
 export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Promise<IncentiveCalculatorResults> => {
   const validationErrors: string[] = [];
   const warningMessages: string[] = [];
@@ -155,16 +210,27 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     };
   }
 
-  // Determine if province is in Region 6 or apply sub-region logic
-  let isRegion6 = isRegion6Province(inputs.province);
+  // Get province region and determine alt region with enhanced logic
   const provinceRegion = getProvinceRegion(inputs.province);
   
-  // Apply sub-region logic if enabled
-  if (isSubRegionSupportEnabled && inputs.district && inputs.osbStatus) {
-    // Region 4 or 5 with OSB Inside → apply Region 6 rules
-    if ((provinceRegion === 4 || provinceRegion === 5) && inputs.osbStatus === 'inside') {
-      isRegion6 = true;
-    }
+  // Validate sub-region inputs when support is enabled
+  if (isSubRegionSupportEnabled && (!inputs.district || !inputs.osbStatus)) {
+    validationErrors.push('Alt bölge desteği etkinleştirildiğinde ilçe ve OSB durumu bilgileri gereklidir.');
+    return {
+      totalFixedInvestment,
+      sgkEmployerPremiumSupport: 0,
+      sgkEmployeePremiumSupport: 0,
+      machinerySupportAmount: 0,
+      interestProfitShareSupportAmount: 0,
+      totalInterestAmount: 0,
+      taxReductionInvestmentContribution: 0,
+      vatCustomsExemption: 'MEVCUT',
+      vatExemptionAmount,
+      customsExemptionAmount,
+      isEligible: false,
+      validationErrors,
+      warningMessages
+    };
   }
 
   // Get appropriate SGK rates based on investment type
@@ -176,34 +242,39 @@ export const calculateIncentives = async (inputs: IncentiveCalculatorInputs): Pr
     ? settings.sgk_employee_premium_rate_manufacturing 
     : settings.sgk_employee_premium_rate_other;
 
-  // Calculate SGK Employer Premium Support with sub-region logic
-  let sgkEmployerDurationMonths = 96; // Default
-  let sgkEmployeeDurationMonths = 0; // Default
-  
-  if (isRegion6) {
-    if (isSubRegionSupportEnabled && inputs.district && inputs.osbStatus) {
-      // Sub-region support enabled - different rules
-      if (provinceRegion === 6) {
-        sgkEmployerDurationMonths = 168; // 14 years for actual Region 6
-        sgkEmployeeDurationMonths = 120; // 10 years for Region 6
-      } else if ((provinceRegion === 4 || provinceRegion === 5) && inputs.osbStatus === 'inside') {
-        sgkEmployerDurationMonths = 144; // 12 years for Region 4/5 OSB Inside
-        sgkEmployeeDurationMonths = 0; // No employee support for Region 4/5
-      }
-    } else {
-      // Standard Region 6 rules (legacy mode)
-      sgkEmployerDurationMonths = 144; // 12 years
-      sgkEmployeeDurationMonths = 120; // 10 years
+  // Determine Alt Region, months, and multiplier using enhanced logic
+  let altRegionData;
+  let sgkEmployeeDurationMonths = 0;
+
+  if (isSubRegionSupportEnabled) {
+    // Use enhanced sub-region logic
+    altRegionData = determineAltRegionAndMonths(provinceRegion, inputs.district, inputs.osbStatus);
+    
+    // SGK Employee Premium Support only for Alt Region 6
+    if (altRegionData.altRegion === 6) {
+      sgkEmployeeDurationMonths = altRegionData.months === 168 ? 120 : 0; // 10 years for actual Region 6 only
     }
   } else {
-    sgkEmployerDurationMonths = 96; // 8 years for other regions
-    sgkEmployeeDurationMonths = 0;
+    // Legacy logic for backward compatibility
+    const isRegion6 = isRegion6Province(inputs.province);
+    altRegionData = {
+      altRegion: isRegion6 ? 6 : provinceRegion,
+      months: isRegion6 ? 144 : 96,
+      multiplier: isRegion6 ? 1.0 : 0.5
+    };
+    
+    if (isRegion6) {
+      sgkEmployeeDurationMonths = 120; // 10 years for Region 6
+    }
   }
 
-  const sgkEmployerPremiumSupport = isRegion6
-    ? sgkEmployerDurationMonths * sgkEmployerRate * inputs.numberOfEmployees
-    : 96 * (sgkEmployerRate / 2) * inputs.numberOfEmployees;
+  // Calculate SGK Employer Premium Support using the enhanced formula
+  const sgkEmployerPremiumSupport = inputs.numberOfEmployees * 
+    altRegionData.multiplier * 
+    sgkEmployerRate * 
+    altRegionData.months;
 
+  // Calculate SGK Employee Premium Support (only for Alt Region 6)
   const sgkEmployeePremiumSupport = sgkEmployeeDurationMonths > 0
     ? sgkEmployeeDurationMonths * sgkEmployeeRate * inputs.numberOfEmployees
     : 0;
