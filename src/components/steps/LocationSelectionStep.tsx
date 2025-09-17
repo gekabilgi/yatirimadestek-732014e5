@@ -242,13 +242,13 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           onValueChange={(value) => handleOsbStatusChange(value as "İÇİ" | "DIŞI")}
           className="flex flex-col space-y-2"
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <RadioGroupItem value="İÇİ" id="osb-ici" />
             <Label htmlFor="osb-ici" className="font-normal text-sm sm:text-base">
               OSB/Endüstri Bölgesi İçinde
             </Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <RadioGroupItem value="DIŞI" id="osb-disi" />
             <Label htmlFor="osb-disi" className="font-normal text-sm sm:text-base">
               OSB/Endüstri Bölgesi Dışında
