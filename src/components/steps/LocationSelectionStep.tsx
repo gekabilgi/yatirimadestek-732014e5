@@ -189,7 +189,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-6 w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-2">
           <Label htmlFor="province">İl</Label>
           <Select value={selectedProvince} onValueChange={handleProvinceChange} disabled={isLoadingProvinces}>
@@ -235,20 +235,20 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label>OSB/Endüstri Bölgesi Durumu</Label>
         <RadioGroup 
           value={osbStatus || ''} 
           onValueChange={(value) => handleOsbStatusChange(value as "İÇİ" | "DIŞI")}
-          className="flex flex-col space-y-2"
+          className="flex flex-col space-y-3"
         >
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-3">
             <RadioGroupItem value="İÇİ" id="osb-ici" />
             <Label htmlFor="osb-ici" className="font-normal text-sm sm:text-base">
               OSB/Endüstri Bölgesi İçinde
             </Label>
           </div>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-3">
             <RadioGroupItem value="DIŞI" id="osb-disi" />
             <Label htmlFor="osb-disi" className="font-normal text-sm sm:text-base">
               OSB/Endüstri Bölgesi Dışında
