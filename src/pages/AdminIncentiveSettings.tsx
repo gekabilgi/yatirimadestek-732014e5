@@ -6,128 +6,172 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton'; // For better loading state
 import { useToast } from '@/hooks/use-toast';
-import { Settings } from 'lucide-react';
+import { Settings, Loader2 } from 'lucide-react'; // Added Loader2 for saving icon
 import { adminSettingsService } from '@/services/adminSettingsService';
 import { IncentiveCalculationSettings } from '@/types/adminSettings';
 
+// --- Reusable Components for this Page ---
+
+/**
+ * @description A reusable card component for a distinct settings section.
+ * @param {string} title - The title of the settings card.
+ * @param {string} [description] - An optional description for the card.
+ * @param {React.ReactNode} children - The content (form fields) of the card.
+ * @param {React.ReactNode} [footer] - The footer content, typically a save button.
+ */
+const SettingsCard = ({ title, description, children, footer }: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) => (
+  <Card className="flex flex-col h-full">
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+      {description && <CardDescription>{description}</CardDescription>}
+    </CardHeader>
+    <CardContent className="flex-grow">
+      {children}
+    </CardContent>
+    {footer && (
+      <CardFooter className="flex justify-end">
+        {footer}
+      </CardFooter>
+    )}
+  </Card>
+);
+
+/**
+ * @description A styled input group for numeric values with a unit.
+ * @param {string} id - The unique ID for the input and label.
+ * @param {string} label - The text for the label.
+ * @param {number} value - The numeric value for the input.
+ * @param {(value: string) => void} onChange - The onChange event handler.
+ * @param {'TL' | '%'} unit - The unit to display next to the value.
+ */
+const NumericInputGroup = ({ id, label, value, onChange, unit }: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (value: string) => void;
+  unit: 'TL' | '%';
+}) => {
+    // Helper to format number with comma for display
+    const formatValue = (num: number) => {
+        return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    
+    return (
+        <div className="space-y-2">
+        <Label htmlFor={id}>{label}</Label>
+        <div className="relative">
+            <Input
+            id={id}
+            type="text"
+            inputMode="decimal" // Better for mobile keyboards
+            value={formatValue(value)}
+            onChange={(e) => onChange(e.target.value)}
+            className="pr-12 text-right" // Make space for the unit
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <span className="text-gray-500 sm:text-sm">{unit}</span>
+            </div>
+        </div>
+        </div>
+    );
+};
+
+
+// --- Main Page Component ---
+
 const AdminIncentiveSettings = () => {
   const [settings, setSettings] = useState<IncentiveCalculationSettings>({
-    sgk_employer_premium_rate_manufacturing: 4355.92,
-    sgk_employer_premium_rate_other: 4095.87,
-    sgk_employee_premium_rate_manufacturing: 3640.77,
-    // Note: The 'other' employee rate is unused in this UI, but kept in state for API consistency.
-    sgk_employee_premium_rate_other: 3420.64,
-    vat_rate: 20.0,
-    customs_duty_rate: 2.0,
+    sgk_employer_premium_rate_manufacturing: 0,
+    sgk_employer_premium_rate_other: 0,
+    sgk_employee_premium_rate_manufacturing: 0,
+    sgk_employee_premium_rate_other: 0,
+    vat_rate: 0,
+    customs_duty_rate: 0,
     sub_region_support_enabled: 0,
   });
+  
   const [isLoading, setIsLoading] = useState(true);
-  const [savingEmployer, setSavingEmployer] = useState(false);
-  const [savingEmployee, setSavingEmployee] = useState(false);
-  const [savingTaxes, setSavingTaxes] = useState(false);
-  const [savingSubRegion, setSavingSubRegion] = useState(false);
+  const [isSaving, setIsSaving] = useState({
+    employer: false,
+    employee: false,
+    taxes: false,
+    subRegion: false,
+  });
   const { toast } = useToast();
 
   useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setIsLoading(true);
+        const data = await adminSettingsService.getIncentiveCalculationSettings();
+        setSettings(data);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast({
+          title: "Hata",
+          description: "Ayarlar yüklenirken bir hata oluştu.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
     loadSettings();
-  }, []);
+  }, [toast]); // Added toast as a dependency
 
-  const loadSettings = async () => {
-    try {
-      setIsLoading(true);
-      const data = await adminSettingsService.getIncentiveCalculationSettings();
-      setSettings(data);
-    } catch (error) {
-      console.error('Error loading settings:', error);
-      toast({
-        title: "Hata",
-        description: "Ayarlar yüklenirken bir hata oluştu.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  const handleInputChange = (key: keyof IncentiveCalculationSettings, value: string) => {
+    // Sanitize input: remove non-numeric characters except comma/dot, then replace comma with dot.
+    const sanitizedValue = value.replace(/[^0-9,.]/g, '').replace(',', '.');
+    const numericValue = sanitizedValue === '' ? 0 : parseFloat(sanitizedValue);
+    
+    // Prevent state update if parsing fails (e.g., "1.2.3")
+    if (!isNaN(numericValue)) {
+      setSettings(prev => ({
+        ...prev,
+        [key]: numericValue,
+      }));
     }
   };
 
-  const handleSaveEmployerRates = async () => {
+  const handleSave = async (
+    type: 'employer' | 'employee' | 'taxes', 
+    saveFunction: () => Promise<any>,
+    successMessage: string,
+    errorMessage: string
+    ) => {
+    setIsSaving(prev => ({ ...prev, [type]: true }));
     try {
-      setSavingEmployer(true);
-      await adminSettingsService.updateEmployerPremiumRates(
-        settings.sgk_employer_premium_rate_manufacturing,
-        settings.sgk_employer_premium_rate_other
-      );
+      await saveFunction();
       toast({
         title: "Başarılı",
-        description: "SGK İşveren Sigorta Primi oranları güncellendi.",
+        description: successMessage,
       });
     } catch (error) {
-      console.error('Error saving employer rates:', error);
+      console.error(`Error saving ${type} rates:`, error);
       toast({
         title: "Hata",
-        description: "İşveren prim oranları kaydedilirken bir hata oluştu.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setSavingEmployer(false);
-    }
-  };
-
-  const handleSaveEmployeeRates = async () => {
-    try {
-      setSavingEmployee(true);
-      await adminSettingsService.updateEmployeePremiumRates(
-        settings.sgk_employee_premium_rate_manufacturing,
-        settings.sgk_employee_premium_rate_other
-      );
-      toast({
-        title: "Başarılı",
-        description: "SGK Çalışan Sigorta Primi oranları güncellendi.",
-      });
-    } catch (error) {
-      console.error('Error saving employee rates:', error);
-      toast({
-        title: "Hata",
-        description: "Çalışan prim oranları kaydedilirken bir hata oluştu.",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingEmployee(false);
-    }
-  };
-
-  const handleSaveTaxRates = async () => {
-    try {
-      setSavingTaxes(true);
-      await adminSettingsService.updateTaxRates(
-        settings.vat_rate,
-        settings.customs_duty_rate
-      );
-      toast({
-        title: "Başarılı",
-        description: "KDV ve Gümrük Vergisi oranları güncellendi.",
-      });
-    } catch (error) {
-      console.error('Error saving tax rates:', error);
-      toast({
-        title: "Hata",
-        description: "Vergi oranları kaydedilirken bir hata oluştu.",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingTaxes(false);
+      setIsSaving(prev => ({ ...prev, [type]: false }));
     }
   };
 
   const handleSubRegionToggle = async (checked: boolean) => {
     const newValue = checked ? 1 : 0;
-    setSettings(prev => ({
-      ...prev,
-      sub_region_support_enabled: newValue
-    }));
-
+    // Optimistically update UI
+    setSettings(prev => ({ ...prev, sub_region_support_enabled: newValue }));
+    
+    setIsSaving(prev => ({ ...prev, subRegion: true }));
     try {
-      setSavingSubRegion(true);
       await adminSettingsService.updateSubRegionSupport(newValue);
       toast({
         title: "Başarılı",
@@ -135,34 +179,17 @@ const AdminIncentiveSettings = () => {
       });
     } catch (error) {
       console.error('Error saving sub-region support:', error);
-      // Revert the state on error
-      setSettings(prev => ({
-        ...prev,
-        sub_region_support_enabled: checked ? 0 : 1
-      }));
+      // Revert UI on failure
+      setSettings(prev => ({ ...prev, sub_region_support_enabled: checked ? 0 : 1 }));
       toast({
         title: "Hata",
         description: "Alt Bölge Desteği ayarı kaydedilirken bir hata oluştu.",
         variant: "destructive",
       });
     } finally {
-      setSavingSubRegion(false);
+      setIsSaving(prev => ({ ...prev, subRegion: false }));
     }
   };
-
-  const handleInputChange = (key: keyof IncentiveCalculationSettings, value: string) => {
-    // Allow empty string for clearing input, otherwise parse to float
-    const numericValue = value === '' ? 0 : parseFloat(value.replace(',', '.')) || 0;
-    setSettings(prev => ({
-      ...prev,
-      [key]: numericValue,
-    }));
-  };
-  
-  // Helper to format number with comma for display
-  const formatValue = (value: number) => {
-    return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
 
   if (isLoading) {
     return (
@@ -172,11 +199,26 @@ const AdminIncentiveSettings = () => {
           description="SGK prim oranları ve diğer hesaplama parametrelerini yönetin"
           icon={Settings}
         />
-        <div className="p-6">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-32 bg-gray-200 rounded"></div>
-          </div>
+        <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Render 4 skeleton cards to match the layout */}
+            {Array.from({ length: 4 }).map((_, index) => (
+                <Card key={index}>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-1/2" />
+                        <Skeleton className="h-4 w-full mt-2" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                           <Skeleton className="h-4 w-1/4" />
+                           <Skeleton className="h-10 w-full" />
+                        </div>
+                         <div className="space-y-2">
+                           <Skeleton className="h-4 w-1/4" />
+                           <Skeleton className="h-10 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
         </div>
       </AdminLayout>
     );
@@ -189,201 +231,149 @@ const AdminIncentiveSettings = () => {
         description="SGK prim oranları ve diğer hesaplama parametrelerini yönetin"
         icon={Settings}
       />
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Teşvik Hesaplama Parametreleri</CardTitle>
-              <CardDescription>
-                SGK prim oranları, KDV ve gümrük vergisi oranlarını düzenleyin. Bu parametreler tüm teşvik hesaplamalarında kullanılır.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
-                
-                {/* SGK İşveren Sigorta Primi */}
-                <div className="flex flex-col">
-                  <div className="z-10 self-center bg-white px-2">
-                    <div className="border rounded-md px-4 py-2">
-                       <h5 className="font-semibold text-gray-700 whitespace-nowrap">SGK İşveren Sigorta Primi (TL)</h5>
-                    </div>
-                  </div>
-                  <div className="border rounded-lg p-4 -mt-4 pt-8">
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <div className="border rounded-md text-center py-1">
-                            <Label htmlFor="imalat">İmalat</Label>
-                         </div>
-                         <div className="border rounded-md">
-                           <Input
-                             id="imalat"
-                             type="text"
-                             value={formatValue(settings.sgk_employer_premium_rate_manufacturing)}
-                             onChange={(e) => handleInputChange('sgk_employer_premium_rate_manufacturing', e.target.value)}
-                             className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                           />
-                         </div>
-                       </div>
-                        <div className="space-y-2">
-                          <div className="border rounded-md text-center py-1">
-                             <Label htmlFor="diger">Diğer</Label>
-                          </div>
-                          <div className="border rounded-md">
-                            <Input
-                              id="diger"
-                              type="text"
-                              value={formatValue(settings.sgk_employer_premium_rate_other)}
-                              onChange={(e) => handleInputChange('sgk_employer_premium_rate_other', e.target.value)}
-                              className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                            />
-                          </div>
-                        </div>
-                       </div>
-                     </div>
-                     <div className="mt-4 flex justify-end">
-                       <Button 
-                         onClick={handleSaveEmployerRates} 
-                         disabled={savingEmployer}
-                         size="sm"
-                       >
-                         {savingEmployer ? 'Kaydediliyor...' : 'Kaydet'}
-                       </Button>
-                     </div>
-                   </div>
+      <div className="p-4 sm:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          
+          <SettingsCard
+            title="SGK İşveren Sigorta Primi"
+            description="İmalat ve diğer sektörler için işveren prim tutarları."
+            footer={
+              <Button
+                onClick={() => handleSave(
+                    'employer',
+                    () => adminSettingsService.updateEmployerPremiumRates(
+                        settings.sgk_employer_premium_rate_manufacturing,
+                        settings.sgk_employer_premium_rate_other
+                    ),
+                    "SGK İşveren Sigorta Primi oranları güncellendi.",
+                    "İşveren prim oranları kaydedilirken bir hata oluştu."
+                )}
+                disabled={isSaving.employer}
+              >
+                {isSaving.employer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving.employer ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+              </Button>
+            }
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <NumericInputGroup 
+                    id="employer_manufacturing"
+                    label="İmalat (TL)"
+                    unit="TL"
+                    value={settings.sgk_employer_premium_rate_manufacturing}
+                    onChange={(val) => handleInputChange('sgk_employer_premium_rate_manufacturing', val)}
+                />
+                <NumericInputGroup 
+                    id="employer_other"
+                    label="Diğer (TL)"
+                    unit="TL"
+                    value={settings.sgk_employer_premium_rate_other}
+                    onChange={(val) => handleInputChange('sgk_employer_premium_rate_other', val)}
+                />
+            </div>
+          </SettingsCard>
+          
+          <SettingsCard
+            title="SGK Çalışan Sigorta Primi"
+            description="İmalat ve diğer sektörler için çalışan prim tutarları."
+             footer={
+              <Button
+                onClick={() => handleSave(
+                    'employee',
+                    () => adminSettingsService.updateEmployeePremiumRates(
+                        settings.sgk_employee_premium_rate_manufacturing,
+                        settings.sgk_employee_premium_rate_other
+                    ),
+                    "SGK Çalışan Sigorta Primi oranları güncellendi.",
+                    "Çalışan prim oranları kaydedilirken bir hata oluştu."
+                )}
+                disabled={isSaving.employee}
+              >
+                {isSaving.employee && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving.employee ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+              </Button>
+            }
+          >
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <NumericInputGroup 
+                    id="employee_manufacturing"
+                    label="İmalat (TL)"
+                    unit="TL"
+                    value={settings.sgk_employee_premium_rate_manufacturing}
+                    onChange={(val) => handleInputChange('sgk_employee_premium_rate_manufacturing', val)}
+                />
+                <NumericInputGroup 
+                    id="employee_other"
+                    label="Diğer (TL)"
+                    unit="TL"
+                    value={settings.sgk_employee_premium_rate_other}
+                    onChange={(val) => handleInputChange('sgk_employee_premium_rate_other', val)}
+                />
+            </div>
+          </SettingsCard>
+          
+          <SettingsCard
+            title="Vergi Oranları"
+            description="Genel KDV ve Gümrük Vergisi oranları."
+             footer={
+              <Button
+                onClick={() => handleSave(
+                    'taxes',
+                    () => adminSettingsService.updateTaxRates(
+                        settings.vat_rate,
+                        settings.customs_duty_rate
+                    ),
+                    "KDV ve Gümrük Vergisi oranları güncellendi.",
+                    "Vergi oranları kaydedilirken bir hata oluştu."
+                )}
+                disabled={isSaving.taxes}
+              >
+                {isSaving.taxes && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving.taxes ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+              </Button>
+            }
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <NumericInputGroup 
+                    id="vat_rate"
+                    label="KDV Oranı (%)"
+                    unit="%"
+                    value={settings.vat_rate}
+                    onChange={(val) => handleInputChange('vat_rate', val)}
+                />
+                <NumericInputGroup 
+                    id="customs_duty_rate"
+                    label="Gümrük Vergisi (%)"
+                    unit="%"
+                    value={settings.customs_duty_rate}
+                    onChange={(val) => handleInputChange('customs_duty_rate', val)}
+                />
+            </div>
+          </SettingsCard>
 
-                  {/* SGK Çalışan Sigorta Primi */}
-                  <div className="flex flex-col">
-                    <div className="z-10 self-center bg-white px-2">
-                      <div className="border rounded-md px-4 py-2">
-                         <h5 className="font-semibold text-gray-700 whitespace-nowrap">SGK Çalışan Sigorta Primi (TL)</h5>
-                      </div>
-                    </div>
-                    <div className="border rounded-lg p-4 -mt-4 pt-8">
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                           <div className="border rounded-md text-center py-1">
-                              <Label htmlFor="calisan_imalat">İmalat</Label>
-                           </div>
-                           <div className="border rounded-md">
-                             <Input
-                               id="calisan_imalat"
-                               type="text"
-                               value={formatValue(settings.sgk_employee_premium_rate_manufacturing)}
-                               onChange={(e) => handleInputChange('sgk_employee_premium_rate_manufacturing', e.target.value)}
-                               className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                             />
-                           </div>
-                         </div>
-                         <div className="space-y-2">
-                           <div className="border rounded-md text-center py-1">
-                              <Label htmlFor="calisan_diger">Diğer</Label>
-                           </div>
-                           <div className="border rounded-md">
-                             <Input
-                               id="calisan_diger"
-                               type="text"
-                               value={formatValue(settings.sgk_employee_premium_rate_other)}
-                               onChange={(e) => handleInputChange('sgk_employee_premium_rate_other', e.target.value)}
-                               className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                             />
-                           </div>
-                         </div>
-                       </div>
-                     </div>
-                     <div className="mt-4 flex justify-end">
-                       <Button 
-                         onClick={handleSaveEmployeeRates} 
-                         disabled={savingEmployee}
-                         size="sm"
-                       >
-                         {savingEmployee ? 'Kaydediliyor...' : 'Kaydet'}
-                       </Button>
-                     </div>
-                    </div>
-
-                   {/* VAT and Customs Duty Rates */}
-                   <div className="flex flex-col">
-                     <div className="z-10 self-center bg-white px-2">
-                       <div className="border rounded-md px-4 py-2">
-                          <h5 className="font-semibold text-gray-700 whitespace-nowrap">KDV ve Gümrük Vergisi Oranları (%)</h5>
-                       </div>
-                     </div>
-                     <div className="border rounded-lg p-4 -mt-4 pt-8">
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="border rounded-md text-center py-1">
-                               <Label htmlFor="vat_rate">KDV Oranı</Label>
-                            </div>
-                            <div className="border rounded-md">
-                              <Input
-                                id="vat_rate"
-                                type="text"
-                                value={formatValue(settings.vat_rate)}
-                                onChange={(e) => handleInputChange('vat_rate', e.target.value)}
-                                className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="border rounded-md text-center py-1">
-                               <Label htmlFor="customs_duty_rate">Gümrük Vergisi Oranı</Label>
-                            </div>
-                            <div className="border rounded-md">
-                              <Input
-                                id="customs_duty_rate"
-                                type="text"
-                                value={formatValue(settings.customs_duty_rate)}
-                                onChange={(e) => handleInputChange('customs_duty_rate', e.target.value)}
-                                className="w-full text-center border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex justify-end">
-                        <Button 
-                          onClick={handleSaveTaxRates} 
-                          disabled={savingTaxes}
-                          size="sm"
-                        >
-                          {savingTaxes ? 'Kaydediliyor...' : 'Kaydet'}
-                        </Button>
-                      </div>
-                     </div>
-
-                    {/* Sub-Region Support Setting */}
-                    <div className="flex flex-col md:col-span-2">
-                      <div className="z-10 self-center bg-white px-2">
-                        <div className="border rounded-md px-4 py-2">
-                           <h5 className="font-semibold text-gray-700 whitespace-nowrap">Alt Bölge Desteği</h5>
-                        </div>
-                      </div>
-                      <div className="border rounded-lg p-4 -mt-4 pt-8">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-2">
-                            <Label htmlFor="sub_region_support">Alt Bölge Desteği Durumu</Label>
-                            <p className="text-sm text-gray-600">
-                              Teşvik hesaplamalarında alt bölge mantığını kullanmak için etkinleştirin. 
-                              Bu özellik etkinleştirildiğinde, il seçiminden sonra ilçe ve OSB durumu soruları görünecektir.
-                            </p>
-                          </div>
-                           <Switch
-                             id="sub_region_support"
-                             checked={settings.sub_region_support_enabled === 1}
-                             onCheckedChange={handleSubRegionToggle}
-                             disabled={savingSubRegion}
-                           />
-                        </div>
-                      </div>
-                    </div>
-
-                   </div>
-              </CardContent>
-            </Card>
-          </div>
+          <SettingsCard
+            title="Genel Ayarlar"
+            description="Uygulama genelindeki hesaplama mantığını etkileyen ayarlar."
+          >
+            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5 pr-4">
+                    <Label htmlFor="sub_region_support" className="text-base">Alt Bölge Desteği</Label>
+                    <p className="text-sm text-muted-foreground">
+                        Etkinleştirildiğinde, hesaplamalarda ilçe ve OSB durumu dikkate alınır.
+                    </p>
+                </div>
+                <Switch
+                    id="sub_region_support"
+                    checked={settings.sub_region_support_enabled === 1}
+                    onCheckedChange={handleSubRegionToggle}
+                    disabled={isSaving.subRegion}
+                />
+            </div>
+          </SettingsCard>
         </div>
-      </AdminLayout>
-    );
-  };
+      </div>
+    </AdminLayout>
+  );
+};
 
-  export default AdminIncentiveSettings;
+export default AdminIncentiveSettings;
