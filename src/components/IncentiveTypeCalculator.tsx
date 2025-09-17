@@ -72,14 +72,21 @@ const IncentiveTypeCalculator: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Türkiye Yüzyılı Teşvikleri Hesaplama</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!calculationResults ? (
-            isSubRegionEnabled ? (
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Three Column Layout for Incentive Types */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Technology Initiative Calculator */}
+        <Card className="h-fit">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-center bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+              Teknoloji Hamlesi
+            </CardTitle>
+            <p className="text-sm text-muted-foreground text-center">
+              Yüksek teknoloji yatırımları için
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isSubRegionEnabled ? (
               <EnhancedIncentiveCalculatorForm 
                 onCalculate={handleCalculate} 
                 isCalculating={isCalculating}
@@ -89,16 +96,76 @@ const IncentiveTypeCalculator: React.FC = () => {
                 onCalculate={handleCalculate} 
                 isCalculating={isCalculating}
               />
-            )
-          ) : (
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Local Development Initiative Calculator */}
+        <Card className="h-fit">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-center bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+              Yerel Kalkınma Hamlesi
+            </CardTitle>
+            <p className="text-sm text-muted-foreground text-center">
+              Bölgesel kalkınma yatırımları için
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isSubRegionEnabled ? (
+              <EnhancedIncentiveCalculatorForm 
+                onCalculate={handleCalculate} 
+                isCalculating={isCalculating}
+              />
+            ) : (
+              <IncentiveCalculatorForm 
+                onCalculate={handleCalculate} 
+                isCalculating={isCalculating}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Strategic Initiative Calculator */}
+        <Card className="h-fit">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-center bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+              Stratejik Hamle
+            </CardTitle>
+            <p className="text-sm text-muted-foreground text-center">
+              Stratejik önem taşıyan yatırımlar için
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isSubRegionEnabled ? (
+              <EnhancedIncentiveCalculatorForm 
+                onCalculate={handleCalculate} 
+                isCalculating={isCalculating}
+              />
+            ) : (
+              <IncentiveCalculatorForm 
+                onCalculate={handleCalculate} 
+                isCalculating={isCalculating}
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Results Section */}
+      {calculationResults && (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-center">Hesaplama Sonuçları</CardTitle>
+          </CardHeader>
+          <CardContent>
             <IncentiveCalculatorResults 
               results={calculationResults}
               inputs={calculationInputs}
               onReset={handleReset}
             />
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
