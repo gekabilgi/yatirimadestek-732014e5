@@ -52,7 +52,7 @@ const MainNavbar = () => {
               </div>
               <div className="hidden sm:block">
                 <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  Yatırım Destek
+                  Yatırıma Destek
                 </span>
                 <div className="text-xs text-muted-foreground font-medium">
                   Teşvik Sistemi
