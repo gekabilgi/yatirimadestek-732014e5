@@ -509,7 +509,7 @@ export const EnhancedIncentiveCalculatorForm: React.FC<IncentiveCalculatorFormPr
       <Button 
         type="submit" 
         disabled={!isFormValid || isCalculating} 
-        className="w-full"
+        className="w-full md:w-auto"
       >
         <Calculator className="mr-2 h-4 w-4" />
         {isCalculating ? 'Hesaplanıyor...' : 'Hesapla'}
