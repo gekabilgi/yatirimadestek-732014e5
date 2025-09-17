@@ -251,7 +251,7 @@ const AdminIncentiveSettings = () => {
                 disabled={isSaving.employer}
               >
                 {isSaving.employer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSaving.employer ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                {isSaving.employer ? 'Kaydediliyor...' : 'Kaydet'}
               </Button>
             }
           >
@@ -290,7 +290,7 @@ const AdminIncentiveSettings = () => {
                 disabled={isSaving.employee}
               >
                 {isSaving.employee && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSaving.employee ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                {isSaving.employee ? 'Kaydediliyor...' : 'Kaydet'}
               </Button>
             }
           >
@@ -329,7 +329,7 @@ const AdminIncentiveSettings = () => {
                 disabled={isSaving.taxes}
               >
                 {isSaving.taxes && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSaving.taxes ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                {isSaving.taxes ? 'Kaydediliyor...' : 'Kaydet'}
               </Button>
             }
           >
