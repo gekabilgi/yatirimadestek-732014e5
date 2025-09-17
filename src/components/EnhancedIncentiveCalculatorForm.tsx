@@ -506,14 +506,16 @@ export const EnhancedIncentiveCalculatorForm: React.FC<IncentiveCalculatorFormPr
         </div>
       )}
 
-      <Button 
-        type="submit" 
-        disabled={!isFormValid || isCalculating} 
-        className="w-full md:w-auto"
-      >
-        <Calculator className="mr-2 h-4 w-4" />
-        {isCalculating ? 'Hesaplanıyor...' : 'Hesapla'}
-      </Button>
+       <div className="flex justify-center">
+        <Button 
+          type="submit" 
+          disabled={!isFormValid || isCalculating}
+          className="w-full md:w-auto"
+        >
+          <Calculator className="h-4 w-4 mr-2" />
+          {isCalculating ? 'Hesaplanıyor...' : 'Hesapla'}
+        </Button>
+      </div>
     </form>
   );
 };
