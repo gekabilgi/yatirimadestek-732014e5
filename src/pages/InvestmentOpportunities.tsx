@@ -190,8 +190,8 @@ const InvestmentOpportunities = () => {
 
         <Card className={`mb-4 sm:mb-6 bg-white shadow-sm ${isMobile ? 'mx-0' : ''}`}>
           <CardHeader className={`${isMobile ? 'pb-3 px-4 pt-4' : 'pb-4'}`}>
-            <div className="flex sm:flex-col gap-3 sm:gap-4">
-              <div className="flex-1 flex sm:flex-col gap-3 w-full">
+            <div className="flex flex gap-3 sm:gap-4">
+              <div className="flex-1 flex flex gap-3 w-full">
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
