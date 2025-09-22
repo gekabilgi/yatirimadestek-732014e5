@@ -177,10 +177,12 @@ export const IncentiveCalculatorReportPDF: React.FC<IncentiveCalculatorReportPro
 
   const totalMachineryCost = inputs.importedMachineryCost + inputs.domesticMachineryCost;
   const totalSupport = results.sgkEmployerPremiumSupport + 
-                      results.sgkEmployeePremiumSupport + 
-                      results.taxReductionInvestmentContribution + 
-                      results.machinerySupportAmount + 
-                      results.interestProfitShareSupportAmount;
+                       results.sgkEmployeePremiumSupport + 
+                       results.taxReductionInvestmentContribution + 
+                       results.machinerySupportAmount + 
+                       results.interestProfitShareSupportAmount +
+                       results.vatExemptionAmount +
+                       results.customsExemptionAmount;
 
   return (
     <Document>
