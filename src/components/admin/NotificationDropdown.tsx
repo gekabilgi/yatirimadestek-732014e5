@@ -46,42 +46,57 @@ export const NotificationDropdown = () => {
         <DropdownMenuLabel className="flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
-            Canlı Aktiviteler
+            Canlı Bildirimler
           </span>
-          {todayActivities > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              Bugün {todayActivities}
-            </Badge>
-          )}
         </DropdownMenuLabel>
         
         <DropdownMenuSeparator />
 
-        <div className="p-3 space-y-3">
-          <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-            <div className="flex items-center gap-2">
+        <div className="p-3 space-y-4">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-blue-600">{totalActivities}</span>
+              <span className="text-gray-600">aktif</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
               <Calculator className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">Teşvik Hesaplamaları</span>
+              <span className="font-medium text-green-600">{calculationStats.globalCount}</span>
+              <span className="text-gray-600">hesaplama</span>
             </div>
-            <Badge variant="outline" className="text-green-700 border-green-300">
-              {calculationStats.globalCount} toplam
-            </Badge>
+            <div className="flex items-center gap-2 text-sm">
+              <Search className="h-4 w-4 text-purple-600" />
+              <span className="font-medium text-purple-600">{searchStats.globalCount}</span>
+              <span className="text-gray-600">arama</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="h-4 w-4 text-orange-600" />
+              <span className="font-medium text-orange-600">6</span>
+              <span className="text-gray-600">oturum</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium">Destek Aramaları</span>
-            </div>
-            <Badge variant="outline" className="text-blue-700 border-blue-300">
-              {searchStats.globalCount} toplam
-            </Badge>
-          </div>
+          <DropdownMenuSeparator />
 
-          <div className="pt-2 border-t text-xs text-gray-500">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              <span>Kullanıcı IP ve lokasyon bilgileri sistem tarafından otomatik olarak takip edilmektedir.</span>
+          {/* Recent Activity */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-3 w-3 text-gray-500" />
+                  <span className="text-sm font-medium">Yeni Arama</span>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Unknown konumundan yeni arama yapıldı
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                  <MapPin className="h-3 w-3" />
+                  <span>Unknown IP: 195.175.81.186</span>
+                </div>
+                <div className="text-xs text-gray-400">5 dakika önce</div>
+              </div>
             </div>
           </div>
         </div>

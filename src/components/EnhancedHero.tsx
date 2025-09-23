@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ArrowRight, Search, Calculator, FileDown, MessageSquare, Building2, TrendingUp } from 'lucide-react';
+import { ArrowRight, FileDown, Calculator, MessageSquare, Building2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -85,13 +85,13 @@ const EnhancedHero = () => {
             </Button>
             
             <Button 
-              onClick={handleSearchClick}
+              onClick={handleMevzuatIncele}
               size="lg" 
               variant="outline" 
               className="btn-outline h-14 px-8 text-lg font-semibold hover:bg-primary/5 border-2"
             >
-              <Search className="mr-2 h-5 w-5" />
-              Destek Ara
+              <FileDown className="mr-2 h-5 w-5" />
+              Mevzuat İncele
             </Button>
           </div>
 
@@ -137,15 +137,15 @@ const EnhancedHero = () => {
               </CardContent>
             </Card>
 
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={handleSearchClick}>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={handleMevzuatIncele}>
               <CardContent className="p-6 text-center">
                 <div className="mb-4 flex justify-center">
                   <div className="rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 p-3 group-hover:from-blue-200 group-hover:to-blue-300 transition-colors duration-200">
-                    <Search className="h-6 w-6 text-blue-600" />
+                    <FileDown className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Destek Arama</h3>
-                <p className="text-sm text-gray-600">Sektörünüze uygun destek programlarını keşfedin</p>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">Mevzuat İncele</h3>
+                <p className="text-sm text-gray-600">Güncel teşvik mevzuatını inceleyin</p>
               </CardContent>
             </Card>
 
@@ -161,15 +161,15 @@ const EnhancedHero = () => {
               </CardContent>
             </Card>
 
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={handleMevzuatIncele}>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/investment-opportunities')}>
               <CardContent className="p-6 text-center">
                 <div className="mb-4 flex justify-center">
                   <div className="rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 p-3 group-hover:from-orange-200 group-hover:to-orange-300 transition-colors duration-200">
-                    <FileDown className="h-6 w-6 text-orange-600" />
+                    <Building2 className="h-6 w-6 text-orange-600" />
                   </div>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Mevzuat İncele</h3>
-                <p className="text-sm text-gray-600">Güncel teşvik mevzuatını inceleyin</p>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">Yatırım Fırsatları</h3>
+                <p className="text-sm text-gray-600">Bölgesel yatırım fırsatlarını inceleyin</p>
               </CardContent>
             </Card>
           </div>
