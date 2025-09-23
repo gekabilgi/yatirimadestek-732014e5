@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Bell, Settings, Search, Menu, X, Home } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface AdminTopbarProps {
   isMobileMenuOpen: boolean;
@@ -79,13 +80,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="sm" className="relative p-2 hover:bg-primary/5">
-          <Bell className="h-4 w-4" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse">
-            <span className="absolute inset-0 h-3 w-3 bg-red-500 rounded-full animate-ping opacity-75"></span>
-            <span className="relative block h-3 w-3 bg-red-500 rounded-full"></span>
-          </span>
-        </Button>
+        <NotificationDropdown />
 
         {/* Settings - hidden on small screens */}
         <Button variant="ghost" size="sm" className="hidden md:flex p-2 hover:bg-primary/5">

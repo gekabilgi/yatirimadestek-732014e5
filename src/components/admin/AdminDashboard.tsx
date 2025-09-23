@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RecentActivities } from './RecentActivities';
+import { LiveActivityFeed } from './LiveActivityFeed';
 import { AdminPageHeader } from './AdminPageHeader';
 
 const AdminDashboard = () => {
@@ -329,9 +330,9 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Right Column - Recent Activities */}
+        {/* Right Column - Live Activity Feed */}
         <div className="lg:col-span-1">
-          <RecentActivities />
+          <LiveActivityFeed />
         </div>
       </div>
       </div>

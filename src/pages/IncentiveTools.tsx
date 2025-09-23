@@ -7,17 +7,24 @@ import StandardHero from '@/components/StandardHero';
 import UnifiedIncentiveQuery from '@/components/UnifiedIncentiveQuery';
 import IncentiveTypeCalculator from '@/components/IncentiveTypeCalculator';
 import { useSearchParams } from 'react-router-dom';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 
 const IncentiveTools = () => {
   const [searchParams] = useSearchParams();
   const moduleParam = searchParams.get('module') as 'query' | 'calculator';
   const [activeModule, setActiveModule] = useState<'query' | 'calculator'>(moduleParam || 'query');
+  const { trackPageView } = useActivityTracking();
 
   useEffect(() => {
     if (moduleParam === 'query' || moduleParam === 'calculator') {
       setActiveModule(moduleParam);
     }
   }, [moduleParam]);
+
+  useEffect(() => {
+    // Track incentive tools page visit
+    trackPageView('/incentive-tools');
+  }, [trackPageView]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-x-hidden">
