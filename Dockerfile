@@ -10,7 +10,7 @@ RUN node -v && npm -v
 # Copy package files first for better layer caching
 COPY package*.json ./
 # Install ALL dependencies needed for build (consider `npm ci` if you have package-lock.json)
-RUN npm install --legacy-peer-deps
+RUN npm install
 
 # Copy the rest of the application code
 COPY . .
