@@ -87,7 +87,7 @@ const EnhancedHero = () => {
             </Button>
             
             <Button 
-              onClick={handleSearchClick}
+              onClick={handleMevzuatIncele}
               size="lg" 
               variant="outline" 
               className="btn-outline h-14 px-8 text-lg font-semibold hover:bg-primary/5 border-2"
