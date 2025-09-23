@@ -13,7 +13,7 @@ const EnhancedHero = () => {
   };
 
   const handleMevzuatIncele = () => {
-    window.open('https://sanayi.gov.tr/mevzuat/diger/mc0403018201', '_blank');
+    window.open('/mevzuat');
   };
 
   const staticStats = [
