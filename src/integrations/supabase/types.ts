@@ -1019,6 +1019,39 @@ export type Database = {
           },
         ]
       }
+      real_time_notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean
+          message: string
+          notification_type: string
+          priority: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message: string
+          notification_type: string
+          priority?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          notification_type?: string
+          priority?: string
+          title?: string
+        }
+        Relationships: []
+      }
       sector_search: {
         Row: {
           bolge_1: number | null
@@ -1438,6 +1471,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_sessions: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          location_city: string | null
+          location_country: string | null
+          page_path: string | null
+          session_id: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          page_path?: string | null
+          session_id: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          page_path?: string | null
+          session_id?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       ydo_users: {
         Row: {
