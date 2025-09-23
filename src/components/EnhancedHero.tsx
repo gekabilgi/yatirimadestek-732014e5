@@ -13,7 +13,7 @@ const EnhancedHero = () => {
   };
 
   const handleMevzuatIncele = () => {
-    window.open('/mevzuat');
+    navigate('/mevzuat');
   };
 
   const staticStats = [
