@@ -17,7 +17,7 @@ const EnhancedHero = () => {
   }, [trackPageView]);
 
   const handleGetStarted = () => {
-    navigate('/mevzuat');
+    navigate('/incentive-tools');
   };
 
   const handleMevzuatIncele = async () => {
@@ -139,7 +139,7 @@ const EnhancedHero = () => {
               </CardContent>
             </Card>
 
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/searchsupport')>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/searchsupport')}>
               <CardContent className="p-6 text-center">
                 <div className="mb-4 flex justify-center">
                   <div className="rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 p-3 group-hover:from-blue-200 group-hover:to-blue-300 transition-colors duration-200">
