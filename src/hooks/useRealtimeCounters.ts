@@ -95,8 +95,11 @@ export const useRealtimeCounters = (statName: string | string[]) => {
 
   // Set up realtime subscription
   useEffect(() => {
+    // Create unique channel name to avoid conflicts
+    const channelId = `counter-changes-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const channel = supabase
-      .channel('counter-changes')
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
@@ -137,7 +140,9 @@ export const useRealtimeCounters = (statName: string | string[]) => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [statNames]);
 

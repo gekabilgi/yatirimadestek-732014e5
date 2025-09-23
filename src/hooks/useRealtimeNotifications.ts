@@ -134,9 +134,12 @@ export const useRealtimeNotifications = () => {
     fetchNotifications();
     fetchStats();
 
+    // Create unique channel names with timestamp to avoid conflicts
+    const channelId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // Subscribe to new notifications
     const notificationsChannel = supabase
-      .channel('notifications-changes')
+      .channel(`notifications-changes-${channelId}`)
       .on(
         'postgres_changes',
         {
@@ -170,7 +173,7 @@ export const useRealtimeNotifications = () => {
 
     // Subscribe to user sessions for stats updates
     const sessionsChannel = supabase
-      .channel('sessions-changes')
+      .channel(`sessions-changes-${channelId}`)
       .on(
         'postgres_changes',
         {
@@ -189,8 +192,13 @@ export const useRealtimeNotifications = () => {
     const statsInterval = setInterval(fetchStats, 60000);
 
     return () => {
-      supabase.removeChannel(notificationsChannel);
-      supabase.removeChannel(sessionsChannel);
+      // Cleanup subscriptions
+      if (notificationsChannel) {
+        supabase.removeChannel(notificationsChannel);
+      }
+      if (sessionsChannel) {
+        supabase.removeChannel(sessionsChannel);
+      }
       clearInterval(statsInterval);
     };
   }, [fetchNotifications, fetchStats]);
