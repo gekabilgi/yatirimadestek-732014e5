@@ -10,6 +10,7 @@ import { Calculator, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucid
 import { IncentiveCalculatorInputs } from '@/types/incentiveCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import LocationSelectionStep from '@/components/steps/LocationSelectionStep';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 
 interface InvestmentByProvince {
   id: number;
@@ -26,6 +27,7 @@ export const EnhancedIncentiveCalculatorForm: React.FC<IncentiveCalculatorFormPr
   onCalculate,
   isCalculating
 }) => {
+  const { trackCalculation } = useActivityTracking();
   const [formData, setFormData] = useState<IncentiveCalculatorInputs>({
     incentiveType: 'Local Development Initiative',
     investmentType: 'İmalat',
@@ -195,12 +197,29 @@ export const EnhancedIncentiveCalculatorForm: React.FC<IncentiveCalculatorFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Calculate total investment
+      const totalInvestment = formData.landCost + formData.constructionCost + 
+                            formData.importedMachineryCost + formData.domesticMachineryCost + 
+                            formData.otherExpenses;
+      
+      // Track calculation activity with details
+      await trackCalculation({
+        incentiveType: formData.incentiveType,
+        province: formData.province,
+        district: formData.district,
+        investmentType: formData.investmentType,
+        totalInvestment,
+        numberOfEmployees: formData.numberOfEmployees,
+        osbStatus: formData.osbStatus,
+        timestamp: new Date().toISOString()
+      });
+      
       // Increment calculation clicks statistics
       await supabase.rpc('increment_stat', { stat_name_param: 'calculation_clicks' });
       onCalculate(formData);
     } catch (error) {
-      console.error('Error incrementing stats:', error);
-      // Still proceed with calculation even if stats update fails
+      console.error('Error tracking calculation:', error);
+      // Still proceed with calculation even if tracking fails
       onCalculate(formData);
     }
   };

@@ -10,16 +10,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Calculator, Search, Users, MapPin } from 'lucide-react';
-import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
+import { useRealtimeActivity } from '@/hooks/useRealtimeActivity';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 export const NotificationDropdown = () => {
-  const calculationStats = useRealtimeCounters('calculation_clicks');
-  const searchStats = useRealtimeCounters('search_clicks');
+  const { stats, isLoading } = useRealtimeActivity();
   
-  const totalActivities = calculationStats.globalCount + searchStats.globalCount;
-  const todayActivities = calculationStats.localCount + searchStats.localCount;
+  const totalActivities = stats.todayCalculations + stats.todaySearches;
 
   return (
     <DropdownMenu>
@@ -57,22 +55,22 @@ export const NotificationDropdown = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-sm">
               <Users className="h-4 w-4 text-blue-600" />
-              <span className="font-medium text-blue-600">{totalActivities}</span>
+              <span className="font-medium text-blue-600">{stats.totalToday}</span>
               <span className="text-gray-600">aktif</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Calculator className="h-4 w-4 text-green-600" />
-              <span className="font-medium text-green-600">{calculationStats.globalCount}</span>
+              <span className="font-medium text-green-600">{stats.todayCalculations}</span>
               <span className="text-gray-600">hesaplama</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Search className="h-4 w-4 text-purple-600" />
-              <span className="font-medium text-purple-600">{searchStats.globalCount}</span>
+              <span className="font-medium text-purple-600">{stats.todaySearches}</span>
               <span className="text-gray-600">arama</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Users className="h-4 w-4 text-orange-600" />
-              <span className="font-medium text-orange-600">6</span>
+              <span className="font-medium text-orange-600">{stats.activeSessions}</span>
               <span className="text-gray-600">oturum</span>
             </div>
           </div>
@@ -81,23 +79,43 @@ export const NotificationDropdown = () => {
 
           {/* Recent Activity */}
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Users className="h-3 w-3 text-gray-500" />
-                  <span className="text-sm font-medium">Yeni Arama</span>
-                </div>
-                <div className="text-xs text-gray-500">
-                  Unknown konumundan yeni arama yapıldı
-                </div>
-                <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                  <MapPin className="h-3 w-3" />
-                  <span>Unknown IP: 195.175.81.186</span>
-                </div>
-                <div className="text-xs text-gray-400">5 dakika önce</div>
+            {isLoading ? (
+              <div className="text-center text-gray-500 py-4">
+                Yükleniyor...
               </div>
-            </div>
+            ) : stats.recentActivities.length > 0 ? (
+              stats.recentActivities.slice(0, 3).map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {activity.activity_type === 'calculation' ? (
+                        <Calculator className="h-3 w-3 text-gray-500" />
+                      ) : (
+                        <Search className="h-3 w-3 text-gray-500" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {activity.activity_type === 'calculation' ? 'Yeni Hesaplama' : 'Yeni Arama'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {activity.location_city || 'Bilinmeyen'} konumundan yeni {activity.activity_type === 'calculation' ? 'hesaplama' : 'arama'} yapıldı
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                      <MapPin className="h-3 w-3" />
+                      <span>IP: {activity.ip_address || 'Bilinmeyen'}</span>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: tr })}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-4">
+                Henüz aktivite yok
+              </div>
+            )}
           </div>
         </div>
       </DropdownMenuContent>

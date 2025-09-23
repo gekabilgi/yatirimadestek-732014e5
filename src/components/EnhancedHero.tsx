@@ -20,7 +20,9 @@ const EnhancedHero = () => {
     navigate('/incentive-tools');
   };
 
-  const handleMevzuatIncele = () => {
+  const handleMevzuatIncele = async () => {
+    await trackSearch({ action: 'legislation_button_click', source: 'hero' });
+    await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
     navigate('/mevzuat');
   };
 
@@ -85,7 +87,7 @@ const EnhancedHero = () => {
             </Button>
             
             <Button 
-              onClick={handleMevzuatIncele}
+              onClick={handleSearchClick}
               size="lg" 
               variant="outline" 
               className="btn-outline h-14 px-8 text-lg font-semibold hover:bg-primary/5 border-2"
