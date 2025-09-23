@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Edit, Trash2, FileText, Upload, Calendar, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { uploadProgramFiles } from '@/utils/fileUpload';
+import { uploadLegislationFiles } from '@/utils/fileUpload';
 
 interface LegalDocument {
   id: string;
@@ -146,7 +146,7 @@ const AdminLegislation = () => {
 
       // Upload file if provided
       if (uploadedFiles.length > 0) {
-        const uploadedFile = await uploadProgramFiles(uploadedFiles, 'legislation');
+        const uploadedFile = await uploadLegislationFiles(uploadedFiles);
         fileUrl = uploadedFile[0]?.file_url || fileUrl;
       }
 
