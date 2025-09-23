@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ArrowRight, FileDown, Calculator, MessageSquare, Building2, TrendingUp } from 'lucide-react';
+import { ArrowRight, FileDown, Calculator, MessageSquare, Building2, TrendingUp, Search, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +17,7 @@ const EnhancedHero = () => {
   }, [trackPageView]);
 
   const handleGetStarted = () => {
-    navigate('/incentive-tools');
+    navigate('/mevzuat');
   };
 
   const handleMevzuatIncele = async () => {
@@ -30,7 +30,7 @@ const EnhancedHero = () => {
     await trackSearch({ action: 'search_button_click', source: 'hero' });
     // Increment search counter
     await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
-    navigate('/search-support');
+    navigate('/searchsupport');
   };
 
   const staticStats = [
@@ -139,27 +139,27 @@ const EnhancedHero = () => {
               </CardContent>
             </Card>
 
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={handleMevzuatIncele}>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/searchsupport')>
               <CardContent className="p-6 text-center">
                 <div className="mb-4 flex justify-center">
                   <div className="rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 p-3 group-hover:from-blue-200 group-hover:to-blue-300 transition-colors duration-200">
-                    <FileDown className="h-6 w-6 text-blue-600" />
+                    <Search className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Mevzuat İncele</h3>
-                <p className="text-sm text-gray-600">Güncel teşvik mevzuatını inceleyin</p>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">Destek Arama</h3>
+                <p className="text-sm text-gray-600">Güncel Destekleri inceleyin</p>
               </CardContent>
             </Card>
 
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/investment-opportunities')}>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/tzy')}>
               <CardContent className="p-6 text-center">
                 <div className="mb-4 flex justify-center">
                   <div className="rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 p-3 group-hover:from-purple-200 group-hover:to-purple-300 transition-colors duration-200">
-                    <Building2 className="h-6 w-6 text-purple-600" />
+                    <Link className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Yatırım Fırsatları</h3>
-                <p className="text-sm text-gray-600">Bölgesel yatırım fırsatlarını inceleyin</p>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">Tedarik Zinciri</h3>
+                <p className="text-sm text-gray-600">Yerli Tedarikçilerle Buluşun</p>
               </CardContent>
             </Card>
 
