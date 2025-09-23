@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { RealtimeStatsCard } from '@/components/RealtimeStatsCard';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { supabase } from '@/integrations/supabase/client';
 
 const EnhancedHero = () => {
   const navigate = useNavigate();
@@ -23,8 +24,10 @@ const EnhancedHero = () => {
     navigate('/mevzuat');
   };
 
-  const handleSearchClick = () => {
-    trackSearch({ action: 'search_button_click', source: 'hero' });
+  const handleSearchClick = async () => {
+    await trackSearch({ action: 'search_button_click', source: 'hero' });
+    // Increment search counter
+    await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
     navigate('/search-support');
   };
 
