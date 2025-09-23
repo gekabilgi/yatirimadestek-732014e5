@@ -102,12 +102,12 @@ const EnhancedHero = () => {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-6">
               <RealtimeStatsCard 
                 label="Bugünkü Hesaplama"
-                statName="hesaplama_sayisi"
+                statName="calculation_clicks"
                 className="hover:scale-105 transition-transform duration-200"
               />
               <RealtimeStatsCard 
                 label="Bugünkü Arama"
-                statName={["arama_sayisi", "destek_arama"]}
+                statName="search_clicks"
                 className="hover:scale-105 transition-transform duration-200"
               />
               {staticStats.map((stat, index) => (
