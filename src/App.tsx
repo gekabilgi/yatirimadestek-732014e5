@@ -43,6 +43,8 @@ import TZYSupplierApplication from "./pages/TZYSupplierApplication";
 import TZYSupplierApplicationSuccess from "./pages/TZYSupplierApplicationSuccess";
 import TZYSupplierApplicationError from "./pages/TZYSupplierApplicationError";
 import TZYSupplierApplications from "./pages/admin/TZYSupplierApplications";
+import Legislation from "./pages/Legislation";
+import AdminLegislation from "./pages/AdminLegislation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -167,6 +169,12 @@ const App = () => {
               <Route path="/admin/tzy-supplier-applications" element={
                 <ProtectedAdminRoute>
                   <TZYSupplierApplications />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/mevzuat" element={<Legislation />} />
+              <Route path="/admin/legislation" element={
+                <ProtectedAdminRoute>
+                  <AdminLegislation />
                 </ProtectedAdminRoute>
               } />
               <Route path="/program/:id" element={<ProgramDetails />} />
