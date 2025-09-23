@@ -163,7 +163,7 @@ const EnhancedHero = () => {
               </CardContent>
             </Card>
 
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/investment-opportunities')}>
+            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/yatirim-firsatlari')}>
               <CardContent className="p-6 text-center">
                 <div className="mb-4 flex justify-center">
                   <div className="rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 p-3 group-hover:from-orange-200 group-hover:to-orange-300 transition-colors duration-200">
