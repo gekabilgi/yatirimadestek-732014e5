@@ -66,12 +66,22 @@ export const useTodayActivity = () => {
 
       console.log('Today activity stats fetched:', { todayCalculations, todaySearches, activeSessions });
 
-      setStats({
-        todayCalculations,
-        todaySearches,
-        activeSessions,
-        totalToday: todayCalculations + todaySearches,
-        recentActivities: todayData?.slice(0, 10) || []
+      setStats(prevStats => {
+        // Only update if data has actually changed
+        const newStats = {
+          todayCalculations,
+          todaySearches,
+          activeSessions,
+          totalToday: todayCalculations + todaySearches,
+          recentActivities: todayData?.slice(0, 10) || []
+        };
+        
+        // Compare with previous stats to avoid unnecessary updates
+        if (JSON.stringify(prevStats) === JSON.stringify(newStats)) {
+          return prevStats;
+        }
+        
+        return newStats;
       });
     } catch (error) {
       console.error('Error fetching today activity stats:', error);
@@ -83,8 +93,8 @@ export const useTodayActivity = () => {
   useEffect(() => {
     fetchTodayStats();
 
-    // Create a unique channel name to avoid conflicts
-    const channelName = `today-activity-${Date.now()}-${Math.random()}`;
+    // Use a static channel name to prevent recreation on re-renders
+    const channelName = 'today-activity-stats';
     
     // Set up real-time subscription for user activity
     const activityChannel = supabase
@@ -98,8 +108,10 @@ export const useTodayActivity = () => {
         },
         (payload) => {
           console.log('New user activity detected:', payload);
-          // Refresh stats when new activity is tracked
-          fetchTodayStats();
+          // Only refresh stats for relevant activity types
+          if (payload.new && ['calculation', 'search'].includes(payload.new.activity_type)) {
+            fetchTodayStats();
+          }
         }
       )
       .subscribe((status) => {
@@ -114,7 +126,7 @@ export const useTodayActivity = () => {
       supabase.removeChannel(activityChannel);
       clearInterval(interval);
     };
-  }, []); // Remove fetchTodayStats dependency to prevent recreation
+  }, [fetchTodayStats]);
 
   return {
     stats,

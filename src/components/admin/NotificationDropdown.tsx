@@ -23,20 +23,27 @@ export const NotificationDropdown = () => {
     const saved = localStorage.getItem('viewedNotifications');
     if (saved) {
       try {
-        setViewedActivities(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setViewedActivities(Array.isArray(parsed) ? parsed : []);
       } catch (error) {
         console.error('Error parsing viewed notifications:', error);
+        setViewedActivities([]);
       }
     }
   }, []);
 
   // Save viewed activities to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('viewedNotifications', JSON.stringify(viewedActivities));
+    if (viewedActivities.length > 0) {
+      localStorage.setItem('viewedNotifications', JSON.stringify(viewedActivities));
+    }
   }, [viewedActivities]);
 
+  // Create a stable key for each activity to ensure consistent tracking
+  const getActivityKey = (activity: any) => `${activity.id}-${activity.created_at}`;
+
   const unviewedCount = stats.recentActivities.filter(
-    activity => !viewedActivities.includes(activity.id)
+    activity => !viewedActivities.includes(getActivityKey(activity))
   ).length;
 
   return (
@@ -102,19 +109,22 @@ export const NotificationDropdown = () => {
               </div>
             ) : stats.recentActivities.length > 0 ? (
               stats.recentActivities.slice(0, 3).map((activity) => {
+                const activityKey = getActivityKey(activity);
+                const isViewed = viewedActivities.includes(activityKey);
+                
                 const handleActivityClick = () => {
-                  if (!viewedActivities.includes(activity.id)) {
-                    setViewedActivities(prev => [...prev, activity.id]);
+                  if (!isViewed) {
+                    setViewedActivities(prev => [...prev, activityKey]);
                   }
                 };
 
                 return (
                 <div 
-                  key={activity.id} 
-                  className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+                  key={activityKey} 
+                  className={`flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-opacity ${isViewed ? 'opacity-60' : ''}`}
                   onClick={handleActivityClick}
                 >
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className={`w-2 h-2 rounded-full ${isViewed ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       {activity.activity_type === 'calculation' ? (
