@@ -11,28 +11,48 @@ const generateSessionId = () => {
   return newId;
 };
 
-// Get user's approximate location using IP geolocation
+// Get user's accurate location using MaxMind GeoIP2
 const getUserLocation = async () => {
   try {
-    // Using a more reliable IP service
-    const response = await fetch('https://api.ipify.org?format=json');
-    if (response.ok) {
-      const data = await response.json();
+    // First get the user's IP address
+    const ipResponse = await fetch('https://api.ipify.org?format=json');
+    if (!ipResponse.ok) {
+      throw new Error('Failed to get IP address');
+    }
+    
+    const ipData = await ipResponse.json();
+    const userIP = ipData.ip;
+    
+    // Call our MaxMind edge function for geolocation
+    const { data: locationData, error } = await supabase.functions.invoke('ip-geolocation', {
+      body: { ip: userIP }
+    });
+    
+    if (error) {
+      console.error('Error calling ip-geolocation function:', error);
+      // Fallback to basic data
       return {
-        country: 'Turkey', // Default for Turkish site
+        country: 'Turkey',
         city: 'Unknown',
-        ip: data.ip || 'Unknown'
+        ip: userIP || 'Unknown'
       };
     }
+    
+    return {
+      country: locationData.country || 'Turkey',
+      city: locationData.city || 'Unknown',
+      region: locationData.region,
+      ip: userIP || 'Unknown'
+    };
+    
   } catch (error) {
     console.error('Error getting location:', error);
+    return {
+      country: 'Turkey',
+      city: 'Unknown', 
+      ip: 'Unknown'
+    };
   }
-  
-  return {
-    country: 'Turkey',
-    city: 'Unknown', 
-    ip: 'Unknown'
-  };
 };
 
 export const useActivityTracking = () => {

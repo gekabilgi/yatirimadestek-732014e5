@@ -38,3 +38,6 @@ enable_signup = true
 
 [functions.send-qna-notifications]
 verify_jwt = false
+
+[functions.ip-geolocation]
+verify_jwt = false
