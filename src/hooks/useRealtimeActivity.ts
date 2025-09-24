@@ -33,21 +33,18 @@ export const useRealtimeActivity = () => {
 
   const fetchActivityStats = useCallback(async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      console.log('Fetching activity stats...');
       
-      // Get today's activities
-      const { data: todayData, error: todayError } = await supabase
-        .from('user_sessions')
-        .select('activity_type, session_id, created_at')
-        .gte('created_at', `${today}T00:00:00.000Z`)
-        .lt('created_at', `${today}T23:59:59.999Z`);
+      // Get stats from app_statistics table (same as RealtimeStatsCard)
+      const { data: appStats, error: appStatsError } = await supabase
+        .from('app_statistics')
+        .select('stat_name, stat_value')
+        .in('stat_name', ['calculation_clicks', 'search_clicks']);
 
-      if (todayError) throw todayError;
+      if (appStatsError) throw appStatsError;
 
-      // Count activities
-      const calculationsToday = todayData?.filter(s => s.activity_type === 'calculation').length || 0;
-      const searchesToday = todayData?.filter(s => s.activity_type === 'search').length || 0;
-      const uniqueSessions = new Set(todayData?.map(s => s.session_id) || []).size;
+      const calculationsToday = appStats?.find(s => s.stat_name === 'calculation_clicks')?.stat_value || 0;
+      const searchesToday = appStats?.find(s => s.stat_name === 'search_clicks')?.stat_value || 0;
       
       // Get active sessions (last 30 minutes)
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
@@ -70,11 +67,13 @@ export const useRealtimeActivity = () => {
 
       if (recentError) throw recentError;
 
+      console.log('Activity stats fetched:', { calculationsToday, searchesToday, activeSessions });
+
       setStats({
         todayCalculations: calculationsToday,
         todaySearches: searchesToday,
         activeSessions,
-        totalToday: uniqueSessions,
+        totalToday: calculationsToday + searchesToday,
         recentActivities: recentData || []
       });
     } catch (error) {
@@ -87,8 +86,26 @@ export const useRealtimeActivity = () => {
   useEffect(() => {
     fetchActivityStats();
 
-    // Set up real-time subscription
-    const channel = supabase
+    // Set up real-time subscription for app_statistics table
+    const statsChannel = supabase
+      .channel('app-stats-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'app_statistics'
+        },
+        (payload) => {
+          console.log('App statistics updated:', payload);
+          // Refresh stats when app_statistics changes
+          fetchActivityStats();
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for user activity
+    const activityChannel = supabase
       .channel('activity-changes')
       .on(
         'postgres_changes',
@@ -97,7 +114,8 @@ export const useRealtimeActivity = () => {
           schema: 'public',
           table: 'user_sessions'
         },
-        () => {
+        (payload) => {
+          console.log('New user activity:', payload);
           // Refresh stats when new activity is tracked
           fetchActivityStats();
         }
@@ -108,7 +126,8 @@ export const useRealtimeActivity = () => {
     const interval = setInterval(fetchActivityStats, 60000);
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(statsChannel);
+      supabase.removeChannel(activityChannel);
       clearInterval(interval);
     };
   }, [fetchActivityStats]);

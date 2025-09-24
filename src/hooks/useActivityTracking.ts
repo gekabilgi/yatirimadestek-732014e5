@@ -14,42 +14,67 @@ const generateSessionId = () => {
 // Get user's accurate location using MaxMind GeoIP2
 const getUserLocation = async () => {
   try {
-    // First get the user's IP address
-    const ipResponse = await fetch('https://api.ipify.org?format=json');
+    console.log('Starting location detection...');
+    
+    // First get the user's IP address with timeout
+    const ipController = new AbortController();
+    const ipTimeout = setTimeout(() => ipController.abort(), 3000);
+    
+    const ipResponse = await fetch('https://api.ipify.org?format=json', {
+      signal: ipController.signal
+    });
+    clearTimeout(ipTimeout);
+    
     if (!ipResponse.ok) {
-      throw new Error('Failed to get IP address');
+      throw new Error(`IP fetch failed: ${ipResponse.status}`);
     }
     
     const ipData = await ipResponse.json();
     const userIP = ipData.ip;
+    console.log('Got IP:', userIP);
     
-    // Call our MaxMind edge function for geolocation
-    const { data: locationData, error } = await supabase.functions.invoke('ip-geolocation', {
-      body: { ip: userIP }
-    });
+    // Call our MaxMind edge function for geolocation with timeout
+    const geoController = new AbortController();
+    const geoTimeout = setTimeout(() => geoController.abort(), 5000);
     
-    if (error) {
-      console.error('Error calling ip-geolocation function:', error);
-      // Fallback to basic data
+    try {
+      const { data: locationData, error } = await supabase.functions.invoke('ip-geolocation', {
+        body: { ip: userIP }
+      });
+      clearTimeout(geoTimeout);
+      
+      if (error) {
+        console.warn('MaxMind geolocation error:', error);
+        throw new Error('MaxMind geolocation failed');
+      }
+      
+      console.log('MaxMind success:', locationData);
+      return {
+        country: locationData.country || 'Turkey',
+        city: locationData.city || 'Unknown',
+        region: locationData.region,
+        ip: userIP
+      };
+    } catch (geoError) {
+      clearTimeout(geoTimeout);
+      console.warn('MaxMind failed, using fallback:', geoError);
+      
+      // Fallback to basic location with the IP we already have
       return {
         country: 'Turkey',
         city: 'Unknown',
-        ip: userIP || 'Unknown'
+        region: 'Unknown',
+        ip: userIP
       };
     }
     
-    return {
-      country: locationData.country || 'Turkey',
-      city: locationData.city || 'Unknown',
-      region: locationData.region,
-      ip: userIP || 'Unknown'
-    };
-    
   } catch (error) {
-    console.error('Error getting location:', error);
+    console.error('Complete location detection failed:', error);
+    // Final fallback
     return {
       country: 'Turkey',
-      city: 'Unknown', 
+      city: 'Unknown',
+      region: 'Unknown',
       ip: 'Unknown'
     };
   }
@@ -65,7 +90,9 @@ export const useActivityTracking = () => {
     pagePath?: string
   ) => {
     try {
+      console.log(`Tracking activity: ${activityType}`, activityData);
       const location = await getUserLocation();
+      console.log('Location for tracking:', location);
       
       const { error } = await supabase
         .from('user_sessions')
@@ -81,7 +108,9 @@ export const useActivityTracking = () => {
         });
 
       if (error) {
-        console.error('Error tracking activity:', error);
+        console.error('Error inserting activity:', error);
+      } else {
+        console.log(`Successfully tracked ${activityType} activity`);
       }
     } catch (error) {
       console.error('Error in trackActivity:', error);

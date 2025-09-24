@@ -20,16 +20,11 @@ const EnhancedHero = () => {
     navigate('/incentive-tools');
   };
 
-  const handleMevzuatIncele = async () => {
-    await trackSearch({ action: 'legislation_button_click', source: 'hero' });
-    await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
+  const handleMevzuatIncele = () => {
     navigate('/mevzuat');
   };
 
-  const handleSearchClick = async () => {
-    await trackSearch({ action: 'search_button_click', source: 'hero' });
-    // Increment search counter
-    await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
+  const handleSearchClick = () => {
     navigate('/searchsupport');
   };
 
