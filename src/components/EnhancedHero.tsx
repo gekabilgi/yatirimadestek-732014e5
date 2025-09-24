@@ -47,6 +47,7 @@ const EnhancedHero = () => {
           <div className="mb-8 animate-fade-in">
             <span className="inline-flex items-center rounded-full bg-gradient-to-r from-primary/10 to-blue-600/10 px-6 py-3 text-sm font-semibold text-primary border border-primary/20 shadow-sm">
               <TrendingUp className="mr-2 h-4 w-4" />
+              <span className="mr-3 h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
               Türkiye'nin En Kapsamlı Teşvik Platformu
             </span>
           </div>
