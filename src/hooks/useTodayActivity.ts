@@ -83,9 +83,12 @@ export const useTodayActivity = () => {
   useEffect(() => {
     fetchTodayStats();
 
+    // Create a unique channel name to avoid conflicts
+    const channelName = `today-activity-${Date.now()}-${Math.random()}`;
+    
     // Set up real-time subscription for user activity
     const activityChannel = supabase
-      .channel('today-activity-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -99,16 +102,19 @@ export const useTodayActivity = () => {
           fetchTodayStats();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Today activity subscription status:', status);
+      });
 
     // Refresh stats every minute to keep active sessions updated
     const interval = setInterval(fetchTodayStats, 60000);
 
     return () => {
+      console.log('Cleaning up today activity subscription');
       supabase.removeChannel(activityChannel);
       clearInterval(interval);
     };
-  }, [fetchTodayStats]);
+  }, []); // Remove fetchTodayStats dependency to prevent recreation
 
   return {
     stats,
