@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ActivityData {
@@ -30,6 +30,11 @@ export const useTodayActivity = () => {
     recentActivities: []
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Realtime channel management per-hook instance
+  const channelNameRef = useRef<string>(`today-activity-${Math.random().toString(36).slice(2)}-${Date.now()}`);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const subscribedRef = useRef<boolean>(false);
 
   const fetchTodayStats = useCallback(async () => {
     try {
@@ -93,37 +98,43 @@ export const useTodayActivity = () => {
   useEffect(() => {
     fetchTodayStats();
 
-    // Use a static channel name to prevent recreation on re-renders
-    const channelName = 'today-activity-stats';
-    
-    // Set up real-time subscription for user activity
-    const activityChannel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'user_sessions'
-        },
-        (payload) => {
-          console.log('New user activity detected:', payload);
-          // Only refresh stats for relevant activity types
-          if (payload.new && ['calculation', 'search'].includes(payload.new.activity_type)) {
-            fetchTodayStats();
+    // Initialize channel only once per hook instance
+    if (!channelRef.current) {
+      channelRef.current = supabase.channel(channelNameRef.current);
+    }
+
+    if (channelRef.current && !subscribedRef.current) {
+      channelRef.current
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'user_sessions'
+          },
+          (payload) => {
+            console.log('New user activity detected:', payload);
+            if (payload.new && ['calculation', 'search'].includes(payload.new.activity_type)) {
+              fetchTodayStats();
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Today activity subscription status:', status);
-      });
+        )
+        .subscribe((status) => {
+          console.log('Today activity subscription status:', status);
+        });
+      subscribedRef.current = true;
+    }
 
     // Refresh stats every minute to keep active sessions updated
     const interval = setInterval(fetchTodayStats, 60000);
 
     return () => {
       console.log('Cleaning up today activity subscription');
-      supabase.removeChannel(activityChannel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        subscribedRef.current = false;
+      }
       clearInterval(interval);
     };
   }, [fetchTodayStats]);
