@@ -45,7 +45,7 @@ const EnhancedHero = () => {
         <div className="mx-auto max-w-6xl text-center">
           {/* Badge */}
           <div className="mb-8 animate-fade-in">
-            <span className="inline-flex items-center rounded-full bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white border border-white/20 shadow-sm">
+            <span className="inline-flex items-center rounded-full bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-primary border border-white/20 shadow-sm">
               <TrendingUp className="mr-3 h-4 w-4" />
               <span className="mr-3 h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
               Türkiye'nin En Kapsamlı Teşvik Platformu
