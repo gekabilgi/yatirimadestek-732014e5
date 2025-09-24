@@ -50,27 +50,9 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
   };
 
   const handleSearch = async () => {
-    console.log('SearchBar handleSearch called');
+    console.log('SearchBar handleSearch called - NO TRACKING (support search page)');
     
-    // Track search activity and increment stat
-    try {
-      const { useActivityTracking } = await import('@/hooks/useActivityTracking');
-      const { trackSearch } = useActivityTracking();
-      await trackSearch({ 
-        action: 'support_search', 
-        keyword: keyword.trim(),
-        tags: selectedTags,
-        institution: institution.trim()
-      });
-      
-      // Increment search counter
-      const { supabase } = await import('@/integrations/supabase/client');
-      await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
-      console.log('Search tracked and stat incremented');
-    } catch (error) {
-      console.error('Error tracking search:', error);
-    }
-    
+    // Only call onSearch without any tracking for support search
     onSearch({
       keyword: keyword.trim() || undefined,
       tags: selectedTags.length > 0 ? selectedTags : undefined,

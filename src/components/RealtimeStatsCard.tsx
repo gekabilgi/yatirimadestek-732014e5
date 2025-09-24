@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
+import { useTodayActivity } from '@/hooks/useTodayActivity';
 
 interface RealtimeStatsCardProps {
   label: string;
@@ -15,7 +15,26 @@ export const RealtimeStatsCard: React.FC<RealtimeStatsCardProps> = ({
   statName,
   className = ""
 }) => {
-  const { globalCount, isLoading, error } = useRealtimeCounters(statName);
+  const { stats, isLoading } = useTodayActivity();
+  
+  // Map statName to today's stats
+  const getTodayCount = () => {
+    if (Array.isArray(statName)) {
+      // If multiple stats, sum them up
+      return statName.reduce((sum, name) => {
+        if (name === 'calculation_clicks') return sum + stats.todayCalculations;
+        if (name === 'search_clicks') return sum + stats.todaySearches;
+        return sum;
+      }, 0);
+    } else {
+      // Single stat
+      if (statName === 'calculation_clicks') return stats.todayCalculations;
+      if (statName === 'search_clicks') return stats.todaySearches;
+      return 0;
+    }
+  };
+
+  const todayCount = getTodayCount();
 
   const formatNumber = (num: number) => {
     return num.toLocaleString('tr-TR');
@@ -29,12 +48,8 @@ export const RealtimeStatsCard: React.FC<RealtimeStatsCardProps> = ({
             <div className="flex items-center justify-center gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : error ? (
-            <div className="flex items-center justify-center gap-2 text-red-500">
-              <AlertCircle className="h-6 w-6" />
-            </div>
           ) : (
-            formatNumber(globalCount)
+            formatNumber(todayCount)
           )}
         </div>
 
