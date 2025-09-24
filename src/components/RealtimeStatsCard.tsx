@@ -3,19 +3,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useTodayActivity } from '@/hooks/useTodayActivity';
+import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
 
 interface RealtimeStatsCardProps {
   label: string;
   statName: string | string[];
   className?: string;
+  showTotalBadge?: boolean;
 }
 
 export const RealtimeStatsCard: React.FC<RealtimeStatsCardProps> = ({
   label,
   statName,
-  className = ""
+  className = "",
+  showTotalBadge = false
 }) => {
   const { stats, isLoading } = useTodayActivity();
+  const { globalCount, isLoading: isLoadingTotal } = useRealtimeCounters(statName);
   
   // Map statName to today's stats
   const getTodayCount = () => {
@@ -56,6 +60,21 @@ export const RealtimeStatsCard: React.FC<RealtimeStatsCardProps> = ({
         <div className="text-xs sm:text-sm text-gray-600 font-medium">
           {label}
         </div>
+
+        {showTotalBadge && (
+          <div className="mt-2">
+            <Badge 
+              variant="secondary" 
+              className="bg-primary/10 text-primary hover:bg-primary/20 text-xs px-2 py-1"
+            >
+              {isLoadingTotal ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                `Toplam: ${formatNumber(globalCount)}`
+              )}
+            </Badge>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -99,11 +99,13 @@ const EnhancedHero = () => {
                 label="Bugünkü Hesaplama"
                 statName="calculation_clicks"
                 className="hover:scale-105 transition-transform duration-200"
+                showTotalBadge={true}
               />
               <RealtimeStatsCard 
                 label="Bugünkü Arama"
                 statName="search_clicks"
                 className="hover:scale-105 transition-transform duration-200"
+                showTotalBadge={true}
               />
               {staticStats.map((stat, index) => (
                 <Card key={index} className="card-elevated bg-white/80 backdrop-blur-sm border-0 hover:bg-white/90 transition-all duration-300 hover:scale-105">
