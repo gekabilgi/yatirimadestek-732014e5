@@ -64,14 +64,14 @@ export const NotificationDropdown = () => {
               <span className="text-gray-600">hesaplama</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <Search className="h-4 w-4 text-purple-600" />
-              <span className="font-medium text-purple-600">{stats.todaySearches}</span>
-              <span className="text-gray-600">arama</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-orange-600" />
+               <Users className="h-4 w-4 text-orange-600" />
               <span className="font-medium text-orange-600">{stats.activeSessions}</span>
               <span className="text-gray-600">oturum</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+             <Search className="h-4 w-4 text-purple-600" />
+              <span className="font-medium text-purple-600">{stats.todaySearches}</span>
+              <span className="text-gray-600">arama</span>
             </div>
           </div>
 
