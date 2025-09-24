@@ -6,6 +6,7 @@ import IncentiveResultsStep from './steps/IncentiveResultsStep';
 import { SectorSearchData } from '@/types/database';
 import { IncentiveResult } from '@/types/incentive';
 import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 
 export interface UnifiedQueryData {
   selectedSector: SectorSearchData | null;
@@ -25,6 +26,7 @@ const UnifiedIncentiveQuery: React.FC = () => {
   const [incentiveResult, setIncentiveResult] = useState<IncentiveResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const { incrementCounter } = useRealtimeCounters('search_clicks');
+  const { trackSearch } = useActivityTracking();
 
   const updateQueryData = (updates: Partial<UnifiedQueryData>) => {
     setQueryData(prev => ({ ...prev, ...updates }));
@@ -93,7 +95,16 @@ const UnifiedIncentiveQuery: React.FC = () => {
           setIncentiveResult={setIncentiveResult}
           isCalculating={isCalculating}
           setIsCalculating={setIsCalculating}
-          onSuccessfulQuery={incrementCounter}
+          onSuccessfulQuery={async () => {
+            await incrementCounter();
+            await trackSearch({
+              sector: queryData.selectedSector?.sektor || '',
+              nace_code: queryData.selectedSector?.nace_kodu || '',
+              province: queryData.selectedProvince,
+              district: queryData.selectedDistrict,
+              osb_status: queryData.osbStatus
+            });
+          }}
         />
       )}
     </div>
