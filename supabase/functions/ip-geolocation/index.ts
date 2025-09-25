@@ -17,6 +17,18 @@ interface LocationData {
   timezone?: string;
 }
 
+interface IPGeolocationResponse {
+  country_name: string;
+  city: string;
+  state_prov: string;
+  zipcode: string;
+  latitude: string;
+  longitude: string;
+  time_zone: {
+    name: string;
+  };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -87,7 +99,7 @@ serve(async (req) => {
     console.log('MaxMind response:', data);
 
     // Extract location data from MaxMind response
-    const locationData: LocationData = {
+    let locationData: LocationData = {
       country: data.country?.names?.en || data.country?.names?.tr || 'Turkey',
       city: data.city?.names?.en || data.city?.names?.tr || 'Unknown',
       region: data.subdivisions?.[0]?.names?.en || data.subdivisions?.[0]?.names?.tr,
@@ -98,7 +110,45 @@ serve(async (req) => {
       timezone: data.location?.time_zone
     };
 
-    console.log('Processed location data:', locationData);
+    console.log('MaxMind processed data:', locationData);
+
+    // If MaxMind returned "Unknown" city, try ipgeolocation.io as fallback
+    if (locationData.city === 'Unknown') {
+      console.log('City is Unknown, trying ipgeolocation.io fallback...');
+      
+      const ipgeolocationApiKey = Deno.env.get('IPGEOLOCATION_API_KEY');
+      
+      if (ipgeolocationApiKey) {
+        try {
+          const ipgeoResponse = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${ipgeolocationApiKey}&ip=${ip}`);
+          
+          if (ipgeoResponse.ok) {
+            const ipgeoData: IPGeolocationResponse = await ipgeoResponse.json();
+            console.log('IPGeolocation.io response:', ipgeoData);
+            
+            // Update location data with ipgeolocation.io data
+            locationData = {
+              country: ipgeoData.country_name || locationData.country,
+              city: ipgeoData.city || locationData.city,
+              region: ipgeoData.state_prov || locationData.region,
+              subdivision: locationData.subdivision, // Keep MaxMind subdivision
+              postal: ipgeoData.zipcode || locationData.postal,
+              latitude: ipgeoData.latitude ? parseFloat(ipgeoData.latitude) : locationData.latitude,
+              longitude: ipgeoData.longitude ? parseFloat(ipgeoData.longitude) : locationData.longitude,
+              timezone: ipgeoData.time_zone?.name || locationData.timezone
+            };
+            
+            console.log('Updated location data from ipgeolocation.io:', locationData);
+          } else {
+            console.error(`IPGeolocation.io API error: ${ipgeoResponse.status}`);
+          }
+        } catch (ipgeoError) {
+          console.error('Error calling ipgeolocation.io:', ipgeoError);
+        }
+      } else {
+        console.log('IPGeolocation API key not found, skipping fallback');
+      }
+    }
 
     return new Response(
       JSON.stringify(locationData), 
