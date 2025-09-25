@@ -78,7 +78,7 @@ export const useTodayActivity = () => {
           todaySearches,
           activeSessions,
           totalToday: todayCalculations + todaySearches,
-          recentActivities: todayData?.slice(0, 10) || []
+          recentActivities: todayData?.slice(0, 30) || []
         };
         
         // Compare with previous stats to avoid unnecessary updates

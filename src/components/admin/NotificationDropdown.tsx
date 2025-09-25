@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Calculator, Search, Users, MapPin } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Bell, Calculator, Search, Users, MapPin, X } from 'lucide-react';
 import { useTodayActivity } from '@/hooks/useTodayActivity';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -46,6 +47,11 @@ export const NotificationDropdown = () => {
     activity => !viewedActivities.includes(getActivityKey(activity))
   ).length;
 
+  const markAllAsRead = () => {
+    const allActivityKeys = stats.recentActivities.map(getActivityKey);
+    setViewedActivities(allActivityKeys);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -70,6 +76,17 @@ export const NotificationDropdown = () => {
             <Bell className="h-4 w-4" />
             Canlı Bildirimler
           </span>
+          {unviewedCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={markAllAsRead}
+              className="h-6 px-2 text-xs"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Tümünü Okundu İşaretle
+            </Button>
+          )}
         </DropdownMenuLabel>
         
         <DropdownMenuSeparator />
@@ -102,54 +119,59 @@ export const NotificationDropdown = () => {
           <DropdownMenuSeparator />
 
           {/* Recent Activity */}
-          <div className="space-y-3">
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-gray-700">Son Aktiviteler</h4>
             {isLoading ? (
               <div className="text-center text-gray-500 py-4">
                 Yükleniyor...
               </div>
             ) : stats.recentActivities.length > 0 ? (
-              stats.recentActivities.slice(0, 3).map((activity) => {
-                const activityKey = getActivityKey(activity);
-                const isViewed = viewedActivities.includes(activityKey);
-                
-                const handleActivityClick = () => {
-                  if (!isViewed) {
-                    setViewedActivities(prev => [...prev, activityKey]);
-                  }
-                };
+              <ScrollArea className="h-[300px] w-full">
+                <div className="space-y-2 pr-3">
+                  {stats.recentActivities.map((activity) => {
+                    const activityKey = getActivityKey(activity);
+                    const isViewed = viewedActivities.includes(activityKey);
+                    
+                    const handleActivityClick = () => {
+                      if (!isViewed) {
+                        setViewedActivities(prev => [...prev, activityKey]);
+                      }
+                    };
 
-                return (
-                <div 
-                  key={activityKey} 
-                  className={`flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-opacity ${isViewed ? 'opacity-60' : ''}`}
-                  onClick={handleActivityClick}
-                >
-                  <div className={`w-2 h-2 rounded-full ${isViewed ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {activity.activity_type === 'calculation' ? (
-                        <Calculator className="h-3 w-3 text-gray-500" />
-                      ) : (
-                        <Search className="h-3 w-3 text-gray-500" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {activity.activity_type === 'calculation' ? 'Yeni Hesaplama' : 'Yeni Arama'}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {activity.location_city || 'Bilinmeyen'} konumundan yeni {activity.activity_type === 'calculation' ? 'hesaplama' : 'arama'} yapıldı
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                      <MapPin className="h-3 w-3" />
-                      <span>IP: {activity.ip_address || 'Bilinmeyen'}</span>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: tr })}
-                    </div>
-                  </div>
+                    return (
+                      <div 
+                        key={activityKey} 
+                        className={`flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-opacity ${isViewed ? 'opacity-60' : ''}`}
+                        onClick={handleActivityClick}
+                      >
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isViewed ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {activity.activity_type === 'calculation' ? (
+                              <Calculator className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                            ) : (
+                              <Search className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                            )}
+                            <span className="text-sm font-medium truncate">
+                              {activity.activity_type === 'calculation' ? 'Yeni Hesaplama' : 'Yeni Arama'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {activity.location_city || 'Bilinmeyen'} konumundan yeni {activity.activity_type === 'calculation' ? 'hesaplama' : 'arama'} yapıldı
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                            <MapPin className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">IP: {activity.ip_address || 'Bilinmeyen'}</span>
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: tr })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                );
-              })
+              </ScrollArea>
             ) : (
               <div className="text-center text-gray-500 py-4">
                 Henüz aktivite yok
