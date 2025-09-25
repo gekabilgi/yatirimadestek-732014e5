@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { XMLParser } from "npm:fast-xml-parser";
+import { XMLParser } from "https://esm.sh/fast-xml-parser@4.2.5";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,8 +87,9 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("Error fetching TCMB rates:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     return new Response(
-      JSON.stringify({ error: "Failed to fetch exchange rates", details: err.message }),
+      JSON.stringify({ error: "Failed to fetch exchange rates", details: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

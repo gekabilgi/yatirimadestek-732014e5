@@ -118,7 +118,8 @@ async function createJWT(credentials: GoogleAnalyticsCredentials): Promise<strin
     return `${signatureInput}.${encodedSignature}`;
   } catch (error) {
     console.error('Error creating JWT:', error);
-    throw new Error(`JWT creation failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`JWT creation failed: ${errorMessage}`);
   }
 }
 
@@ -325,7 +326,8 @@ serve(async (req) => {
       
     } catch (parseError) {
       console.error('Failed to parse credentials JSON:', parseError);
-      throw new Error(`Invalid JSON format in GOOGLE_ANALYTICS_CREDENTIALS: ${parseError.message}`);
+      const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+      throw new Error(`Invalid JSON format in GOOGLE_ANALYTICS_CREDENTIALS: ${errorMessage}`);
     }
     
     console.log('Getting access token...');
@@ -357,17 +359,18 @@ serve(async (req) => {
     
     let userMessage = 'Failed to fetch Google Analytics data';
     let statusCode = 500;
+    const errorMessage = error instanceof Error ? error.message : String(error);
     
-    if (error.message.includes('Permission denied') || error.message.includes('PERMISSION_DENIED')) {
+    if (errorMessage.includes('Permission denied') || errorMessage.includes('PERMISSION_DENIED')) {
       userMessage = `Access denied to Google Analytics property. Please add the service account email as a user in your GA4 property settings with 'Viewer' permissions.`;
       statusCode = 403;
-    } else if (error.message.includes('credentials')) {
+    } else if (errorMessage.includes('credentials')) {
       userMessage = 'Google Analytics credentials are invalid or incorrectly formatted';
       statusCode = 401;
-    } else if (error.message.includes('property')) {
+    } else if (errorMessage.includes('property')) {
       userMessage = 'Google Analytics property ID is invalid or not accessible';
       statusCode = 403;
-    } else if (error.message.includes('access token')) {
+    } else if (errorMessage.includes('access token')) {
       userMessage = 'Failed to authenticate with Google Analytics API';
       statusCode = 401;
     }
@@ -375,7 +378,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: userMessage,
-        details: error.message,
+        details: errorMessage,
         timestamp: new Date().toISOString(),
         action: statusCode === 403 ? 'Add service account to GA4 property as Viewer' : 'Check credentials and configuration'
       }),
