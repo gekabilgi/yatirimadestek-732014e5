@@ -14,6 +14,7 @@ import { Plus, Edit, Trash2, FileText, Upload, Calendar, ExternalLink } from 'lu
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { uploadLegislationFiles } from '@/utils/fileUpload';
+import { DraggableLegalDocumentList } from '@/components/admin/DraggableLegalDocumentList';
 
 interface LegalDocument {
   id: string;
@@ -27,6 +28,7 @@ interface LegalDocument {
   status: string;
   keywords: string;
   document_number: string;
+  display_order: number;
 }
 
 interface DocumentFormData {
@@ -70,10 +72,22 @@ const AdminLegislation = () => {
       const { data, error } = await supabase
         .from('legal_documents')
         .select('*')
+        .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
+      
+      // Sort documents: custom order first (display_order > 0), then by created_at
+      const sortedData = (data || []).sort((a, b) => {
+        if (a.display_order > 0 && b.display_order > 0) {
+          return a.display_order - b.display_order;
+        }
+        if (a.display_order > 0) return -1;
+        if (b.display_order > 0) return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setDocuments(sortedData);
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast({
@@ -153,7 +167,8 @@ const AdminLegislation = () => {
       const documentData = {
         ...formData,
         file_url: fileUrl,
-        status: 'active'
+        status: 'active',
+        display_order: 0 // New documents default to automatic ordering
       };
 
       if (editingDocument) {
@@ -258,6 +273,71 @@ const AdminLegislation = () => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR');
+  };
+
+  const handleReorder = async (reorderedDocuments: LegalDocument[]) => {
+    try {
+      // Update display_order for all documents
+      const updates = reorderedDocuments.map((doc, index) => ({
+        id: doc.id,
+        display_order: index + 1
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('legal_documents')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id);
+
+        if (error) throw error;
+      }
+
+      // Update local state
+      setDocuments(reorderedDocuments);
+      
+      toast({
+        title: "Başarılı",
+        description: "Döküman sıralaması güncellendi.",
+      });
+    } catch (error) {
+      console.error('Error updating document order:', error);
+      toast({
+        title: "Hata",
+        description: "Sıralama güncellenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+      // Refresh to get original order back
+      fetchDocuments();
+    }
+  };
+
+  const handleResetOrder = async () => {
+    if (!confirm('Tüm özel sıralamayı sıfırlamak istediğinizden emin misiniz? Dökümanlar tarih sırasına göre dizilecektir.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('legal_documents')
+        .update({ display_order: 0 })
+        .neq('display_order', 0);
+
+      if (error) throw error;
+
+      toast({
+        title: "Başarılı",
+        description: "Sıralama sıfırlandı. Dökümanlar şimdi tarih sırasına göre görünecek.",
+      });
+      
+      fetchDocuments();
+    } catch (error) {
+      console.error('Error resetting order:', error);
+      toast({
+        title: "Hata",
+        description: "Sıralama sıfırlanırken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -419,12 +499,12 @@ const AdminLegislation = () => {
           </Dialog>
         </div>
 
-        {/* Documents Table */}
+        {/* Documents List */}
         <Card>
           <CardHeader>
             <CardTitle>Mevzuat Dökümanları</CardTitle>
             <CardDescription>
-              Tüm mevzuat dökümanlarını görüntüleyin ve yönetin.
+              Dökümanları yönetin ve sürükleyerek sıralayın.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -433,81 +513,14 @@ const AdminLegislation = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Başlık</TableHead>
-                    <TableHead>Tür</TableHead>
-                    <TableHead>Bakanlık</TableHead>
-                    <TableHead>Yayın Tarihi</TableHead>
-                    <TableHead>Durum</TableHead>
-                    <TableHead>İşlemler</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {documents.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{doc.title}</div>
-                          <div className="text-sm text-muted-foreground line-clamp-2">
-                            {doc.description}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{doc.document_type}</Badge>
-                      </TableCell>
-                      <TableCell>{doc.ministry || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {formatDate(doc.publication_date)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={doc.status === 'active' ? 'default' : 'secondary'}>
-                          {doc.status === 'active' ? 'Aktif' : 'Pasif'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {(doc.file_url || doc.external_url) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(doc.file_url || doc.external_url, '_blank')}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(doc)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => toggleStatus(doc.id, doc.status)}
-                          >
-                            {doc.status === 'active' ? 'Pasif Et' : 'Aktif Et'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(doc.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DraggableLegalDocumentList
+                documents={documents}
+                onReorder={handleReorder}
+                onEdit={openEditDialog}
+                onToggleStatus={toggleStatus}
+                onDelete={handleDelete}
+                onResetOrder={handleResetOrder}
+              />
             )}
           </CardContent>
         </Card>

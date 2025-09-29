@@ -48,11 +48,21 @@ const Legislation = () => {
       const { data, error } = await supabase
         .from('legal_documents')
         .select('*')
-        .eq('status', 'active')
-        .order('publication_date', { ascending: false });
+        .eq('status', 'active');
 
       if (error) throw error;
-      setDocuments(data || []);
+      
+      // Sort documents: custom order first (display_order > 0), then by publication_date
+      const sortedData = (data || []).sort((a, b) => {
+        if (a.display_order > 0 && b.display_order > 0) {
+          return a.display_order - b.display_order;
+        }
+        if (a.display_order > 0) return -1;
+        if (b.display_order > 0) return 1;
+        return new Date(b.publication_date).getTime() - new Date(a.publication_date).getTime();
+      });
+      
+      setDocuments(sortedData);
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast({
