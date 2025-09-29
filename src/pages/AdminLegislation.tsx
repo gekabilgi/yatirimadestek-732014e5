@@ -347,7 +347,7 @@ const AdminLegislation = () => {
         description="Mevzuat dökümanlarını yönetin"
       />
 
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         {/* Documents List */}
         <Card>
           <CardHeader>
