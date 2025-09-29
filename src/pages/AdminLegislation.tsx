@@ -345,157 +345,159 @@ const AdminLegislation = () => {
       <AdminPageHeader 
         title="Mevzuat Yönetimi"
         description="Mevzuat dökümanlarını yönetin"
-      >
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Yeni Döküman Ekle
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingDocument ? 'Döküman Düzenle' : 'Yeni Döküman Ekle'}
-              </DialogTitle>
-              <DialogDescription>
-                Mevzuat dökümanı bilgilerini girin.
-              </DialogDescription>
-            </DialogHeader>
+      />
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-6">
+        {/* Add Document Button */}
+        <div className="flex justify-end">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Yeni Döküman Ekle
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingDocument ? 'Döküman Düzenle' : 'Yeni Döküman Ekle'}
+                </DialogTitle>
+                <DialogDescription>
+                  Mevzuat dökümanı bilgilerini girin.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Başlık *</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      placeholder="Döküman başlığı"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="document_type">Döküman Türü *</Label>
+                    <Select 
+                      value={formData.document_type} 
+                      onValueChange={(value) => setFormData({...formData, document_type: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Döküman türü seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Kanun">Kanun</SelectItem>
+                        <SelectItem value="Yönetmelik">Yönetmelik</SelectItem>
+                        <SelectItem value="Tebliğ">Tebliğ</SelectItem>
+                        <SelectItem value="Genelge">Genelge</SelectItem>
+                        <SelectItem value="Karar">Karar</SelectItem>
+                        <SelectItem value="Diğer">Diğer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="title">Başlık *</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    placeholder="Döküman başlığı"
+                  <Label htmlFor="description">Açıklama *</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Döküman açıklaması (2-3 satır)"
+                    rows={3}
                     required
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ministry">Bakanlık/Kurum</Label>
+                    <Input
+                      id="ministry"
+                      value={formData.ministry}
+                      onChange={(e) => setFormData({...formData, ministry: e.target.value})}
+                      placeholder="İlgili bakanlık veya kurum"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="document_number">Döküman Numarası</Label>
+                    <Input
+                      id="document_number"
+                      value={formData.document_number}
+                      onChange={(e) => setFormData({...formData, document_number: e.target.value})}
+                      placeholder="Resmi döküman numarası"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="publication_date">Yayın Tarihi</Label>
+                    <Input
+                      id="publication_date"
+                      type="date"
+                      value={formData.publication_date}
+                      onChange={(e) => setFormData({...formData, publication_date: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="keywords">Anahtar Kelimeler</Label>
+                    <Input
+                      id="keywords"
+                      value={formData.keywords}
+                      onChange={(e) => setFormData({...formData, keywords: e.target.value})}
+                      placeholder="Virgülle ayrılmış anahtar kelimeler"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="document_type">Döküman Türü *</Label>
-                  <Select 
-                    value={formData.document_type} 
-                    onValueChange={(value) => setFormData({...formData, document_type: value})}
+                  <Label htmlFor="external_url">Harici Link</Label>
+                  <Input
+                    id="external_url"
+                    type="url"
+                    value={formData.external_url}
+                    onChange={(e) => setFormData({...formData, external_url: e.target.value})}
+                    placeholder="https://example.com/document.pdf"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="file_upload">Dosya Yükle</Label>
+                  <Input
+                    id="file_upload"
+                    type="file"
+                    onChange={handleFileUpload}
+                    accept=".pdf,.doc,.docx,.xlsx,.xls"
+                    multiple={false}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    PDF, DOCX, XLSX formatları desteklenir. Harici link varsa dosya yükleme opsiyoneldir.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Döküman türü seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Kanun">Kanun</SelectItem>
-                      <SelectItem value="Yönetmelik">Yönetmelik</SelectItem>
-                      <SelectItem value="Tebliğ">Tebliğ</SelectItem>
-                      <SelectItem value="Genelge">Genelge</SelectItem>
-                      <SelectItem value="Karar">Karar</SelectItem>
-                      <SelectItem value="Diğer">Diğer</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    İptal
+                  </Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? 'Kaydediliyor...' : (editingDocument ? 'Güncelle' : 'Ekle')}
+                  </Button>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Açıklama *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Döküman açıklaması (2-3 satır)"
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ministry">Bakanlık/Kurum</Label>
-                  <Input
-                    id="ministry"
-                    value={formData.ministry}
-                    onChange={(e) => setFormData({...formData, ministry: e.target.value})}
-                    placeholder="İlgili bakanlık veya kurum"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="document_number">Döküman Numarası</Label>
-                  <Input
-                    id="document_number"
-                    value={formData.document_number}
-                    onChange={(e) => setFormData({...formData, document_number: e.target.value})}
-                    placeholder="Resmi döküman numarası"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="publication_date">Yayın Tarihi</Label>
-                  <Input
-                    id="publication_date"
-                    type="date"
-                    value={formData.publication_date}
-                    onChange={(e) => setFormData({...formData, publication_date: e.target.value})}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="keywords">Anahtar Kelimeler</Label>
-                  <Input
-                    id="keywords"
-                    value={formData.keywords}
-                    onChange={(e) => setFormData({...formData, keywords: e.target.value})}
-                    placeholder="Virgülle ayrılmış anahtar kelimeler"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="external_url">Harici Link</Label>
-                <Input
-                  id="external_url"
-                  type="url"
-                  value={formData.external_url}
-                  onChange={(e) => setFormData({...formData, external_url: e.target.value})}
-                  placeholder="https://example.com/document.pdf"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="file_upload">Dosya Yükle</Label>
-                <Input
-                  id="file_upload"
-                  type="file"
-                  onChange={handleFileUpload}
-                  accept=".pdf,.doc,.docx,.xlsx,.xls"
-                  multiple={false}
-                />
-                <p className="text-sm text-muted-foreground">
-                  PDF, DOCX, XLSX formatları desteklenir. Harici link varsa dosya yükleme opsiyoneldir.
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  İptal
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? 'Kaydediliyor...' : (editingDocument ? 'Güncelle' : 'Ekle')}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </AdminPageHeader>
-
-      <div className="space-y-6">
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         {/* Documents List */}
         <Card>
