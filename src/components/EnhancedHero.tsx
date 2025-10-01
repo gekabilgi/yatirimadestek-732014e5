@@ -132,7 +132,7 @@ const EnhancedHero = () => {
                     <Calculator className="h-6 w-6 text-green-600" />
                   </div>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Teşvik Hesaplayıcı</h3>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">Teşvik Robotu</h3>
                 <p className="text-sm text-gray-600">Yatırımınız için alabileceğiniz teşvik miktarını hesaplayın</p>
               </CardContent>
             </Card>
