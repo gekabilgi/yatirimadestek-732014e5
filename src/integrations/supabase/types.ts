@@ -770,6 +770,66 @@ export type Database = {
         }
         Relationships: []
       }
+      pre_requests_audit: {
+        Row: {
+          accessed_at: string
+          action: string
+          changed_fields: Json | null
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          notes: string | null
+          old_values: Json | null
+          pre_request_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          action: string
+          changed_fields?: Json | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          notes?: string | null
+          old_values?: Json | null
+          pre_request_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          action?: string
+          changed_fields?: Json | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          notes?: string | null
+          old_values?: Json | null
+          pre_request_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_requests_audit_pre_request_id_fkey"
+            columns: ["pre_request_id"]
+            isOneToOne: false
+            referencedRelation: "approved_pre_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_requests_audit_pre_request_id_fkey"
+            columns: ["pre_request_id"]
+            isOneToOne: false
+            referencedRelation: "pre_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           basvuru_son_tarihi: string
@@ -1570,6 +1630,17 @@ export type Database = {
         }
         Relationships: []
       }
+      pre_requests_security_summary: {
+        Row: {
+          access_count: number | null
+          access_date: string | null
+          action: string | null
+          unique_requests: number | null
+          unique_users: number | null
+          user_role: string | null
+        }
+        Relationships: []
+      }
       public_qna_view: {
         Row: {
           answer: string | null
@@ -1618,6 +1689,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_old_sensitive_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_pre_requests_audit_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
