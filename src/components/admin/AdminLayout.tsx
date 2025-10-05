@@ -16,7 +16,8 @@ import {
   Link as LinkIcon,
   ChevronDown,
   ChevronRight,
-  Scale
+  Scale,
+  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Soru & Cevap', href: '/admin/qa-management', icon: MessageSquare },
+    { name: 'AI Chatbot Bilgi Bankası', href: '/admin/knowledge-base', icon: Bot },
     { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
     { name: 'Fizibilite İstatistikleri', href: '/admin/feasibility-statistics', icon: TrendingUp },
     { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },

@@ -142,6 +142,39 @@ export type Database = {
         }
         Relationships: []
       }
+      document_uploads: {
+        Row: {
+          chunks_count: number | null
+          created_at: string
+          error_message: string | null
+          file_size: number
+          filename: string
+          id: string
+          status: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          chunks_count?: number | null
+          created_at?: string
+          error_message?: string | null
+          file_size: number
+          filename: string
+          id?: string
+          status?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          chunks_count?: number | null
+          created_at?: string
+          error_message?: string | null
+          file_size?: number
+          filename?: string
+          id?: string
+          status?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           created_at: string
@@ -474,6 +507,42 @@ export type Database = {
           end_char?: number | null
           id?: number
           start_char?: number | null
+        }
+        Relationships: []
+      }
+      knowledge_base: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          created_by: string | null
+          embedding: string | null
+          filename: string
+          id: string
+          metadata: Json | null
+          updated_at: string
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string
+          created_by?: string | null
+          embedding?: string | null
+          filename: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          embedding?: string | null
+          filename?: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1779,6 +1848,19 @@ export type Database = {
           p_user_role?: string
         }
         Returns: undefined
+      }
+      match_documents: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          filename: string
+          id: string
+          similarity: number
+        }[]
       }
       record_submission: {
         Args: { p_identifier: string; p_submission_type: string }

@@ -45,6 +45,8 @@ import TZYSupplierApplicationError from "./pages/TZYSupplierApplicationError";
 import TZYSupplierApplications from "./pages/admin/TZYSupplierApplications";
 import Legislation from "./pages/Legislation";
 import AdminLegislation from "./pages/AdminLegislation";
+import AdminKnowledgeBase from "./pages/AdminKnowledgeBase";
+import { AIChatbot } from "./components/AIChatbot";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +66,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AIChatbot />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/incentive-tools" element={<IncentiveTools />} />
@@ -175,6 +178,11 @@ const App = () => {
               <Route path="/admin/legislation" element={
                 <ProtectedAdminRoute>
                   <AdminLegislation />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/knowledge-base" element={
+                <ProtectedAdminRoute>
+                  <AdminKnowledgeBase />
                 </ProtectedAdminRoute>
               } />
               <Route path="/program/:id" element={<ProgramDetails />} />

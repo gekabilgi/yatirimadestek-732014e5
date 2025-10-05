@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.ip-geolocation]
 verify_jwt = false
+
+[functions.generate-embeddings]
+verify_jwt = true
+
+[functions.chat-rag]
+verify_jwt = false
