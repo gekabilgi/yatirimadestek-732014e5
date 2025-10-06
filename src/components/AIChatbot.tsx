@@ -7,16 +7,45 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Bot, Send, X, Loader2, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTypewriter } from "@/hooks/useTypewriter";
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  id: string;
+}
+
+function MessageBubble({ message }: { message: Message }) {
+  const isUser = message.role === 'user';
+  
+  // Only use typewriter for assistant messages
+  const { displayedText } = useTypewriter({
+    text: message.content,
+    speed: isUser ? 0 : 30,
+  });
+
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`max-w-[85%] rounded-lg p-3 ${
+          isUser
+            ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white'
+            : 'bg-muted'
+        }`}
+      >
+        <p className="text-sm whitespace-pre-wrap">
+          {isUser ? message.content : displayedText}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
+      id: '1',
       role: 'assistant',
       content: 'Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.',
     },
@@ -40,7 +69,7 @@ export function AIChatbot() {
     setInput('');
     
     // Add user message
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: userMessage }]);
     setIsLoading(true);
 
     try {
@@ -54,6 +83,7 @@ export function AIChatbot() {
       setMessages(prev => [
         ...prev,
         {
+          id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: data.answer,
         },
@@ -78,6 +108,7 @@ export function AIChatbot() {
       setMessages(prev => [
         ...prev,
         {
+          id: (Date.now() + 2).toString(),
           role: 'assistant',
           content: errorMessage,
         },
@@ -135,21 +166,8 @@ export function AIChatbot() {
           {/* Messages */}
           <ScrollArea className="flex-1 p-4" ref={scrollRef}>
             <div className="space-y-4">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-lg p-3 ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                  </div>
-                </div>
+              {messages.map((message) => (
+                <MessageBubble key={message.id} message={message} />
               ))}
               
               {isLoading && (
