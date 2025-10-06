@@ -6,7 +6,7 @@ interface UseTypewriterOptions {
   onComplete?: () => void;
 }
 
-export function useTypewriter({ text, speed = 30, onComplete }: UseTypewriterOptions) {
+export function useTypewriter({ text, speed = 15, onComplete }: UseTypewriterOptions) {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const indexRef = useRef(0);

@@ -15,13 +15,13 @@ interface Message {
   id: string;
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message, isLatest }: { message: Message; isLatest: boolean }) {
   const isUser = message.role === 'user';
   
-  // Only use typewriter for assistant messages
+  // Only use typewriter for the latest assistant message
   const { displayedText } = useTypewriter({
     text: message.content,
-    speed: isUser ? 0 : 30,
+    speed: (isUser || !isLatest) ? 0 : 15,
   });
 
   return (
@@ -52,6 +52,7 @@ export function AIChatbot() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [latestAssistantId, setLatestAssistantId] = useState<string | null>('1');
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -80,10 +81,12 @@ export function AIChatbot() {
       if (error) throw error;
 
       // Add assistant response
+      const assistantId = (Date.now() + 1).toString();
+      setLatestAssistantId(assistantId);
       setMessages(prev => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: assistantId,
           role: 'assistant',
           content: data.answer,
         },
@@ -105,10 +108,12 @@ export function AIChatbot() {
         variant: "destructive",
       });
       
+      const errorId = (Date.now() + 2).toString();
+      setLatestAssistantId(errorId);
       setMessages(prev => [
         ...prev,
         {
-          id: (Date.now() + 2).toString(),
+          id: errorId,
           role: 'assistant',
           content: errorMessage,
         },
@@ -167,7 +172,11 @@ export function AIChatbot() {
           <ScrollArea className="flex-1 p-4" ref={scrollRef}>
             <div className="space-y-4">
               {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
+                <MessageBubble 
+                  key={message.id} 
+                  message={message} 
+                  isLatest={message.role === 'assistant' && message.id === latestAssistantId}
+                />
               ))}
               
               {isLoading && (
