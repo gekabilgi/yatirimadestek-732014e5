@@ -118,6 +118,48 @@ serve(async (req) => {
 
     console.log('Processing question:', question);
 
+    // ROUTING LOGIC: Try CSV lookup first for NACE codes or short queries
+    const nacePattern = /\b[0-9]{2}(?:\.[0-9]{1,2}){0,2}\b/;
+    const hasNaceCode = nacePattern.test(question);
+    const isShortQuery = question.length < 100;
+    
+    // Try CSV lookup for NACE codes or short sector queries
+    if (hasNaceCode || isShortQuery) {
+      console.log('Attempting CSV lookup (NACE or short query)');
+      try {
+        const csvLookupResponse = await fetch(`${supabaseUrl}/functions/v1/lookup-nace`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({ question }),
+        });
+
+        if (csvLookupResponse.ok) {
+          const csvResult = await csvLookupResponse.json();
+          if (csvResult.found) {
+            console.log('CSV lookup successful, returning structured answer');
+            return new Response(
+              JSON.stringify({
+                answer: csvResult.answer,
+                sources: ['CSV Policy Database'],
+                isDisambiguation: csvResult.isDisambiguation || false,
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+        console.log('CSV lookup returned no results, falling back to TXT RAG');
+      } catch (csvError) {
+        console.error('CSV lookup error:', csvError);
+        console.log('Falling back to TXT RAG due to CSV error');
+      }
+    } else {
+      console.log('Skipping CSV lookup (general question), using TXT RAG directly');
+    }
+
+    // FALLBACK: TXT RAG for general questions or when CSV lookup fails
     // Generate embedding for the question
     const queryEmbedding = await generateEmbedding(question);
     console.log('Generated query embedding');
