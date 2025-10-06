@@ -118,14 +118,34 @@ serve(async (req) => {
 
     console.log('Processing question:', question);
 
-    // ROUTING LOGIC: Try CSV lookup first for NACE codes or short queries
+    // ROUTING LOGIC: Smart 3-layer routing
+    const questionLower = question.toLowerCase();
+    
+    // Layer 1: NACE Code Detection (exact match)
     const nacePattern = /\b[0-9]{2}(?:\.[0-9]{1,2}){0,2}\b/;
     const hasNaceCode = nacePattern.test(question);
-    const isShortQuery = question.length < 100;
     
-    // Try CSV lookup for NACE codes or short sector queries
-    if (hasNaceCode || isShortQuery) {
-      console.log('Attempting CSV lookup (NACE or short query)');
+    // Layer 2: General Question Keywords (go directly to TXT RAG)
+    const generalKeywords = [
+      'teşvik', 'başvuru', 'nasıl', 'nedir', 'kimler', 'hangi', 'nereye',
+      'yerel kalkınma', 'bölgesel', 'destek programı', 'süreç', 'evrak',
+      'başvurmak', 'gerekli', 'koşul', 'şart', 'açıklama', 'detay'
+    ];
+    const hasGeneralKeyword = generalKeywords.some(kw => questionLower.includes(kw));
+    
+    // Layer 3: Sector Keywords (try CSV, fallback to TXT RAG if low relevance)
+    const sectorKeywords = [
+      'nace', 'gtip', 'sektor', 'üretim', 'imalat', 'yetiştiriciliği',
+      'kümes', 'sera', 'tekstil', 'kimyasal', 'makine', 'gıda',
+      'metal', 'plastik', 'elektronik', 'otomotiv', 'inşaat'
+    ];
+    const hasSectorKeyword = sectorKeywords.some(kw => questionLower.includes(kw));
+    
+    // Route to CSV only if: has NACE code OR has sector keyword BUT NOT general keyword
+    const shouldTryCSV = hasNaceCode || (hasSectorKeyword && !hasGeneralKeyword);
+    
+    if (shouldTryCSV) {
+      console.log('Attempting CSV lookup (NACE code or sector keyword)');
       try {
         const csvLookupResponse = await fetch(`${supabaseUrl}/functions/v1/lookup-nace`, {
           method: 'POST',
@@ -138,8 +158,10 @@ serve(async (req) => {
 
         if (csvLookupResponse.ok) {
           const csvResult = await csvLookupResponse.json();
-          if (csvResult.found) {
-            console.log('CSV lookup successful, returning structured answer');
+          
+          // For exact NACE matches, always return
+          if (csvResult.found && hasNaceCode) {
+            console.log('CSV exact NACE match found, returning result');
             return new Response(
               JSON.stringify({
                 answer: csvResult.answer,
@@ -149,14 +171,32 @@ serve(async (req) => {
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
+          
+          // For fuzzy matches, check if it's a disambiguation or single result
+          if (csvResult.found && !csvResult.isDisambiguation) {
+            console.log('CSV fuzzy match found, returning result');
+            return new Response(
+              JSON.stringify({
+                answer: csvResult.answer,
+                sources: ['CSV Policy Database'],
+                isDisambiguation: false,
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          
+          // If disambiguation with too many results, fallback to TXT RAG
+          if (csvResult.isDisambiguation && csvResult.answer.includes('fazla sonuç')) {
+            console.log('CSV returned too many results, falling back to TXT RAG');
+          }
         }
-        console.log('CSV lookup returned no results, falling back to TXT RAG');
+        console.log('CSV lookup returned no high-confidence results, falling back to TXT RAG');
       } catch (csvError) {
         console.error('CSV lookup error:', csvError);
         console.log('Falling back to TXT RAG due to CSV error');
       }
     } else {
-      console.log('Skipping CSV lookup (general question), using TXT RAG directly');
+      console.log('General question detected, using TXT RAG directly');
     }
 
     // FALLBACK: TXT RAG for general questions or when CSV lookup fails
