@@ -36,6 +36,53 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding;
 }
 
+// Expand short queries using Lovable AI
+async function expandQuery(shortQuery: string): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  
+  if (!LOVABLE_API_KEY) {
+    return shortQuery; // Fallback to original if no API key
+  }
+
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [{
+          role: 'user',
+          content: `Kullanıcı kısa bir soru sordu: "${shortQuery}"
+
+Bu soruyu Türkiye'deki yatırım teşvikleri ve destekleri bağlamında tam bir soruya dönüştür.
+Örnekler:
+- "Türkiye Yüzyılı Kalkınma" → "Türkiye Yüzyılı Kalkınma Hamlesi hangi programları ve destekleri içerir?"
+- "teşvik başvuru" → "Teşvik başvurusu nasıl yapılır?"
+- "bölgesel destek" → "Bölgesel destek programları nelerdir?"
+
+SADECE genişletilmiş soruyu döndür, başka hiçbir açıklama yapma.`
+        }],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Query expansion failed:', response.status);
+      return shortQuery; // Fallback to original
+    }
+
+    const data = await response.json();
+    const expandedQuery = data.choices[0].message.content.trim();
+    console.log(`Query expanded: "${shortQuery}" → "${expandedQuery}"`);
+    return expandedQuery;
+  } catch (error) {
+    console.error('Error expanding query:', error);
+    return shortQuery; // Fallback to original
+  }
+}
+
 // Generate chat response using Lovable AI
 async function generateResponse(context: string, question: string, matchedQuestions: string[]): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -50,8 +97,8 @@ Resmi Soru-Cevap dokümanlarına dayanarak kullanıcı sorularını cevaplıyors
 ÖNEMLİ KURALLAR:
 1. Sadece sağlanan bilgi bankasındaki bilgilere dayanarak cevap ver
 2. Bilgi bankasında tam cevap varsa, o cevabı kullan ve hangi sorudan geldiğini belirt
-3. Eğer bilgi bankasında ALAKALI bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun." de
-4. Asla bilgi bankasında olmayan bilgileri uydurma veya genel bilgilerle cevap verme
+3. Eğer bilgi bankasında ALAKALI bilgi varsa, en yakın cevabı ver
+4. Asla bilgi bankasında olmayan bilgileri uydurma
 5. Cevapları Türkçe, net ve profesyonel bir şekilde ver
 6. Mümkünse orijinal soruyu referans göster: "Bu soru 'X' sorusunda cevaplanmış:"`;
 
@@ -64,7 +111,7 @@ ${context}${questionContext}
 
 Kullanıcı Sorusu: ${question}
 
-Lütfen yukarıdaki bilgi bankasındaki bilgilere dayanarak soruyu cevapla. Eğer bilgi bankasında alakalı bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok" de.`;
+Lütfen yukarıdaki bilgi bankasındaki bilgilere dayanarak soruyu cevapla.`;
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -78,7 +125,7 @@ Lütfen yukarıdaki bilgi bankasındaki bilgilere dayanarak soruyu cevapla. Eğe
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.3, // Lower temperature for more precise answers
+      temperature: 0.3,
     }),
   });
 
@@ -200,15 +247,25 @@ serve(async (req) => {
     }
 
     // FALLBACK: TXT RAG for general questions or when CSV lookup fails
-    // Generate embedding for the question
-    const queryEmbedding = await generateEmbedding(question);
+    
+    // Expand short queries for better matching
+    const wordCount = question.trim().split(/\s+/).length;
+    let processedQuestion = question;
+    
+    if (wordCount <= 6) {
+      console.log(`Short query detected (${wordCount} words), expanding...`);
+      processedQuestion = await expandQuery(question);
+    }
+    
+    // Generate embedding for the processed question
+    const queryEmbedding = await generateEmbedding(processedQuestion);
     console.log('Generated query embedding');
 
-    // Search for similar documents with optimized threshold for Q&A
+    // Search for similar documents with lowered threshold for better recall
     const { data: matches, error: searchError } = await supabase
       .rpc('match_documents', {
         query_embedding: queryEmbedding,
-        match_threshold: 0.4,  // Lower threshold for better recall
+        match_threshold: 0.3,  // Lowered from 0.4 to catch more partial matches
         match_count: 10,  // Get more matches to find the best Q&A
       });
 
