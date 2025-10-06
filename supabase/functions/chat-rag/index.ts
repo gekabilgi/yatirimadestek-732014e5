@@ -112,11 +112,11 @@ serve(async (req) => {
     const queryEmbedding = await generateEmbedding(question);
     console.log('Generated query embedding');
 
-    // Search for similar documents
+    // Search for similar documents with lower threshold
     const { data: matches, error: searchError } = await supabase
       .rpc('match_documents', {
         query_embedding: queryEmbedding,
-        match_threshold: 0.7,
+        match_threshold: 0.5,  // Lowered from 0.7 to 0.5
         match_count: 5,
       });
 
