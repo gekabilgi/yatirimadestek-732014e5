@@ -37,23 +37,34 @@ async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 // Generate chat response using Lovable AI
-async function generateResponse(context: string, question: string): Promise<string> {
+async function generateResponse(context: string, question: string, matchedQuestions: string[]): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   
   if (!LOVABLE_API_KEY) {
     throw new Error('LOVABLE_API_KEY is not configured');
   }
 
-  const systemPrompt = `Sen Türkçe konuşan yardımcı bir asistansın. Kullanıcının sorularını verilen bağlama göre cevapla. 
-Eğer bağlamda cevap yoksa, kibarca bilmediğini söyle ve varsa ilgili konularda yönlendirme yap.
-Her zaman Türkçe cevap ver ve nazik ol.`;
+  const systemPrompt = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın. 
+Resmi Soru-Cevap dokümanlarına dayanarak kullanıcı sorularını cevaplıyorsun.
 
-  const userPrompt = `Bağlam:
-${context}
+ÖNEMLİ KURALLAR:
+1. Sadece sağlanan bilgi bankasındaki bilgilere dayanarak cevap ver
+2. Bilgi bankasında tam cevap varsa, o cevabı kullan ve hangi sorudan geldiğini belirt
+3. Eğer bilgi bankasında ALAKALI bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun." de
+4. Asla bilgi bankasında olmayan bilgileri uydurma veya genel bilgilerle cevap verme
+5. Cevapları Türkçe, net ve profesyonel bir şekilde ver
+6. Mümkünse orijinal soruyu referans göster: "Bu soru 'X' sorusunda cevaplanmış:"`;
 
-Soru: ${question}
+  const questionContext = matchedQuestions.length > 0 
+    ? `\n\nBenzer Sorular:\n${matchedQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
+    : '';
 
-Lütfen yukarıdaki bağlamı kullanarak soruyu cevapla:`;
+  const userPrompt = `Bilgi Bankası (Resmi Soru-Cevap Dokümanı):
+${context}${questionContext}
+
+Kullanıcı Sorusu: ${question}
+
+Lütfen yukarıdaki bilgi bankasındaki bilgilere dayanarak soruyu cevapla. Eğer bilgi bankasında alakalı bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok" de.`;
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -67,8 +78,7 @@ Lütfen yukarıdaki bağlamı kullanarak soruyu cevapla:`;
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.7,
-      max_tokens: 1000,
+      temperature: 0.3, // Lower temperature for more precise answers
     }),
   });
 
@@ -112,12 +122,12 @@ serve(async (req) => {
     const queryEmbedding = await generateEmbedding(question);
     console.log('Generated query embedding');
 
-    // Search for similar documents with lower threshold
+    // Search for similar documents with optimized threshold for Q&A
     const { data: matches, error: searchError } = await supabase
       .rpc('match_documents', {
         query_embedding: queryEmbedding,
-        match_threshold: 0.5,  // Lowered from 0.7 to 0.5
-        match_count: 5,
+        match_threshold: 0.4,  // Lower threshold for better recall
+        match_count: 10,  // Get more matches to find the best Q&A
       });
 
     if (searchError) {
@@ -130,7 +140,7 @@ serve(async (req) => {
     if (!matches || matches.length === 0) {
       return new Response(
         JSON.stringify({
-          answer: 'Üzgünüm, bu konuda yeterli bilgim yok. Lütfen başka bir soru sorun veya daha fazla bilgi ekleyin.',
+          answer: 'Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun.',
           sources: [],
         }),
         {
@@ -139,19 +149,33 @@ serve(async (req) => {
       );
     }
 
-    // Combine context from matches
-    const context = matches
-      .map((match: any) => `${match.content} (Kaynak: ${match.filename})`)
-      .join('\n\n');
+    // Extract matched questions from metadata
+    const matchedQuestions = matches
+      .filter((match: any) => match.content.includes('Soru:'))
+      .map((match: any) => {
+        const questionMatch = match.content.match(/Soru:\s*(.+?)(?=Cevap:|$)/is);
+        return questionMatch ? questionMatch[1].trim() : null;
+      })
+      .filter((q: string | null) => q !== null)
+      .slice(0, 3); // Top 3 matched questions
 
-    // Generate response
-    const answer = await generateResponse(context, question);
+    // Build context from matched documents, prioritizing complete Q&A pairs
+    const context = matches
+      .slice(0, 5) // Use top 5 matches for context
+      .map((match: any) => match.content)
+      .join('\n\n---\n\n');
+
+    console.log('Generating response with Q&A context');
+    console.log('Matched questions:', matchedQuestions);
+
+    // Generate response using Lovable AI with matched questions
+    const answer = await generateResponse(context, question, matchedQuestions);
     console.log('Generated response');
 
     return new Response(
       JSON.stringify({
         answer,
-        sources: matches.map((m: any) => ({
+        sources: matches.slice(0, 5).map((m: any) => ({
           filename: m.filename,
           similarity: m.similarity,
         })),

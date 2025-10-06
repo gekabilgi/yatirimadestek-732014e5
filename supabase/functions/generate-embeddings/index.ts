@@ -6,27 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Chunk text into smaller pieces for embedding
-function chunkText(text: string, chunkSize = 500): string[] {
-  const chunks: string[] = [];
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+// Q&A-aware chunking that keeps question-answer pairs together
+function chunkQAPairs(text: string): Array<{ content: string; question: string | null }> {
+  const chunks: Array<{ content: string; question: string | null }> = [];
   
-  let currentChunk = '';
+  // Split by "Soru:" pattern while keeping the delimiter
+  const qaPairs = text.split(/(?=Soru:)/i).filter(s => s.trim());
   
-  for (const sentence of sentences) {
-    if ((currentChunk + sentence).length > chunkSize && currentChunk) {
-      chunks.push(currentChunk.trim());
-      currentChunk = sentence;
+  for (const pair of qaPairs) {
+    const trimmed = pair.trim();
+    if (!trimmed) continue;
+    
+    // Extract question text for metadata
+    const questionMatch = trimmed.match(/Soru:\s*(.+?)(?=Cevap:|$)/is);
+    const question = questionMatch ? questionMatch[1].trim() : null;
+    
+    // If chunk is too large (>2000 chars), split it but try to keep Q&A together
+    if (trimmed.length > 2000) {
+      const parts = trimmed.match(/[\s\S]{1,2000}(?:\s|$)/g) || [trimmed];
+      parts.forEach((part, index) => {
+        chunks.push({
+          content: part.trim(),
+          question: index === 0 ? question : null // Only first chunk gets the question
+        });
+      });
     } else {
-      currentChunk += ' ' + sentence;
+      chunks.push({
+        content: trimmed,
+        question
+      });
     }
   }
   
-  if (currentChunk) {
-    chunks.push(currentChunk.trim());
-  }
-  
-  return chunks;
+  return chunks.length > 0 ? chunks : [{ content: text, question: null }];
 }
 
 // Generate embedding using OpenAI
@@ -73,9 +85,9 @@ serve(async (req) => {
     
     console.log('Processing document:', filename);
     
-    // Chunk the text
-    const chunks = chunkText(content);
-    console.log(`Created ${chunks.length} chunks`);
+    // Chunk the text using Q&A-aware chunking
+    const chunks = chunkQAPairs(content);
+    console.log(`Created ${chunks.length} Q&A chunks`);
 
     // Generate embeddings for each chunk
     const embeddings: Array<{
@@ -83,17 +95,24 @@ serve(async (req) => {
       content: string;
       chunk_index: number;
       embedding: number[];
+      metadata?: any;
     }> = [];
 
     for (let i = 0; i < chunks.length; i++) {
       console.log(`Generating embedding for chunk ${i + 1}/${chunks.length}`);
-      const embedding = await generateEmbedding(chunks[i]);
+      const embedding = await generateEmbedding(chunks[i].content);
+      
+      const metadata: any = {};
+      if (chunks[i].question) {
+        metadata.question = chunks[i].question;
+      }
       
       embeddings.push({
         filename,
-        content: chunks[i],
+        content: chunks[i].content,
         chunk_index: i,
         embedding,
+        ...(Object.keys(metadata).length > 0 && { metadata })
       });
     }
 
