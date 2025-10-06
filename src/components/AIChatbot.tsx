@@ -6,12 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Bot, Send, X, Loader2, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  sources?: Array<{ filename: string; similarity: number }>;
 }
 
 export function AIChatbot() {
@@ -26,6 +25,7 @@ export function AIChatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -56,7 +56,6 @@ export function AIChatbot() {
         {
           role: 'assistant',
           content: data.answer,
-          sources: data.sources,
         },
       ]);
     } catch (error: any) {
@@ -110,7 +109,7 @@ export function AIChatbot() {
 
       {/* Chat Modal */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-[420px] h-[600px] shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300">
+        <Card className={`fixed ${isMobile ? 'inset-4' : 'bottom-6 right-6 w-[420px] h-[600px]'} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
             <div className="flex items-center gap-2">
@@ -149,17 +148,6 @@ export function AIChatbot() {
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    
-                    {message.sources && message.sources.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
-                        <p className="text-xs opacity-70">Kaynaklar:</p>
-                        {message.sources.map((source, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs mr-1">
-                            {source.filename}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
