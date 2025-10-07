@@ -38,8 +38,8 @@ function appendInfoAndBadge(answer: string): string {
 
   // Badge yoksa ekle
   if (!out.includes(BADGE_TAG)) {
-    const sep = out.endsWith(".") ? " " : "\n";
-    out += `\n${sep}${INFO_SENTENCE}${BADGE_TAG}`;
+    //const sep = out.endsWith(".") ? " " : "\n";
+    out += `\n${INFO_SENTENCE}${BADGE_TAG}`;
   }
 
   return out;
