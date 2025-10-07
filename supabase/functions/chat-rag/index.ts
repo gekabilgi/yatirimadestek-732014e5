@@ -8,8 +8,8 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const INFO_SENTENCE = "Başvuru ve detaylı bilgi için https://yerelkalkinmahamlesi.gov.tr adresini ziyaret edin.";
-const BADGE_TAG = "[badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.gov.tr]";
+const INFO_SENTENCE = "Başvuru ve detaylı bilgi için https://yerelkalkinmahamlesi.sanayi.gov.tr adresini ziyaret edin.";
+const BADGE_TAG = "[badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.sanayi.gov.tr]";
 
 // --- Utils ---
 
