@@ -52,7 +52,7 @@ Resmi Soru-Cevap dokümanlarına dayanarak kullanıcı sorularını cevaplıyors
 2. Bilgi bankasında tam cevap varsa, o cevabı kullan
 3. Eğer bilgi bankasında ALAKALI bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun." de
 4. Asla bilgi bankasında olmayan bilgileri uydurma veya genel bilgilerle cevap verme
-5. Cevapları Türkçe, net ve profesyonel bir şekilde ver;
+5. Cevapları Türkçe, net ve profesyonel bir şekilde ver"`;
 
   const questionContext = matchedQuestions.length > 0 
     ? `\n\nBenzer Sorular:\n${matchedQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
