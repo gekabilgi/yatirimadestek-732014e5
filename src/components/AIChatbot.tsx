@@ -7,12 +7,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Bot, Send, X, Loader2, Sparkles, RotateCcw, Square, Trash2, Download, PlusCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   id: string;
 }
+
+const BADGE_RE = /\[badge:\s*([^\|\]]+)\|([^\]]+)\]/gi;
 
 function TypingDots() {
   return (
@@ -24,22 +27,70 @@ function TypingDots() {
   );
 }
 
+function renderContentWithBadges(content: string) {
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = BADGE_RE.exec(content)) !== null) {
+    const start = match.index;
+    const end = start + match[0].length;
+
+    // Rozetten önceki düz metin
+    if (start > lastIndex) {
+      const text = content.slice(lastIndex, start);
+      nodes.push(
+        <span key={`t-${lastIndex}`} className="whitespace-pre-wrap">
+          {text}
+        </span>,
+      );
+    }
+
+    const label = match[1].trim();
+    const hrefRaw = match[2].trim();
+    const href = /^https?:\/\//i.test(hrefRaw) ? hrefRaw : "#";
+
+    nodes.push(
+      <a
+        key={`b-${start}`}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block align-middle ml-2"
+        aria-label={label}
+      >
+        <Badge className="cursor-pointer select-none">{label}</Badge>
+      </a>,
+    );
+
+    lastIndex = end;
+  }
+
+  // Son rozetten sonra kalan metin
+  if (lastIndex < content.length) {
+    nodes.push(
+      <span key={`t-${lastIndex}`} className="whitespace-pre-wrap">
+        {content.slice(lastIndex)}
+      </span>,
+    );
+  }
+
+  return nodes;
+}
+
 function MessageBubble({ message }: { message: Message }) {
-  const isUser = message.role === 'user';
+  const isUser = message.role === "user";
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[85%] rounded-lg p-3 ${
-          isUser
-            ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white'
-            : 'bg-muted'
+          isUser ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white" : "bg-muted"
         }`}
       >
-        <div 
-          className="text-sm whitespace-pre-wrap prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: message.content }}
-        />
+        <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+          {renderContentWithBadges(message.content)}
+        </div>
       </div>
     </div>
   );
@@ -49,12 +100,12 @@ export function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
-      role: 'assistant',
-      content: 'Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.',
+      id: "1",
+      role: "assistant",
+      content: "Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.",
     },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -66,16 +117,16 @@ export function AIChatbot() {
   // Auto-scroll logic with user scroll detection
   useEffect(() => {
     if (!scrollRef.current || !shouldAutoScroll) return;
-    
+
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, shouldAutoScroll, isLoading]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
-    
+
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
+
     // Pause auto-scroll if user scrolled up more than 120px
     setShouldAutoScroll(distanceFromBottom < 120);
   };
@@ -84,11 +135,11 @@ export function AIChatbot() {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
-    setInput('');
-    
+    setInput("");
+
     // Add user message
     const userMsgId = Date.now().toString();
-    setMessages(prev => [...prev, { id: userMsgId, role: 'user', content: userMessage }]);
+    setMessages((prev) => [...prev, { id: userMsgId, role: "user", content: userMessage }]);
     setIsLoading(true);
     setShouldAutoScroll(true);
 
@@ -96,7 +147,7 @@ export function AIChatbot() {
     abortControllerRef.current = new AbortController();
 
     try {
-      const { data, error } = await supabase.functions.invoke('chat-rag', {
+      const { data, error } = await supabase.functions.invoke("chat-rag", {
         body: { question: userMessage },
       });
 
@@ -104,54 +155,50 @@ export function AIChatbot() {
 
       // Add assistant response
       const assistantId = (Date.now() + 1).toString();
-      
+
       // Simulate typing effect
       setIsStreaming(true);
       const fullResponse = data.answer;
-      const words = fullResponse.split(' ');
-      let currentText = '';
-      
+      const words = fullResponse.split(" ");
+      let currentText = "";
+
       // Add empty message first
-      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
-      
+      setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
+
       // Stream words
       for (let i = 0; i < words.length; i++) {
         if (abortControllerRef.current?.signal.aborted) break;
-        
-        currentText += (i > 0 ? ' ' : '') + words[i];
-        setMessages(prev => prev.map(msg => 
-          msg.id === assistantId ? { ...msg, content: currentText } : msg
-        ));
-        
+
+        currentText += (i > 0 ? " " : "") + words[i];
+        setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? { ...msg, content: currentText } : msg)));
+
         // Variable delay for natural cadence
-        await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 20));
+        await new Promise((resolve) => setTimeout(resolve, 30 + Math.random() * 20));
       }
-      
+
       // Ensure full response is shown
-      setMessages(prev => prev.map(msg => 
-        msg.id === assistantId ? { ...msg, content: fullResponse } : msg
-      ));
-      
+      setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? { ...msg, content: fullResponse } : msg)));
+
       setIsStreaming(false);
     } catch (error: any) {
-      console.error('Chat error:', error);
-      
-      let errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
-      
-      if (error.message?.includes('429')) {
-        errorMessage = 'Çok fazla istek gönderildi. Lütfen birkaç saniye bekleyin.';
-      } else if (error.message?.includes('402')) {
-        errorMessage = 'Servis geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
+      console.error("Chat error:", error);
+
+      let errorMessage = "Bir hata oluştu. Lütfen tekrar deneyin.";
+
+      if (error.message?.includes("429")) {
+        errorMessage = "Çok fazla istek gönderildi. Lütfen birkaç saniye bekleyin.";
+      } else if (error.message?.includes("402")) {
+        errorMessage = "Servis geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.";
       }
-      
+
       toast({
         title: "Hata",
         description: errorMessage,
         variant: "destructive",
       });
-      
+
       const errorId = (Date.now() + 2).toString();
-      setMessages(prev => [...prev, { id: errorId, role: 'assistant', content: errorMessage }]);
+      setMessages((prev) => [...prev, { id: errorId, role: "assistant", content: errorMessage }]);
       setIsStreaming(false);
     } finally {
       setIsLoading(false);
@@ -167,43 +214,45 @@ export function AIChatbot() {
 
   const handleRegenerate = () => {
     if (messages.length < 2) return;
-    
+
     // Find the last user message
-    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
     if (!lastUserMessage) return;
-    
+
     // Remove last assistant message
-    setMessages(prev => prev.slice(0, -1));
-    
+    setMessages((prev) => prev.slice(0, -1));
+
     // Resend last user message
     setInput(lastUserMessage.content);
     setTimeout(() => handleSend(), 100);
   };
 
   const handleNewChat = () => {
-    setMessages([{
-      id: Date.now().toString(),
-      role: 'assistant',
-      content: 'Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.',
-    }]);
-    setInput('');
+    setMessages([
+      {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.",
+      },
+    ]);
+    setInput("");
   };
 
   const handleClear = () => {
     setMessages([]);
-    setInput('');
+    setInput("");
   };
 
   const handleExport = () => {
     const dataStr = JSON.stringify(messages, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `chat-${new Date().toISOString()}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    
+
     toast({
       title: "Başarılı",
       description: "Sohbet dışa aktarıldı",
@@ -211,7 +260,7 @@ export function AIChatbot() {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -233,7 +282,9 @@ export function AIChatbot() {
 
       {/* Chat Modal */}
       {isOpen && (
-        <Card className={`fixed ${isMobile ? 'left-4 right-4 top-20 bottom-4 max-h-[85dvh]' : 'bottom-6 right-6 w-[420px] h-[600px]'} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}>
+        <Card
+          className={`fixed ${isMobile ? "left-4 right-4 top-20 bottom-4 max-h-[85dvh]" : "bottom-6 right-6 w-[420px] h-[600px]"} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
             <div className="flex items-center gap-2">
@@ -292,16 +343,12 @@ export function AIChatbot() {
           </div>
 
           {/* Messages */}
-          <ScrollArea 
-            className="flex-1 p-3 sm:p-4" 
-            ref={scrollRef}
-            onScrollCapture={handleScroll}
-          >
+          <ScrollArea className="flex-1 p-3 sm:p-4" ref={scrollRef} onScrollCapture={handleScroll}>
             <div className="space-y-4">
               {messages.map((message) => (
                 <MessageBubble key={message.id} message={message} />
               ))}
-              
+
               {isLoading && !isStreaming && (
                 <div className="flex justify-start">
                   <div className="bg-muted rounded-lg">
@@ -313,7 +360,8 @@ export function AIChatbot() {
           </ScrollArea>
 
           {/* Stop/Regenerate Button */}
-          {(isStreaming || (!isLoading && messages.length > 1 && messages[messages.length - 1].role === 'assistant')) && (
+          {(isStreaming ||
+            (!isLoading && messages.length > 1 && messages[messages.length - 1].role === "assistant")) && (
             <div className="px-3 sm:px-4 pb-2">
               <Button
                 variant="outline"
