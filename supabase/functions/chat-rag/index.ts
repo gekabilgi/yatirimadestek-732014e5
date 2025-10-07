@@ -14,30 +14,31 @@ const BADGE_TAG = "[badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.
 // --- Utils ---
 
 /**
- * Improved detection for provincial investment topics
- * More flexible pattern matching
+ * Eğer yanıt "<İl> Yerel Kalkınma Hamlesi Yatırım Konuları ..." ile başlıyorsa true döner.
+ * "Soru: <İl> ..." ile başlamış olsa bile tespit eder (bazı durumlarda model Soru/Cevap formatı döndürebilir).
  */
 function shouldAppendBadge(answer: string): boolean {
-  const t = (answer || "").trim().toLowerCase();
-
-  // Check for key phrases that indicate provincial investment topics
-  const patterns = [
-    /yerel kalkınma hamlesi yatırım konuları/i,
-    /yatırım konuları.*yerel kalkınma/i,
-    /^(?:soru:\s*)?[\wçğıöşü\s\-]+\s+yerel kalkınma hamlesi/i,
-  ];
-
-  return patterns.some((pattern) => pattern.test(t));
+  const t = (answer || "").trim();
+  // Türkçe karakterleri de kapsayan geniş bir il adı kalıbı ile başta arama
+  const re = /^(?:Soru:\s*)?[A-Za-zÇĞİÖŞÜçğıöşü\s\-]+Yerel Kalkınma Hamlesi Yatırım Konuları/i;
+  return re.test(t);
 }
 
 /**
- * Appends info sentence and badge if not already present
+ * Sonuna bilgi cümlesi ve badge işaretini ekler (zaten varsa yinelenmez).
  */
 function appendInfoAndBadge(answer: string): string {
   let out = answer?.trim() ?? "";
 
-  // Add badge if not present
+  // Bilgi cümlesi yoksa ekle
+  // if (!out.includes("yerelkalkinmahamlesi.sanayi.gov.tr")) {
+  //  const sep = out.endsWith(".") ? " " : "\n";
+  //   out += `${sep}${INFO_SENTENCE}`;
+  // }
+
+  // Badge yoksa ekle
   if (!out.includes(BADGE_TAG)) {
+    //const sep = out.endsWith(".") ? " " : "\n";
     out += `\n${INFO_SENTENCE}${BADGE_TAG}`;
   }
 
@@ -76,6 +77,7 @@ async function generateResponse(context: string, question: string, matchedQuesti
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+  // System prompt: kural (6) hem bilgi cümlesi hem badge işareti içeriyor.
   const systemPrompt = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın. 
 Resmi Soru-Cevap dokümanlarına dayanarak kullanıcı sorularını cevaplıyorsun.
 
@@ -85,7 +87,7 @@ Resmi Soru-Cevap dokümanlarına dayanarak kullanıcı sorularını cevaplıyors
 3. Eğer bilgi bankasında ALAKALI bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun." de.
 4. Asla bilgi bankasında olmayan bilgileri uydurma veya genel bilgilerle cevap verme.
 5. Cevapları Türkçe, net ve profesyonel bir şekilde ver.
-6. Eğer yanıt bir ilin "Yerel Kalkınma Hamlesi Yatırım Konuları" hakkındaysa, cevabın sonuna aşağıdaki işareti *aynen* ekle:
+6. Eğer yanıt "<İl> Yerel Kalkınma Hamlesi Yatırım Konuları" ile başlıyorsa, cevabın sonuna aşağıdaki işareti *aynen* ekle:
    Başvuru ve detaylı bilgi için [badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.sanayi.gov.tr]
    Bu işareti metin içinde HTML'e dönüştürmeye çalışma; sadece bu işareti yaz.
 
@@ -115,7 +117,7 @@ Lütfen yukarıdaki bilgi bankasındaki bilgilere dayanarak soruyu cevapla. Eğe
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3,
+      temperature: 0.3, // daha deterministik
     }),
   });
 
@@ -153,14 +155,14 @@ serve(async (req) => {
 
     console.log("Processing question:", question);
 
-    // 1) Generate embedding
+    // 1) Embedding üret
     const queryEmbedding = await generateEmbedding(question);
     console.log("Generated query embedding");
 
-    // 2) Find similar documents with LOWER threshold for better recall
+    // 2) Benzer belgeleri bul (Q&A odaklı düşük eşik)
     const { data: matches, error: searchError } = await supabase.rpc("match_documents", {
       query_embedding: queryEmbedding,
-      match_threshold: 0.2, // Lowered from 0.3 to 0.2
+      match_threshold: 0.2,
       match_count: 25,
     });
 
@@ -172,14 +174,6 @@ serve(async (req) => {
     const foundCount = matches?.length || 0;
     console.log(`Found ${foundCount} similar documents`);
 
-    // Log top matches for debugging
-    if (matches && matches.length > 0) {
-      console.log("Top 3 matches:");
-      matches.slice(0, 3).forEach((m: any, i: number) => {
-        console.log(`${i + 1}. Similarity: ${m.similarity}, Content preview: ${m.content?.substring(0, 100)}...`);
-      });
-    }
-
     if (!matches || matches.length === 0) {
       return new Response(
         JSON.stringify({
@@ -190,7 +184,7 @@ serve(async (req) => {
       );
     }
 
-    // 3) Extract matched questions
+    // 3) Eşleşen soruları çıkar (Soru: ... kalıbı)
     const matchedQuestions: string[] = matches
       .filter((m: any) => typeof m.content === "string" && m.content.includes("Soru:"))
       .map((m: any) => {
@@ -200,7 +194,7 @@ serve(async (req) => {
       .filter((q: string | null): q is string => !!q)
       .slice(0, 3);
 
-    // 4) Build context from top 5 matches
+    // 4) Bağlam oluştur (en iyi 5 kayıt)
     const context = matches
       .slice(0, 5)
       .map((m: any) => m.content)
@@ -209,16 +203,16 @@ serve(async (req) => {
     console.log("Generating response with Q&A context");
     console.log("Matched questions:", matchedQuestions);
 
-    // 5) Generate LLM response
+    // 5) LLM yanıtı
     let answer = await generateResponse(context, question, matchedQuestions);
     console.log("Generated response");
 
-    // 6) Server-side safety net: append badge if conditions met
+    // 6) Sunucu tarafı güvenlik ağı: koşul sağlanıyorsa cümle + badge ekle
     if (shouldAppendBadge(answer)) {
       answer = appendInfoAndBadge(answer);
     }
 
-    // 7) Return response
+    // 7) Yanıtla
     return new Response(
       JSON.stringify({
         answer,
