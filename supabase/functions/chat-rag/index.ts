@@ -71,6 +71,57 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding as number[];
 }
 
+// --- Query Expansion ---
+async function expandQuery(shortQuery: string): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+  const words = shortQuery.trim().split(/\s+/);
+  if (words.length > 6) return shortQuery; // Already detailed enough
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "system",
+          content: "Sen Türkçe sorguları genişletip tam cümleler haline getiren bir asistansın. Kullanıcı kısa anahtar kelimeler verdiğinde, bunları tam bir soru cümlesine dönüştür. Sadece genişletilmiş soruyu döndür, başka açıklama ekleme.",
+        },
+        {
+          role: "user",
+          content: `Bu kısa sorguyu tam bir soru cümlesine çevir: "${shortQuery}"`,
+        },
+      ],
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    console.warn("Query expansion failed, using original query");
+    return shortQuery;
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content.trim() || shortQuery;
+}
+
+// --- Turkish Character Normalization ---
+function turkishFold(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/ı/g, "i")
+    .replace(/ş/g, "s")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c");
+}
+
 // --- Lovable Chat Completion ---
 async function generateResponse(context: string, question: string, matchedQuestions: string[]): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -154,15 +205,19 @@ serve(async (req) => {
 
     console.log("Processing question:", question);
 
-    // 1) Embedding üret
-    const queryEmbedding = await generateEmbedding(question);
+    // 1) Expand short queries for better semantic understanding
+    const expandedQuestion = await expandQuery(question);
+    console.log("Expanded question:", expandedQuestion);
+
+    // 2) Generate embedding using expanded query
+    const queryEmbedding = await generateEmbedding(expandedQuestion);
     console.log("Generated query embedding");
 
-    // 2) Benzer belgeleri bul (Q&A odaklı düşük eşik)
+    // 3) Find similar documents with lower threshold for better recall
     const { data: matches, error: searchError } = await supabase.rpc("match_documents", {
       query_embedding: queryEmbedding,
-      match_threshold: 0.4,
-      match_count: 10,
+      match_threshold: 0.3, // Lower threshold for more recall
+      match_count: 25,      // More candidates for re-ranking
     });
 
     if (searchError) {
@@ -172,6 +227,32 @@ serve(async (req) => {
 
     const foundCount = matches?.length || 0;
     console.log(`Found ${foundCount} similar documents`);
+
+    // 4) Turkish city-aware re-ranking
+    const cityMatch = expandedQuestion.match(/\b([A-ZÇĞİÖŞÜ][a-zçğıöşü]+)\s+[Yy]erel\s+[Kk]alkınma/);
+    const detectedCity = cityMatch ? cityMatch[1] : null;
+    
+    if (detectedCity) {
+      console.log("Detected city:", detectedCity);
+      const normalizedCity = turkishFold(detectedCity);
+      
+      // Re-rank: boost documents that mention the detected city
+      matches.sort((a: any, b: any) => {
+        const aContent = turkishFold(a.content || "");
+        const bContent = turkishFold(b.content || "");
+        const aCityMatch = aContent.includes(normalizedCity + " yerel kalkinma");
+        const bCityMatch = bContent.includes(normalizedCity + " yerel kalkinma");
+        
+        if (aCityMatch && !bCityMatch) return -1;
+        if (!aCityMatch && bCityMatch) return 1;
+        return b.similarity - a.similarity; // Fallback to similarity
+      });
+      
+      console.log("Top 3 after city re-ranking:", matches.slice(0, 3).map((m: any) => m.filename));
+    } else {
+      console.log("No city detected, using semantic ranking only");
+      console.log("Top 3 by similarity:", matches.slice(0, 3).map((m: any) => m.filename));
+    }
 
     if (!matches || matches.length === 0) {
       return new Response(
