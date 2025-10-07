@@ -12,36 +12,21 @@ const INFO_SENTENCE = "Başvuru ve detaylı bilgi için";
 const BADGE_TAG = "[badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.sanayi.gov.tr]";
 
 // --- Utils ---
-
-/**
- * Eğer yanıt "<İl> Yerel Kalkınma Hamlesi Yatırım Konuları ..." ile başlıyorsa true döner.
- * "Soru: <İl> ..." ile başlamış olsa bile tespit eder (bazı durumlarda model Soru/Cevap formatı döndürebilir).
- */
 function shouldAppendBadge(answer: string): boolean {
-  const t = (answer || "").trim();
-  // Türkçe karakterleri de kapsayan geniş bir il adı kalıbı ile başta arama
-  const re = /^(?:Soru:\s*)?[A-Za-zÇĞİÖŞÜçğıöşü\s\-]+Yerel Kalkınma Hamlesi Yatırım Konuları/i;
-  return re.test(t);
+  const t = (answer || "").trim().toLowerCase();
+  const patterns = [
+    /yerel kalkınma hamlesi yatırım konuları/i,
+    /yatırım konuları.*yerel kalkınma/i,
+    /^(?:soru:\s*)?[\wçğıöşü\s\-]+\s+yerel kalkınma hamlesi/i,
+  ];
+  return patterns.some((pattern) => pattern.test(t));
 }
 
-/**
- * Sonuna bilgi cümlesi ve badge işaretini ekler (zaten varsa yinelenmez).
- */
 function appendInfoAndBadge(answer: string): string {
   let out = answer?.trim() ?? "";
-
-  // Bilgi cümlesi yoksa ekle
-  // if (!out.includes("yerelkalkinmahamlesi.sanayi.gov.tr")) {
-  //  const sep = out.endsWith(".") ? " " : "\n";
-  //   out += `${sep}${INFO_SENTENCE}`;
-  // }
-
-  // Badge yoksa ekle
   if (!out.includes(BADGE_TAG)) {
-    //const sep = out.endsWith(".") ? " " : "\n";
     out += `\n${INFO_SENTENCE}${BADGE_TAG}`;
   }
-
   return out;
 }
 
@@ -49,6 +34,8 @@ function appendInfoAndBadge(answer: string): string {
 async function generateEmbedding(text: string): Promise<number[]> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
+
+  console.log("🔍 Generating embedding for:", text);
 
   const response = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
@@ -64,11 +51,12 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
   if (!response.ok) {
     const error = await response.text();
-    console.error("OpenAI Embedding API error:", response.status, error);
+    console.error("❌ OpenAI Embedding API error:", response.status, error);
     throw new Error(`Embedding generation failed: ${response.status}`);
   }
 
   const data = await response.json();
+  console.log("✅ Embedding generated successfully");
   return data.data[0].embedding as number[];
 }
 
@@ -77,7 +65,6 @@ async function generateResponse(context: string, question: string, matchedQuesti
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-  // System prompt: kural (6) hem bilgi cümlesi hem badge işareti içeriyor.
   const systemPrompt = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın. 
 Resmi Soru-Cevap dokümanlarına dayanarak kullanıcı sorularını cevaplıyorsun.
 
@@ -87,7 +74,7 @@ Resmi Soru-Cevap dokümanlarına dayanarak kullanıcı sorularını cevaplıyors
 3. Eğer bilgi bankasında ALAKALI bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun." de.
 4. Asla bilgi bankasında olmayan bilgileri uydurma veya genel bilgilerle cevap verme.
 5. Cevapları Türkçe, net ve profesyonel bir şekilde ver.
-6. Eğer yanıt "<İl> Yerel Kalkınma Hamlesi Yatırım Konuları" ile başlıyorsa, cevabın sonuna aşağıdaki işareti *aynen* ekle:
+6. Eğer yanıt bir ilin "Yerel Kalkınma Hamlesi Yatırım Konuları" hakkındaysa, cevabın sonuna aşağıdaki işareti *aynen* ekle:
    Başvuru ve detaylı bilgi için [badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.sanayi.gov.tr]
    Bu işareti metin içinde HTML'e dönüştürmeye çalışma; sadece bu işareti yaz.
 
@@ -105,6 +92,8 @@ Kullanıcı Sorusu: ${question}
 
 Lütfen yukarıdaki bilgi bankasındaki bilgilere dayanarak soruyu cevapla. Eğer bilgi bankasında alakalı bilgi yoksa, kesinlikle "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok" de.`;
 
+  console.log("🤖 Sending to LLM with context length:", context.length);
+
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -117,13 +106,13 @@ Lütfen yukarıdaki bilgi bankasındaki bilgilere dayanarak soruyu cevapla. Eğe
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3, // daha deterministik
+      temperature: 0.3,
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    console.error("Chat API error:", response.status, error);
+    console.error("❌ Chat API error:", response.status, error);
     if (response.status === 429) {
       throw new Error("Şu anda çok fazla istek var. Lütfen birkaç saniye sonra tekrar deneyin.");
     }
@@ -153,38 +142,100 @@ serve(async (req) => {
       throw new Error("Geçerli bir soru girin");
     }
 
-    console.log("Processing question:", question);
+    console.log("=".repeat(80));
+    console.log("📝 Processing question:", question);
+    console.log("=".repeat(80));
 
-    // 1) Embedding üret
+    // 1) Generate embedding
     const queryEmbedding = await generateEmbedding(question);
-    console.log("Generated query embedding");
 
-    // 2) Benzer belgeleri bul (Q&A odaklı düşük eşik)
-    const { data: matches, error: searchError } = await supabase.rpc("match_documents", {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.2,
-      match_count: 25,
-    });
+    // 2) FIRST: Check if ANY documents with "Uşak" exist
+    console.log("\n🔎 Checking if Uşak documents exist in database...");
+    const { data: usakCheck, error: usakError } = await supabase
+      .from("documents")
+      .select("id, content, filename")
+      .ilike("content", "%Uşak%")
+      .limit(5);
 
-    if (searchError) {
-      console.error("Search error:", searchError);
-      throw new Error("Arama sırasında bir hata oluştu");
+    if (usakError) {
+      console.error("❌ Error checking Uşak documents:", usakError);
+    } else {
+      console.log(`📊 Found ${usakCheck?.length || 0} documents containing "Uşak"`);
+      if (usakCheck && usakCheck.length > 0) {
+        usakCheck.forEach((doc, i) => {
+          console.log(`\n📄 Document ${i + 1}:`);
+          console.log(`   Filename: ${doc.filename}`);
+          console.log(`   Content preview: ${doc.content?.substring(0, 200)}...`);
+        });
+      }
     }
 
-    const foundCount = matches?.length || 0;
-    console.log(`Found ${foundCount} similar documents`);
+    // 3) Try multiple thresholds
+    console.log("\n🎯 Trying similarity search with different thresholds...");
+
+    const thresholds = [0.1, 0.2, 0.3, 0.4];
+    let bestMatches = null;
+    let usedThreshold = 0.3;
+
+    for (const threshold of thresholds) {
+      console.log(`\n   Testing threshold: ${threshold}`);
+      const { data: testMatches, error: testError } = await supabase.rpc("match_documents", {
+        query_embedding: queryEmbedding,
+        match_threshold: threshold,
+        match_count: 25,
+      });
+
+      if (!testError && testMatches && testMatches.length > 0) {
+        console.log(`   ✅ Found ${testMatches.length} matches at threshold ${threshold}`);
+        console.log(
+          `   📊 Similarity scores: ${testMatches
+            .slice(0, 5)
+            .map((m: any) => m.similarity.toFixed(3))
+            .join(", ")}`,
+        );
+
+        if (!bestMatches) {
+          bestMatches = testMatches;
+          usedThreshold = threshold;
+        }
+      } else {
+        console.log(`   ❌ No matches at threshold ${threshold}`);
+      }
+    }
+
+    // 4) Use the best matches found
+    const matches = bestMatches;
 
     if (!matches || matches.length === 0) {
+      console.log("\n❌ NO MATCHES FOUND AT ANY THRESHOLD");
+      console.log("⚠️  This suggests:");
+      console.log("   1. Documents don't exist in database");
+      console.log("   2. Documents exist but embeddings are not generated");
+      console.log("   3. Embedding model mismatch (different model used for indexing vs querying)");
+
       return new Response(
         JSON.stringify({
           answer: "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun.",
           sources: [],
+          debug: {
+            usakDocumentsFound: usakCheck?.length || 0,
+            embeddingGenerated: true,
+            matchesFound: 0,
+          },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // 3) Eşleşen soruları çıkar (Soru: ... kalıbı)
+    console.log(`\n✅ Using ${matches.length} matches from threshold ${usedThreshold}`);
+    console.log("\n📋 Top 5 matches:");
+    matches.slice(0, 5).forEach((m: any, i: number) => {
+      console.log(`\n${i + 1}. Similarity: ${m.similarity.toFixed(4)}`);
+      console.log(`   Filename: ${m.filename}`);
+      console.log(`   Content: ${m.content?.substring(0, 150)}...`);
+    });
+
+    // 5) Extract matched questions
     const matchedQuestions: string[] = matches
       .filter((m: any) => typeof m.content === "string" && m.content.includes("Soru:"))
       .map((m: any) => {
@@ -194,25 +245,34 @@ serve(async (req) => {
       .filter((q: string | null): q is string => !!q)
       .slice(0, 3);
 
-    // 4) Bağlam oluştur (en iyi 5 kayıt)
+    console.log(`\n❓ Matched questions: ${matchedQuestions.length}`);
+    matchedQuestions.forEach((q, i) => {
+      console.log(`   ${i + 1}. ${q}`);
+    });
+
+    // 6) Build context
     const context = matches
       .slice(0, 5)
       .map((m: any) => m.content)
       .join("\n\n---\n\n");
 
-    console.log("Generating response with Q&A context");
-    console.log("Matched questions:", matchedQuestions);
+    console.log(`\n📦 Context size: ${context.length} characters`);
 
-    // 5) LLM yanıtı
+    // 7) Generate response
     let answer = await generateResponse(context, question, matchedQuestions);
-    console.log("Generated response");
+    console.log(`\n💬 Generated answer: ${answer.substring(0, 150)}...`);
 
-    // 6) Sunucu tarafı güvenlik ağı: koşul sağlanıyorsa cümle + badge ekle
+    // 8) Append badge if needed
     if (shouldAppendBadge(answer)) {
+      console.log("✨ Appending badge to answer");
       answer = appendInfoAndBadge(answer);
     }
 
-    // 7) Yanıtla
+    console.log("=".repeat(80));
+    console.log("✅ REQUEST COMPLETED");
+    console.log("=".repeat(80));
+
+    // 9) Return response
     return new Response(
       JSON.stringify({
         answer,
@@ -220,11 +280,18 @@ serve(async (req) => {
           filename: m.filename,
           similarity: m.similarity,
         })),
+        debug: {
+          usakDocumentsFound: usakCheck?.length || 0,
+          matchesFound: matches.length,
+          usedThreshold,
+          topSimilarity: matches[0]?.similarity,
+        },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error: any) {
-    console.error("Error in chat-rag:", error);
+    console.error("💥 ERROR in chat-rag:", error);
+    console.error("Stack trace:", error.stack);
     return new Response(JSON.stringify({ error: error?.message || "Bir hata oluştu" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
