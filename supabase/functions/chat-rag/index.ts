@@ -162,8 +162,8 @@ serve(async (req) => {
     // 2) Benzer belgeleri bul (Q&A odaklı düşük eşik)
     const { data: matches, error: searchError } = await supabase.rpc("match_documents", {
       query_embedding: queryEmbedding,
-      match_threshold: 0.4,
-      match_count: 10,
+      match_threshold: 0.3,
+      match_count: 25,
     });
 
     if (searchError) {
