@@ -175,7 +175,7 @@ serve(async (req) => {
 
     const thresholds = [0.1, 0.2, 0.3, 0.4];
     let bestMatches = null;
-    let usedThreshold = 0.3;
+    let usedThreshold = 0.1;
 
     for (const threshold of thresholds) {
       console.log(`\n   Testing threshold: ${threshold}`);
