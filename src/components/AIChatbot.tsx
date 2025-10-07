@@ -5,9 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Bot, Send, X, Loader2, Sparkles } from "lucide-react";
+import { Bot, Send, X, Loader2, Sparkles, RotateCcw, Square, Trash2, Download, PlusCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useTypewriter } from "@/hooks/useTypewriter";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,14 +14,18 @@ interface Message {
   id: string;
 }
 
-function MessageBubble({ message, isLatest }: { message: Message; isLatest: boolean }) {
+function TypingDots() {
+  return (
+    <div className="flex gap-1 p-3">
+      <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+      <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+      <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"></div>
+    </div>
+  );
+}
+
+function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user';
-  
-  // Only use typewriter for the latest assistant message
-  const { displayedText } = useTypewriter({
-    text: message.content,
-    speed: (isUser || !isLatest) ? 0 : 15,
-  });
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -33,9 +36,10 @@ function MessageBubble({ message, isLatest }: { message: Message; isLatest: bool
             : 'bg-muted'
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap">
-          {isUser ? message.content : displayedText}
-        </p>
+        <div 
+          className="text-sm whitespace-pre-wrap prose prose-sm max-w-none dark:prose-invert"
+          dangerouslySetInnerHTML={{ __html: message.content }}
+        />
       </div>
     </div>
   );
@@ -52,16 +56,29 @@ export function AIChatbot() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [latestAssistantId, setLatestAssistantId] = useState<string | null>('1');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
+  // Auto-scroll logic with user scroll detection
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    if (!scrollRef.current || !shouldAutoScroll) return;
+    
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, shouldAutoScroll, isLoading]);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    
+    // Pause auto-scroll if user scrolled up more than 120px
+    setShouldAutoScroll(distanceFromBottom < 120);
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -70,8 +87,13 @@ export function AIChatbot() {
     setInput('');
     
     // Add user message
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: userMessage }]);
+    const userMsgId = Date.now().toString();
+    setMessages(prev => [...prev, { id: userMsgId, role: 'user', content: userMessage }]);
     setIsLoading(true);
+    setShouldAutoScroll(true);
+
+    // Create abort controller for stop functionality
+    abortControllerRef.current = new AbortController();
 
     try {
       const { data, error } = await supabase.functions.invoke('chat-rag', {
@@ -82,15 +104,35 @@ export function AIChatbot() {
 
       // Add assistant response
       const assistantId = (Date.now() + 1).toString();
-      setLatestAssistantId(assistantId);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: assistantId,
-          role: 'assistant',
-          content: data.answer,
-        },
-      ]);
+      
+      // Simulate typing effect
+      setIsStreaming(true);
+      const fullResponse = data.answer;
+      const words = fullResponse.split(' ');
+      let currentText = '';
+      
+      // Add empty message first
+      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
+      
+      // Stream words
+      for (let i = 0; i < words.length; i++) {
+        if (abortControllerRef.current?.signal.aborted) break;
+        
+        currentText += (i > 0 ? ' ' : '') + words[i];
+        setMessages(prev => prev.map(msg => 
+          msg.id === assistantId ? { ...msg, content: currentText } : msg
+        ));
+        
+        // Variable delay for natural cadence
+        await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 20));
+      }
+      
+      // Ensure full response is shown
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantId ? { ...msg, content: fullResponse } : msg
+      ));
+      
+      setIsStreaming(false);
     } catch (error: any) {
       console.error('Chat error:', error);
       
@@ -109,18 +151,63 @@ export function AIChatbot() {
       });
       
       const errorId = (Date.now() + 2).toString();
-      setLatestAssistantId(errorId);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: errorId,
-          role: 'assistant',
-          content: errorMessage,
-        },
-      ]);
+      setMessages(prev => [...prev, { id: errorId, role: 'assistant', content: errorMessage }]);
+      setIsStreaming(false);
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
+  };
+
+  const handleStop = () => {
+    abortControllerRef.current?.abort();
+    setIsStreaming(false);
+    setIsLoading(false);
+  };
+
+  const handleRegenerate = () => {
+    if (messages.length < 2) return;
+    
+    // Find the last user message
+    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+    if (!lastUserMessage) return;
+    
+    // Remove last assistant message
+    setMessages(prev => prev.slice(0, -1));
+    
+    // Resend last user message
+    setInput(lastUserMessage.content);
+    setTimeout(() => handleSend(), 100);
+  };
+
+  const handleNewChat = () => {
+    setMessages([{
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: 'Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.',
+    }]);
+    setInput('');
+  };
+
+  const handleClear = () => {
+    setMessages([]);
+    setInput('');
+  };
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify(messages, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `chat-${new Date().toISOString()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Başarılı",
+      description: "Sohbet dışa aktarıldı",
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -138,8 +225,9 @@ export function AIChatbot() {
           onClick={() => setIsOpen(true)}
           size="lg"
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-50"
+          aria-label="AI Asistan'ı Aç"
         >
-          <Bot className="h-9 w-9" />
+          <Bot className="h-6 w-6" />
         </Button>
       )}
 
@@ -147,67 +235,128 @@ export function AIChatbot() {
       {isOpen && (
         <Card className={`fixed ${isMobile ? 'left-4 right-4 top-20 bottom-4 max-h-[85dvh]' : 'bottom-6 right-6 w-[420px] h-[600px]'} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}>
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Bot className="h-6 w-6" />
-                <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-yellow-300" />
+                <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
+                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 absolute -top-1 -right-1 text-yellow-300" />
               </div>
               <div>
-                <h3 className="font-semibold">AI Asistan</h3>
-                <p className="text-xs opacity-90">Sorularınızı cevaplayabilirim</p>
+                <h3 className="font-semibold text-sm sm:text-base">AI Asistan</h3>
+                <p className="text-xs opacity-90 hidden sm:block">Sorularınızı cevaplayabilirim</p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 h-8 w-8"
+              aria-label="Kapat"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
+          {/* Action Buttons */}
+          <div className="flex gap-1 sm:gap-2 p-2 border-b bg-muted/30">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNewChat}
+              className="flex-1 text-xs sm:text-sm h-8"
+              disabled={isLoading}
+            >
+              <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Yeni</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClear}
+              className="flex-1 text-xs sm:text-sm h-8"
+              disabled={isLoading || messages.length === 0}
+            >
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Temizle</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExport}
+              className="flex-1 text-xs sm:text-sm h-8"
+              disabled={messages.length === 0}
+            >
+              <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Dışa Aktar</span>
+            </Button>
+          </div>
+
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+          <ScrollArea 
+            className="flex-1 p-3 sm:p-4" 
+            ref={scrollRef}
+            onScrollCapture={handleScroll}
+          >
             <div className="space-y-4">
               {messages.map((message) => (
-                <MessageBubble 
-                  key={message.id} 
-                  message={message} 
-                  isLatest={message.role === 'assistant' && message.id === latestAssistantId}
-                />
+                <MessageBubble key={message.id} message={message} />
               ))}
               
-              {isLoading && (
+              {isLoading && !isStreaming && (
                 <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg p-3">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  <div className="bg-muted rounded-lg">
+                    <TypingDots />
                   </div>
                 </div>
               )}
             </div>
           </ScrollArea>
 
+          {/* Stop/Regenerate Button */}
+          {(isStreaming || (!isLoading && messages.length > 1 && messages[messages.length - 1].role === 'assistant')) && (
+            <div className="px-3 sm:px-4 pb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={isStreaming ? handleStop : handleRegenerate}
+                className="w-full text-xs sm:text-sm h-8"
+              >
+                {isStreaming ? (
+                  <>
+                    <Square className="h-3 w-3 sm:h-4 sm:w-4" />
+                    Durdur
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+                    Yeniden Oluştur
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
           {/* Input */}
-          <div className="p-4 border-t">
+          <div className="p-3 sm:p-4 border-t">
             <div className="flex gap-2">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder="Sorunuzu yazın..."
-                className="resize-none"
+                className="resize-none text-sm"
                 rows={2}
                 disabled={isLoading}
+                aria-label="Soru girin"
               />
               <Button
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto"
+                className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto min-w-[44px]"
+                aria-label="Gönder"
               >
-                {isLoading ? (
+                {isLoading && !isStreaming ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Send className="h-4 w-4" />
