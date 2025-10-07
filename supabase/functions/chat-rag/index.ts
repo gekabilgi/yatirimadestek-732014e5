@@ -8,7 +8,7 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const INFO_SENTENCE = "Başvuru ve detaylı bilgi için https://yerelkalkinmahamlesi.sanayi.gov.tr adresini ziyaret edin.";
+const INFO_SENTENCE = "Başvuru ve detaylı bilgi için";
 const BADGE_TAG = "[badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.sanayi.gov.tr]";
 
 // --- Utils ---
@@ -38,7 +38,8 @@ function appendInfoAndBadge(answer: string): string {
 
   // Badge yoksa ekle
   if (!out.includes(BADGE_TAG)) {
-    out += `\n${BADGE_TAG}`;
+    const sep = out.endsWith(".") ? " " : "\n";
+    out += `\n${sep}${INFO_SENTENCE}${BADGE_TAG}`;
   }
 
   return out;
