@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import Index from "./pages/Index";
+import Start from "./pages/Start";
 import IncentiveTools from "./pages/IncentiveTools";
 import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import Admin from "./pages/Admin";
@@ -67,9 +68,10 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <AIChatbot />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/incentive-tools" element={<IncentiveTools />} />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/start" element={<Start />} />
+          <Route path="/incentive-tools" element={<IncentiveTools />} />
               <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
               <Route path="/tzy" element={<TZY />} />
               <Route path="/tzyil" element={<TZYPublicList />} />

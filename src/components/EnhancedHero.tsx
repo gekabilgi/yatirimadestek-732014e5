@@ -17,7 +17,7 @@ const EnhancedHero = () => {
   }, [trackPageView]);
 
   const handleGetStarted = () => {
-    navigate('/incentive-tools');
+    navigate('/start');
   };
 
   const handleMevzuatIncele = () => {
