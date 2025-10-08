@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { ArrowRight, FileDown, Calculator, MessageSquare, Building2, TrendingUp, Search, Link } from 'lucide-react';
+import { ArrowRight, FileDown, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { RealtimeStatsCard } from '@/components/RealtimeStatsCard';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
-import { supabase } from '@/integrations/supabase/client';
+import AnnouncementCarousel from '@/components/AnnouncementCarousel';
+import AgencyLogosSection from '@/components/AgencyLogosSection';
 
 const EnhancedHero = () => {
   const navigate = useNavigate();
@@ -22,10 +23,6 @@ const EnhancedHero = () => {
 
   const handleMevzuatIncele = () => {
     navigate('/mevzuat');
-  };
-
-  const handleSearchClick = () => {
-    navigate('/searchsupport');
   };
 
   const staticStats = [
@@ -123,78 +120,14 @@ const EnhancedHero = () => {
             </div>
           </div>
 
-          {/* Feature Cards */}
-          <div className="grid gap-6 animate-slide-up-delay-5 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={handleGetStarted}>
-              <CardContent className="p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="rounded-lg bg-gradient-to-br from-green-100 to-green-200 p-3 group-hover:from-green-200 group-hover:to-green-300 transition-colors duration-200">
-                    <Calculator className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Teşvik Robotu</h3>
-                <p className="text-sm text-gray-600">Yatırımınız için alabileceğiniz teşvik miktarını hesaplayın</p>
-              </CardContent>
-            </Card>
-
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/searchsupport')}>
-              <CardContent className="p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 p-3 group-hover:from-blue-200 group-hover:to-blue-300 transition-colors duration-200">
-                    <Search className="h-6 w-6 text-blue-600" />
-                  </div>
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Destek Arama</h3>
-                <p className="text-sm text-gray-600">Güncel Destekleri inceleyin</p>
-              </CardContent>
-            </Card>
-
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/tzy')}>
-              <CardContent className="p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 p-3 group-hover:from-purple-200 group-hover:to-purple-300 transition-colors duration-200">
-                    <Link className="h-6 w-6 text-purple-600" />
-                  </div>
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Tedarik Zinciri</h3>
-                <p className="text-sm text-gray-600">Yerli Tedarikçilerle Buluşun</p>
-              </CardContent>
-            </Card>
-
-            <Card className="card-modern hover:shadow-lg transition-all duration-300 group cursor-pointer" onClick={() => navigate('/yatirim-firsatlari')}>
-              <CardContent className="p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 p-3 group-hover:from-orange-200 group-hover:to-orange-300 transition-colors duration-200">
-                    <Building2 className="h-6 w-6 text-orange-600" />
-                  </div>
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-gray-900">Yatırım Fırsatları</h3>
-                <p className="text-sm text-gray-600">Bölgesel yatırım fırsatlarını inceleyin</p>
-              </CardContent>
-            </Card>
+          {/* Announcement Carousel */}
+          <div className="animate-slide-up-delay-5">
+            <AnnouncementCarousel />
           </div>
 
-          {/* Bottom CTA */}
-          <div className="mt-16 animate-slide-up-delay-6">
-            <div className="rounded-2xl bg-gradient-to-r from-primary/10 via-blue-600/10 to-primary/10 p-8 border border-primary/20">
-              <div className="mx-auto max-w-2xl text-center">
-                <MessageSquare className="mx-auto mb-4 h-12 w-12 text-primary" />
-                <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                  Uzman Desteği Alın
-                </h2>
-                <p className="mb-6 text-gray-600">
-                  Teşvik başvuru sürecinizde profesyonel destek almak için uzmanlarımızla iletişime geçin.
-                </p>
-                <Button 
-                  onClick={() => navigate('/qna')}
-                  size="lg" 
-                  className="btn-primary h-12 px-8 font-semibold"
-                >
-                  <MessageSquare className="mr-2 h-5 w-5" />
-                  Soru Sor
-                </Button>
-              </div>
-            </div>
+          {/* Agency Logos Section */}
+          <div className="mt-8 animate-slide-up-delay-6">
+            <AgencyLogosSection />
           </div>
         </div>
       </div>
