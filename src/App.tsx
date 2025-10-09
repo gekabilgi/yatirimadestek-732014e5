@@ -13,6 +13,8 @@ import IncentiveTools from "./pages/IncentiveTools";
 import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import Admin from "./pages/Admin";
 import AdminSupportPrograms from "./pages/AdminSupportPrograms";
+import AdminAnnouncements from "./pages/AdminAnnouncements";
+import AnnouncementDetail from "./pages/AnnouncementDetail";
 import AdminFeasibilityReports from "./pages/AdminFeasibilityReports";
 import FeasibilityStatistics from "./pages/FeasibilityStatistics";
 import AdminLogin from "./pages/AdminLogin";
@@ -71,6 +73,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/start" element={<Start />} />
+          <Route path="/duyuru/:id" element={<AnnouncementDetail />} />
           <Route path="/incentive-tools" element={<IncentiveTools />} />
               <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
               <Route path="/tzy" element={<TZY />} />
@@ -109,6 +112,11 @@ const App = () => {
               <Route path="/admin/support-programs" element={
                 <ProtectedAdminRoute>
                   <AdminSupportPrograms />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/announcements" element={
+                <ProtectedAdminRoute>
+                  <AdminAnnouncements />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/feasibility-reports" element={

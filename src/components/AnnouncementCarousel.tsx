@@ -1,4 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Carousel,
@@ -8,60 +11,61 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { ExternalLink } from 'lucide-react';
-
-interface Announcement {
-  id: number;
-  agency: string;
-  agencyLogo: string;
-  title: string;
-  date: string;
-  link?: string;
-}
-
-const announcements: Announcement[] = [
-  {
-    id: 1,
-    agency: 'TKDK',
-    agencyLogo: '/img/image.png',
-    title: 'İPARD III (2021-2027) Onuncu Başvuru Çağrı Dönemi İlan Edilmiştir.',
-    date: '18 TEMMUZ 2025',
-    link: '#',
-  },
-  {
-    id: 2,
-    agency: 'TKDK',
-    agencyLogo: '/img/image.png',
-    title: 'İPARD III (2021-2027) Onuncu Başvuru Çağrı Dönemi İlan Edilmiştir.',
-    date: '07 EKİM 2025',
-    link: '#',
-  },
-  {
-    id: 3,
-    agency: 'İŞKUR',
-    agencyLogo: '/img/image.png',
-    title: 'İŞKUR Engellilere ve Eski Hükümlülere Yönelik 2025/3 Hibe Desteği Başvuruları Başlamıştır.',
-    date: '02 EKİM 2025',
-    link: '#',
-  },
-  {
-    id: 4,
-    agency: 'TKDK',
-    agencyLogo: '/img/image.png',
-    title: 'İPARD III (2021-2027) Dokuzuncu Başvuru Çağrı Dönemi İlan Edilmiştir.',
-    date: '08 EYLÜL 2025',
-    link: '#',
-  },
-  {
-    id: 5,
-    agency: 'BİGG',
-    agencyLogo: '/img/image.png',
-    title: 'BİGG Programı 2025/2 Dönemi Başvuruları Başlamıştır.',
-    date: '15 AĞUSTOS 2025',
-    link: '#',
-  },
-];
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const AnnouncementCarousel = () => {
+  const navigate = useNavigate();
+
+  const { data: announcements = [], isLoading } = useQuery({
+    queryKey: ['announcements'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .order('announcement_date', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="w-full py-12">
+        <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
+          Güncel Destek Duyuruları
+        </h2>
+        <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-72">
+              <CardContent className="p-6 space-y-4">
+                <Skeleton className="w-24 h-24 mx-auto rounded-lg" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (announcements.length === 0) {
+    return (
+      <div className="w-full py-12">
+        <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
+          Güncel Destek Duyuruları
+        </h2>
+        <p className="text-center text-muted-foreground">Henüz duyuru bulunmamaktadır.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full py-12">
       <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
@@ -78,14 +82,17 @@ const AnnouncementCarousel = () => {
         <CarouselContent className="-ml-4">
           {announcements.map((announcement) => (
             <CarouselItem key={announcement.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
-              <Card className="card-modern hover:shadow-xl transition-all duration-300 h-full">
+              <Card 
+                className="card-modern hover:shadow-xl transition-all duration-300 h-full cursor-pointer"
+                onClick={() => navigate(`/duyuru/${announcement.id}`)}
+              >
                 <CardContent className="p-6 flex flex-col h-full">
                   {/* Agency Logo */}
                   <div className="mb-4 flex justify-center">
                     <div className="w-24 h-24 bg-white rounded-lg shadow-sm flex items-center justify-center p-2">
                       <img 
-                        src={announcement.agencyLogo} 
-                        alt={announcement.agency}
+                        src={announcement.institution_logo} 
+                        alt={announcement.institution_name}
                         className="max-w-full max-h-full object-contain"
                       />
                     </div>
@@ -98,8 +105,10 @@ const AnnouncementCarousel = () => {
 
                   {/* Date */}
                   <div className="flex items-center justify-between text-xs text-slate-600 pt-4 border-t">
-                    <span className="font-medium">{announcement.date}</span>
-                    {announcement.link && (
+                    <span className="font-medium uppercase">
+                      {format(new Date(announcement.announcement_date), 'd MMMM yyyy', { locale: tr })}
+                    </span>
+                    {announcement.external_link && (
                       <ExternalLink className="h-4 w-4 text-primary" />
                     )}
                   </div>

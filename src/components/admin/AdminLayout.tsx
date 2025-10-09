@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronRight,
   Scale,
-  Bot
+  Bot,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +40,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
     { name: 'Fizibilite İstatistikleri', href: '/admin/feasibility-statistics', icon: TrendingUp },
     { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },
+    { name: 'Duyuru Yönetimi', href: '/admin/announcements', icon: Megaphone },
     { name: 'Mevzuat Yönetimi', href: '/admin/legislation', icon: Scale },
     { name: 'Yatırımcı Sözlüğü', href: '/admin/glossary-management', icon: Book },
     { name: 'E-posta Yönetimi', href: '/admin/email-management', icon: Mail },

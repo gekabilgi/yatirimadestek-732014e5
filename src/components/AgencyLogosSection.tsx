@@ -27,29 +27,55 @@ const AgencyLogosSection = () => {
     window.open(website, '_blank', 'noopener,noreferrer');
   };
 
+  // Duplicate agencies for seamless loop
+  const duplicatedAgencies = [...agencies, ...agencies];
+
   return (
-    <div className="w-full py-12 border-t border-slate-200">
+    <section className="w-full py-16 bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6">
-          {agencies.map((agency) => (
-            <div
-              key={agency.name}
-              onClick={() => handleAgencyClick(agency.website)}
-              className="flex items-center justify-center p-4 rounded-lg hover:bg-slate-50 transition-all duration-200 cursor-pointer group"
-              title={agency.fullName}
-            >
-              <div className="w-full h-16 flex items-center justify-center grayscale group-hover:grayscale-0 opacity-60 group-hover:opacity-100 transition-all duration-200">
+        <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">
+          İşbirliği İçinde Olduğumuz Kurumlar
+        </h2>
+        
+        <div className="relative">
+          <div className="flex gap-8 animate-scroll">
+            {duplicatedAgencies.map((agency, index) => (
+              <div
+                key={`${agency.name}-${index}`}
+                onClick={() => handleAgencyClick(agency.website)}
+                className="flex-shrink-0 flex items-center justify-center w-40 h-24 p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group"
+                title={agency.fullName}
+              >
                 <img
                   src={agency.logo}
-                  alt={agency.name}
-                  className="max-w-full max-h-full object-contain"
+                  alt={agency.fullName}
+                  className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
                 />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+      
+      <style>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        
+        .animate-scroll {
+          animation: scroll 40s linear infinite;
+        }
+        
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
+    </section>
   );
 };
 

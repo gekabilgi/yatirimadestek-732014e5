@@ -44,6 +44,48 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          announcement_date: string
+          created_at: string
+          detail: string
+          display_order: number | null
+          external_link: string | null
+          id: string
+          institution_logo: string
+          institution_name: string
+          is_active: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          announcement_date?: string
+          created_at?: string
+          detail: string
+          display_order?: number | null
+          external_link?: string | null
+          id?: string
+          institution_logo: string
+          institution_name: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          announcement_date?: string
+          created_at?: string
+          detail?: string
+          display_order?: number | null
+          external_link?: string | null
+          id?: string
+          institution_logo?: string
+          institution_name?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_statistics: {
         Row: {
           created_at: string
@@ -65,6 +107,75 @@ export type Database = {
           stat_name?: string
           stat_value?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      chatbot_knowledge: {
+        Row: {
+          answer: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          question: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          question: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          question?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1849,6 +1960,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      match_chatbot_knowledge: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          answer: string
+          id: string
+          question: string
+          similarity: number
+        }[]
+      }
       match_documents: {
         Args: {
           match_count?: number
@@ -1859,6 +1983,19 @@ export type Database = {
           content: string
           filename: string
           id: string
+          similarity: number
+        }[]
+      }
+      match_knowledge_base: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          answer: string
+          id: string
+          question: string
           similarity: number
         }[]
       }
