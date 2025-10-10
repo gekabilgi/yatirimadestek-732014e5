@@ -45,6 +45,8 @@ export const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
   const isActive = watch('is_active');
   const announcementDate = watch('announcement_date');
 
+  const selectedInstitution = institutionLogos.find(i => i.logoPath === selectedLogo);
+
   const handleLogoChange = (logoPath: string) => {
     setValue('institution_logo', logoPath);
     const institution = institutionLogos.find(i => i.logoPath === logoPath);
@@ -59,7 +61,14 @@ export const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
         <Label htmlFor="institution_logo">Kurum Logosu *</Label>
         <Select value={selectedLogo} onValueChange={handleLogoChange}>
           <SelectTrigger>
-            <SelectValue placeholder="Kurum seçiniz" />
+            {selectedInstitution ? (
+              <div className="flex items-center gap-2">
+                <img src={selectedInstitution.logoPath} alt={selectedInstitution.name} className="w-6 h-6 object-contain" />
+                <span>{selectedInstitution.name}</span>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">Kurum seçiniz</span>
+            )}
           </SelectTrigger>
           <SelectContent>
             {institutionLogos.map((institution) => (
