@@ -218,7 +218,7 @@ const AgencyLogosSection = () => {
           100% { transform: translateX(calc(-50%)); }
         }
         .animate-scroll {
-          animation: scroll 40s linear infinite;
+          animation: scroll 50s linear infinite;
         }
         .animate-scroll:hover {
           animation-play-state: paused;
