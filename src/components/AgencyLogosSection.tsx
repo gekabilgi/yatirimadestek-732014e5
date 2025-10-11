@@ -90,7 +90,7 @@ const agencies: Agency[] = [
   {
     name: "İKA",
     fullName: "İpekyolu Kalkınma Ajansı",
-    logo: "/img/agencies/ika.png",
+    logo: "/img/agencies/ipekyolu.png",
     website: "http://www.ika.org.tr",
   },
   {
