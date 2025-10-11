@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface Agency {
   name: string;
@@ -8,23 +8,162 @@ interface Agency {
 }
 
 const agencies: Agency[] = [
-  { name: 'AHKA', fullName: 'Ahiler Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.ahika.gov.tr' },
-  { name: 'BAKKA', fullName: 'Batı Akdeniz Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.bakka.gov.tr' },
-  { name: 'BEBKA', fullName: 'Bursa Eskişehir Bilecik Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.bebka.org.tr' },
-  { name: 'BİKA', fullName: 'Batı Karadeniz Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.bka.org.tr' },
-  { name: 'DİKA', fullName: 'Dicle Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.dika.org.tr' },
-  { name: 'DOĞAKA', fullName: 'Doğu Akdeniz Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.dogaka.gov.tr' },
-  { name: 'DOKA', fullName: 'Doğu Karadeniz Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.doka.org.tr' },
-  { name: 'FKA', fullName: 'Fırat Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.fka.gov.tr' },
-  { name: 'GEKA', fullName: 'Güney Ege Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.geka.gov.tr' },
-  { name: 'GMKA', fullName: 'Güney Marmara Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.gmka.gov.tr' },
-  { name: 'İKA', fullName: 'İzmir Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.izka.org.tr' },
-  { name: 'İSTKA', fullName: 'İstanbul Kalkınma Ajansı', logo: '/img/image.png', website: 'https://www.istka.org.tr' },
+  {
+    name: "AHİKA",
+    fullName: "Ahiler Kalkınma Ajansı",
+    logo: "/img/agencies/ahika.png",
+    website: "http://www.ahika.gov.tr",
+  },
+  {
+    name: "ANKARAKA",
+    fullName: "Ankara Kalkınma Ajansı",
+    logo: "/img/agencies/ankaraka.png",
+    website: "http://www.ankaraka.org.tr",
+  },
+  {
+    name: "BAKA",
+    fullName: "Batı Akdeniz Kalkınma Ajansı",
+    logo: "/img/agencies/baka.png",
+    website: "http://www.baka.gov.tr",
+  },
+  {
+    name: "BAKKA",
+    fullName: "Batı Karadeniz Kalkınma Ajansı",
+    logo: "/img/agencies/bakka.png",
+    website: "http://www.bakka.gov.tr",
+  },
+  {
+    name: "BEBKA",
+    fullName: "Bursa Eskişehir Bilecik Kalkınma Ajansı",
+    logo: "/img/agencies/bebka.png",
+    website: "http://www.bebka.org.tr",
+  },
+  {
+    name: "ÇKA",
+    fullName: "Çukurova Kalkınma Ajansı",
+    logo: "/img/agencies/cka.png",
+    website: "http://www.cka.org.tr",
+  },
+  {
+    name: "DAKA",
+    fullName: "Doğu Anadolu Kalkınma Ajansı",
+    logo: "/img/agencies/daka.png",
+    website: "http://www.daka.org.tr",
+  },
+  {
+    name: "DİKA",
+    fullName: "Dicle Kalkınma Ajansı",
+    logo: "/img/agencies/dika.png",
+    website: "http://www.dika.org.tr",
+  },
+  {
+    name: "DOĞAKA",
+    fullName: "Doğu Akdeniz Kalkınma Ajansı",
+    logo: "/img/agencies/dogaka.png",
+    website: "https://www.dogaka.gov.tr",
+  },
+  {
+    name: "DOKA",
+    fullName: "Doğu Karadeniz Kalkınma Ajansı",
+    logo: "/img/agencies/doka.png",
+    website: "http://www.doka.org.tr",
+  },
+  {
+    name: "MARKA",
+    fullName: "Doğu Marmara Kalkınma Ajansı",
+    logo: "/img/agencies/marka.png",
+    website: "http://www.marka.org.tr",
+  },
+  { name: "FKA", fullName: "Fırat Kalkınma Ajansı", logo: "/img/agencies/fka.png", website: "http://www.fka.gov.tr" },
+  {
+    name: "GEKA",
+    fullName: "Güney Ege Kalkınma Ajansı",
+    logo: "/img/agencies/geka.png",
+    website: "http://www.geka.gov.tr",
+  },
+  {
+    name: "GMKA",
+    fullName: "Güney Marmara Kalkınma Ajansı",
+    logo: "/img/agencies/gmka.png",
+    website: "http://www.gmka.gov.tr",
+  },
+  {
+    name: "İKA",
+    fullName: "İpekyolu Kalkınma Ajansı",
+    logo: "/img/agencies/ika.png",
+    website: "http://www.ika.org.tr",
+  },
+  {
+    name: "İSTKA",
+    fullName: "İstanbul Kalkınma Ajansı",
+    logo: "/img/agencies/istka.png",
+    website: "http://www.istka.org.tr",
+  },
+  {
+    name: "İZKA",
+    fullName: "İzmir Kalkınma Ajansı",
+    logo: "/img/agencies/izka.png",
+    website: "http://www.izka.org.tr",
+  },
+  {
+    name: "KARACADAĞ",
+    fullName: "Karacadağ Kalkınma Ajansı",
+    logo: "/img/agencies/karacadag.png",
+    website: "http://www.karacadag.gov.tr",
+  },
+  {
+    name: "KUZKA",
+    fullName: "Kuzey Anadolu Kalkınma Ajansı",
+    logo: "/img/agencies/kuzka.png",
+    website: "http://www.kuzka.gov.tr",
+  },
+  {
+    name: "KUDAKA",
+    fullName: "Kuzeydoğu Anadolu Kalkınma Ajansı",
+    logo: "/img/agencies/kudaka.png",
+    website: "http://kudaka.ka.gov.tr",
+  },
+  {
+    name: "MEVKA",
+    fullName: "Mevlana Kalkınma Ajansı",
+    logo: "/img/agencies/mevka.png",
+    website: "http://www.mevka.org.tr",
+  },
+  {
+    name: "ORAN",
+    fullName: "Orta Anadolu Kalkınma Ajansı",
+    logo: "/img/agencies/oran.png",
+    website: "http://www.oran.org.tr",
+  },
+  {
+    name: "OKA",
+    fullName: "Orta Karadeniz Kalkınma Ajansı",
+    logo: "/img/agencies/oka.png",
+    website: "http://oka.ka.gov.tr",
+  },
+  {
+    name: "SERKA",
+    fullName: "Serhat Kalkınma Ajansı",
+    logo: "/img/agencies/serka.png",
+    website: "http://www.serka.gov.tr",
+  },
+  {
+    name: "TRAKYAKA",
+    fullName: "Trakya Kalkınma Ajansı",
+    logo: "/img/agencies/trakyaka.png",
+    website: "http://www.trakyaka.org.tr",
+  },
+  {
+    name: "ZAFER",
+    fullName: "Zafer Kalkınma Ajansı",
+    logo: "/img/agencies/zafer.png",
+    website: "http://www.zafer.gov.tr",
+  },
 ];
 
 const AgencyLogosSection = () => {
   const handleAgencyClick = (website: string) => {
-    window.open(website, '_blank', 'noopener,noreferrer');
+    window.open(website, "_blank", "noopener,noreferrer");
   };
 
   // Duplicate agencies for seamless loop
@@ -33,10 +172,8 @@ const AgencyLogosSection = () => {
   return (
     <section className="w-full py-16 bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">
-          İşbirliği İçinde Olduğumuz Kurumlar
-        </h2>
-        
+        <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">İşbirliği İçinde Olduğumuz Kurumlar</h2>
+
         <div className="relative">
           <div className="flex gap-8 animate-scroll">
             {duplicatedAgencies.map((agency, index) => (
@@ -56,7 +193,7 @@ const AgencyLogosSection = () => {
           </div>
         </div>
       </div>
-      
+
       <style>{`
         @keyframes scroll {
           0% {
