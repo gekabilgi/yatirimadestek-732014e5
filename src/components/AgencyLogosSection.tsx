@@ -168,12 +168,11 @@ const AgencyLogosSection = () => {
 
   // Duplicate agencies for seamless loop
   const duplicatedAgencies = [...agencies, ...agencies];
-
+  console.log(duplicatedAgencies);
   return (
     <section className="w-full py-16 bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">İşbirliği İçinde Olduğumuz Kurumlar</h2>
-
+        a<h2 className="text-3xl font-bold text-center mb-12 text-slate-900">Kalkınma Ajansları</h2>
         <div className="relative">
           <div className="flex gap-8 animate-scroll">
             {duplicatedAgencies.map((agency, index) => (
