@@ -40,6 +40,35 @@ const IncentiveTypeCalculator: React.FC = () => {
       // Increment counter on successful calculation
       if (results.isEligible) {
         await supabase.rpc('increment_stat', { stat_name_param: 'calculation_clicks' });
+        
+        // Import toast at the top of file
+        const { toast } = await import('@/hooks/use-toast');
+        
+        // Create notification description based on incentive type
+        const getIncentiveTypeText = (type: string): string => {
+          switch (type) {
+            case 'Technology Initiative':
+              return 'Teknoloji Hamlesi';
+            case 'Local Development Initiative':
+              return 'Yerel Kalkınma Hamlesi';
+            case 'Strategic Initiative':
+              return 'Stratejik Hamle';
+            default:
+              return type;
+          }
+        };
+        
+        let description = `Teşvik Türü: ${getIncentiveTypeText(inputs.incentiveType)}`;
+        
+        // If Local Development Initiative, add investment type
+        if (inputs.incentiveType === 'Local Development Initiative') {
+          description += ` - Yatırım Konusu: ${inputs.investmentType}`;
+        }
+        
+        toast({
+          title: "Hesaplama Tamamlandı",
+          description: description,
+        });
       }
     } catch (error) {
       console.error('Calculation error:', error);

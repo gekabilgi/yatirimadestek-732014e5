@@ -312,7 +312,7 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       
       toast({
         title: "Hesaplama Tamamlandı",
-        description: "Teşvik hesaplaması başarıyla tamamlandı.",
+        description: `Sektör: ${queryData.selectedSector.sektor} - Teşvik hesaplaması başarıyla tamamlandı.`,
       });
       
     } catch (error) {
