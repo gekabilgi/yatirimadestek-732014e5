@@ -11,6 +11,10 @@ interface ActivityData {
   page_path: string;
   activity_data: any;
   created_at: string;
+  module_name?: string;
+  search_term?: string;
+  incentive_type?: string;
+  investment_topic?: string;
 }
 
 interface TodayActivityStats {

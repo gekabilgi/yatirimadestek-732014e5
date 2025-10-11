@@ -7,6 +7,7 @@ import { IncentiveCalculatorInputs, IncentiveCalculatorResults as Results } from
 import { calculateIncentives } from '@/utils/incentiveCalculations';
 import { adminSettingsService } from '@/services/adminSettingsService';
 import { supabase } from '@/integrations/supabase/client';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 
 const IncentiveTypeCalculator: React.FC = () => {
   const [calculationResults, setCalculationResults] = useState<Results | null>(null);
@@ -14,6 +15,7 @@ const IncentiveTypeCalculator: React.FC = () => {
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSubRegionEnabled, setIsSubRegionEnabled] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const { trackCalculation } = useActivityTracking();
 
   useEffect(() => {
     loadSettings();
@@ -69,6 +71,21 @@ const IncentiveTypeCalculator: React.FC = () => {
           title: "Hesaplama Tamamlandı",
           description: description,
         });
+
+        // Track calculation with context
+        await trackCalculation(
+          {
+            province: inputs.province,
+            district: inputs.district,
+            incentive_type: inputs.incentiveType,
+            investment_type: inputs.investmentType,
+          },
+          {
+            moduleName: 'Türkiye Yüzyılı Teşvik Hesaplamaları',
+            incentiveType: getIncentiveTypeText(inputs.incentiveType),
+            investmentTopic: inputs.incentiveType === 'Local Development Initiative' ? inputs.investmentType : undefined,
+          }
+        );
       }
     } catch (error) {
       console.error('Calculation error:', error);

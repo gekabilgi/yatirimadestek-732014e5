@@ -87,7 +87,13 @@ export const useActivityTracking = () => {
   const trackActivity = useCallback(async (
     activityType: 'calculation' | 'search' | 'page_view' | 'session_start' | 'session_end',
     activityData?: any,
-    pagePath?: string
+    pagePath?: string,
+    contextData?: {
+      moduleName?: string;
+      searchTerm?: string;
+      incentiveType?: string;
+      investmentTopic?: string;
+    }
   ) => {
     try {
       console.log(`Tracking activity: ${activityType}`, activityData);
@@ -104,7 +110,11 @@ export const useActivityTracking = () => {
           user_agent: navigator.userAgent,
           page_path: pagePath || window.location.pathname,
           activity_type: activityType,
-          activity_data: activityData
+          activity_data: activityData,
+          module_name: contextData?.moduleName,
+          search_term: contextData?.searchTerm,
+          incentive_type: contextData?.incentiveType,
+          investment_topic: contextData?.investmentTopic,
         });
 
       if (error) {
@@ -123,13 +133,29 @@ export const useActivityTracking = () => {
   }, [trackActivity]);
 
   // Track calculations
-  const trackCalculation = useCallback((calculationData: any) => {
-    trackActivity('calculation', calculationData);
+  const trackCalculation = useCallback((
+    calculationData: any,
+    contextData?: {
+      moduleName?: string;
+      searchTerm?: string;
+      incentiveType?: string;
+      investmentTopic?: string;
+    }
+  ) => {
+    trackActivity('calculation', calculationData, undefined, contextData);
   }, [trackActivity]);
 
   // Track searches
-  const trackSearch = useCallback((searchData: any) => {
-    trackActivity('search', searchData);
+  const trackSearch = useCallback((
+    searchData: any,
+    contextData?: {
+      moduleName?: string;
+      searchTerm?: string;
+      incentiveType?: string;
+      investmentTopic?: string;
+    }
+  ) => {
+    trackActivity('search', searchData, undefined, contextData);
   }, [trackActivity]);
 
   // Initialize session tracking

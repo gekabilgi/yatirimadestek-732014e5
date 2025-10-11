@@ -179,6 +179,33 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_knowledge_768: {
+        Row: {
+          answer: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          question: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          question: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          question?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       districts: {
         Row: {
           created_at: string | null
@@ -1718,10 +1745,14 @@ export type Database = {
           activity_type: string
           created_at: string
           id: string
+          incentive_type: string | null
+          investment_topic: string | null
           ip_address: string | null
           location_city: string | null
           location_country: string | null
+          module_name: string | null
           page_path: string | null
+          search_term: string | null
           session_id: string
           updated_at: string
           user_agent: string | null
@@ -1731,10 +1762,14 @@ export type Database = {
           activity_type: string
           created_at?: string
           id?: string
+          incentive_type?: string | null
+          investment_topic?: string | null
           ip_address?: string | null
           location_city?: string | null
           location_country?: string | null
+          module_name?: string | null
           page_path?: string | null
+          search_term?: string | null
           session_id: string
           updated_at?: string
           user_agent?: string | null
@@ -1744,10 +1779,14 @@ export type Database = {
           activity_type?: string
           created_at?: string
           id?: string
+          incentive_type?: string | null
+          investment_topic?: string | null
           ip_address?: string | null
           location_city?: string | null
           location_country?: string | null
+          module_name?: string | null
           page_path?: string | null
+          search_term?: string | null
           session_id?: string
           updated_at?: string
           user_agent?: string | null
@@ -1960,12 +1999,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      match_chatbot_embedding_768: {
+        Args:
+          | {
+              match_count: number
+              match_threshold: number
+              query_embedding: number[]
+            }
+          | {
+              match_count: number
+              match_threshold: number
+              query_embedding: string
+            }
+        Returns: {
+          answer: string
+          id: string
+          question: string
+          similarity: number
+        }[]
+      }
       match_chatbot_knowledge: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          query_embedding: string
-        }
+        Args:
+          | {
+              match_count?: number
+              match_threshold?: number
+              query_embedding: string
+            }
+          | { p_limit?: number; query_embedding: string }
         Returns: {
           answer: string
           id: string
@@ -2018,6 +2078,56 @@ export type Database = {
       test_final_security: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      update_chatbot_768: {
+        Args: { row_id: string; vals: number }
+        Returns: undefined
+      }
+      update_chatbot_embedding: {
+        Args:
+          | {
+              match_count: number
+              match_threshold: number
+              query_embedding: number[]
+            }
+          | {
+              match_count: number
+              match_threshold: number
+              query_embedding: string
+            }
+          | { p_row_id: string; p_vals: number[] }
+          | { payload: Json }
+        Returns: undefined
+      }
+      update_chatbot_embedding_768: {
+        Args:
+          | { p_row_id: string; p_vals: number[] }
+          | { p_row_id: string; p_vals: number }
+        Returns: undefined
+      }
+      update_chatbot_embedding_768_array: {
+        Args: { p_row_id: string; p_vals: number[] }
+        Returns: undefined
+      }
+      update_chatbot_embedding_768_from_array: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          query_embedding: number
+        }
+        Returns: undefined
+      }
+      update_chatbot_embedding_from_array: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          query_embedding: number[]
+        }
+        Returns: undefined
+      }
+      update_embedding: {
+        Args: { row_id: string; vals: number[] }
+        Returns: undefined
       }
       vector_avg: {
         Args: { "": number[] }

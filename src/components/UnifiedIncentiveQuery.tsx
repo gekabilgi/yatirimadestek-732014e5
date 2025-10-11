@@ -97,13 +97,19 @@ const UnifiedIncentiveQuery: React.FC = () => {
           setIsCalculating={setIsCalculating}
           onSuccessfulQuery={async () => {
             await incrementCounter();
-            await trackSearch({
-              sector: queryData.selectedSector?.sektor || '',
-              nace_code: queryData.selectedSector?.nace_kodu || '',
-              province: queryData.selectedProvince,
-              district: queryData.selectedDistrict,
-              osb_status: queryData.osbStatus
-            });
+            await trackSearch(
+              {
+                sector: queryData.selectedSector?.sektor || '',
+                nace_code: queryData.selectedSector?.nace_kodu || '',
+                province: queryData.selectedProvince,
+                district: queryData.selectedDistrict,
+                osb_status: queryData.osbStatus
+              },
+              {
+                moduleName: 'Sektör Bazlı Teşvik Sorgulama',
+                searchTerm: queryData.selectedSector?.sektor || '',
+              }
+            );
           }}
         />
       )}

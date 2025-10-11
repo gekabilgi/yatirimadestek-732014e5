@@ -159,6 +159,24 @@ export const NotificationDropdown = () => {
                           <div className="text-xs text-gray-500 truncate">
                             {activity.location_city || 'Bilinmeyen'} konumundan yeni {activity.activity_type === 'calculation' ? 'hesaplama' : 'arama'} yapıldı
                           </div>
+                          
+                          {/* Contextual details based on module */}
+                          {activity.search_term && (
+                            <div className="text-xs text-gray-600 mt-1 truncate">
+                              <span className="font-medium">Arama:</span> {activity.search_term}
+                            </div>
+                          )}
+                          {activity.incentive_type && (
+                            <div className="text-xs text-gray-600 mt-1 truncate">
+                              <span className="font-medium">Teşvik Türü:</span> {activity.incentive_type}
+                            </div>
+                          )}
+                          {activity.investment_topic && (
+                            <div className="text-xs text-gray-600 mt-1 truncate">
+                              <span className="font-medium">Yatırım Konusu:</span> {activity.investment_topic}
+                            </div>
+                          )}
+                          
                           <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
                             <MapPin className="h-3 w-3 flex-shrink-0" />
                             <span className="truncate">IP: {activity.ip_address || 'Bilinmeyen'}</span>
