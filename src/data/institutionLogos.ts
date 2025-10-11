@@ -13,7 +13,6 @@ export const institutionLogos: InstitutionLogo[] = [
     category: "agency",
   },
   { id: "iskur", name: "İŞKUR (Türkiye İş Kurumu)", logoPath: "/img/instlogo/iskur.png", category: "agency" },
-  { id: "bigg", name: "BİGG (Bireysel Genç Girişimci)", logoPath: "/img/image.png", category: "other" },
   {
     id: "kosgeb",
     name: "KOSGEB (Küçük ve Orta Ölçekli İşletmeleri Geliştirme ve Destekleme İdaresi Başkanlığı)",
@@ -23,7 +22,7 @@ export const institutionLogos: InstitutionLogo[] = [
   {
     id: "tubitak",
     name: "TÜBİTAK (Türkiye Bilimsel ve Teknolojik Araştırma Kurumu)",
-    logoPath: "/img/image.png",
+    logoPath: "/img/instlogo/tubitak.png",
     category: "other",
   },
   { id: "sanayi", name: "Sanayi ve Teknoloji Bakanlığı", logoPath: "/img/instlogo/sanayi.png", category: "ministry" },
