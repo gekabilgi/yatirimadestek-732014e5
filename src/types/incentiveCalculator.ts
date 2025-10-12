@@ -1,6 +1,7 @@
 export interface IncentiveCalculatorInputs {
   incentiveType: 'Technology Initiative' | 'Local Development Initiative' | 'Strategic Initiative';
   investmentType: 'İmalat' | 'Diğer';
+  investment?: string; // Investment name for Local Development Initiative
   province: string;
   district?: string; // For sub-region mode
   osbStatus?: 'inside' | 'outside'; // For sub-region mode  

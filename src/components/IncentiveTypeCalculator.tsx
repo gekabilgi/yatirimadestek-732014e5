@@ -83,7 +83,7 @@ const IncentiveTypeCalculator: React.FC = () => {
           {
             moduleName: 'Türkiye Yüzyılı Teşvik Hesaplamaları',
             incentiveType: getIncentiveTypeText(inputs.incentiveType),
-            investmentTopic: inputs.incentiveType === 'Local Development Initiative' ? inputs.investmentType : undefined,
+            investmentTopic: inputs.incentiveType === 'Local Development Initiative' ? inputs.investment : undefined,
           }
         );
       }

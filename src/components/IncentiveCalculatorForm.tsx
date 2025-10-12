@@ -217,11 +217,22 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
       
       // Increment legacy statistics counter as well
       await supabase.rpc('increment_stat', { stat_name_param: 'calculation_clicks' });
-      onCalculate(formData);
+      
+      // Include selected investment name when submitting
+      const submissionData = {
+        ...formData,
+        investment: selectedInvestment || undefined
+      };
+      
+      onCalculate(submissionData);
     } catch (error) {
       console.error('Error tracking calculation:', error);
       // Still proceed with calculation even if tracking fails
-      onCalculate(formData);
+      const submissionData = {
+        ...formData,
+        investment: selectedInvestment || undefined
+      };
+      onCalculate(submissionData);
     }
   };
 
