@@ -222,14 +222,6 @@ export function KnowledgeBaseManager() {
   };
 
   const handleProcessMissingEmbeddings = async () => {
-    if (missingCount === 0) {
-      toast({
-        title: "No missing embeddings",
-        description: "All rows already have embeddings.",
-      });
-      return;
-    }
-
     setIsProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('process-missing-embeddings');
@@ -260,13 +252,8 @@ export function KnowledgeBaseManager() {
   };
 
   const handleSmartRefresh = async () => {
-    if (missingCount > 0) {
-      await handleProcessMissingEmbeddings();
-    } else {
-      await fetchUploads();
-    }
+    await handleProcessMissingEmbeddings();
   };
-
   return (
     <Card>
       <CardHeader>
