@@ -259,6 +259,14 @@ export function KnowledgeBaseManager() {
     }
   };
 
+  const handleSmartRefresh = async () => {
+    if (missingCount > 0) {
+      await handleProcessMissingEmbeddings();
+    } else {
+      await fetchUploads();
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -272,21 +280,6 @@ export function KnowledgeBaseManager() {
               Chatbot'un kullanacağı dökümanları yükleyin ve yönetin
             </CardDescription>
           </div>
-          {missingCount > 0 && (
-            <Button
-              onClick={handleProcessMissingEmbeddings}
-              disabled={isProcessing}
-              variant="outline"
-              size="sm"
-            >
-              {isProcessing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <AlertCircle className="mr-2 h-4 w-4" />
-              )}
-              Eksik {missingCount} Embedding'i İşle
-            </Button>
-          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -320,14 +313,21 @@ export function KnowledgeBaseManager() {
               </span>
             </Button>
           </label>
-          <Button
-            variant="outline"
-            onClick={fetchUploads}
-            disabled={isLoading}
-          >
-            {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Yenile
-          </Button>
+              <Button
+                variant="outline"
+                onClick={handleSmartRefresh}
+                disabled={isLoading || isProcessing}
+              >
+                {(isLoading || isProcessing) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {missingCount > 0 ? (
+                  <>
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    İşle ve Yenile ({missingCount})
+                  </>
+                ) : (
+                  'Yenile'
+                )}
+              </Button>
         </div>
 
         <div className="rounded-md border">
