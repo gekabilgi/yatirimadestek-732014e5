@@ -213,6 +213,9 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
         totalInvestment,
         numberOfEmployees: formData.numberOfEmployees,
         timestamp: new Date().toISOString()
+      }, {
+        incentiveType: formData.incentiveType,
+        investmentTopic: formData.incentiveType === 'Local Development Initiative' ? selectedInvestment : undefined
       });
       
       // Increment legacy statistics counter as well
