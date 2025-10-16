@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, Trash2, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Upload, FileText, Trash2, Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -30,6 +30,8 @@ export function KnowledgeBaseManager() {
   const [uploads, setUploads] = useState<DocumentUpload[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [missingCount, setMissingCount] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,6 +68,16 @@ export function KnowledgeBaseManager() {
 
       if (error) throw error;
       setUploads((data as DocumentUpload[]) || []);
+
+      // Check for rows with missing embeddings
+      const { count, error: countError } = await supabase
+        .from('knowledge_base')
+        .select('*', { count: 'exact', head: true })
+        .is('embedding', null);
+
+      if (!countError) {
+        setMissingCount(count || 0);
+      }
     } catch (error: any) {
       console.error('Error fetching uploads:', error);
       toast({
@@ -209,16 +221,73 @@ export function KnowledgeBaseManager() {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
+  const handleProcessMissingEmbeddings = async () => {
+    if (missingCount === 0) {
+      toast({
+        title: "No missing embeddings",
+        description: "All rows already have embeddings.",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-missing-embeddings');
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.success) {
+        toast({
+          title: "Processing complete",
+          description: `Processed ${data.processed} rows${data.failed > 0 ? `, ${data.failed} failed` : ''}.`,
+        });
+        fetchUploads(); // Refresh the list
+      } else {
+        throw new Error(data.error || 'Processing failed');
+      }
+    } catch (error) {
+      console.error('Error processing embeddings:', error);
+      toast({
+        variant: "destructive",
+        title: "Processing failed",
+        description: error instanceof Error ? error.message : 'Failed to process embeddings',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Bilgi Bankası Yönetimi
-        </CardTitle>
-        <CardDescription>
-          Chatbot'un kullanacağı dökümanları yükleyin ve yönetin
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Bilgi Bankası Yönetimi
+            </CardTitle>
+            <CardDescription>
+              Chatbot'un kullanacağı dökümanları yükleyin ve yönetin
+            </CardDescription>
+          </div>
+          {missingCount > 0 && (
+            <Button
+              onClick={handleProcessMissingEmbeddings}
+              disabled={isProcessing}
+              variant="outline"
+              size="sm"
+            >
+              {isProcessing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <AlertCircle className="mr-2 h-4 w-4" />
+              )}
+              Eksik {missingCount} Embedding'i İşle
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4">
