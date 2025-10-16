@@ -110,6 +110,87 @@ export type Database = {
         }
         Relationships: []
       }
+      cb_knowledge_base: {
+        Row: {
+          answer: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          question: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          question: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          question?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cb_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      cb_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          session_id: string
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -1930,6 +2011,13 @@ export type Database = {
           status: string
         }[]
       }
+      get_chat_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          session_id: string
+          title: string
+        }[]
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
@@ -1988,7 +2076,7 @@ export type Database = {
       }
       l2_normalize: {
         Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: string
+        Returns: unknown
       }
       log_qna_audit: {
         Args: {
@@ -1998,6 +2086,20 @@ export type Database = {
           p_user_role?: string
         }
         Returns: undefined
+      }
+      match_cb_knowledge: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          query_embedding: string
+          query_text: string
+        }
+        Returns: {
+          answer: string
+          id: string
+          question: string
+          similarity: number
+        }[]
       }
       match_chatbot_embedding_768: {
         Args:
@@ -2028,9 +2130,11 @@ export type Database = {
           | { p_limit?: number; query_embedding: string }
         Returns: {
           answer: string
+          created_at: string
+          embedding: string
           id: string
           question: string
-          similarity: number
+          updated_at: string
         }[]
       }
       match_documents: {
@@ -2043,6 +2147,19 @@ export type Database = {
           content: string
           filename: string
           id: string
+          similarity: number
+        }[]
+      }
+      match_knowledge: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          answer: string
+          id: string
+          question: string
           similarity: number
         }[]
       }

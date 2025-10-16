@@ -48,7 +48,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.chat-rag]
-verify_jwt = false
+verify_jwt = true
 
 [functions.lookup-nace]
-verify_jwt = false
+verify_jwt = true
