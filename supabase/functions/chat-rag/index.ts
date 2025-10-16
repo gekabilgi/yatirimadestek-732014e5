@@ -170,43 +170,31 @@ serve(async (req) => {
       }
     }
 
-    // 3) Try hybrid search with embeddings + full-text + keyword matching
-    console.log("\n🎯 Using hybrid search (embeddings + full-text + keyword)...");
+    // 3) Try similarity search with lower threshold for better partial matching
+    console.log("\n🎯 Using embedding search with optimized threshold...");
 
-    const { data: matches, error: matchError } = await supabase.rpc("match_cb_knowledge", {
+    const { data: matches, error: matchError } = await supabase.rpc("match_documents", {
       query_embedding: queryEmbedding,
-      query_text: question,
-      match_threshold: 0.1, // Lower threshold since we're combining multiple search methods
+      match_threshold: 0.15, // Lower threshold for better partial query matching
       match_count: 25,
     });
 
     if (matchError) {
-      console.error("❌ Error in hybrid search:", matchError);
-      // Fallback to simple embedding search if hybrid fails
-      console.log("⚠️  Falling back to embedding-only search...");
-      const { data: fallbackMatches, error: fallbackError } = await supabase.rpc("match_documents", {
-        query_embedding: queryEmbedding,
-        match_threshold: 0.2,
-        match_count: 25,
-      });
-      
-      if (fallbackError || !fallbackMatches || fallbackMatches.length === 0) {
-        console.log("❌ Fallback search also failed");
-        return new Response(
-          JSON.stringify({
-            answer: "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun.",
-            sources: [],
-            debug: { error: matchError?.message || fallbackError?.message },
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
+      console.error("❌ Error in search:", matchError);
+      return new Response(
+        JSON.stringify({
+          answer: "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun.",
+          sources: [],
+          debug: { error: matchError?.message },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     if (matches && matches.length > 0) {
-      console.log(`✅ Hybrid search found ${matches.length} matches`);
+      console.log(`✅ Found ${matches.length} matches`);
       console.log(
-        `📊 Combined similarity scores: ${matches
+        `📊 Similarity scores: ${matches
           .slice(0, 5)
           .map((m: any) => m.similarity?.toFixed(3) || 'N/A')
           .join(", ")}`,
@@ -228,25 +216,28 @@ serve(async (req) => {
             usakDocumentsFound: usakCheck?.length || 0,
             embeddingGenerated: true,
             matchesFound: 0,
-            searchMethod: "hybrid",
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    console.log(`\n✅ Found ${matches.length} matches using hybrid search`);
+    console.log(`\n✅ Using ${matches.length} matches with optimized threshold`);
     console.log("\n📋 Top 5 matches:");
     matches.slice(0, 5).forEach((m: any, i: number) => {
-      console.log(`\n${i + 1}. Combined similarity: ${m.similarity?.toFixed(4) || 'N/A'}`);
-      console.log(`   Question: ${m.question?.substring(0, 100)}...`);
-      console.log(`   Answer: ${m.answer?.substring(0, 100)}...`);
+      console.log(`\n${i + 1}. Similarity: ${m.similarity?.toFixed(4) || 'N/A'}`);
+      console.log(`   Filename: ${m.filename}`);
+      console.log(`   Content: ${m.content?.substring(0, 150)}...`);
     });
 
-    // 5) Extract matched questions for context
+    // 5) Extract matched questions
     const matchedQuestions: string[] = matches
-      .filter((m: any) => m.question)
-      .map((m: any) => m.question)
+      .filter((m: any) => typeof m.content === "string" && m.content.includes("Soru:"))
+      .map((m: any) => {
+        const q = m.content.match(/Soru:\s*(.+?)(?=Cevap:|$)/is);
+        return q ? q[1].trim() : null;
+      })
+      .filter((q: string | null): q is string => !!q)
       .slice(0, 3);
 
     console.log(`\n❓ Matched questions: ${matchedQuestions.length}`);
@@ -254,10 +245,10 @@ serve(async (req) => {
       console.log(`   ${i + 1}. ${q}`);
     });
 
-    // 6) Build context from Q&A pairs
+    // 6) Build context
     const context = matches
       .slice(0, 5)
-      .map((m: any) => `Soru: ${m.question}\n\nCevap: ${m.answer}`)
+      .map((m: any) => m.content)
       .join("\n\n---\n\n");
 
     console.log(`\n📦 Context size: ${context.length} characters`);
@@ -281,13 +272,13 @@ serve(async (req) => {
       JSON.stringify({
         answer,
         sources: matches.slice(0, 5).map((m: any) => ({
-          question: m.question?.substring(0, 100),
+          filename: m.filename,
           similarity: m.similarity,
         })),
         debug: {
           usakDocumentsFound: usakCheck?.length || 0,
           matchesFound: matches.length,
-          searchMethod: "hybrid",
+          threshold: 0.15,
           topSimilarity: matches[0]?.similarity,
         },
       }),
