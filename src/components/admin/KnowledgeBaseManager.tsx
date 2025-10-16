@@ -71,7 +71,7 @@ export function KnowledgeBaseManager() {
 
       // Check for rows with missing embeddings
       const { count, error: countError } = await supabase
-        .from('cb_knowledge_base' as any)
+        .from('knowledge_base')
         .select('*', { count: 'exact', head: true })
         .is('embedding', null);
 
