@@ -1980,6 +1980,10 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
+      check_chat_rate_limit: {
+        Args: { session_id_param: string }
+        Returns: boolean
+      }
       check_submission_spam: {
         Args: {
           p_cooldown_minutes?: number
