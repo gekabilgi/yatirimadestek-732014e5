@@ -214,7 +214,6 @@ export const IncentiveCalculatorForm: React.FC<IncentiveCalculatorFormProps> = (
         numberOfEmployees: formData.numberOfEmployees,
         timestamp: new Date().toISOString()
       }, {
-        incentiveType: formData.incentiveType,
         investmentTopic: formData.incentiveType === 'Local Development Initiative' ? selectedInvestment : undefined
       });
       
