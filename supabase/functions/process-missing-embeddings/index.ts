@@ -50,8 +50,8 @@ serve(async (req) => {
 
     // Get all rows without embeddings
     const { data: missingEmbeddings, error: fetchError } = await supabase
-      .from('knowledge_base')
-      .select('id, content, filename')
+      .from('cb_knowledge_base')
+      .select('id, question, answer')
       .is('embedding', null);
 
     if (fetchError) {
@@ -82,14 +82,17 @@ serve(async (req) => {
     // Process each row
     for (const row of missingEmbeddings) {
       try {
-        console.log(`Processing row ${row.id} (${row.filename})...`);
+        console.log(`Processing row ${row.id} (${row.question.substring(0, 50)})...`);
+        
+        // Combine question and answer for embedding
+        const textToEmbed = `${row.question}\n${row.answer}`;
         
         // Generate embedding
-        const embedding = await generateEmbedding(row.content);
+        const embedding = await generateEmbedding(textToEmbed);
         
         // Update the row with the embedding
         const { error: updateError } = await supabase
-          .from('knowledge_base')
+          .from('cb_knowledge_base')
           .update({ 
             embedding,
             updated_at: new Date().toISOString()
@@ -101,7 +104,7 @@ serve(async (req) => {
           failed++;
           errors.push({
             id: row.id,
-            filename: row.filename,
+            filename: row.question.substring(0, 50),
             error: updateError.message
           });
         } else {
@@ -116,7 +119,7 @@ serve(async (req) => {
         failed++;
         errors.push({
           id: row.id,
-          filename: row.filename,
+          filename: row.question.substring(0, 50),
           error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
