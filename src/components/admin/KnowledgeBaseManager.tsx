@@ -90,15 +90,42 @@ export function KnowledgeBaseManager() {
     }
   };
 
+  const parseCSV = (text: string): string => {
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return '';
+
+    // Check if first line is header
+    const hasHeader = lines[0].toLowerCase().includes('question') || 
+                      lines[0].toLowerCase().includes('soru') ||
+                      lines[0].toLowerCase().includes('content');
+    
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    
+    // Parse CSV and convert to text format
+    return dataLines.map(line => {
+      // Simple CSV parsing (handles basic cases)
+      const columns = line.split(',').map(col => col.trim().replace(/^"(.*)"$/, '$1'));
+      
+      if (columns.length >= 2) {
+        // Two columns: treat as Question, Answer
+        return `Soru: ${columns[0]}\nCevap: ${columns[1]}\n`;
+      } else {
+        // Single column: treat as content
+        return columns[0] + '\n';
+      }
+    }).join('\n');
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (!file.name.endsWith('.txt')) {
+    const isValidType = file.name.endsWith('.txt') || file.name.endsWith('.csv');
+    if (!isValidType) {
       toast({
         title: "Hata",
-        description: "Sadece .txt dosyaları yüklenebilir",
+        description: "Sadece .txt ve .csv dosyaları yüklenebilir",
         variant: "destructive",
       });
       return;
@@ -108,7 +135,12 @@ export function KnowledgeBaseManager() {
 
     try {
       // Read file content
-      const content = await file.text();
+      let content = await file.text();
+      
+      // Parse CSV if needed
+      if (file.name.endsWith('.csv')) {
+        content = parseCSV(content);
+      }
 
       // Create upload record
       const { data: uploadData, error: uploadError } = await supabase
@@ -273,7 +305,7 @@ export function KnowledgeBaseManager() {
         <div className="flex items-center gap-4">
           <input
             type="file"
-            accept=".txt"
+            accept=".txt,.csv"
             onChange={handleFileUpload}
             disabled={isUploading}
             className="hidden"
@@ -294,7 +326,7 @@ export function KnowledgeBaseManager() {
                 ) : (
                   <>
                     <Upload className="h-4 w-4 mr-2" />
-                    Döküman Yükle (.txt)
+                    Döküman Yükle (.txt, .csv)
                   </>
                 )}
               </span>
