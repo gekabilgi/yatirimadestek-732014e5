@@ -170,48 +170,55 @@ serve(async (req) => {
       }
     }
 
-    // 3) Try multiple thresholds
-    console.log("\n🎯 Trying similarity search with different thresholds...");
+    // 3) Try hybrid search with embeddings + full-text + keyword matching
+    console.log("\n🎯 Using hybrid search (embeddings + full-text + keyword)...");
 
-    const thresholds = [0.1, 0.2, 0.3, 0.4];
-    let bestMatches = null;
-    let usedThreshold = 0.1;
+    const { data: matches, error: matchError } = await supabase.rpc("match_cb_knowledge", {
+      query_embedding: queryEmbedding,
+      query_text: question,
+      match_threshold: 0.1, // Lower threshold since we're combining multiple search methods
+      match_count: 25,
+    });
 
-    for (const threshold of thresholds) {
-      console.log(`\n   Testing threshold: ${threshold}`);
-      const { data: testMatches, error: testError } = await supabase.rpc("match_documents", {
+    if (matchError) {
+      console.error("❌ Error in hybrid search:", matchError);
+      // Fallback to simple embedding search if hybrid fails
+      console.log("⚠️  Falling back to embedding-only search...");
+      const { data: fallbackMatches, error: fallbackError } = await supabase.rpc("match_documents", {
         query_embedding: queryEmbedding,
-        match_threshold: threshold,
+        match_threshold: 0.2,
         match_count: 25,
       });
-
-      if (!testError && testMatches && testMatches.length > 0) {
-        console.log(`   ✅ Found ${testMatches.length} matches at threshold ${threshold}`);
-        console.log(
-          `   📊 Similarity scores: ${testMatches
-            .slice(0, 5)
-            .map((m: any) => m.similarity.toFixed(3))
-            .join(", ")}`,
+      
+      if (fallbackError || !fallbackMatches || fallbackMatches.length === 0) {
+        console.log("❌ Fallback search also failed");
+        return new Response(
+          JSON.stringify({
+            answer: "Üzgünüm, bu konuda bilgi bankamda yeterli bilgi yok. Lütfen başka bir soru sorun.",
+            sources: [],
+            debug: { error: matchError?.message || fallbackError?.message },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
-
-        if (!bestMatches) {
-          bestMatches = testMatches;
-          usedThreshold = threshold;
-        }
-      } else {
-        console.log(`   ❌ No matches at threshold ${threshold}`);
       }
     }
 
-    // 4) Use the best matches found
-    const matches = bestMatches;
+    if (matches && matches.length > 0) {
+      console.log(`✅ Hybrid search found ${matches.length} matches`);
+      console.log(
+        `📊 Combined similarity scores: ${matches
+          .slice(0, 5)
+          .map((m: any) => m.similarity?.toFixed(3) || 'N/A')
+          .join(", ")}`,
+      );
+    }
 
     if (!matches || matches.length === 0) {
-      console.log("\n❌ NO MATCHES FOUND AT ANY THRESHOLD");
+      console.log("\n❌ NO MATCHES FOUND");
       console.log("⚠️  This suggests:");
       console.log("   1. Documents don't exist in database");
       console.log("   2. Documents exist but embeddings are not generated");
-      console.log("   3. Embedding model mismatch (different model used for indexing vs querying)");
+      console.log("   3. Query is too specific or uses uncommon terms");
 
       return new Response(
         JSON.stringify({
@@ -221,28 +228,25 @@ serve(async (req) => {
             usakDocumentsFound: usakCheck?.length || 0,
             embeddingGenerated: true,
             matchesFound: 0,
+            searchMethod: "hybrid",
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    console.log(`\n✅ Using ${matches.length} matches from threshold ${usedThreshold}`);
+    console.log(`\n✅ Found ${matches.length} matches using hybrid search`);
     console.log("\n📋 Top 5 matches:");
     matches.slice(0, 5).forEach((m: any, i: number) => {
-      console.log(`\n${i + 1}. Similarity: ${m.similarity.toFixed(4)}`);
-      console.log(`   Filename: ${m.filename}`);
-      console.log(`   Content: ${m.content?.substring(0, 150)}...`);
+      console.log(`\n${i + 1}. Combined similarity: ${m.similarity?.toFixed(4) || 'N/A'}`);
+      console.log(`   Question: ${m.question?.substring(0, 100)}...`);
+      console.log(`   Answer: ${m.answer?.substring(0, 100)}...`);
     });
 
-    // 5) Extract matched questions
+    // 5) Extract matched questions for context
     const matchedQuestions: string[] = matches
-      .filter((m: any) => typeof m.content === "string" && m.content.includes("Soru:"))
-      .map((m: any) => {
-        const q = m.content.match(/Soru:\s*(.+?)(?=Cevap:|$)/is);
-        return q ? q[1].trim() : null;
-      })
-      .filter((q: string | null): q is string => !!q)
+      .filter((m: any) => m.question)
+      .map((m: any) => m.question)
       .slice(0, 3);
 
     console.log(`\n❓ Matched questions: ${matchedQuestions.length}`);
@@ -250,10 +254,10 @@ serve(async (req) => {
       console.log(`   ${i + 1}. ${q}`);
     });
 
-    // 6) Build context
+    // 6) Build context from Q&A pairs
     const context = matches
       .slice(0, 5)
-      .map((m: any) => m.content)
+      .map((m: any) => `Soru: ${m.question}\n\nCevap: ${m.answer}`)
       .join("\n\n---\n\n");
 
     console.log(`\n📦 Context size: ${context.length} characters`);
@@ -277,13 +281,13 @@ serve(async (req) => {
       JSON.stringify({
         answer,
         sources: matches.slice(0, 5).map((m: any) => ({
-          filename: m.filename,
+          question: m.question?.substring(0, 100),
           similarity: m.similarity,
         })),
         debug: {
           usakDocumentsFound: usakCheck?.length || 0,
           matchesFound: matches.length,
-          usedThreshold,
+          searchMethod: "hybrid",
           topSimilarity: matches[0]?.similarity,
         },
       }),
