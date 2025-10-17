@@ -1248,6 +1248,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          password: string | null
         }
         Insert: {
           created_at?: string
@@ -1255,6 +1256,7 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean
+          password?: string | null
         }
         Update: {
           created_at?: string
@@ -1262,6 +1264,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          password?: string | null
         }
         Relationships: []
       }

@@ -40,6 +40,7 @@ export interface QnaAdminEmail {
   full_name: string;
   is_active: boolean;
   created_at: string;
+  password?: string;
 }
 
 export interface QnaEmailLog {

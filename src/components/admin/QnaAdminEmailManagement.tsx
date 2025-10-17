@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Mail } from 'lucide-react';
+import { Trash2, Edit, Plus, Mail, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { QnaAdminEmail } from '@/types/qna';
@@ -20,8 +20,10 @@ const QnaAdminEmailManagement = () => {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    is_active: true
+    is_active: true,
+    password: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchAdminEmails();
@@ -54,13 +56,20 @@ const QnaAdminEmailManagement = () => {
 
     try {
       if (editingEmail) {
+        const updateData: any = {
+          email: formData.email,
+          full_name: formData.full_name,
+          is_active: formData.is_active
+        };
+        
+        // Only update password if it's provided
+        if (formData.password && formData.password.trim() !== '') {
+          updateData.password = formData.password;
+        }
+
         const { error } = await supabase
           .from('qna_admin_emails')
-          .update({
-            email: formData.email,
-            full_name: formData.full_name,
-            is_active: formData.is_active
-          })
+          .update(updateData)
           .eq('id', editingEmail.id);
 
         if (error) throw error;
@@ -71,7 +80,8 @@ const QnaAdminEmailManagement = () => {
           .insert({
             email: formData.email,
             full_name: formData.full_name,
-            is_active: formData.is_active
+            is_active: formData.is_active,
+            password: formData.password || null
           });
 
         if (error) throw error;
@@ -81,7 +91,8 @@ const QnaAdminEmailManagement = () => {
       fetchAdminEmails();
       setIsDialogOpen(false);
       setEditingEmail(null);
-      setFormData({ email: '', full_name: '', is_active: true });
+      setFormData({ email: '', full_name: '', is_active: true, password: '' });
+      setShowPassword(false);
     } catch (error) {
       console.error('Error saving admin email:', error);
       toast.error('Admin e-postası kaydedilirken hata oluştu.');
@@ -129,14 +140,17 @@ const QnaAdminEmailManagement = () => {
     setFormData({
       email: adminEmail.email,
       full_name: adminEmail.full_name,
-      is_active: adminEmail.is_active
+      is_active: adminEmail.is_active,
+      password: ''
     });
+    setShowPassword(false);
     setIsDialogOpen(true);
   };
 
   const openAddDialog = () => {
     setEditingEmail(null);
-    setFormData({ email: '', full_name: '', is_active: true });
+    setFormData({ email: '', full_name: '', is_active: true, password: '' });
+    setShowPassword(false);
     setIsDialogOpen(true);
   };
 
@@ -188,6 +202,34 @@ const QnaAdminEmailManagement = () => {
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     placeholder="Ad ve soyadını giriniz"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="password">
+                    Şifre {editingEmail && <span className="text-sm text-muted-foreground">(değiştirmek için doldurun)</span>}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder={editingEmail ? "Yeni şifre (opsiyonel)" : "Şifre giriniz"}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
