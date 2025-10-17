@@ -28,10 +28,13 @@ export const fetchAllUsersWithRoles = async (): Promise<UnifiedUser[]> => {
     if (profilesError) throw profilesError;
 
     // Fetch user roles
-    const { data: userRoles, error: rolesError } = await supabase
-      .rpc('get_all_user_roles');
+    // Fetch admin ids via edge function (service role)
+    const { data: adminRes, error: adminError } = await supabase.functions.invoke('manage-user-roles', {
+      body: { action: 'list_admin_ids' },
+    });
 
-    if (rolesError) throw rolesError;
+    if (adminError) throw adminError;
+    const adminIdSet = new Set<string>((adminRes as any)?.adminIds ?? []);
 
     // Fetch YDO users
     const { data: ydoUsers, error: ydoError } = await supabase
@@ -67,14 +70,13 @@ export const fetchAllUsersWithRoles = async (): Promise<UnifiedUser[]> => {
       }
     });
 
-    // Update with admin roles
-    userRoles?.forEach((role) => {
-      const profile = profiles?.find(p => p.id === role.user_id);
-      if (profile?.email && userMap.has(profile.email)) {
-        const user = userMap.get(profile.email)!;
-        if (role.role === 'admin') {
-          user.is_admin = true;
-          user.user_type = 'admin';
+    // Mark admins using the adminIdSet
+    profiles?.forEach((p) => {
+      if (p.email && userMap.has(p.email)) {
+        const u = userMap.get(p.email)!;
+        if (adminIdSet.has(p.id)) {
+          u.is_admin = true;
+          u.user_type = 'admin';
         }
       }
     });
@@ -145,27 +147,22 @@ export const fetchAllUsersWithRoles = async (): Promise<UnifiedUser[]> => {
  * Grant admin role to a user
  */
 export const grantAdminRole = async (userId: string): Promise<void> => {
-  const { error } = await supabase
-    .from('user_roles')
-    .insert({
-      user_id: userId,
-      role: 'admin',
-    });
+  const { error } = await supabase.functions.invoke('manage-user-roles', {
+    body: { action: 'grant_admin', userId },
+  });
 
-  if (error) throw error;
+  if (error) throw error as any;
 };
 
 /**
  * Revoke admin role from a user
  */
 export const revokeAdminRole = async (userId: string): Promise<void> => {
-  const { error } = await supabase
-    .from('user_roles')
-    .delete()
-    .eq('user_id', userId)
-    .eq('role', 'admin');
+  const { error } = await supabase.functions.invoke('manage-user-roles', {
+    body: { action: 'revoke_admin', userId },
+  });
 
-  if (error) throw error;
+  if (error) throw error as any;
 };
 
 /**

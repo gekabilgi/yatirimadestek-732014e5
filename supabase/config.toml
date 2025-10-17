@@ -55,3 +55,6 @@ verify_jwt = true
 
 [functions.create-user-account]
 verify_jwt = true
+
+[functions.manage-user-roles]
+verify_jwt = true
