@@ -29,8 +29,7 @@ export const fetchAllUsersWithRoles = async (): Promise<UnifiedUser[]> => {
 
     // Fetch user roles
     const { data: userRoles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('user_id, role');
+      .rpc('get_all_user_roles');
 
     if (rolesError) throw rolesError;
 
