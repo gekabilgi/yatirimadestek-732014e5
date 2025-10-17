@@ -23,6 +23,7 @@ import QAManagement from "./pages/QAManagement";
 import AdminEmailManagement from "./pages/AdminEmailManagement";
 import AdminGlossaryManagement from "./pages/AdminGlossaryManagement";
 import AdminIncentiveSettings from "./pages/AdminIncentiveSettings";
+import AdminMenuSettings from "./pages/AdminMenuSettings";
 import InvestorGlossary from "./pages/InvestorGlossary";
 import ApplicationProcess from "./pages/ApplicationProcess";
 import ProgramDetails from "./pages/ProgramDetails";
@@ -152,6 +153,11 @@ const App = () => {
               <Route path="/admin/settings/incentive-calculation" element={
                 <ProtectedAdminRoute>
                   <AdminIncentiveSettings />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/settings/menu-visibility" element={
+                <ProtectedAdminRoute>
+                  <AdminMenuSettings />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/tzyotl" element={

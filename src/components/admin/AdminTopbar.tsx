@@ -83,7 +83,13 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
         <NotificationDropdown />
 
         {/* Settings - hidden on small screens */}
-        <Button variant="ghost" size="sm" className="hidden md:flex p-2 hover:bg-primary/5">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/admin/settings/menu-visibility')}
+          className="hidden md:flex p-2 hover:bg-primary/5"
+          title="Ayarlar"
+        >
           <Settings className="h-4 w-4" />
         </Button>
 

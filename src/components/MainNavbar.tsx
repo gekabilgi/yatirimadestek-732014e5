@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, Calculator, User, LogOut, Settings, TrendingUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -22,13 +22,40 @@ const MainNavbar = () => {
     await signOut();
   };
 
-  // Base navigation items available to everyone
-  const baseNavItems = [
+  const [visibleNavItems, setVisibleNavItems] = useState([
     { name: 'Destek Arama', href: '/searchsupport' },
-  ];
+  ]);
 
-  // Admin-only navigation items
+  // Fetch menu visibility settings for anonymous users
+  useEffect(() => {
+    const loadMenuSettings = async () => {
+      try {
+        const { menuVisibilityService } = await import('@/services/menuVisibilityService');
+        const { MENU_ITEMS } = await import('@/types/menuSettings');
+        const settings = await menuVisibilityService.getMenuVisibilitySettings();
+        
+        // Filter menu items based on visibility settings
+        const visibleItems = MENU_ITEMS.filter(item => settings[item.settingKey]).map(item => ({
+          name: item.title,
+          href: item.url,
+        }));
+        
+        setVisibleNavItems(visibleItems);
+      } catch (error) {
+        console.error('Error loading menu settings:', error);
+        // Fallback to default if error
+        setVisibleNavItems([{ name: 'Destek Arama', href: '/searchsupport' }]);
+      }
+    };
+
+    if (!isAdmin) {
+      loadMenuSettings();
+    }
+  }, [isAdmin]);
+
+  // Admin sees all items
   const adminNavItems = [
+    { name: 'Destek Arama', href: '/searchsupport' },
     { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
     { name: 'Soru & Cevap', href: '/qna' },
     { name: 'Tedarik Zinciri', href: '/tzy' },
@@ -38,7 +65,7 @@ const MainNavbar = () => {
   ];
 
   // Combine nav items based on user role
-  const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
+  const navItems = isAdmin ? adminNavItems : visibleNavItems;
 
   return (
     <nav className="nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm">

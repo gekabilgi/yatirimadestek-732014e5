@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Scale,
   Bot,
-  Megaphone
+  Megaphone,
+  Menu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +62,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       icon: Settings,
       subItems: [
         { name: 'Teşvik Hesaplama Ayarları', href: '/admin/settings/incentive-calculation' },
+        { name: 'Menü Görünürlük Ayarları', href: '/admin/settings/menu-visibility' },
       ]
     },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
