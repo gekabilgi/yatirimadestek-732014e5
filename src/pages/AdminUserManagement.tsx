@@ -22,6 +22,7 @@ import {
   checkIfUserExists,
   type UnifiedUser,
 } from '@/services/userManagementService';
+import { UserTypeRoleManager } from '@/components/admin/UserTypeRoleManager';
 
 const AdminUserManagement = () => {
   const [users, setUsers] = useState<UnifiedUser[]>([]);
@@ -292,6 +293,8 @@ const AdminUserManagement = () => {
                       <TableCell>{user.province || '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          <UserTypeRoleManager user={user} onUpdate={loadUsers} />
+                          
                           {!user.has_auth_account && (
                             <>
                               <Button
@@ -318,30 +321,13 @@ const AdminUserManagement = () => {
                               )}
                             </>
                           )}
-                          {user.has_auth_account && !user.is_admin && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleGrantAdminRole(user)}
-                            >
-                              <Shield className="h-4 w-4 mr-1" />
-                              Admin Yap
-                            </Button>
-                          )}
-                          {user.is_admin && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleRevokeAdminRole(user)}
-                            >
-                              Rolü Kaldır
-                            </Button>
-                          )}
+                          
                           {user.user_type === 'qna' && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleToggleQnaStatus(user)}
+                              title={user.is_active ? 'Pasif yap' : 'Aktif yap'}
                             >
                               <UserCheck className="h-4 w-4" />
                             </Button>

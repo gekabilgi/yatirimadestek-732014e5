@@ -235,3 +235,78 @@ export const toggleQnaAdminStatus = async (qnaAdminId: string, isActive: boolean
 
   if (error) throw error;
 };
+
+/**
+ * Add user to YDO users
+ */
+export const addUserToYdo = async (
+  email: string,
+  fullName: string,
+  province: string,
+  userId?: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('ydo_users')
+    .insert({
+      email,
+      full_name: fullName,
+      province,
+      user_id: userId,
+    });
+
+  if (error) throw error;
+};
+
+/**
+ * Remove user from YDO users
+ */
+export const removeUserFromYdo = async (ydoUserId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('ydo_users')
+    .delete()
+    .eq('id', ydoUserId);
+
+  if (error) throw error;
+};
+
+/**
+ * Add user to QNA admins
+ */
+export const addUserToQna = async (
+  email: string,
+  fullName: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('qna_admin_emails')
+    .insert({
+      email,
+      full_name: fullName,
+      is_active: true,
+    });
+
+  if (error) throw error;
+};
+
+/**
+ * Remove user from QNA admins
+ */
+export const removeUserFromQna = async (qnaAdminId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('qna_admin_emails')
+    .delete()
+    .eq('id', qnaAdminId);
+
+  if (error) throw error;
+};
+
+/**
+ * Update YDO user province
+ */
+export const updateYdoUserProvince = async (ydoUserId: string, province: string): Promise<void> => {
+  const { error } = await supabase
+    .from('ydo_users')
+    .update({ province })
+    .eq('id', ydoUserId);
+
+  if (error) throw error;
+};
