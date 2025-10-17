@@ -21,6 +21,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
 import AdminEmailManagement from "./pages/AdminEmailManagement";
+import AdminUserManagement from "./pages/AdminUserManagement";
 import AdminGlossaryManagement from "./pages/AdminGlossaryManagement";
 import AdminIncentiveSettings from "./pages/AdminIncentiveSettings";
 import AdminMenuSettings from "./pages/AdminMenuSettings";
@@ -138,6 +139,11 @@ const App = () => {
               <Route path="/admin/qa-management" element={
                 <ProtectedAdminRoute>
                   <QAManagement />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/user-management" element={
+                <ProtectedAdminRoute>
+                  <AdminUserManagement />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/email-management" element={

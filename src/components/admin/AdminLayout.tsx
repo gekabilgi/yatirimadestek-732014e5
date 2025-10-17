@@ -19,7 +19,8 @@ import {
   Scale,
   Bot,
   Megaphone,
-  Menu
+  Menu,
+  Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +45,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Duyuru Yönetimi', href: '/admin/announcements', icon: Megaphone },
     { name: 'Mevzuat Yönetimi', href: '/admin/legislation', icon: Scale },
     { name: 'Yatırımcı Sözlüğü', href: '/admin/glossary-management', icon: Book },
+    { name: 'Kullanıcı ve Rol Yönetimi', href: '/admin/user-management', icon: Users },
     { name: 'E-posta Yönetimi', href: '/admin/email-management', icon: Mail },
     { 
       name: 'Tedarik Zinciri', 

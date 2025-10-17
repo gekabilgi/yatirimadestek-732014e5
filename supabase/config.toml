@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.lookup-nace]
 verify_jwt = true
+
+[functions.create-user-account]
+verify_jwt = true
