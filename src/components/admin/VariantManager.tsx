@@ -60,6 +60,7 @@ export function VariantManager() {
   const [editingVariant, setEditingVariant] = useState<QuestionVariant | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRegeneratingEmbedding, setIsRegeneratingEmbedding] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -223,6 +224,50 @@ export function VariantManager() {
       ...editingVariant,
       variants: newVariants,
     });
+  };
+
+  const regenerateEmbedding = async () => {
+    if (!editingVariant) return;
+
+    setIsRegeneratingEmbedding(true);
+    
+    try {
+      toast({
+        title: "Embedding Oluşturuluyor",
+        description: "Lütfen bekleyin...",
+      });
+
+      const { data: embeddingData, error: embeddingError } = 
+        await supabase.functions.invoke('generate-embeddings', {
+          body: { text: editingVariant.canonical_question }
+        });
+
+      if (embeddingError) throw embeddingError;
+      
+      // Update the database
+      const { error: updateError } = await supabase
+        .from("question_variants")
+        .update({ embedding: embeddingData.embedding })
+        .eq("id", editingVariant.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Başarılı",
+        description: "Embedding başarıyla yenilendi",
+      });
+
+      fetchVariants();
+    } catch (error: any) {
+      console.error("Embedding regeneration error:", error);
+      toast({
+        title: "Hata",
+        description: "Embedding yenilenirken bir hata oluştu: " + error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegeneratingEmbedding(false);
+    }
   };
 
   return (
@@ -417,7 +462,25 @@ export function VariantManager() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={regenerateEmbedding}
+              disabled={isRegeneratingEmbedding}
+            >
+              {isRegeneratingEmbedding ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Embedding Oluşturuluyor...
+                </>
+              ) : (
+                <>
+                  <GitMerge className="h-4 w-4 mr-2" />
+                  Embedding Yenile
+                </>
+              )}
+            </Button>
+            <div className="flex-1" />
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               İptal
             </Button>

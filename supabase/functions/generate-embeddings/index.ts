@@ -81,7 +81,23 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { filename, content, uploadId } = await req.json();
+    const body = await req.json();
+    
+    // Single text embedding endpoint (for variant updates)
+    if (body.text && !body.filename) {
+      console.log('Generating single embedding for text');
+      const embedding = await generateEmbedding(body.text);
+      
+      return new Response(
+        JSON.stringify({ embedding }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Document upload endpoint (existing functionality)
+    const { filename, content, uploadId } = body;
     
     console.log('Processing document:', filename);
     
