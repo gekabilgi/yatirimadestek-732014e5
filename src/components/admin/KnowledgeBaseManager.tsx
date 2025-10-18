@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, Trash2, Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Upload, FileText, Trash2, Loader2, CheckCircle, XCircle, AlertCircle, GitBranch, Play, Eye, Database } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -13,6 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 
@@ -32,6 +38,9 @@ export function KnowledgeBaseManager() {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [missingCount, setMissingCount] = useState(0);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationPreview, setMigrationPreview] = useState<any>(null);
+  const [activeSystem, setActiveSystem] = useState<"v1" | "v2">("v1");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -286,6 +295,49 @@ export function KnowledgeBaseManager() {
   const handleSmartRefresh = async () => {
     await handleProcessMissingEmbeddings();
   };
+
+  const handleRunMigration = async (dryRun: boolean = true) => {
+    setMigrating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "migrate-existing-knowledge",
+        {
+          body: {
+            dryRun,
+            similarityThreshold: 0.95,
+            batchSize: 50,
+          },
+        }
+      );
+
+      if (error) throw error;
+
+      if (dryRun) {
+        setMigrationPreview(data);
+        toast({
+          title: "Başarılı",
+          description: "Migration önizlemesi hazır!",
+        });
+      } else {
+        setMigrationPreview(null);
+        toast({
+          title: "Başarılı",
+          description: `Migration tamamlandı! ${data.stats.saved} grup kaydedildi.`,
+        });
+        fetchUploads();
+      }
+    } catch (error) {
+      console.error("Migration error:", error);
+      toast({
+        title: "Hata",
+        description: "Migration hatası: " + (error as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -301,37 +353,117 @@ export function KnowledgeBaseManager() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <input
-            type="file"
-            accept=".txt,.csv"
-            onChange={handleFileUpload}
-            disabled={isUploading}
-            className="hidden"
-            id="file-upload"
-          />
-          <label htmlFor="file-upload">
-            <Button
-              disabled={isUploading}
-              className="cursor-pointer"
-              asChild
-            >
-              <span>
-                {isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Yükleniyor...
-                  </>
+      
+      <CardContent>
+        <Tabs value={activeSystem} onValueChange={(v) => setActiveSystem(v as "v1" | "v2")}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="v1">Mevcut Sistem (V1)</TabsTrigger>
+            <TabsTrigger value="v2">Yeni Sistem (V2) - Soru Varyasyonları</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="v2" className="space-y-4">
+            <Alert>
+              <GitBranch className="h-4 w-4" />
+              <AlertTitle>Yeni Sistem: Akıllı Soru Gruplandırma</AlertTitle>
+              <AlertDescription>
+                Benzer soruları tek bir "canonical" soru altında gruplar. Bu sayede:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>%60-70 daha az embedding maliyeti</li>
+                  <li>Daha hızlı arama performansı</li>
+                  <li>Daha tutarlı cevaplar</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleRunMigration(true)}
+                disabled={migrating}
+                variant="outline"
+              >
+                {migrating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
-                  <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Döküman Yükle (.txt, .csv)
-                  </>
+                  <Eye className="h-4 w-4 mr-2" />
                 )}
-              </span>
-            </Button>
-          </label>
+                Önizleme Yap (Dry Run)
+              </Button>
+              
+              {migrationPreview && (
+                <Button
+                  onClick={() => handleRunMigration(false)}
+                  disabled={migrating}
+                >
+                  {migrating ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4 mr-2" />
+                  )}
+                  Migration'ı Çalıştır
+                </Button>
+              )}
+            </div>
+
+            {migrationPreview && (
+              <Alert>
+                <AlertTitle>Migration Önizlemesi</AlertTitle>
+                <AlertDescription>
+                  <div className="space-y-2 mt-2">
+                    <p><strong>Toplam Kayıt:</strong> {migrationPreview.stats.totalRecords}</p>
+                    <p><strong>Gruplandırılmış:</strong> {migrationPreview.stats.groupedRecords}</p>
+                    <p><strong>Tasarruf:</strong> {migrationPreview.stats.reductionPercent}%</p>
+                    <p><strong>Maliyet Tasarrufu:</strong> {migrationPreview.stats.estimatedSavings.costSavings}</p>
+                    
+                    <div className="mt-4">
+                      <p className="font-semibold mb-2">İlk 10 Grup Önizlemesi:</p>
+                      <div className="space-y-2">
+                        {migrationPreview.preview.map((item: any, idx: number) => (
+                          <div key={idx} className="text-sm border-l-2 pl-2 py-1">
+                            <p className="font-medium">{item.canonical_question}</p>
+                            <p className="text-muted-foreground">
+                              {item.variant_count} varyasyon | Kaynak: {item.source}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+
+          <TabsContent value="v1" className="space-y-4">
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept=".txt,.csv"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+                className="hidden"
+                id="file-upload"
+              />
+              <label htmlFor="file-upload">
+                <Button
+                  disabled={isUploading}
+                  className="cursor-pointer"
+                  asChild
+                >
+                  <span>
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Yükleniyor...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Döküman Yükle (.txt, .csv)
+                      </>
+                    )}
+                  </span>
+                </Button>
+              </label>
               <Button
                 variant="outline"
                 onClick={handleSmartRefresh}
@@ -347,56 +479,58 @@ export function KnowledgeBaseManager() {
                   'Yenile'
                 )}
               </Button>
-        </div>
+            </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Dosya Adı</TableHead>
-                <TableHead>Boyut</TableHead>
-                <TableHead>Parça Sayısı</TableHead>
-                <TableHead>Durum</TableHead>
-                <TableHead>Yüklenme</TableHead>
-                <TableHead className="text-right">İşlemler</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {uploads.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Henüz döküman yüklenmedi
-                  </TableCell>
-                </TableRow>
-              ) : (
-                uploads.map((upload) => (
-                  <TableRow key={upload.id}>
-                    <TableCell className="font-medium">{upload.filename}</TableCell>
-                    <TableCell>{formatFileSize(upload.file_size)}</TableCell>
-                    <TableCell>{upload.chunks_count || '-'}</TableCell>
-                    <TableCell>{getStatusBadge(upload.status)}</TableCell>
-                    <TableCell>
-                      {formatDistanceToNow(new Date(upload.created_at), {
-                        addSuffix: true,
-                        locale: tr,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(upload.id, upload.filename)}
-                        disabled={upload.status === 'processing'}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Dosya Adı</TableHead>
+                    <TableHead>Boyut</TableHead>
+                    <TableHead>Parça Sayısı</TableHead>
+                    <TableHead>Durum</TableHead>
+                    <TableHead>Yüklenme</TableHead>
+                    <TableHead className="text-right">İşlemler</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {uploads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        Henüz döküman yüklenmedi
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    uploads.map((upload) => (
+                      <TableRow key={upload.id}>
+                        <TableCell className="font-medium">{upload.filename}</TableCell>
+                        <TableCell>{formatFileSize(upload.file_size)}</TableCell>
+                        <TableCell>{upload.chunks_count || '-'}</TableCell>
+                        <TableCell>{getStatusBadge(upload.status)}</TableCell>
+                        <TableCell>
+                          {formatDistanceToNow(new Date(upload.created_at), {
+                            addSuffix: true,
+                            locale: tr,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(upload.id, upload.filename)}
+                            disabled={upload.status === 'processing'}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

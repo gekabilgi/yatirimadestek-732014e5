@@ -1373,6 +1373,48 @@ export type Database = {
           },
         ]
       }
+      question_variants: {
+        Row: {
+          canonical_answer: string
+          canonical_question: string
+          confidence_score: number | null
+          created_at: string | null
+          created_by: string | null
+          embedding: string
+          id: string
+          metadata: Json | null
+          source_document: string | null
+          updated_at: string | null
+          variants: string[] | null
+        }
+        Insert: {
+          canonical_answer: string
+          canonical_question: string
+          confidence_score?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          embedding: string
+          id?: string
+          metadata?: Json | null
+          source_document?: string | null
+          updated_at?: string | null
+          variants?: string[] | null
+        }
+        Update: {
+          canonical_answer?: string
+          canonical_question?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          embedding?: string
+          id?: string
+          metadata?: Json | null
+          source_document?: string | null
+          updated_at?: string | null
+          variants?: string[] | null
+        }
+        Relationships: []
+      }
       real_time_notifications: {
         Row: {
           created_at: string
@@ -2212,6 +2254,22 @@ export type Database = {
           id: string
           question: string
           similarity: number
+        }[]
+      }
+      match_question_variants: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          canonical_answer: string
+          canonical_question: string
+          id: string
+          metadata: Json
+          similarity: number
+          source_document: string
+          variants: string[]
         }[]
       }
       record_submission: {

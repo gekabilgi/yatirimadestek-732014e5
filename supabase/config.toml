@@ -50,6 +50,12 @@ verify_jwt = true
 [functions.chat-rag]
 verify_jwt = false
 
+[functions.chat-rag-v2]
+verify_jwt = false
+
+[functions.migrate-existing-knowledge]
+verify_jwt = true
+
 [functions.lookup-nace]
 verify_jwt = true
 
