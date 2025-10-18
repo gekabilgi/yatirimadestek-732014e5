@@ -128,13 +128,23 @@ export function VariantManager() {
   const handleSave = async () => {
     if (!editingVariant) return;
 
+    const cleanedVariants = editingVariant.variants.filter((v) => v.trim());
+
+    // Boş varyant uyarısı
+    if (cleanedVariants.length < editingVariant.variants.length) {
+      toast({
+        title: "Uyarı",
+        description: "Boş varyantlar otomatik olarak kaldırıldı",
+      });
+    }
+
     try {
       const { error } = await supabase
         .from("question_variants")
         .update({
           canonical_question: editingVariant.canonical_question,
           canonical_answer: editingVariant.canonical_answer,
-          variants: editingVariant.variants.filter((v) => v.trim()),
+          variants: cleanedVariants,
           source_document: editingVariant.source_document,
         })
         .eq("id", editingVariant.id);
@@ -187,14 +197,22 @@ export function VariantManager() {
     }
   };
 
-  const addVariant = (variantText: string) => {
-    if (!editingVariant || !variantText.trim()) return;
+  const addVariant = () => {
+    if (!editingVariant) return;
     
-    const newVariants = [...editingVariant.variants, variantText.trim()];
+    // Boş bir input field ekle - kullanıcı sonradan dolduracak
+    const newVariants = [...editingVariant.variants, ""];
     setEditingVariant({
       ...editingVariant,
       variants: newVariants,
     });
+
+    // Yeni eklenen input'a odaklan
+    setTimeout(() => {
+      const inputs = document.querySelectorAll('input[type="text"]');
+      const lastInput = inputs[inputs.length - 1] as HTMLInputElement;
+      lastInput?.focus();
+    }, 100);
   };
 
   const removeVariant = (index: number) => {
@@ -388,7 +406,7 @@ export function VariantManager() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => addVariant("")}
+                    onClick={addVariant}
                     className="w-full"
                   >
                     <Plus className="h-4 w-4 mr-2" />
