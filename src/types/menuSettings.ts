@@ -1,20 +1,23 @@
-export type MenuVisibilityMode = 'anonymous_only' | 'admin_only' | 'authenticated' | 'public';
-
-export interface MenuVisibilitySettings {
-  menu_item_destek_arama: MenuVisibilityMode;
-  menu_item_tesvik_araclari: MenuVisibilityMode;
-  menu_item_soru_cevap: MenuVisibilityMode;
-  menu_item_tedarik_zinciri: MenuVisibilityMode;
-  menu_item_yatirim_firsatlari: MenuVisibilityMode;
-  menu_item_yatirimci_sozlugu: MenuVisibilityMode;
-  menu_item_basvuru_sureci: MenuVisibilityMode;
+export interface MenuItemVisibility {
+  admin: boolean;
+  registered: boolean;
+  anonymous: boolean;
 }
 
-export const VISIBILITY_MODE_LABELS: Record<MenuVisibilityMode, string> = {
-  anonymous_only: 'Sadece Giriş Yapmamış Kullanıcılar',
-  admin_only: 'Sadece Yöneticiler',
-  authenticated: 'Tüm Giriş Yapmış Kullanıcılar',
-  public: 'Herkes (Herkese Açık)',
+export interface MenuVisibilitySettings {
+  menu_item_destek_arama: MenuItemVisibility;
+  menu_item_tesvik_araclari: MenuItemVisibility;
+  menu_item_soru_cevap: MenuItemVisibility;
+  menu_item_tedarik_zinciri: MenuItemVisibility;
+  menu_item_yatirim_firsatlari: MenuItemVisibility;
+  menu_item_yatirimci_sozlugu: MenuItemVisibility;
+  menu_item_basvuru_sureci: MenuItemVisibility;
+}
+
+export const DEFAULT_VISIBILITY: MenuItemVisibility = {
+  admin: true,
+  registered: false,
+  anonymous: false,
 };
 
 export interface MenuItem {
