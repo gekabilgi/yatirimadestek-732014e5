@@ -39,6 +39,8 @@ import {
   Save,
   X,
   GitMerge,
+  Upload,
+  Download,
 } from "lucide-react";
 
 interface QuestionVariant {
@@ -64,6 +66,8 @@ export function VariantManager() {
   const [isBatchRegenerating, setIsBatchRegenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -347,6 +351,152 @@ export function VariantManager() {
     }
   };
 
+  const exportToCSV = () => {
+    const csvHeader = "id,canonical_question,canonical_answer,variants,source_document\n";
+    const csvRows = variants.map(v => {
+      const variantsStr = v.variants.join("|");
+      return `${v.id},"${v.canonical_question.replace(/"/g, '""')}","${v.canonical_answer.replace(/"/g, '""')}","${variantsStr}","${v.source_document || ""}"`;
+    }).join("\n");
+    
+    const csvContent = csvHeader + csvRows;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `question_variants_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "CSV İndirildi",
+      description: `${variants.length} varyant CSV olarak indirildi`,
+    });
+  };
+
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split("\n").filter(line => line.trim());
+        
+        // Skip header
+        const dataLines = lines.slice(1);
+        setImportProgress({ current: 0, total: dataLines.length });
+
+        let insertCount = 0;
+        let updateCount = 0;
+        let errorCount = 0;
+
+        toast({
+          title: "CSV İçe Aktarımı Başladı",
+          description: `${dataLines.length} satır işlenecek`,
+        });
+
+        for (let i = 0; i < dataLines.length; i++) {
+          setImportProgress({ current: i + 1, total: dataLines.length });
+
+          try {
+            // CSV parsing with quoted values
+            const match = dataLines[i].match(/^([^,]*),\"([^\"]*)\",\"([^\"]*)\",\"([^\"]*)\",\"([^\"]*)\"$/);
+            if (!match) {
+              console.warn(`Skipping invalid line ${i + 1}:`, dataLines[i]);
+              errorCount++;
+              continue;
+            }
+
+            const [, id, canonical_question, canonical_answer, variantsStr, source_document] = match;
+            const variants = variantsStr.split("|").filter(v => v.trim());
+
+            if (!canonical_question || !canonical_answer) {
+              errorCount++;
+              continue;
+            }
+
+            const rowData = {
+              canonical_question,
+              canonical_answer,
+              variants,
+              source_document: source_document || null,
+              embedding: null as any, // Will be generated later
+            };
+
+            // Check if ID exists and is valid UUID
+            const hasValidId = id && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+
+            if (hasValidId) {
+              // Try to update
+              const { error: updateError } = await supabase
+                .from("question_variants")
+                .update(rowData)
+                .eq("id", id);
+
+              if (updateError) {
+                // If update fails, try insert
+                const { error: insertError } = await supabase
+                  .from("question_variants")
+                  .insert([rowData]);
+                
+                if (insertError) throw insertError;
+                insertCount++;
+              } else {
+                updateCount++;
+              }
+            } else {
+              // Insert new record
+              const { error: insertError } = await supabase
+                .from("question_variants")
+                .insert([rowData]);
+              
+              if (insertError) throw insertError;
+              insertCount++;
+            }
+
+            // Progress toast every 10 items
+            if ((i + 1) % 10 === 0) {
+              toast({
+                title: "İşleniyor...",
+                description: `${i + 1} / ${dataLines.length} tamamlandı`,
+              });
+            }
+
+          } catch (error) {
+            console.error(`Error processing line ${i + 1}:`, error);
+            errorCount++;
+          }
+        }
+
+        toast({
+          title: "CSV İçe Aktarımı Tamamlandı",
+          description: `✅ ${insertCount} yeni, 🔄 ${updateCount} güncelleme, ❌ ${errorCount} hata`,
+        });
+
+        fetchVariants();
+
+      } catch (error: any) {
+        console.error("CSV import error:", error);
+        toast({
+          title: "Hata",
+          description: "CSV dosyası işlenirken bir hata oluştu",
+          variant: "destructive",
+        });
+      } finally {
+        setIsImporting(false);
+        setImportProgress({ current: 0, total: 0 });
+        event.target.value = ""; // Reset file input
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -362,6 +512,38 @@ export function VariantManager() {
         <Badge variant="outline">
           {filteredVariants.length} / {variants.length} soru
         </Badge>
+        <Button
+          variant="outline"
+          onClick={exportToCSV}
+          disabled={variants.length === 0}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          CSV İndir
+        </Button>
+        <Button
+          variant="outline"
+          disabled={isImporting}
+          onClick={() => document.getElementById('csv-upload')?.click()}
+        >
+          {isImporting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {importProgress.current} / {importProgress.total}
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4 mr-2" />
+              CSV Yükle
+            </>
+          )}
+        </Button>
+        <input
+          id="csv-upload"
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={handleCSVImport}
+        />
         <Button
           variant="outline"
           onClick={() => {
