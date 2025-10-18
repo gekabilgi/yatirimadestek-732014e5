@@ -42,6 +42,7 @@ import {
   Upload,
   Download,
 } from "lucide-react";
+import * as XLSX from 'xlsx';
 
 interface QuestionVariant {
   id: string;
@@ -375,126 +376,195 @@ export function VariantManager() {
     });
   };
 
-  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setIsImporting(true);
-    const reader = new FileReader();
+    setImportProgress({ current: 0, total: 0 });
 
-    reader.onload = async (e) => {
-      try {
-        const text = e.target?.result as string;
-        const lines = text.split("\n").filter(line => line.trim());
+    try {
+      const fileName = file.name.toLowerCase();
+      const isXLSX = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+      let rows: any[] = [];
+
+      if (isXLSX) {
+        // Handle XLSX files
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
         
-        // Skip header
-        const dataLines = lines.slice(1);
-        setImportProgress({ current: 0, total: dataLines.length });
-
-        let insertCount = 0;
-        let updateCount = 0;
-        let errorCount = 0;
-
-        toast({
-          title: "CSV İçe Aktarımı Başladı",
-          description: `${dataLines.length} satır işlenecek`,
-        });
-
-        for (let i = 0; i < dataLines.length; i++) {
-          setImportProgress({ current: i + 1, total: dataLines.length });
-
-          try {
-            // CSV parsing with quoted values
-            const match = dataLines[i].match(/^([^,]*),\"([^\"]*)\",\"([^\"]*)\",\"([^\"]*)\",\"([^\"]*)\"$/);
-            if (!match) {
-              console.warn(`Skipping invalid line ${i + 1}:`, dataLines[i]);
-              errorCount++;
-              continue;
-            }
-
-            const [, id, canonical_question, canonical_answer, variantsStr, source_document] = match;
-            const variants = variantsStr.split("|").filter(v => v.trim());
-
-            if (!canonical_question || !canonical_answer) {
-              errorCount++;
-              continue;
-            }
-
-            const rowData = {
-              canonical_question,
-              canonical_answer,
-              variants,
-              source_document: source_document || null,
-              embedding: null as any, // Will be generated later
-            };
-
-            // Check if ID exists and is valid UUID
-            const hasValidId = id && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-
-            if (hasValidId) {
-              // Try to update
-              const { error: updateError } = await supabase
-                .from("question_variants")
-                .update(rowData)
-                .eq("id", id);
-
-              if (updateError) {
-                // If update fails, try insert
-                const { error: insertError } = await supabase
-                  .from("question_variants")
-                  .insert([rowData]);
-                
-                if (insertError) throw insertError;
-                insertCount++;
-              } else {
-                updateCount++;
-              }
-            } else {
-              // Insert new record
-              const { error: insertError } = await supabase
-                .from("question_variants")
-                .insert([rowData]);
-              
-              if (insertError) throw insertError;
-              insertCount++;
-            }
-
-            // Progress toast every 10 items
-            if ((i + 1) % 10 === 0) {
-              toast({
-                title: "İşleniyor...",
-                description: `${i + 1} / ${dataLines.length} tamamlandı`,
-              });
-            }
-
-          } catch (error) {
-            console.error(`Error processing line ${i + 1}:`, error);
-            errorCount++;
-          }
+        // Skip header row and convert to structured format
+        rows = (jsonData as any[]).slice(1).map((row: any) => ({
+          id: row[0]?.toString().trim() || '',
+          canonical_question: row[1]?.toString().trim() || '',
+          canonical_answer: row[2]?.toString().trim() || '',
+          variants: row[3],
+          source_document: row[4]?.toString().trim() || ''
+        }));
+      } else {
+        // Handle CSV files
+        const text = await file.text();
+        const cleanText = text.replace(/^\uFEFF/, ''); // Remove BOM
+        const lines = cleanText.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          toast({
+            title: "Hata",
+            description: "Dosya boş veya sadece başlık satırı içeriyor",
+            variant: "destructive",
+          });
+          return;
         }
 
-        toast({
-          title: "CSV İçe Aktarımı Tamamlandı",
-          description: `✅ ${insertCount} yeni, 🔄 ${updateCount} güncelleme, ❌ ${errorCount} hata`,
-        });
+        // Skip header and parse CSV rows
+        const dataLines = lines.slice(1);
+        rows = dataLines.map(line => {
+          const regex = /(?:^|,)("(?:[^"]|"")*"|[^,]*)/g;
+          const matches = [...line.matchAll(regex)]
+            .map(match => match[1])
+            .filter(val => val !== undefined)
+            .map(val => val.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
 
-        fetchVariants();
-
-      } catch (error: any) {
-        console.error("CSV import error:", error);
-        toast({
-          title: "Hata",
-          description: "CSV dosyası işlenirken bir hata oluştu",
-          variant: "destructive",
+          return {
+            id: matches[0] || '',
+            canonical_question: matches[1] || '',
+            canonical_answer: matches[2] || '',
+            variants: matches[3],
+            source_document: matches[4] || ''
+          };
         });
-      } finally {
-        setIsImporting(false);
-        setImportProgress({ current: 0, total: 0 });
-        event.target.value = ""; // Reset file input
       }
-    };
 
-    reader.readAsText(file);
+      setImportProgress({ current: 0, total: rows.length });
+
+      toast({
+        title: "İçe Aktarma Başladı",
+        description: `${rows.length} satır işlenecek...`,
+      });
+
+      let insertCount = 0;
+      let updateCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        setImportProgress({ current: i + 1, total: rows.length });
+
+        try {
+          if (!row.canonical_question) {
+            errors.push(`Satır ${i + 2}: Soru alanı boş`);
+            errorCount++;
+            continue;
+          }
+
+          // Parse variants - support multiple formats
+          let variants: string[] = [];
+          try {
+            if (typeof row.variants === 'string') {
+              const variantsStr = row.variants.trim();
+              if (variantsStr.startsWith('[')) {
+                // JSON array format: ["variant1", "variant2"]
+                variants = JSON.parse(variantsStr);
+              } else if (variantsStr.includes('|')) {
+                // Pipe-separated format: variant1|variant2
+                variants = variantsStr.split('|').map(v => v.trim()).filter(v => v);
+              } else {
+                // Single variant
+                variants = variantsStr ? [variantsStr] : [];
+              }
+            } else if (Array.isArray(row.variants)) {
+              variants = row.variants;
+            }
+          } catch (parseError) {
+            errors.push(`Satır ${i + 2}: Variants parse edilemedi`);
+            errorCount++;
+            continue;
+          }
+
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          const isValidUUID = row.id && uuidRegex.test(row.id);
+
+          if (isValidUUID) {
+            // UPDATE existing row
+            const updateData: any = {
+              canonical_question: row.canonical_question,
+              variants: variants,
+            };
+
+            if (row.canonical_answer) updateData.canonical_answer = row.canonical_answer;
+            if (row.source_document) updateData.source_document = row.source_document;
+
+            const { error: updateError } = await supabase
+              .from("question_variants")
+              .update(updateData)
+              .eq("id", row.id);
+
+            if (updateError) {
+              errors.push(`Satır ${i + 2}: Update hatası - ${updateError.message}`);
+              errorCount++;
+            } else {
+              updateCount++;
+            }
+          } else {
+            // INSERT new row
+            const { error: insertError } = await supabase
+              .from("question_variants")
+              .insert({
+                canonical_question: row.canonical_question,
+                canonical_answer: row.canonical_answer || "",
+                variants: variants,
+                source_document: row.source_document || null,
+                embedding: null as any,
+              });
+
+            if (insertError) {
+              errors.push(`Satır ${i + 2}: Insert hatası - ${insertError.message}`);
+              errorCount++;
+            } else {
+              insertCount++;
+            }
+          }
+
+          if ((i + 1) % 10 === 0) {
+            toast({
+              title: "İşleniyor...",
+              description: `${i + 1} / ${rows.length} satır işlendi`,
+            });
+          }
+
+        } catch (rowError: any) {
+          errors.push(`Satır ${i + 2}: ${rowError.message}`);
+          errorCount++;
+        }
+      }
+
+      if (errors.length > 0) {
+        console.error("Import errors:", errors.slice(0, 10));
+      }
+
+      toast({
+        title: "İçe Aktarma Tamamlandı",
+        description: `✅ ${insertCount} eklendi, 🔄 ${updateCount} güncellendi, ❌ ${errorCount} hata`,
+        variant: errorCount > 0 ? "destructive" : "default",
+      });
+
+      await fetchVariants();
+      
+    } catch (error: any) {
+      console.error("Import error:", error);
+      toast({
+        title: "Hata",
+        description: `Dosya işlenirken bir hata oluştu: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+      setImportProgress({ current: 0, total: 0 });
+      event.target.value = '';
+    }
   };
 
   return (
@@ -533,16 +603,16 @@ export function VariantManager() {
           ) : (
             <>
               <Upload className="h-4 w-4 mr-2" />
-              CSV Yükle
+              Excel/CSV Yükle
             </>
           )}
         </Button>
         <input
           id="csv-upload"
           type="file"
-          accept=".csv"
+          accept=".csv,.xlsx,.xls"
           className="hidden"
-          onChange={handleCSVImport}
+          onChange={handleFileImport}
         />
         <Button
           variant="outline"
