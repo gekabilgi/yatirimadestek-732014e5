@@ -1,62 +1,65 @@
 import { supabase } from "@/integrations/supabase/client";
-import { AdminSetting } from "@/types/adminSettings";
-import { MenuVisibilitySettings } from "@/types/menuSettings";
+import { MenuVisibilitySettings, MenuVisibilityMode } from "@/types/menuSettings";
 
 export const menuVisibilityService = {
   async getMenuVisibilitySettings(): Promise<MenuVisibilitySettings> {
-    const { data, error } = await supabase
-      .from('admin_settings')
-      .select('*')
-      .eq('category', 'menu_visibility');
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('setting_key, setting_value_text')
+        .eq('category', 'menu_visibility');
 
-    if (error) {
+      if (error) throw error;
+
+      const settings: MenuVisibilitySettings = {
+        menu_item_destek_arama: 'public',
+        menu_item_tesvik_araclari: 'anonymous_only',
+        menu_item_soru_cevap: 'anonymous_only',
+        menu_item_tedarik_zinciri: 'anonymous_only',
+        menu_item_yatirim_firsatlari: 'anonymous_only',
+        menu_item_yatirimci_sozlugu: 'anonymous_only',
+        menu_item_basvuru_sureci: 'anonymous_only',
+      };
+
+      data?.forEach((row) => {
+        const key = row.setting_key as keyof MenuVisibilitySettings;
+        if (key in settings && row.setting_value_text) {
+          settings[key] = row.setting_value_text as MenuVisibilityMode;
+        }
+      });
+
+      return settings;
+    } catch (error) {
       console.error('Error fetching menu visibility settings:', error);
-      // Return default values if database fetch fails (only Destek Arama visible)
+      // Return default settings on error
       return {
-        menu_item_destek_arama: true,
-        menu_item_tesvik_araclari: false,
-        menu_item_soru_cevap: false,
-        menu_item_tedarik_zinciri: false,
-        menu_item_yatirim_firsatlari: false,
-        menu_item_yatirimci_sozlugu: false,
-        menu_item_basvuru_sureci: false,
+        menu_item_destek_arama: 'public',
+        menu_item_tesvik_araclari: 'anonymous_only',
+        menu_item_soru_cevap: 'anonymous_only',
+        menu_item_tedarik_zinciri: 'anonymous_only',
+        menu_item_yatirim_firsatlari: 'anonymous_only',
+        menu_item_yatirimci_sozlugu: 'anonymous_only',
+        menu_item_basvuru_sureci: 'anonymous_only',
       };
     }
-
-    // Start with defaults
-    const settings: MenuVisibilitySettings = {
-      menu_item_destek_arama: true,
-      menu_item_tesvik_araclari: false,
-      menu_item_soru_cevap: false,
-      menu_item_tedarik_zinciri: false,
-      menu_item_yatirim_firsatlari: false,
-      menu_item_yatirimci_sozlugu: false,
-      menu_item_basvuru_sureci: false,
-    };
-
-    // Update with database values
-    data?.forEach((setting: AdminSetting) => {
-      const key = setting.setting_key as keyof MenuVisibilitySettings;
-      if (key in settings) {
-        settings[key] = setting.setting_value === 1;
-      }
-    });
-
-    return settings;
   },
 
-  async updateMenuItemVisibility(menuItemKey: string, isVisible: boolean): Promise<void> {
+  async updateMenuItemVisibility(menuItemKey: string, visibilityMode: MenuVisibilityMode): Promise<void> {
     const { error } = await supabase
       .from('admin_settings')
-      .update({ setting_value: isVisible ? 1 : 0 })
-      .eq('setting_key', menuItemKey);
+      .upsert({
+        category: 'menu_visibility',
+        setting_key: menuItemKey,
+        setting_value: 0, // Keep for backward compatibility
+        setting_value_text: visibilityMode,
+      }, {
+        onConflict: 'category,setting_key',
+      });
 
-    if (error) {
-      throw new Error(`Failed to update ${menuItemKey}: ${error.message}`);
-    }
+    if (error) throw error;
   },
 
-  async updateMultipleMenuItems(updates: Record<string, boolean>): Promise<void> {
+  async updateMultipleMenuItems(updates: Record<string, MenuVisibilityMode>): Promise<void> {
     for (const [key, value] of Object.entries(updates)) {
       await this.updateMenuItemVisibility(key, value);
     }

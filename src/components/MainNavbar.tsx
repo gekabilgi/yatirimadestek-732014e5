@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Calculator, User, LogOut, Settings, TrendingUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { shouldShowMenuItem } from '@/utils/menuVisibility';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +26,7 @@ const MainNavbar = () => {
     { name: 'Destek Arama', href: '/searchsupport' },
   ]);
 
-  // Fetch menu visibility settings for anonymous users
+  // Fetch menu visibility settings and filter based on user authentication/role
   useEffect(() => {
     const loadMenuSettings = async () => {
       try {
@@ -34,8 +34,11 @@ const MainNavbar = () => {
         const { MENU_ITEMS } = await import('@/types/menuSettings');
         const settings = await menuVisibilityService.getMenuVisibilitySettings();
         
-        // Filter menu items based on visibility settings
-        const visibleItems = MENU_ITEMS.filter(item => settings[item.settingKey]).map(item => ({
+        // Filter menu items based on visibility settings and user state
+        const visibleItems = MENU_ITEMS.filter(item => {
+          const mode = settings[item.settingKey];
+          return shouldShowMenuItem(mode, !!user, isAdmin);
+        }).map(item => ({
           name: item.title,
           href: item.url,
         }));
@@ -48,24 +51,8 @@ const MainNavbar = () => {
       }
     };
 
-    if (!isAdmin) {
-      loadMenuSettings();
-    }
-  }, [isAdmin]);
-
-  // Admin sees all items
-  const adminNavItems = [
-    { name: 'Destek Arama', href: '/searchsupport' },
-    { name: '9903 | Teşvik Araçları', href: '/incentive-tools' },
-    { name: 'Soru & Cevap', href: '/qna' },
-    { name: 'Tedarik Zinciri', href: '/tzy' },
-    { name: 'Yatırım Fırsatları', href: '/yatirim-firsatlari' },
-    { name: 'Yatırımcı Sözlüğü', href: '/investor-glossary' },
-    { name: 'Başvuru Süreci', href: '/basvuru-sureci' },
-  ];
-
-  // Combine nav items based on user role
-  const navItems = isAdmin ? adminNavItems : visibleNavItems;
+    loadMenuSettings();
+  }, [user, isAdmin]);
 
   return (
     <nav className="nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm">
@@ -90,7 +77,7 @@ const MainNavbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
@@ -153,7 +140,7 @@ const MainNavbar = () => {
         {isMenuOpen && (
           <div className="lg:hidden animate-slide-up">
             <div className="px-4 pt-4 pb-6 space-y-2 border-t bg-white/95 backdrop-blur-sm">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}

@@ -2,24 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Menu } from 'lucide-react';
 import { menuVisibilityService } from '@/services/menuVisibilityService';
-import { MenuVisibilitySettings, MENU_ITEMS } from '@/types/menuSettings';
+import { MenuVisibilitySettings, MenuVisibilityMode, MENU_ITEMS, VISIBILITY_MODE_LABELS } from '@/types/menuSettings';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AdminMenuSettings = () => {
   const [settings, setSettings] = useState<MenuVisibilitySettings>({
-    menu_item_destek_arama: true,
-    menu_item_tesvik_araclari: false,
-    menu_item_soru_cevap: false,
-    menu_item_tedarik_zinciri: false,
-    menu_item_yatirim_firsatlari: false,
-    menu_item_yatirimci_sozlugu: false,
-    menu_item_basvuru_sureci: false,
+    menu_item_destek_arama: 'public',
+    menu_item_tesvik_araclari: 'anonymous_only',
+    menu_item_soru_cevap: 'anonymous_only',
+    menu_item_tedarik_zinciri: 'anonymous_only',
+    menu_item_yatirim_firsatlari: 'anonymous_only',
+    menu_item_yatirimci_sozlugu: 'anonymous_only',
+    menu_item_basvuru_sureci: 'anonymous_only',
   });
   
   const [isLoading, setIsLoading] = useState(true);
@@ -46,21 +46,22 @@ const AdminMenuSettings = () => {
     loadSettings();
   }, [toast]);
 
-  const handleToggle = async (menuItemKey: keyof MenuVisibilitySettings, checked: boolean) => {
+  const handleVisibilityChange = async (menuItemKey: keyof MenuVisibilitySettings, newMode: MenuVisibilityMode) => {
+    const previousMode = settings[menuItemKey];
     // Optimistically update UI
-    setSettings(prev => ({ ...prev, [menuItemKey]: checked }));
+    setSettings(prev => ({ ...prev, [menuItemKey]: newMode }));
     
     setSavingStates(prev => ({ ...prev, [menuItemKey]: true }));
     try {
-      await menuVisibilityService.updateMenuItemVisibility(menuItemKey, checked);
+      await menuVisibilityService.updateMenuItemVisibility(menuItemKey, newMode);
       toast({
         title: "Başarılı",
-        description: `Menü öğesi görünürlüğü ${checked ? 'etkinleştirildi' : 'devre dışı bırakıldı'}.`,
+        description: `Menü öğesi görünürlüğü güncellendi.`,
       });
     } catch (error) {
       console.error('Error saving menu visibility:', error);
       // Revert UI on failure
-      setSettings(prev => ({ ...prev, [menuItemKey]: !checked }));
+      setSettings(prev => ({ ...prev, [menuItemKey]: previousMode }));
       toast({
         title: "Hata",
         description: "Ayar kaydedilirken bir hata oluştu.",
@@ -114,8 +115,8 @@ const AdminMenuSettings = () => {
           <CardHeader>
             <CardTitle>Menü Öğeleri Görünürlüğü</CardTitle>
             <CardDescription>
-              Aşağıdaki ayarlar, ana sayfadaki navigasyon menüsünde hangi öğelerin
-              giriş yapmamış kullanıcılara (anonim) görüneceğini kontrol eder.
+              Her menü öğesi için görünürlük modunu seçin: Sadece anonim kullanıcılar, sadece yöneticiler, 
+              tüm giriş yapmış kullanıcılar veya herkese açık olabilir.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
@@ -125,7 +126,7 @@ const AdminMenuSettings = () => {
                   <div className="space-y-0.5 flex-1 pr-4">
                     <Label 
                       htmlFor={item.settingKey}
-                      className="text-base font-medium cursor-pointer"
+                      className="text-base font-medium"
                     >
                       {item.title}
                     </Label>
@@ -133,12 +134,22 @@ const AdminMenuSettings = () => {
                       {item.description}
                     </p>
                   </div>
-                  <Switch
-                    id={item.settingKey}
-                    checked={settings[item.settingKey]}
-                    onCheckedChange={(checked) => handleToggle(item.settingKey, checked)}
+                  <Select
+                    value={settings[item.settingKey]}
+                    onValueChange={(value) => handleVisibilityChange(item.settingKey, value as MenuVisibilityMode)}
                     disabled={savingStates[item.settingKey]}
-                  />
+                  >
+                    <SelectTrigger className="w-[280px] bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {(Object.keys(VISIBILITY_MODE_LABELS) as MenuVisibilityMode[]).map((mode) => (
+                        <SelectItem key={mode} value={mode}>
+                          {VISIBILITY_MODE_LABELS[mode]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {index < MENU_ITEMS.length - 1 && <Separator />}
               </React.Fragment>

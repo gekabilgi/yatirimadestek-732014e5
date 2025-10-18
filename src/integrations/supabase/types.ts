@@ -22,6 +22,7 @@ export type Database = {
           id: string
           setting_key: string
           setting_value: number
+          setting_value_text: string | null
           updated_at: string
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           id?: string
           setting_key: string
           setting_value: number
+          setting_value_text?: string | null
           updated_at?: string
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           id?: string
           setting_key?: string
           setting_value?: number
+          setting_value_text?: string | null
           updated_at?: string
         }
         Relationships: []
