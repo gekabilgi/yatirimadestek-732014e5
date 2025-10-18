@@ -1380,7 +1380,7 @@ export type Database = {
           confidence_score: number | null
           created_at: string | null
           created_by: string | null
-          embedding: string
+          embedding: string | null
           id: string
           metadata: Json | null
           source_document: string | null
@@ -1393,7 +1393,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string | null
           created_by?: string | null
-          embedding: string
+          embedding?: string | null
           id?: string
           metadata?: Json | null
           source_document?: string | null
@@ -1406,7 +1406,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string | null
           created_by?: string | null
-          embedding?: string
+          embedding?: string | null
           id?: string
           metadata?: Json | null
           source_document?: string | null
