@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Edit, ExternalLink, GripVertical, RotateCcw } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Edit, ExternalLink, GripVertical, RotateCcw } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LegalDocument {
   id: string;
@@ -34,19 +34,19 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
   onEdit,
   onToggleStatus,
   onDelete,
-  onResetOrder
+  onResetOrder,
 }) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [dragOverItem, setDragOverItem] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedItem(index);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     setDragOverItem(index);
   };
 
@@ -56,7 +56,7 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
-    
+
     if (draggedItem === null || draggedItem === dropIndex) {
       setDraggedItem(null);
       setDragOverItem(null);
@@ -65,18 +65,18 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
 
     const newDocuments = [...documents];
     const draggedDocument = newDocuments[draggedItem];
-    
+
     // Remove dragged item
     newDocuments.splice(draggedItem, 1);
-    
+
     // Insert at new position
     const insertIndex = draggedItem < dropIndex ? dropIndex - 1 : dropIndex;
     newDocuments.splice(insertIndex, 0, draggedDocument);
-    
+
     // Update display_order for all documents
     const reorderedDocuments = newDocuments.map((doc, index) => ({
       ...doc,
-      display_order: index + 1
+      display_order: index + 1,
     }));
 
     onReorder(reorderedDocuments);
@@ -90,12 +90,12 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR');
+    return date.toLocaleDateString("tr-TR");
   };
 
-  const hasCustomOrder = documents.some(doc => doc.display_order > 0);
+  const hasCustomOrder = documents.some((doc) => doc.display_order > 0);
 
   return (
     <div className="space-y-4">
@@ -112,12 +112,7 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
           )}
         </div>
         {hasCustomOrder && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onResetOrder}
-            className="flex items-center gap-2"
-          >
+          <Button variant="outline" size="sm" onClick={onResetOrder} className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
             Sıralamayı Sıfırla
           </Button>
@@ -139,7 +134,7 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
               "flex items-center gap-4 p-4 border rounded-lg bg-card cursor-move transition-all",
               draggedItem === index && "opacity-50 scale-95",
               dragOverItem === index && draggedItem !== index && "border-primary bg-primary/5",
-              "hover:shadow-md"
+              "hover:shadow-md",
             )}
           >
             {/* Position and Drag Handle */}
@@ -154,15 +149,11 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-foreground truncate">{doc.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                    {doc.description}
-                  </p>
+                  <h6 className="font-medium text-foreground truncate">{doc.title}</h6>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{doc.description}</p>
                   <div className="flex items-center gap-4 mt-2">
                     <Badge variant="outline">{doc.document_type}</Badge>
-                    {doc.ministry && (
-                      <span className="text-sm text-muted-foreground">{doc.ministry}</span>
-                    )}
+                    {doc.ministry && <span className="text-sm text-muted-foreground">{doc.ministry}</span>}
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       {formatDate(doc.publication_date)}
@@ -172,33 +163,25 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
 
                 {/* Status and Actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant={doc.status === 'active' ? 'default' : 'secondary'}>
-                    {doc.status === 'active' ? 'Aktif' : 'Pasif'}
+                  <Badge variant={doc.status === "active" ? "default" : "secondary"}>
+                    {doc.status === "active" ? "Aktif" : "Pasif"}
                   </Badge>
-                  
+
                   <div className="flex items-center gap-1">
                     {(doc.file_url || doc.external_url) && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(doc.file_url || doc.external_url, '_blank')}
+                        onClick={() => window.open(doc.file_url || doc.external_url, "_blank")}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onEdit(doc)}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => onEdit(doc)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onToggleStatus(doc.id, doc.status)}
-                    >
-                      {doc.status === 'active' ? 'Pasif Et' : 'Aktif Et'}
+                    <Button size="sm" variant="outline" onClick={() => onToggleStatus(doc.id, doc.status)}>
+                      {doc.status === "active" ? "Pasif Et" : "Aktif Et"}
                     </Button>
                     <Button
                       size="sm"
@@ -217,9 +200,7 @@ export const DraggableLegalDocumentList: React.FC<DraggableLegalDocumentListProp
       </div>
 
       {documents.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          Henüz döküman eklenmemiş.
-        </div>
+        <div className="text-center py-8 text-muted-foreground">Henüz döküman eklenmemiş.</div>
       )}
     </div>
   );
