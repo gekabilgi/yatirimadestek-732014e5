@@ -61,6 +61,9 @@ export function VariantManager() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isRegeneratingEmbedding, setIsRegeneratingEmbedding] = useState(false);
+  const [isBatchRegenerating, setIsBatchRegenerating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -270,6 +273,80 @@ export function VariantManager() {
     }
   };
 
+  const regenerateAllEmbeddings = async () => {
+    setIsBatchRegenerating(true);
+    setBatchProgress({ current: 0, total: variants.length });
+
+    try {
+      toast({
+        title: "Toplu Güncelleme Başladı",
+        description: `${variants.length} varyant için embedding oluşturulacak`,
+      });
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        setBatchProgress({ current: i + 1, total: variants.length });
+
+        try {
+          // Embedding oluştur
+          const { data: embeddingData, error: embeddingError } = 
+            await supabase.functions.invoke('generate-embeddings', {
+              body: { text: variant.canonical_question }
+            });
+
+          if (embeddingError) throw embeddingError;
+
+          // Database'e kaydet
+          const { error: updateError } = await supabase
+            .from("question_variants")
+            .update({ embedding: embeddingData.embedding })
+            .eq("id", variant.id);
+
+          if (updateError) throw updateError;
+          
+          successCount++;
+          
+          // Progress toast (her 5 varyantda bir)
+          if ((i + 1) % 5 === 0) {
+            toast({
+              title: "İşleniyor...",
+              description: `${i + 1} / ${variants.length} tamamlandı`,
+            });
+          }
+          
+          // Rate limit koruması (saniyede 1 istek)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (error) {
+          console.error(`Error regenerating embedding for variant ${variant.id}:`, error);
+          errorCount++;
+        }
+      }
+
+      toast({
+        title: "Toplu Güncelleme Tamamlandı",
+        description: `✅ ${successCount} başarılı, ❌ ${errorCount} hata`,
+      });
+
+      fetchVariants();
+      
+    } catch (error: any) {
+      console.error("Batch regeneration error:", error);
+      toast({
+        title: "Hata",
+        description: "Toplu güncelleme sırasında bir hata oluştu",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBatchRegenerating(false);
+      setBatchProgress({ current: 0, total: 0 });
+      setShowBatchConfirm(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -285,6 +362,29 @@ export function VariantManager() {
         <Badge variant="outline">
           {filteredVariants.length} / {variants.length} soru
         </Badge>
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (variants.length > 50) {
+              setShowBatchConfirm(true);
+            } else {
+              regenerateAllEmbeddings();
+            }
+          }}
+          disabled={isBatchRegenerating || variants.length === 0}
+        >
+          {isBatchRegenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {batchProgress.current} / {batchProgress.total}
+            </>
+          ) : (
+            <>
+              <GitMerge className="h-4 w-4 mr-2" />
+              Tüm Embeddingleri Yenile
+            </>
+          )}
+        </Button>
       </div>
 
       {isLoading ? (
@@ -504,6 +604,26 @@ export function VariantManager() {
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>Sil</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch Regeneration Confirmation */}
+      <AlertDialog open={showBatchConfirm} onOpenChange={setShowBatchConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Toplu Güncelleme Onayı</AlertDialogTitle>
+            <AlertDialogDescription>
+              {variants.length} adet varyant için embedding oluşturulacak.
+              Bu işlem yaklaşık {Math.ceil(variants.length / 60)} dakika sürebilir.
+              Devam etmek istiyor musunuz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={regenerateAllEmbeddings}>
+              Devam Et
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
