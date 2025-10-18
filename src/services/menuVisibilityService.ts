@@ -1,6 +1,22 @@
 import { supabase } from "@/integrations/supabase/client";
 import { MenuVisibilitySettings, MenuItemVisibility, DEFAULT_VISIBILITY } from "@/types/menuSettings";
 
+// Convert old mode format to new format
+function convertOldModeToNew(mode: string): MenuItemVisibility {
+  switch (mode) {
+    case 'anonymous_only':
+      return { admin: false, registered: false, anonymous: true };
+    case 'admin_only':
+      return { admin: true, registered: false, anonymous: false };
+    case 'authenticated':
+      return { admin: true, registered: true, anonymous: false };
+    case 'public':
+      return { admin: true, registered: true, anonymous: true };
+    default:
+      return { ...DEFAULT_VISIBILITY };
+  }
+}
+
 export const menuVisibilityService = {
   async getMenuVisibilitySettings(): Promise<MenuVisibilitySettings> {
     try {
@@ -25,10 +41,12 @@ export const menuVisibilityService = {
         const key = row.setting_key as keyof MenuVisibilitySettings;
         if (key in settings && row.setting_value_text) {
           try {
+            // Try to parse as JSON first (new format)
             settings[key] = JSON.parse(row.setting_value_text);
           } catch (e) {
-            console.error(`Error parsing visibility for ${key}:`, e);
-            settings[key] = { ...DEFAULT_VISIBILITY };
+            // If JSON parsing fails, it's in old format - convert it
+            const oldMode = row.setting_value_text;
+            settings[key] = convertOldModeToNew(oldMode);
           }
         }
       });
