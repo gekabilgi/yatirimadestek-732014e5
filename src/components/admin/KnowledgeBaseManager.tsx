@@ -21,6 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
+import { VariantManager } from "./VariantManager";
 
 interface DocumentUpload {
   id: string;
@@ -40,7 +41,7 @@ export function KnowledgeBaseManager() {
   const [missingCount, setMissingCount] = useState(0);
   const [migrating, setMigrating] = useState(false);
   const [migrationPreview, setMigrationPreview] = useState<any>(null);
-  const [activeSystem, setActiveSystem] = useState<"v1" | "v2">("v1");
+  const [activeSystem, setActiveSystem] = useState<"v1" | "v2" | "manage">("v1");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -355,10 +356,11 @@ export function KnowledgeBaseManager() {
       </CardHeader>
       
       <CardContent>
-        <Tabs value={activeSystem} onValueChange={(v) => setActiveSystem(v as "v1" | "v2")}>
+        <Tabs value={activeSystem} onValueChange={(v) => setActiveSystem(v as "v1" | "v2" | "manage")}>
           <TabsList className="mb-4">
             <TabsTrigger value="v1">Mevcut Sistem (V1)</TabsTrigger>
-            <TabsTrigger value="v2">Yeni Sistem (V2) - Soru Varyasyonları</TabsTrigger>
+            <TabsTrigger value="v2">Yeni Sistem (V2) - Migration</TabsTrigger>
+            <TabsTrigger value="manage">Varyant Yönetimi</TabsTrigger>
           </TabsList>
 
           <TabsContent value="v2" className="space-y-4">
@@ -431,6 +433,18 @@ export function KnowledgeBaseManager() {
                 </AlertDescription>
               </Alert>
             )}
+          </TabsContent>
+
+          <TabsContent value="manage" className="space-y-4">
+            <Alert>
+              <Database className="h-4 w-4" />
+              <AlertTitle>Varyant Yönetimi</AlertTitle>
+              <AlertDescription>
+                Mevcut soru varyasyonlarını görüntüleyin, düzenleyin ve yönetin. Her canonical soru için varyasyonlar ekleyebilir veya çıkarabilirsiniz.
+              </AlertDescription>
+            </Alert>
+            
+            <VariantManager />
           </TabsContent>
 
           <TabsContent value="v1" className="space-y-4">
