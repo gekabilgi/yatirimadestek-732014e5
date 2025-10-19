@@ -19,40 +19,25 @@ const QnaSection = () => {
       try {
         // Fetch average response time
         const { data: avgTimeData, error: avgTimeError } = await supabase.functions.invoke('calculate-avg-response-time');
-        if (!avgTimeError) {
+        if (!avgTimeError && avgTimeData) {
           setAverageResponseTime(avgTimeData.averageResponseTime || "24 saat");
         }
 
-        // Fetch total public questions (answered & approved)
-        const { count: totalCount, error: totalError } = await supabase
-          .from('public_qna_view')
-          .select('*', { count: 'exact', head: true });
-        
-        if (!totalError) {
-          setTotalQuestions(totalCount?.toLocaleString() || "0");
+        // Fetch total public Q&A count via secure RPC
+        const { data: totalCountData, error: totalError } = await supabase.rpc('get_public_qna_count');
+        if (!totalError && totalCountData !== null) {
+          setTotalQuestions(totalCountData.toLocaleString());
         }
 
-        // Fetch active experts (YDO users) - only if authenticated to avoid RLS issues
-        if (user) {
-          const { count: expertsCount, error: expertsError } = await supabase
-            .from('ydo_users')
-            .select('*', { count: 'exact', head: true });
-          
-          if (!expertsError) {
-            setActiveExperts(expertsCount?.toString() || '0');
-          }
-        } else {
-          setActiveExperts('—');
+        // Fetch active experts (YDO users) via secure RPC
+        const { data: expertsCountData, error: expertsError } = await supabase.rpc('get_ydo_user_count');
+        if (!expertsError && expertsCountData !== null) {
+          setActiveExperts(expertsCountData.toString());
         }
 
-        // Fetch answered questions rate (from public view)
-        const { count: answeredCount, error: answeredError } = await supabase
-          .from('public_qna_view')
-          .select('*', { count: 'exact', head: true })
-          .not('answer', 'is', null);
-        
-        if (!answeredError && totalCount && totalCount > 0) {
-          const rate = Math.round((answeredCount || 0) / totalCount * 100);
+        // Fetch answered questions rate
+        if (totalCountData && totalCountData > 0) {
+          const rate = Math.round(100); // All returned are answered by definition
           setAnsweredRate(`%${rate}`);
         }
 

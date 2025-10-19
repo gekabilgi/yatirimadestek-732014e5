@@ -2091,6 +2091,27 @@ export type Database = {
           title: string
         }[]
       }
+      get_public_qna: {
+        Args: { limit_count?: number }
+        Returns: {
+          answer: string
+          answer_date: string
+          category: string
+          created_at: string
+          id: string
+          province: string
+          question: string
+          question_number: number
+        }[]
+      }
+      get_public_qna_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_ydo_user_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown

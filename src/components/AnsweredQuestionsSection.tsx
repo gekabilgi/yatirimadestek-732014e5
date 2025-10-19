@@ -32,12 +32,8 @@ const AnsweredQuestionsSection = () => {
   const fetchAnsweredQuestions = async () => {
     try {
       console.log('🔍 Starting to fetch answered questions...');
-      // SECURITY FIX: Use secure view instead of direct table access
-      // This prevents exposure of personal data (names, emails, phones)
-      const { data, error } = await supabase
-        .from('public_qna_view')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // SECURITY FIX: Use secure RPC to avoid RLS blocking
+      const { data, error } = await supabase.rpc('get_public_qna', { limit_count: 100 });
 
       if (error) {
         console.error('Error fetching answered questions:', error);
@@ -50,13 +46,13 @@ const AnsweredQuestionsSection = () => {
         return;
       }
 
-      console.log('✅ Raw data from public_qna_view:', data);
+      console.log('✅ Raw data from get_public_qna:', data);
       console.log('📊 Number of records fetched:', data?.length || 0);
 
-      // Transform the secure view data to match the expected Question type
+      // Transform the secure RPC data to match the expected Question type
       const transformedData = data?.map(item => ({
         ...item,
-        // Personal data fields are intentionally excluded from the secure view
+        // Personal data fields are intentionally excluded from the secure RPC
         full_name: 'Anonim Kullanıcı', // Anonymous user for privacy
         email: 'Gizli', // Hidden for privacy
         phone: null,
@@ -76,7 +72,7 @@ const AnsweredQuestionsSection = () => {
 
       console.log('🔄 Transformed data:', transformedData);
       setQuestions(transformedData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
       toast({
         title: "Hata",
@@ -91,10 +87,8 @@ const AnsweredQuestionsSection = () => {
   const fetchTotalAnsweredCount = async () => {
     try {
       console.log('📊 Fetching total answered count...');
-      // SECURITY FIX: Use secure view for count to avoid exposing personal data
-      const { count, error } = await supabase
-        .from('public_qna_view')
-        .select('*', { count: 'exact', head: true });
+      // SECURITY FIX: Use secure RPC to avoid RLS blocking
+      const { data, error } = await supabase.rpc('get_public_qna_count');
 
       if (error) {
         console.error('Error fetching count:', error);
@@ -102,8 +96,8 @@ const AnsweredQuestionsSection = () => {
         return;
       }
 
-      console.log('✅ Total count fetched:', count);
-      setTotalAnsweredCount(count || 0);
+      console.log('✅ Total count fetched:', data);
+      setTotalAnsweredCount(data || 0);
     } catch (error) {
       console.error('Error:', error);
     }
