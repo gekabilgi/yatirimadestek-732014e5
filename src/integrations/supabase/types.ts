@@ -2114,6 +2114,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_ydo_province_access: {
+        Args: { _province: string; _user_id: string }
+        Returns: boolean
+      }
       hnsw_bit_support: {
         Args: { "": unknown }
         Returns: unknown

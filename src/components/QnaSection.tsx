@@ -5,12 +5,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { MessageSquare, Users, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import SoruSorModal from './SoruSorModal';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const QnaSection = () => {
   const [averageResponseTime, setAverageResponseTime] = useState("Hesaplanıyor...");
   const [totalQuestions, setTotalQuestions] = useState("0");
   const [activeExperts, setActiveExperts] = useState("0");
   const [answeredRate, setAnsweredRate] = useState("0%");
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -30,13 +32,17 @@ const QnaSection = () => {
           setTotalQuestions(totalCount?.toLocaleString() || "0");
         }
 
-        // Fetch active experts (YDO users)
-        const { count: expertsCount, error: expertsError } = await supabase
-          .from('ydo_users')
-          .select('*', { count: 'exact', head: true });
-        
-        if (!expertsError) {
-          setActiveExperts(expertsCount?.toString() || "0");
+        // Fetch active experts (YDO users) - only if authenticated to avoid RLS issues
+        if (user) {
+          const { count: expertsCount, error: expertsError } = await supabase
+            .from('ydo_users')
+            .select('*', { count: 'exact', head: true });
+          
+          if (!expertsError) {
+            setActiveExperts(expertsCount?.toString() || '0');
+          }
+        } else {
+          setActiveExperts('—');
         }
 
         // Fetch answered questions rate (from public view)
