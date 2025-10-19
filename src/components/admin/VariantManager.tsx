@@ -50,6 +50,7 @@ interface QuestionVariant {
   canonical_answer: string;
   variants: string[];
   source_document: string | null;
+  embedding: string | null;
   metadata: any;
   created_at: string;
   updated_at: string;
@@ -582,6 +583,9 @@ export function VariantManager() {
         <Badge variant="outline">
           {filteredVariants.length} / {variants.length} soru
         </Badge>
+        <Badge variant={variants.filter(v => !v.embedding).length > 0 ? "destructive" : "default"}>
+          {variants.filter(v => v.embedding).length} / {variants.length} embedded
+        </Badge>
         <Button
           variant="outline"
           onClick={exportToCSV}
@@ -664,6 +668,15 @@ export function VariantManager() {
                         {variant.source_document && (
                           <Badge variant="outline" className="text-xs">
                             {variant.source_document}
+                          </Badge>
+                        )}
+                        {variant.embedding ? (
+                          <Badge variant="default" className="text-xs bg-green-500">
+                            ✓ Embedded
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive" className="text-xs">
+                            ⚠ No Embedding
                           </Badge>
                         )}
                       </div>
