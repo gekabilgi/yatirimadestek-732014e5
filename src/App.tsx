@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
+import ProtectedMenuRoute from "@/components/ProtectedMenuRoute";
 import Index from "./pages/Index";
 import Start from "./pages/Start";
 import IncentiveTools from "./pages/IncentiveTools";
@@ -76,9 +77,21 @@ const App = () => {
           <Route path="/" element={<Index />} />
           <Route path="/start" element={<Start />} />
           <Route path="/duyuru/:id" element={<AnnouncementDetail />} />
-          <Route path="/incentive-tools" element={<IncentiveTools />} />
-              <Route path="/yatirim-firsatlari" element={<InvestmentOpportunities />} />
-              <Route path="/tzy" element={<TZY />} />
+          <Route path="/incentive-tools" element={
+            <ProtectedMenuRoute settingKey="menu_item_tesvik_araclari">
+              <IncentiveTools />
+            </ProtectedMenuRoute>
+          } />
+              <Route path="/yatirim-firsatlari" element={
+                <ProtectedMenuRoute settingKey="menu_item_yatirim_firsatlari">
+                  <InvestmentOpportunities />
+                </ProtectedMenuRoute>
+              } />
+              <Route path="/tzy" element={
+                <ProtectedMenuRoute settingKey="menu_item_tedarik_zinciri">
+                  <TZY />
+                </ProtectedMenuRoute>
+              } />
               <Route path="/tzyil" element={<TZYPublicList />} />
               <Route path="/tzyotg" element={<TZYOTG />} />
               <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
@@ -88,10 +101,26 @@ const App = () => {
               <Route path="/tzy/talepler/basvuru/:on_request_id/:product_id" element={<TZYSupplierApplication />} />
               <Route path="/tzy/supplier-application/success" element={<TZYSupplierApplicationSuccess />} />
               <Route path="/tzy/supplier-application/error" element={<TZYSupplierApplicationError />} />
-              <Route path="/basvuru-sureci" element={<ApplicationProcess />} />
-              <Route path="/qna" element={<QNA />} />
-              <Route path="/searchsupport" element={<SearchSupport />} />
-              <Route path="/investor-glossary" element={<InvestorGlossary />} />
+              <Route path="/basvuru-sureci" element={
+                <ProtectedMenuRoute settingKey="menu_item_basvuru_sureci">
+                  <ApplicationProcess />
+                </ProtectedMenuRoute>
+              } />
+              <Route path="/qna" element={
+                <ProtectedMenuRoute settingKey="menu_item_soru_cevap">
+                  <QNA />
+                </ProtectedMenuRoute>
+              } />
+              <Route path="/searchsupport" element={
+                <ProtectedMenuRoute settingKey="menu_item_destek_arama">
+                  <SearchSupport />
+                </ProtectedMenuRoute>
+              } />
+              <Route path="/investor-glossary" element={
+                <ProtectedMenuRoute settingKey="menu_item_yatirimci_sozlugu">
+                  <InvestorGlossary />
+                </ProtectedMenuRoute>
+              } />
               <Route path="/ydo/secure-access" element={<YdoSecureAccess />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={
