@@ -59,10 +59,10 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
   const handleSearch = () => {
     onSearch({
       keyword: keyword.trim() || undefined,
-      province: province || undefined,
+      province: province && province !== 'all' ? province : undefined,
       sector: sector.trim() || undefined,
-      investmentRange: investmentRange || undefined,
-      scope: scope || undefined,
+      investmentRange: investmentRange && investmentRange !== 'all' ? investmentRange : undefined,
+      scope: scope && scope !== 'all' ? scope : undefined,
     });
   };
 
@@ -96,16 +96,22 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
     
     const newFilters = {
       keyword: filterType === 'keyword' ? undefined : keyword.trim() || undefined,
-      province: filterType === 'province' ? undefined : province || undefined,
+      province: filterType === 'province' ? undefined : (province && province !== 'all' ? province : undefined),
       sector: filterType === 'sector' ? undefined : sector.trim() || undefined,
-      investmentRange: filterType === 'investmentRange' ? undefined : investmentRange || undefined,
-      scope: filterType === 'scope' ? undefined : scope || undefined,
+      investmentRange: filterType === 'investmentRange' ? undefined : (investmentRange && investmentRange !== 'all' ? investmentRange : undefined),
+      scope: filterType === 'scope' ? undefined : (scope && scope !== 'all' ? scope : undefined),
     };
     
     onSearch(newFilters);
   };
 
-  const activeFiltersCount = [province, sector, investmentRange, scope, keyword].filter(Boolean).length;
+  const activeFiltersCount = [
+    province && province !== 'all' ? province : '',
+    sector,
+    investmentRange && investmentRange !== 'all' ? investmentRange : '',
+    scope && scope !== 'all' ? scope : '',
+    keyword
+  ].filter(Boolean).length;
 
   return (
     <div className="space-y-4">
@@ -155,7 +161,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
                     <SelectValue placeholder="İl seçin" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    <SelectItem value="">Tümü</SelectItem>
+                    <SelectItem value="all">Tümü</SelectItem>
                     {provinces.map((prov) => (
                       <SelectItem key={prov} value={prov}>
                         {prov}
@@ -182,7 +188,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
                     <SelectValue placeholder="Tutar aralığı seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tümü</SelectItem>
+                    <SelectItem value="all">Tümü</SelectItem>
                     {investmentRanges.map((range) => (
                       <SelectItem key={range} value={range}>
                         {range}
@@ -199,7 +205,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
                     <SelectValue placeholder="Kapsam seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tümü</SelectItem>
+                    <SelectItem value="all">Tümü</SelectItem>
                     {scopes.map((scopeItem) => (
                       <SelectItem key={scopeItem} value={scopeItem}>
                         {scopeItem}
@@ -235,7 +241,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
               />
             </Badge>
           )}
-          {province && (
+          {province && province !== 'all' && (
             <Badge variant="secondary" className="flex items-center gap-1">
               İl: {province}
               <X 
@@ -253,7 +259,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
               />
             </Badge>
           )}
-          {investmentRange && (
+          {investmentRange && investmentRange !== 'all' && (
             <Badge variant="secondary" className="flex items-center gap-1">
               Tutar: {investmentRange}
               <X 
@@ -262,7 +268,7 @@ export const InvestmentSearchBar = ({ onSearch, filters }: InvestmentSearchBarPr
               />
             </Badge>
           )}
-          {scope && (
+          {scope && scope !== 'all' && (
             <Badge variant="secondary" className="flex items-center gap-1">
               Kapsam: {scope}
               <X 

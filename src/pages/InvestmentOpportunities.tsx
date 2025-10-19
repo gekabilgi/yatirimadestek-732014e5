@@ -240,7 +240,7 @@ const InvestmentOpportunities = () => {
                   <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Yatırım Boyutu</Label>
                   <Select
                     value={filters.scope || ''}
-                    onValueChange={(value) => handleSearch({ ...filters, scope: value })}
+                    onValueChange={(value) => handleSearch({ ...filters, scope: value === 'all' ? undefined : value })}
                   >
                     <SelectTrigger className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
                       isMobile ? 'h-9 text-sm' : 'h-10'
@@ -248,7 +248,7 @@ const InvestmentOpportunities = () => {
                       <SelectValue placeholder="Boyut seçin" />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-50">
-                      <SelectItem value="">Tümü</SelectItem>
+                      <SelectItem value="all">Tümü</SelectItem>
                       <SelectItem value="Yerel">Yerel</SelectItem>
                       <SelectItem value="Ulusal">Ulusal</SelectItem>
                       <SelectItem value="Küresel">Küresel</SelectItem>
@@ -260,7 +260,7 @@ const InvestmentOpportunities = () => {
                   <Label className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>Yatırım Tutarı</Label>
                   <Select
                     value={filters.investmentRange || ''}
-                    onValueChange={(value) => handleSearch({ ...filters, investmentRange: value })}
+                    onValueChange={(value) => handleSearch({ ...filters, investmentRange: value === 'all' ? undefined : value })}
                   >
                     <SelectTrigger className={`bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
                       isMobile ? 'h-9 text-sm' : 'h-10'
@@ -268,7 +268,7 @@ const InvestmentOpportunities = () => {
                       <SelectValue placeholder="Tutar aralığı" />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-50">
-                      <SelectItem value="">Tümü</SelectItem>
+                      <SelectItem value="all">Tümü</SelectItem>
                       <SelectItem value="0-500.000 USD">0-500.000 USD</SelectItem>
                       <SelectItem value="500.000-1.000.000 USD">500.000-1.000.000 USD</SelectItem>
                       <SelectItem value="1.000.000-5.000.000 USD">1.000.000-5.000.000 USD</SelectItem>
