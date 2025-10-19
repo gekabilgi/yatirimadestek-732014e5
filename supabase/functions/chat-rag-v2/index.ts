@@ -160,7 +160,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           answer:
-            "Üzgünüm, bu sorunuzla ilgili bilgi bankamda yeterli bilgi bulamadım. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin veya Yatırım Destek Ofisi Uzmanı ile iletişime geçin.",
+            "Üzgünüm, bu sorunuzla ilgili bilgi bankamda yeterli bilgi bulamadım. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin veya Yatırım Ofisi Müdürlüğü ile iletişime geçin.",
           sources: [],
           debug: {
             matchCount: 0,
