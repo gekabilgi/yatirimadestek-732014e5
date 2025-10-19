@@ -147,7 +147,7 @@ export function AIChatbot() {
     abortControllerRef.current = new AbortController();
 
     try {
-      const { data, error } = await supabase.functions.invoke("chat-rag", {
+      const { data, error } = await supabase.functions.invoke("chat-rag-v2", {
         body: { question: userMessage },
       });
 
