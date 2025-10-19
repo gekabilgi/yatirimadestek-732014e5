@@ -42,7 +42,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
     kvkkAccepted: false
   });
 
-  // SECURITY: Auto-fill authenticated user's email
+  // Auto-fill authenticated user's email if available
   useEffect(() => {
     if (user?.email) {
       setFormData(prev => ({ ...prev, email: user.email }));
@@ -56,12 +56,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // SECURITY: Check authentication first
-    if (!user || !session) {
-      toast.error('Soru gönderebilmek için giriş yapmalısınız.');
-      return;
-    }
-    
     if (!formData.kvkkAccepted) {
       toast.error('KVKK sözleşmesini kabul etmeniz gerekmektedir.');
       return;
@@ -69,12 +63,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
 
     if (!formData.fullName || !formData.email || !formData.province || !formData.question) {
       toast.error('Lütfen tüm zorunlu alanları doldurunuz.');
-      return;
-    }
-
-    // SECURITY: Validate that email matches authenticated user
-    if (formData.email !== user.email) {
-      toast.error('Sadece kendi e-posta adresinizi kullanabilirsiniz.');
       return;
     }
 
@@ -176,18 +164,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
           <DialogTitle className="text-xl sm:text-2xl">Yatırım Desteği Hakkında Soru Sor</DialogTitle>
         </DialogHeader>
         
-        {/* SECURITY: Show authentication requirement */}
-        {!user && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 text-amber-800">
-              <Lock className="h-4 w-4" />
-              <p className="text-sm font-medium">Giriş Gerekli</p>
-            </div>
-            <p className="text-sm text-amber-700 mt-1">
-              Soru gönderebilmek için önce giriş yapmalısınız.
-            </p>
-          </div>
-        )}
         
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -199,7 +175,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
                 onChange={(e) => handleInputChange('fullName', e.target.value)}
                 placeholder="Adınızı ve soyadınızı giriniz"
                 required
-                disabled={!user}
               />
             </div>
             
@@ -212,8 +187,8 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="ornek@email.com"
                 required
-                disabled // SECURITY: Always disabled - auto-filled from auth
-                className="bg-muted"
+                disabled={!!user}
+                className={user ? "bg-muted" : ""}
               />
               {user && (
                 <p className="text-xs text-muted-foreground">
@@ -231,7 +206,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="05XX XXX XX XX"
-                disabled={!user}
               />
             </div>
             
@@ -240,7 +214,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
               <Select 
                 value={formData.province} 
                 onValueChange={(value) => handleInputChange('province', value)}
-                disabled={!user}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="İl seçiniz" />
@@ -265,7 +238,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
               placeholder="Yatırım destekleri hakkında merak ettiğiniz konuları detaylı bir şekilde yazınız..."
               rows={6}
               required
-              disabled={!user}
             />
           </div>
 
@@ -274,7 +246,6 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
               id="kvkk"
               checked={formData.kvkkAccepted}
               onCheckedChange={(checked) => handleInputChange('kvkkAccepted', checked === true)}
-              disabled={!user}
             />
             <Label htmlFor="kvkk" className="text-xs sm:text-sm leading-5">
               Kişisel verilerimin işlenmesine yönelik{' '}
@@ -296,16 +267,11 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={loading || !user}
+              disabled={loading}
               className="flex-1 h-11"
             >
               {loading ? (
                 "Gönderiliyor..."
-              ) : !user ? (
-                <>
-                  <Lock className="mr-2 h-4 w-4" />
-                  Giriş Gerekli
-                </>
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
