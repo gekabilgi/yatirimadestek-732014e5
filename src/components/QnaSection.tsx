@@ -21,9 +21,9 @@ const QnaSection = () => {
           setAverageResponseTime(avgTimeData.averageResponseTime || "24 saat");
         }
 
-        // Fetch total questions
+        // Fetch total public questions (answered & approved)
         const { count: totalCount, error: totalError } = await supabase
-          .from('soru_cevap')
+          .from('public_qna_view')
           .select('*', { count: 'exact', head: true });
         
         if (!totalError) {
@@ -39,11 +39,11 @@ const QnaSection = () => {
           setActiveExperts(expertsCount?.toString() || "0");
         }
 
-        // Fetch answered questions rate
+        // Fetch answered questions rate (from public view)
         const { count: answeredCount, error: answeredError } = await supabase
-          .from('soru_cevap')
+          .from('public_qna_view')
           .select('*', { count: 'exact', head: true })
-          .eq('answered', true);
+          .not('answer', 'is', null);
         
         if (!answeredError && totalCount && totalCount > 0) {
           const rate = Math.round((answeredCount || 0) / totalCount * 100);
