@@ -37,7 +37,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
     fullName: '',
     email: '',
     phone: '',
-    province: '',
+    province: undefined as string | undefined,
     question: '',
     kvkkAccepted: false
   });
@@ -130,7 +130,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
         fullName: '',
         email: user?.email || '',
         phone: '',
-        province: '',
+        province: undefined,
         question: '',
         kvkkAccepted: false
       });
