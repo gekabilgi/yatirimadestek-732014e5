@@ -18,6 +18,10 @@ function shouldAppendBadge(answer: string): boolean {
     /yerel kalkınma hamlesi yatırım konuları/i,
     /yatırım konuları.*yerel kalkınma/i,
     /^(?:soru:\s*)?[\wçğıöşü\s\-]+\s+yerel kalkınma hamlesi/i,
+    /HİT-30/i,
+    /hit-30/i,
+    /hit30/i,
+    /HIT-30/i,
   ];
   return patterns.some((pattern) => pattern.test(t));
 }
@@ -196,7 +200,7 @@ serve(async (req) => {
       console.log(
         `📊 Similarity scores: ${matches
           .slice(0, 5)
-          .map((m: any) => m.similarity?.toFixed(3) || 'N/A')
+          .map((m: any) => m.similarity?.toFixed(3) || "N/A")
           .join(", ")}`,
       );
     }
@@ -225,7 +229,7 @@ serve(async (req) => {
     console.log(`\n✅ Using ${matches.length} matches with optimized threshold`);
     console.log("\n📋 Top 5 matches:");
     matches.slice(0, 5).forEach((m: any, i: number) => {
-      console.log(`\n${i + 1}. Similarity: ${m.similarity?.toFixed(4) || 'N/A'}`);
+      console.log(`\n${i + 1}. Similarity: ${m.similarity?.toFixed(4) || "N/A"}`);
       console.log(`   Filename: ${m.filename}`);
       console.log(`   Content: ${m.content?.substring(0, 150)}...`);
     });

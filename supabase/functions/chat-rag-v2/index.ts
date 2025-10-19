@@ -4,12 +4,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const INFO_SENTENCE =
-  " Daha fazla bilgi ve detaylı destek için Yatırım Ofisi Müdürlüğü ile iletişime geçebilirsiniz.";
+const INFO_SENTENCE = " Daha fazla bilgi ve detaylı destek için Yatırım Ofisi Müdürlüğü ile iletişime geçebilirsiniz.";
 const BADGE_TAG = "[badge: Destek Almak İçin|https://tesviksor.com/qna]";
 
 function shouldAppendBadge(answer: string): boolean {
@@ -33,20 +31,17 @@ async function generateEmbedding(text: string): Promise<number[]> {
   }
 
   console.log("Generating embedding for query...");
-  const embeddingResponse = await fetch(
-    "https://api.openai.com/v1/embeddings",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        input: text,
-        model: "text-embedding-3-small",
-      }),
-    }
-  );
+  const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${openAIApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      input: text,
+      model: "text-embedding-3-small",
+    }),
+  });
 
   if (!embeddingResponse.ok) {
     const errorText = await embeddingResponse.text();
@@ -58,11 +53,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return embeddingData.data[0].embedding;
 }
 
-async function generateResponse(
-  context: string,
-  question: string,
-  matchedQuestions: string[]
-): Promise<string> {
+async function generateResponse(context: string, question: string, matchedQuestions: string[]): Promise<string> {
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableApiKey) {
     throw new Error("LOVABLE_API_KEY is not configured");
@@ -76,7 +67,12 @@ async function generateResponse(
 3. Yanıtlarını profesyonel ama samimi bir dille yaz
 4. Yanıtlarında markdown formatını kullan (başlıklar, listeler, vurgular)
 5. Gerekirse adım adım açıkla
-6. İlgili yasal düzenlemelere atıfta bulun`;
+6. İlgili yasal düzenlemelere atıfta bulun
+7. Eğer yanıt bir ilin "Yerel Kalkınma Hamlesi Yatırım Konuları" hakkındaysa, cevabın sonuna aşağıdaki işareti *aynen* ekle:
+   Başvuru ve detaylı bilgi için [badge: Yerel Kalkınma Hamlesi|https://yerelkalkinmahamlesi.sanayi.gov.tr]
+8. Eğer yanıt "HIT-30", "HİT-30", "hit30", "hit-30" hakkındaysa, cevabın sonuna aşağıdaki işareti *aynen* ekle:
+   Başvuru ve detaylı bilgi için [badge: HIT-30|https://hit30.sanayi.gov.tr]
+   Bu işareti metin içinde HTML'e dönüştürmeye çalışma; sadece bu işareti yaz`;
 
   const userPrompt = `Soru: ${question}
 
@@ -87,25 +83,22 @@ ${context}
 Lütfen yukarıdaki bilgilere dayanarak soruyu yanıtla.`;
 
   console.log("Generating AI response with Lovable AI...");
-  const response = await fetch(
-    "https://ai.gateway.lovable.dev/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-    }
-  );
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${lovableApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -127,13 +120,10 @@ serve(async (req) => {
     const { question } = await req.json();
 
     if (!question || typeof question !== "string") {
-      return new Response(
-        JSON.stringify({ error: "Question is required and must be a string" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Question is required and must be a string" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log("RAG-V2: Processing question:", question);
@@ -153,14 +143,11 @@ serve(async (req) => {
 
     // Search for similar questions using the new question_variants table
     console.log("Searching question_variants with embedding similarity...");
-    const { data: matches, error: matchError } = await supabase.rpc(
-      "match_question_variants",
-      {
-        query_embedding: queryEmbedding,
-        match_threshold: 0.15,
-        match_count: 5,
-      }
-    );
+    const { data: matches, error: matchError } = await supabase.rpc("match_question_variants", {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.15,
+      match_count: 5,
+    });
 
     if (matchError) {
       console.error("Error matching question variants:", matchError);
@@ -182,7 +169,7 @@ serve(async (req) => {
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -198,9 +185,7 @@ serve(async (req) => {
     // Build context from matches
     const context = matches
       .map((match, index) => {
-        const variants = match.variants?.length > 0 
-          ? `\nAlternatif sorular: ${match.variants.join(", ")}` 
-          : "";
+        const variants = match.variants?.length > 0 ? `\nAlternatif sorular: ${match.variants.join(", ")}` : "";
         return `[${index + 1}] Soru: ${match.canonical_question}${variants}\nCevap: ${match.canonical_answer}\nSimilarity: ${match.similarity.toFixed(3)}`;
       })
       .join("\n\n---\n\n");
@@ -211,13 +196,11 @@ serve(async (req) => {
     const answer = await generateResponse(
       context,
       question,
-      matchedQuestions.slice(0, 5) // Top 5 similar questions
+      matchedQuestions.slice(0, 5), // Top 5 similar questions
     );
 
     // Append badge if relevant
-    const finalAnswer = shouldAppendBadge(answer)
-      ? appendInfoAndBadge(answer)
-      : answer;
+    const finalAnswer = shouldAppendBadge(answer) ? appendInfoAndBadge(answer) : answer;
 
     // Prepare sources
     const sources = matches.map((match) => ({
@@ -240,7 +223,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("Error in chat-rag-v2 function:", error);
@@ -252,7 +235,7 @@ serve(async (req) => {
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });
