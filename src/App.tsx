@@ -89,21 +89,9 @@ const App = () => {
               <Route path="/tzy/supplier-application/success" element={<TZYSupplierApplicationSuccess />} />
               <Route path="/tzy/supplier-application/error" element={<TZYSupplierApplicationError />} />
               <Route path="/basvuru-sureci" element={<ApplicationProcess />} />
-              <Route path="/qna" element={
-                <ProtectedAdminRoute>
-                  <QNA />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/searchsupport" element={
-                <ProtectedAdminRoute>
-                  <SearchSupport />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/investor-glossary" element={
-                <ProtectedAdminRoute>
-                  <InvestorGlossary />
-                </ProtectedAdminRoute>
-              } />
+              <Route path="/qna" element={<QNA />} />
+              <Route path="/searchsupport" element={<SearchSupport />} />
+              <Route path="/investor-glossary" element={<InvestorGlossary />} />
               <Route path="/ydo/secure-access" element={<YdoSecureAccess />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={
