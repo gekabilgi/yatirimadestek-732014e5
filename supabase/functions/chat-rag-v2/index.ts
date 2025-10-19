@@ -95,7 +95,7 @@ Lütfen yukarıdaki bilgilere dayanarak soruyu yanıtla.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.6,
+      temperature: 0.7,
       max_tokens: 2000,
     }),
   });
@@ -145,7 +145,7 @@ serve(async (req) => {
     console.log("Searching question_variants with embedding similarity...");
     const { data: matches, error: matchError } = await supabase.rpc("match_question_variants", {
       query_embedding: queryEmbedding,
-      match_threshold: 0.15,
+      match_threshold: 0.1,
       match_count: 5,
     });
 
@@ -160,7 +160,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           answer:
-            "Üzgünüm, bu sorunuzla ilgili bilgi bankamda yeterli bilgi bulamadım. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin veya Yatırım Ofisi Müdürlüğü ile iletişime geçin.",
+            "Üzgünüm, bu sorunuzla ilgili bilgi bankamda yeterli bilgi bulamadım. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin veya Yatırım Destek Ofisi Uzmanı ile iletişime geçin.",
           sources: [],
           debug: {
             matchCount: 0,
