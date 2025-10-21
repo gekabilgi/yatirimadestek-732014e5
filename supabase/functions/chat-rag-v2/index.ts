@@ -146,8 +146,8 @@ serve(async (req) => {
     console.log("Searching question_variants with embedding similarity...");
     const { data: matches, error: matchError } = await supabase.rpc("match_question_variants", {
       query_embedding: queryEmbedding,
-      match_threshold: 0.06,
-      match_count: 5,
+      match_threshold: 0.04,
+      match_count: 10,
     });
 
     if (matchError) {
