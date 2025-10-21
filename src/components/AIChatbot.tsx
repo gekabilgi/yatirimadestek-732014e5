@@ -282,7 +282,7 @@ export function AIChatbot() {
       {/* Chat Modal */}
       {isOpen && (
         <Card
-          className={`fixed ${isMobile ? "left-4 right-4 top-20 bottom-4 max-h-[85dvh]" : "bottom-6 right-6 w-[480px] h-[680px]"} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}
+          className={`fixed ${isMobile ? "inset-0" : "bottom-6 right-6 w-[480px] h-[680px]"} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
