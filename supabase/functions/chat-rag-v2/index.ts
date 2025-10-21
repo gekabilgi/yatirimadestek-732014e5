@@ -7,7 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const INFO_SENTENCE = " Daha fazla bilgi ve detaylı destek için Yatırım Destek Ofisi Uzmanımız ile iletişime geçebilirsiniz.";
+const INFO_SENTENCE =
+  " Daha fazla bilgi ve detaylı destek için Yatırım Destek Ofisi Uzmanımız ile iletişime geçebilirsiniz.";
 const BADGE_TAG = "[badge: Destek Almak İçin|https://tesviksor.com/qna]";
 
 function shouldAppendBadge(answer: string): boolean {
@@ -95,7 +96,7 @@ Lütfen yukarıdaki bilgilere dayanarak soruyu yanıtla.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.65,
+      temperature: 0.7,
       max_tokens: 2000,
     }),
   });
@@ -145,7 +146,7 @@ serve(async (req) => {
     console.log("Searching question_variants with embedding similarity...");
     const { data: matches, error: matchError } = await supabase.rpc("match_question_variants", {
       query_embedding: queryEmbedding,
-      match_threshold: 0.08,
+      match_threshold: 0.06,
       match_count: 5,
     });
 
