@@ -632,8 +632,9 @@ export function VariantManager() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-2">
+      {/* Row 1: Search and Stats */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative w-full sm:flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Soru veya cevap ara..."
@@ -642,44 +643,69 @@ export function VariantManager() {
             className="pl-10"
           />
         </div>
-        <Badge variant="outline">
-          {filteredVariants.length} / {variants.length} soru
-        </Badge>
-        <Badge variant={variants.filter((v) => !v.embedding).length > 0 ? "destructive" : "default"}>
-          {variants.filter((v) => v.embedding).length} / {variants.length} embedded
-        </Badge>
-        <Button variant="outline" onClick={exportToCSV} disabled={variants.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          CSV İndir
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="outline" className="whitespace-nowrap">
+            {filteredVariants.length} / {variants.length} soru
+          </Badge>
+          <Badge 
+            variant={variants.filter((v) => !v.embedding).length > 0 ? "destructive" : "default"}
+            className="whitespace-nowrap"
+          >
+            {variants.filter((v) => v.embedding).length} / {variants.length} embedded
+          </Badge>
+        </div>
+      </div>
+
+      {/* Row 2: Action Buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={exportToCSV} 
+          disabled={variants.length === 0}
+          className="flex-shrink-0"
+        >
+          <Download className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">CSV İndir</span>
         </Button>
-        <Button variant="outline" disabled={isImporting} onClick={() => document.getElementById("csv-upload")?.click()}>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          disabled={isImporting} 
+          onClick={() => document.getElementById("csv-upload")?.click()}
+          className="flex-shrink-0"
+        >
           {isImporting ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {importProgress.current} / {importProgress.total}
+              <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+              <span className="hidden sm:inline">{importProgress.current} / {importProgress.total}</span>
             </>
           ) : (
             <>
-              <Upload className="h-4 w-4 mr-2" />
-              Excel/CSV Yükle
+              <Upload className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Excel/CSV Yükle</span>
             </>
           )}
         </Button>
         <input id="csv-upload" type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileImport} />
+        
         <Button
           variant="default"
+          size="sm"
           onClick={regenerateMissingEmbeddings}
           disabled={variants.filter((v) => !v.embedding).length === 0 || isBatchRegenerating}
+          className="flex-shrink-0"
         >
           {isBatchRegenerating ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {batchProgress.current} / {batchProgress.total}
+              <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+              <span className="hidden sm:inline">{batchProgress.current} / {batchProgress.total}</span>
             </>
           ) : (
             <>
-              <Plus className="h-4 w-4 mr-2" />
-              Eksik Embeddingleri Oluştur
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Eksik Embeddingleri Oluştur</span>
               {variants.filter((v) => !v.embedding).length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {variants.filter((v) => !v.embedding).length}
@@ -688,8 +714,10 @@ export function VariantManager() {
             </>
           )}
         </Button>
+        
         <Button
           variant="outline"
+          size="sm"
           onClick={() => {
             if (variants.length > 50) {
               setShowBatchConfirm(true);
@@ -698,17 +726,18 @@ export function VariantManager() {
             }
           }}
           disabled={isBatchRegenerating || variants.length === 0}
+          className="flex-shrink-0"
         >
           {isBatchRegenerating ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {batchProgress.current} / {batchProgress.total}
+              <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+              <span className="hidden sm:inline">{batchProgress.current} / {batchProgress.total}</span>
             </>
           ) : (
             <>
-              <GitMerge className="h-4 w-4 mr-2" />
-              TÜM Embeddingleri Yenile
-              <span className="ml-1 text-xs text-destructive">(⚠️ Tümünü)</span>
+              <GitMerge className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">TÜM Embeddingleri Yenile</span>
+              <span className="ml-1 text-xs text-destructive hidden sm:inline">(⚠️ Tümünü)</span>
             </>
           )}
         </Button>
