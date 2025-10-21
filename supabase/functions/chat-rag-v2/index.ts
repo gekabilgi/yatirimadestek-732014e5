@@ -143,8 +143,9 @@ serve(async (req) => {
     const queryEmbedding = await generateEmbedding(question);
 
     // Search for similar questions using the new question_variants table
-    console.log("Searching question_variants with embedding similarity...");
-    const { data: matches, error: matchError } = await supabase.rpc("match_question_variants", {
+    console.log("Searching question_variants with hybrid search...");
+    const { data: matches, error: matchError } = await supabase.rpc("hybrid_match_question_variants", {
+      query_text: question,
       query_embedding: queryEmbedding,
       match_threshold: 0.04,
       match_count: 10,
@@ -208,6 +209,7 @@ serve(async (req) => {
       question: match.canonical_question,
       variants: match.variants || [],
       similarity: match.similarity,
+      matchType: match.match_type,
       source: match.source_document || "Unknown",
     }));
 
@@ -215,12 +217,17 @@ serve(async (req) => {
       JSON.stringify({
         answer: finalAnswer,
         sources,
-        debug: {
-          matchCount: matches.length,
-          topSimilarity: matches[0]?.similarity || 0,
-          variantCount: matchedQuestions.length,
-          systemVersion: "v2",
-        },
+      debug: {
+        matchCount: matches.length,
+        topSimilarity: matches[0]?.similarity || 0,
+        topMatchType: matches[0]?.match_type || "none",
+        matchTypes: matches.reduce((acc, m) => {
+          acc[m.match_type] = (acc[m.match_type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        variantCount: matchedQuestions.length,
+        systemVersion: "v2-hybrid",
+      },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
