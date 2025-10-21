@@ -279,6 +279,90 @@ export function VariantManager() {
     }
   };
 
+  const regenerateMissingEmbeddings = async () => {
+    // Sadece embedding'i null olanları filtrele
+    const missingEmbeddings = variants.filter(v => !v.embedding);
+    
+    if (missingEmbeddings.length === 0) {
+      toast({
+        title: "Bilgi",
+        description: "Eksik embedding bulunamadı",
+      });
+      return;
+    }
+
+    setIsBatchRegenerating(true);
+    setBatchProgress({ current: 0, total: missingEmbeddings.length });
+
+    try {
+      toast({
+        title: "Eksik Embeddingleri Oluşturma Başladı",
+        description: `${missingEmbeddings.length} varyant için embedding oluşturulacak`,
+      });
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < missingEmbeddings.length; i++) {
+        const variant = missingEmbeddings[i];
+        setBatchProgress({ current: i + 1, total: missingEmbeddings.length });
+
+        try {
+          // Embedding oluştur
+          const { data: embeddingData, error: embeddingError } = 
+            await supabase.functions.invoke('generate-embeddings', {
+              body: { text: variant.canonical_question }
+            });
+
+          if (embeddingError) throw embeddingError;
+
+          // Database'e kaydet
+          const { error: updateError } = await supabase
+            .from("question_variants")
+            .update({ embedding: embeddingData.embedding })
+            .eq("id", variant.id);
+
+          if (updateError) throw updateError;
+          
+          successCount++;
+          
+          // Progress toast (her 5 varyantda bir)
+          if ((i + 1) % 5 === 0 || (i + 1) === missingEmbeddings.length) {
+            toast({
+              title: "İşleniyor...",
+              description: `${i + 1} / ${missingEmbeddings.length} tamamlandı`,
+            });
+          }
+          
+          // Rate limit koruması (saniyede 1 istek)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (error) {
+          console.error(`Error generating embedding for variant ${variant.id}:`, error);
+          errorCount++;
+        }
+      }
+
+      toast({
+        title: "Eksik Embeddingler Oluşturuldu",
+        description: `✅ ${successCount} başarılı, ❌ ${errorCount} hata`,
+      });
+
+      fetchVariants();
+      
+    } catch (error: any) {
+      console.error("Missing embeddings generation error:", error);
+      toast({
+        title: "Hata",
+        description: "Eksik embedding oluştururken bir hata oluştu",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBatchRegenerating(false);
+      setBatchProgress({ current: 0, total: 0 });
+    }
+  };
+
   const regenerateAllEmbeddings = async () => {
     setIsBatchRegenerating(true);
     setBatchProgress({ current: 0, total: variants.length });
@@ -619,6 +703,28 @@ export function VariantManager() {
           onChange={handleFileImport}
         />
         <Button
+          variant="default"
+          onClick={regenerateMissingEmbeddings}
+          disabled={variants.filter(v => !v.embedding).length === 0 || isBatchRegenerating}
+        >
+          {isBatchRegenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {batchProgress.current} / {batchProgress.total}
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Eksik Embeddingleri Oluştur
+              {variants.filter(v => !v.embedding).length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {variants.filter(v => !v.embedding).length}
+                </Badge>
+              )}
+            </>
+          )}
+        </Button>
+        <Button
           variant="outline"
           onClick={() => {
             if (variants.length > 50) {
@@ -637,7 +743,8 @@ export function VariantManager() {
           ) : (
             <>
               <GitMerge className="h-4 w-4 mr-2" />
-              Tüm Embeddingleri Yenile
+              TÜM Embeddingleri Yenile
+              <span className="ml-1 text-xs text-destructive">(⚠️ Tümünü)</span>
             </>
           )}
         </Button>
