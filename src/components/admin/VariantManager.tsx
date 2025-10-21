@@ -13,11 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,20 +25,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Search,
-  Plus,
-  Edit2,
-  Trash2,
-  ChevronDown,
-  Loader2,
-  Save,
-  X,
-  GitMerge,
-  Upload,
-  Download,
-} from "lucide-react";
-import * as XLSX from 'xlsx';
+import { Search, Plus, Edit2, Trash2, ChevronDown, Loader2, Save, X, GitMerge, Upload, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface QuestionVariant {
   id: string;
@@ -87,7 +71,7 @@ export function VariantManager() {
         },
         () => {
           fetchVariants();
-        }
+        },
       )
       .subscribe();
 
@@ -107,7 +91,7 @@ export function VariantManager() {
       (v) =>
         v.canonical_question.toLowerCase().includes(query) ||
         v.canonical_answer.toLowerCase().includes(query) ||
-        v.variants.some((variant) => variant.toLowerCase().includes(query))
+        v.variants.some((variant) => variant.toLowerCase().includes(query)),
     );
     setFilteredVariants(filtered);
   }, [searchQuery, variants]);
@@ -183,10 +167,7 @@ export function VariantManager() {
     if (!deleteId) return;
 
     try {
-      const { error } = await supabase
-        .from("question_variants")
-        .delete()
-        .eq("id", deleteId);
+      const { error } = await supabase.from("question_variants").delete().eq("id", deleteId);
 
       if (error) throw error;
 
@@ -209,7 +190,7 @@ export function VariantManager() {
 
   const addVariant = () => {
     if (!editingVariant) return;
-    
+
     // Boş bir input field ekle - kullanıcı sonradan dolduracak
     const newVariants = [...editingVariant.variants, ""];
     setEditingVariant({
@@ -227,7 +208,7 @@ export function VariantManager() {
 
   const removeVariant = (index: number) => {
     if (!editingVariant) return;
-    
+
     const newVariants = editingVariant.variants.filter((_, i) => i !== index);
     setEditingVariant({
       ...editingVariant,
@@ -239,20 +220,19 @@ export function VariantManager() {
     if (!editingVariant) return;
 
     setIsRegeneratingEmbedding(true);
-    
+
     try {
       toast({
         title: "Embedding Oluşturuluyor",
         description: "Lütfen bekleyin...",
       });
 
-      const { data: embeddingData, error: embeddingError } = 
-        await supabase.functions.invoke('generate-embeddings', {
-          body: { text: editingVariant.canonical_question }
-        });
+      const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke("generate-embeddings", {
+        body: { text: editingVariant.canonical_question },
+      });
 
       if (embeddingError) throw embeddingError;
-      
+
       // Update the database
       const { error: updateError } = await supabase
         .from("question_variants")
@@ -281,8 +261,8 @@ export function VariantManager() {
 
   const regenerateMissingEmbeddings = async () => {
     // Sadece embedding'i null olanları filtrele
-    const missingEmbeddings = variants.filter(v => !v.embedding);
-    
+    const missingEmbeddings = variants.filter((v) => !v.embedding);
+
     if (missingEmbeddings.length === 0) {
       toast({
         title: "Bilgi",
@@ -309,10 +289,12 @@ export function VariantManager() {
 
         try {
           // Embedding oluştur
-          const { data: embeddingData, error: embeddingError } = 
-            await supabase.functions.invoke('generate-embeddings', {
-              body: { text: variant.canonical_question }
-            });
+          const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke(
+            "generate-embeddings",
+            {
+              body: { text: variant.canonical_question },
+            },
+          );
 
           if (embeddingError) throw embeddingError;
 
@@ -323,20 +305,19 @@ export function VariantManager() {
             .eq("id", variant.id);
 
           if (updateError) throw updateError;
-          
+
           successCount++;
-          
+
           // Progress toast (her 5 varyantda bir)
-          if ((i + 1) % 5 === 0 || (i + 1) === missingEmbeddings.length) {
+          if ((i + 1) % 5 === 0 || i + 1 === missingEmbeddings.length) {
             toast({
               title: "İşleniyor...",
               description: `${i + 1} / ${missingEmbeddings.length} tamamlandı`,
             });
           }
-          
+
           // Rate limit koruması (saniyede 1 istek)
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (error) {
           console.error(`Error generating embedding for variant ${variant.id}:`, error);
           errorCount++;
@@ -349,7 +330,6 @@ export function VariantManager() {
       });
 
       fetchVariants();
-      
     } catch (error: any) {
       console.error("Missing embeddings generation error:", error);
       toast({
@@ -382,10 +362,12 @@ export function VariantManager() {
 
         try {
           // Embedding oluştur
-          const { data: embeddingData, error: embeddingError } = 
-            await supabase.functions.invoke('generate-embeddings', {
-              body: { text: variant.canonical_question }
-            });
+          const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke(
+            "generate-embeddings",
+            {
+              body: { text: variant.canonical_question },
+            },
+          );
 
           if (embeddingError) throw embeddingError;
 
@@ -396,9 +378,9 @@ export function VariantManager() {
             .eq("id", variant.id);
 
           if (updateError) throw updateError;
-          
+
           successCount++;
-          
+
           // Progress toast (her 5 varyantda bir)
           if ((i + 1) % 5 === 0) {
             toast({
@@ -406,10 +388,9 @@ export function VariantManager() {
               description: `${i + 1} / ${variants.length} tamamlandı`,
             });
           }
-          
+
           // Rate limit koruması (saniyede 1 istek)
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (error) {
           console.error(`Error regenerating embedding for variant ${variant.id}:`, error);
           errorCount++;
@@ -422,7 +403,6 @@ export function VariantManager() {
       });
 
       fetchVariants();
-      
     } catch (error: any) {
       console.error("Batch regeneration error:", error);
       toast({
@@ -439,17 +419,19 @@ export function VariantManager() {
 
   const exportToCSV = () => {
     const csvHeader = "id,canonical_question,canonical_answer,variants,source_document\n";
-    const csvRows = variants.map(v => {
-      const variantsStr = v.variants.join("|");
-      return `${v.id},"${v.canonical_question.replace(/"/g, '""')}","${v.canonical_answer.replace(/"/g, '""')}","${variantsStr}","${v.source_document || ""}"`;
-    }).join("\n");
-    
+    const csvRows = variants
+      .map((v) => {
+        const variantsStr = v.variants.join("|");
+        return `${v.id},"${v.canonical_question.replace(/"/g, '""')}","${v.canonical_answer.replace(/"/g, '""')}","${variantsStr}","${v.source_document || ""}"`;
+      })
+      .join("\n");
+
     const csvContent = csvHeader + csvRows;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `question_variants_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `question_variants_${new Date().toISOString().split("T")[0]}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -470,7 +452,7 @@ export function VariantManager() {
 
     try {
       const fileName = file.name.toLowerCase();
-      const isXLSX = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+      const isXLSX = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
       let rows: any[] = [];
 
       if (isXLSX) {
@@ -479,21 +461,21 @@ export function VariantManager() {
         const workbook = XLSX.read(data);
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-        
+
         // Skip header row and convert to structured format
         rows = (jsonData as any[]).slice(1).map((row: any) => ({
-          id: row[0]?.toString().trim() || '',
-          canonical_question: row[1]?.toString().trim() || '',
-          canonical_answer: row[2]?.toString().trim() || '',
+          id: row[0]?.toString().trim() || "",
+          canonical_question: row[1]?.toString().trim() || "",
+          canonical_answer: row[2]?.toString().trim() || "",
           variants: row[3],
-          source_document: row[4]?.toString().trim() || ''
+          source_document: row[4]?.toString().trim() || "",
         }));
       } else {
         // Handle CSV files
         const text = await file.text();
-        const cleanText = text.replace(/^\uFEFF/, ''); // Remove BOM
-        const lines = cleanText.split('\n').filter(line => line.trim());
-        
+        const cleanText = text.replace(/^\uFEFF/, ""); // Remove BOM
+        const lines = cleanText.split("\n").filter((line) => line.trim());
+
         if (lines.length < 2) {
           toast({
             title: "Hata",
@@ -505,19 +487,19 @@ export function VariantManager() {
 
         // Skip header and parse CSV rows
         const dataLines = lines.slice(1);
-        rows = dataLines.map(line => {
+        rows = dataLines.map((line) => {
           const regex = /(?:^|,)("(?:[^"]|"")*"|[^,]*)/g;
           const matches = [...line.matchAll(regex)]
-            .map(match => match[1])
-            .filter(val => val !== undefined)
-            .map(val => val.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+            .map((match) => match[1])
+            .filter((val) => val !== undefined)
+            .map((val) => val.replace(/^"|"$/g, "").replace(/""/g, '"').trim());
 
           return {
-            id: matches[0] || '',
-            canonical_question: matches[1] || '',
-            canonical_answer: matches[2] || '',
+            id: matches[0] || "",
+            canonical_question: matches[1] || "",
+            canonical_answer: matches[2] || "",
             variants: matches[3],
-            source_document: matches[4] || ''
+            source_document: matches[4] || "",
           };
         });
       }
@@ -548,14 +530,17 @@ export function VariantManager() {
           // Parse variants - support multiple formats
           let variants: string[] = [];
           try {
-            if (typeof row.variants === 'string') {
+            if (typeof row.variants === "string") {
               const variantsStr = row.variants.trim();
-              if (variantsStr.startsWith('[')) {
+              if (variantsStr.startsWith("[")) {
                 // JSON array format: ["variant1", "variant2"]
                 variants = JSON.parse(variantsStr);
-              } else if (variantsStr.includes('|')) {
+              } else if (variantsStr.includes("|")) {
                 // Pipe-separated format: variant1|variant2
-                variants = variantsStr.split('|').map(v => v.trim()).filter(v => v);
+                variants = variantsStr
+                  .split("|")
+                  .map((v) => v.trim())
+                  .filter((v) => v);
               } else {
                 // Single variant
                 variants = variantsStr ? [variantsStr] : [];
@@ -582,10 +567,7 @@ export function VariantManager() {
             if (row.canonical_answer) updateData.canonical_answer = row.canonical_answer;
             if (row.source_document) updateData.source_document = row.source_document;
 
-            const { error: updateError } = await supabase
-              .from("question_variants")
-              .update(updateData)
-              .eq("id", row.id);
+            const { error: updateError } = await supabase.from("question_variants").update(updateData).eq("id", row.id);
 
             if (updateError) {
               errors.push(`Satır ${i + 2}: Update hatası - ${updateError.message}`);
@@ -595,15 +577,13 @@ export function VariantManager() {
             }
           } else {
             // INSERT new row
-            const { error: insertError } = await supabase
-              .from("question_variants")
-              .insert({
-                canonical_question: row.canonical_question,
-                canonical_answer: row.canonical_answer || "",
-                variants: variants,
-                source_document: row.source_document || null,
-                embedding: null as any,
-              });
+            const { error: insertError } = await supabase.from("question_variants").insert({
+              canonical_question: row.canonical_question,
+              canonical_answer: row.canonical_answer || "",
+              variants: variants,
+              source_document: row.source_document || null,
+              embedding: null as any,
+            });
 
             if (insertError) {
               errors.push(`Satır ${i + 2}: Insert hatası - ${insertError.message}`);
@@ -619,7 +599,6 @@ export function VariantManager() {
               description: `${i + 1} / ${rows.length} satır işlendi`,
             });
           }
-
         } catch (rowError: any) {
           errors.push(`Satır ${i + 2}: ${rowError.message}`);
           errorCount++;
@@ -637,7 +616,6 @@ export function VariantManager() {
       });
 
       await fetchVariants();
-      
     } catch (error: any) {
       console.error("Import error:", error);
       toast({
@@ -648,14 +626,14 @@ export function VariantManager() {
     } finally {
       setIsImporting(false);
       setImportProgress({ current: 0, total: 0 });
-      event.target.value = '';
+      event.target.value = "";
     }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+        <div className="relative flex-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Soru veya cevap ara..."
@@ -667,22 +645,14 @@ export function VariantManager() {
         <Badge variant="outline">
           {filteredVariants.length} / {variants.length} soru
         </Badge>
-        <Badge variant={variants.filter(v => !v.embedding).length > 0 ? "destructive" : "default"}>
-          {variants.filter(v => v.embedding).length} / {variants.length} embedded
+        <Badge variant={variants.filter((v) => !v.embedding).length > 0 ? "destructive" : "default"}>
+          {variants.filter((v) => v.embedding).length} / {variants.length} embedded
         </Badge>
-        <Button
-          variant="outline"
-          onClick={exportToCSV}
-          disabled={variants.length === 0}
-        >
+        <Button variant="outline" onClick={exportToCSV} disabled={variants.length === 0}>
           <Download className="h-4 w-4 mr-2" />
           CSV İndir
         </Button>
-        <Button
-          variant="outline"
-          disabled={isImporting}
-          onClick={() => document.getElementById('csv-upload')?.click()}
-        >
+        <Button variant="outline" disabled={isImporting} onClick={() => document.getElementById("csv-upload")?.click()}>
           {isImporting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -695,17 +665,11 @@ export function VariantManager() {
             </>
           )}
         </Button>
-        <input
-          id="csv-upload"
-          type="file"
-          accept=".csv,.xlsx,.xls"
-          className="hidden"
-          onChange={handleFileImport}
-        />
+        <input id="csv-upload" type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileImport} />
         <Button
           variant="default"
           onClick={regenerateMissingEmbeddings}
-          disabled={variants.filter(v => !v.embedding).length === 0 || isBatchRegenerating}
+          disabled={variants.filter((v) => !v.embedding).length === 0 || isBatchRegenerating}
         >
           {isBatchRegenerating ? (
             <>
@@ -716,9 +680,9 @@ export function VariantManager() {
             <>
               <Plus className="h-4 w-4 mr-2" />
               Eksik Embeddingleri Oluştur
-              {variants.filter(v => !v.embedding).length > 0 && (
+              {variants.filter((v) => !v.embedding).length > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {variants.filter(v => !v.embedding).length}
+                  {variants.filter((v) => !v.embedding).length}
                 </Badge>
               )}
             </>
@@ -801,11 +765,7 @@ export function VariantManager() {
                   >
                     <Edit2 className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteId(variant.id)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(variant.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -842,9 +802,7 @@ export function VariantManager() {
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Soru Varyantını Düzenle</DialogTitle>
-            <DialogDescription>
-              Canonical soruyu, cevabı ve varyasyonları düzenleyebilirsiniz
-            </DialogDescription>
+            <DialogDescription>Canonical soruyu, cevabı ve varyasyonları düzenleyebilirsiniz</DialogDescription>
           </DialogHeader>
 
           {editingVariant && (
@@ -911,21 +869,12 @@ export function VariantManager() {
                           });
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeVariant(idx)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => removeVariant(idx)}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={addVariant}
-                    className="w-full"
-                  >
+                  <Button variant="outline" size="sm" onClick={addVariant} className="w-full">
                     <Plus className="h-4 w-4 mr-2" />
                     Yeni Varyasyon Ekle
                   </Button>
@@ -935,11 +884,7 @@ export function VariantManager() {
           )}
 
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
-              onClick={regenerateEmbedding}
-              disabled={isRegeneratingEmbedding}
-            >
+            <Button variant="outline" onClick={regenerateEmbedding} disabled={isRegeneratingEmbedding}>
               {isRegeneratingEmbedding ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -986,16 +931,13 @@ export function VariantManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Toplu Güncelleme Onayı</AlertDialogTitle>
             <AlertDialogDescription>
-              {variants.length} adet varyant için embedding oluşturulacak.
-              Bu işlem yaklaşık {Math.ceil(variants.length / 60)} dakika sürebilir.
-              Devam etmek istiyor musunuz?
+              {variants.length} adet varyant için embedding oluşturulacak. Bu işlem yaklaşık{" "}
+              {Math.ceil(variants.length / 60)} dakika sürebilir. Devam etmek istiyor musunuz?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={regenerateAllEmbeddings}>
-              Devam Et
-            </AlertDialogAction>
+            <AlertDialogAction onClick={regenerateAllEmbeddings}>Devam Et</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
