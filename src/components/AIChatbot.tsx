@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -283,7 +282,7 @@ export function AIChatbot() {
       {/* Chat Modal */}
       {isOpen && (
         <Card
-          className={`fixed ${isMobile ? "left-4 right-4 top-20 bottom-4 max-h-[85dvh]" : "bottom-6 right-6 w-[420px] h-[600px]"} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}
+          className={`fixed ${isMobile ? "left-4 right-4 top-20 bottom-4 max-h-[85dvh]" : "bottom-6 right-6 w-[480px] h-[680px]"} shadow-2xl z-50 flex flex-col border-2 animate-in slide-in-from-bottom-5 duration-300`}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
@@ -343,7 +342,11 @@ export function AIChatbot() {
           </div>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-3 sm:p-4" ref={scrollRef} onScrollCapture={handleScroll}>
+          <div 
+            className="flex-1 p-3 sm:p-4 overflow-y-auto" 
+            ref={scrollRef} 
+            onScroll={handleScroll}
+          >
             <div className="space-y-4">
               {messages.map((message) => (
                 <MessageBubble key={message.id} message={message} />
@@ -357,7 +360,7 @@ export function AIChatbot() {
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
 
           {/* Stop/Regenerate Button */}
           {(isStreaming ||
