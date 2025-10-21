@@ -1381,6 +1381,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           embedding: string | null
+          fts_vector: unknown | null
           id: string
           metadata: Json | null
           source_document: string | null
@@ -1394,6 +1395,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           embedding?: string | null
+          fts_vector?: unknown | null
           id?: string
           metadata?: Json | null
           source_document?: string | null
@@ -1407,6 +1409,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           embedding?: string | null
+          fts_vector?: unknown | null
           id?: string
           metadata?: Json | null
           source_document?: string | null
@@ -2112,6 +2115,26 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
@@ -2154,6 +2177,24 @@ export type Database = {
       hnswhandler: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      hybrid_match_question_variants: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+          query_text: string
+        }
+        Returns: {
+          canonical_answer: string
+          canonical_question: string
+          id: string
+          match_type: string
+          metadata: Json
+          similarity: number
+          source_document: string
+          variants: string[]
+        }[]
       }
       increment_stat: {
         Args: { stat_name_param: string }
@@ -2301,6 +2342,18 @@ export type Database = {
         Args: { p_identifier: string; p_submission_type: string }
         Returns: undefined
       }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
+      }
       sparsevec_out: {
         Args: { "": unknown }
         Returns: unknown
@@ -2316,6 +2369,14 @@ export type Database = {
       test_final_security: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      unaccent: {
+        Args: { "": string }
+        Returns: string
+      }
+      unaccent_init: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       update_chatbot_768: {
         Args: { row_id: string; vals: number }

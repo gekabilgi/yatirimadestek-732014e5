@@ -188,7 +188,7 @@ serve(async (req) => {
     const context = matches
       .map((match, index) => {
         const variants = match.variants?.length > 0 ? `\nAlternatif sorular: ${match.variants.join(", ")}` : "";
-        return `[${index + 1}] Soru: ${match.canonical_question}${variants}\nCevap: ${match.canonical_answer}\nSimilarity: ${match.similarity.toFixed(3)}`;
+        return `[${index + 1}] Soru: ${match.canonical_question}${variants}\nCevap: ${match.canonical_answer}\nSimilarity: ${match.similarity.toFixed(3)} (${match.match_type})`;
       })
       .join("\n\n---\n\n");
 
