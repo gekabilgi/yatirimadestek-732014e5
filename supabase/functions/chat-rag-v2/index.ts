@@ -25,15 +25,53 @@ function appendInfoAndBadge(answer: string): string {
   return answer + INFO_SENTENCE + " " + BADGE_TAG;
 }
 
+function hasRealQuestion(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  
+  // Soru kelimeleri - Turkish question words
+  const questionWords = [
+    'hangi', 'nerede', 'nasıl', 'ne zaman', 'kim', 
+    'nedir', 'niçin', 'neden', 'kaç', 'ne kadar',
+    'var mı', 'mı', 'mi', 'mu', 'mü'
+  ];
+  
+  // İşletme/yatırım terimleri - Business/investment terms
+  const businessTerms = [
+    'yatırım', 'teşvik', 'destek', 'kredi', 'hibe',
+    'seramik', 'üretim', 'tesis', 'bölge', 'il',
+    'firma', 'şirket', 'başvuru', 'proje', 'sektör',
+    'destekleniyor', 'desteklenir', 'faydalanabilir'
+  ];
+  
+  // Eğer soru kelimesi VEYA işletme terimi varsa, gerçek soru
+  const hasQuestion = questionWords.some(w => lowerText.includes(w));
+  const hasBusiness = businessTerms.some(w => lowerText.includes(w));
+  
+  return hasQuestion || hasBusiness;
+}
+
 function isCasualMessage(text: string): boolean {
   const casual = text.toLowerCase().trim();
-  const greetings = ['merhaba', 'selam', 'hi', 'hello', 'hey', 'günaydın', 'iyi günler', 'selamün aleyküm'];
-  const howAreYou = ['nasılsın', 'nasılsin', 'naber', 'how are you', 'ne haber', 'napıyorsun', 'napiyorsun'];
-  const thanks = ['teşekkür', 'tesekkur', 'sağol', 'sagol', 'thank', 'thanks', 'eyvallah', 'merci'];
   
-  return greetings.some(g => casual.includes(g)) || 
-         howAreYou.some(h => casual.includes(h)) ||
-         thanks.some(t => casual.includes(t));
+  // Selamlama tespiti
+  const greetings = ['merhaba', 'selam', 'hi', 'hello', 'hey', 'günaydın', 'iyi günler', 'selamün aleyküm'];
+  const hasGreeting = greetings.some(g => casual.includes(g));
+  
+  // Nasılsın tespiti
+  const howAreYou = ['nasılsın', 'nasılsin', 'naber', 'how are you', 'ne haber', 'napıyorsun', 'napiyorsun'];
+  const hasHowAreYou = howAreYou.some(h => casual.includes(h));
+  
+  // Teşekkür tespiti
+  const thanks = ['teşekkür', 'tesekkur', 'sağol', 'sagol', 'thank', 'thanks', 'eyvallah', 'merci'];
+  const hasThanks = thanks.some(t => casual.includes(t));
+  
+  // Eğer selamlama/teşekkür var AMA gerçek soru da varsa → CASUAL DEĞİL
+  if ((hasGreeting || hasThanks || hasHowAreYou) && hasRealQuestion(text)) {
+    return false; // Gerçek soru var, RAG yap!
+  }
+  
+  // Sadece selamlama/teşekkür/nasılsın varsa → CASUAL
+  return hasGreeting || howAreYou.some(h => casual.includes(h)) || hasThanks;
 }
 
 async function generateEmbedding(text: string): Promise<number[]> {
