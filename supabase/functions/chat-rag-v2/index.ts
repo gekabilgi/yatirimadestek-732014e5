@@ -148,9 +148,14 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    console.log("RAG-V2: Request received");
+    const body = await req.json();
+    console.log("RAG-V2: Request body:", JSON.stringify(body));
+    
+    const { messages } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.error("RAG-V2: Invalid messages array:", messages);
       return new Response(JSON.stringify({ error: "Messages array is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -159,6 +164,14 @@ serve(async (req) => {
 
     // Extract the latest user message
     const latestMessage = messages[messages.length - 1];
+    if (!latestMessage || !latestMessage.content) {
+      console.error("RAG-V2: Invalid latest message:", latestMessage);
+      return new Response(JSON.stringify({ error: "Invalid message format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     const question = latestMessage.content;
 
     console.log("RAG-V2: Processing question:", question);
@@ -293,9 +306,11 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error in chat-rag-v2 function:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : "Unknown error",
+        details: error instanceof Error ? error.stack : String(error),
         systemVersion: "v2",
       }),
       {

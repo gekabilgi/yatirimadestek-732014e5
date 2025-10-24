@@ -150,7 +150,15 @@ export function AIChatbot() {
         body: { messages: [...messages, { role: "user", content: userMessage }] },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw error;
+      }
+
+      if (!data || !data.answer) {
+        console.error("Invalid response data:", data);
+        throw new Error("Geçersiz yanıt formatı");
+      }
 
       // Add assistant response
       const assistantId = (Date.now() + 1).toString();
@@ -181,6 +189,11 @@ export function AIChatbot() {
       setIsStreaming(false);
     } catch (error: any) {
       console.error("Chat error:", error);
+      console.error("Chat error details:", { 
+        message: error.message, 
+        status: error.status,
+        context: error.context 
+      });
 
       let errorMessage = "Bir hata oluştu. Lütfen tekrar deneyin.";
 
@@ -188,6 +201,11 @@ export function AIChatbot() {
         errorMessage = "Çok fazla istek gönderildi. Lütfen birkaç saniye bekleyin.";
       } else if (error.message?.includes("402")) {
         errorMessage = "Servis geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.";
+      } else if (error.message?.includes("Invalid message format")) {
+        errorMessage = "Mesaj formatı geçersiz. Lütfen sayfayı yenileyin.";
+      } else if (error.message) {
+        // Show more specific error if available
+        errorMessage = `Hata: ${error.message}`;
       }
 
       toast({
