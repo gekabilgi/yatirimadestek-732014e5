@@ -147,7 +147,7 @@ export function AIChatbot() {
 
     try {
       const { data, error } = await supabase.functions.invoke("chat-rag-v2", {
-        body: { question: userMessage },
+        body: { messages: [...messages, { role: "user", content: userMessage }] },
       });
 
       if (error) throw error;

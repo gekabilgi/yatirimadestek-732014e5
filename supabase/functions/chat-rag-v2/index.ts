@@ -25,6 +25,17 @@ function appendInfoAndBadge(answer: string): string {
   return answer + INFO_SENTENCE + " " + BADGE_TAG;
 }
 
+function isCasualMessage(text: string): boolean {
+  const casual = text.toLowerCase().trim();
+  const greetings = ['merhaba', 'selam', 'hi', 'hello', 'hey', 'günaydın', 'iyi günler', 'selamün aleyküm'];
+  const howAreYou = ['nasılsın', 'nasılsin', 'naber', 'how are you', 'ne haber', 'napıyorsun', 'napiyorsun'];
+  const thanks = ['teşekkür', 'tesekkur', 'sağol', 'sagol', 'thank', 'thanks', 'eyvallah', 'merci'];
+  
+  return greetings.some(g => casual.includes(g)) || 
+         howAreYou.some(h => casual.includes(h)) ||
+         thanks.some(t => casual.includes(t));
+}
+
 async function generateEmbedding(text: string): Promise<number[]> {
   const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
   if (!openAIApiKey) {
@@ -54,16 +65,28 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return embeddingData.data[0].embedding;
 }
 
-async function generateResponse(context: string, question: string, matchedQuestions: string[]): Promise<string> {
+async function generateResponse(
+  context: string, 
+  conversationHistory: Array<{role: string, content: string}>,
+  matchedQuestions: string[] = []
+): Promise<string> {
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableApiKey) {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
 
-  const systemPrompt = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın. Görevin, kullanıcıların sorularına verilen bilgi bankası içeriğine dayanarak doğru ve yardımcı yanıtlar vermektir.
+  const systemPrompt = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir AI asistansın. Görevin, kullanıcıların sorularına verilen bilgi bankası içeriğine dayanarak doğru ve yardımcı yanıtlar vermektir.
+
+Kişilik ve davranış:
+- Kullanıcılar selamlaştığında veya "nasılsın?" diye sorduğunda samimi ve dostça karşılık ver
+- "Merhaba! Ben Teşviksor AI asistanıyım. Türkiye'deki yatırım teşvikleri, destek programları ve yatırım fırsatları hakkında size yardımcı olabilirim. Size nasıl yardımcı olabilirim?" gibi yanıtlar ver
+- Teşekkür edildiğinde kibarca karşılık ver: "Rica ederim, yardımcı olabildiysem ne mutlu bana! Başka sorularınız varsa her zaman buradayım."
+- Önceki mesajlara atıfta bulunabilir ve bağlam içinde yanıt verebilirsin
+- Kullanıcı "ne hakkında konuşuyorduk?" diye sorduğunda konuşma geçmişini özetle
+- Kullanıcı takip soruları sorduğunda (örn: "peki şu ne olacak?", "ya bu durumda?"), önceki konuşmayı hatırla ve bağlamda yanıt ver
 
 Önemli kurallar:
-1. SADECE verilen bilgi bankası içeriğini kullan
+1. Bilgi bankası içeriği verildiğinde SADECE onu kullan
 2. Bilmediğin bir şey sorulursa "Bu konuda elimde yeterli bilgi yok" de
 3. Yanıtlarını profesyonel ama samimi bir dille yaz
 4. Yanıtlarında markdown formatını kullan (başlıklar, listeler, vurgular)
@@ -75,13 +98,23 @@ async function generateResponse(context: string, question: string, matchedQuesti
    Başvuru ve detaylı bilgi için [badge: HIT-30|https://hit30.sanayi.gov.tr]
    Bu işareti metin içinde HTML'e dönüştürmeye çalışma; sadece bu işareti yaz`;
 
-  const userPrompt = `Soru: ${question}
-
-${matchedQuestions.length > 0 ? `Benzer sorular: ${matchedQuestions.join(", ")}\n\n` : ""}
-Bilgi Bankası İçeriği:
-${context}
-
-Lütfen yukarıdaki bilgilere dayanarak soruyu yanıtla.`;
+  // Build messages array
+  const messages = [{ role: "system", content: systemPrompt }];
+  
+  // Add conversation history
+  messages.push(...conversationHistory);
+  
+  // If we have RAG context, add it as additional context
+  if (context) {
+    const contextMessage = matchedQuestions.length > 0 
+      ? `Benzer sorular: ${matchedQuestions.join(", ")}\n\nBilgi Bankası İçeriği:\n${context}`
+      : `Bilgi Bankası İçeriği:\n${context}`;
+    
+    messages.push({
+      role: "system",
+      content: contextMessage
+    });
+  }
 
   console.log("Generating AI response with Lovable AI...");
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -92,10 +125,7 @@ Lütfen yukarıdaki bilgilere dayanarak soruyu yanıtla.`;
     },
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
+      messages: messages,
       temperature: 0.7,
       max_tokens: 2000,
     }),
@@ -118,16 +148,21 @@ serve(async (req) => {
   }
 
   try {
-    const { question } = await req.json();
+    const { messages } = await req.json();
 
-    if (!question || typeof question !== "string") {
-      return new Response(JSON.stringify({ error: "Question is required and must be a string" }), {
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "Messages array is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // Extract the latest user message
+    const latestMessage = messages[messages.length - 1];
+    const question = latestMessage.content;
+
     console.log("RAG-V2: Processing question:", question);
+    console.log("RAG-V2: Conversation history length:", messages.length);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -138,6 +173,29 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Check if this is a casual message (greeting, thanks, etc.)
+    if (isCasualMessage(question)) {
+      console.log("RAG-V2: Detected casual message, skipping RAG search");
+      
+      // Generate conversational response without RAG
+      const answer = await generateResponse("", messages, []);
+      
+      return new Response(
+        JSON.stringify({
+          answer,
+          sources: [],
+          debug: {
+            matchCount: 0,
+            systemVersion: "v2-casual",
+            isCasual: true,
+          },
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     // Generate embedding for the question
     const queryEmbedding = await generateEmbedding(question);
@@ -194,10 +252,10 @@ serve(async (req) => {
 
     console.log("Context built from", matches.length, "variant groups");
 
-    // Generate AI response
+    // Generate AI response with conversation history
     const answer = await generateResponse(
       context,
-      question,
+      messages,
       matchedQuestions.slice(0, 5), // Top 5 similar questions
     );
 
