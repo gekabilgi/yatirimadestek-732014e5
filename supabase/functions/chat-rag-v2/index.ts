@@ -38,9 +38,10 @@ function hasRealQuestion(text: string): boolean {
   // İşletme/yatırım terimleri - Business/investment terms
   const businessTerms = [
     'yatırım', 'teşvik', 'destek', 'kredi', 'hibe',
-    'seramik', 'üretim', 'tesis', 'bölge', 'il',
+    'seramik', 'üretim', 'tesis', 'bölge', 'il', 'ilçe',
     'firma', 'şirket', 'başvuru', 'proje', 'sektör',
-    'destekleniyor', 'desteklenir', 'faydalanabilir'
+    'destekleniyor', 'desteklenir', 'faydalanabilir',
+    'destek alır'
   ];
   
   // Eğer soru kelimesi VEYA işletme terimi varsa, gerçek soru
