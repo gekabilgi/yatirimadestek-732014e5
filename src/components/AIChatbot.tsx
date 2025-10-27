@@ -463,7 +463,7 @@ export function AIChatbot() {
           )}
 
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
             <div className="flex items-center gap-2">
@@ -532,11 +532,11 @@ export function AIChatbot() {
 
           {/* Messages */}
           <div 
-            className="flex-1 p-3 sm:p-4 overflow-y-auto" 
+            className="flex-1 overflow-y-auto overflow-x-hidden" 
             ref={scrollRef} 
             onScroll={handleScroll}
           >
-            <div className="space-y-4">
+            <div className="space-y-4 p-3 sm:p-4">
               {messages.map((message) => (
                 <MessageBubble key={message.id} message={message} />
               ))}
