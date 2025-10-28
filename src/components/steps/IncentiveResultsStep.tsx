@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { pdf } from '@react-pdf/renderer';
 import IncentiveReportPDF from '@/components/IncentiveReportPDF';
-import { isIstanbulMiningInvestment, isResGesInvestment, getGesResOverrideValues } from '@/utils/investmentValidation';
+import { isIstanbulMiningInvestment, isResGesInvestment, getGesResOverrideValues, isIstanbulTargetInvestment } from '@/utils/investmentValidation';
 import { isRegion6Province } from '@/utils/regionUtils';
 
 interface IncentiveResultsStepProps {
@@ -62,6 +62,11 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
       interestSupport: "N/A",
       cap: "N/A"
     };
+    
+    // Check for Istanbul target investment - no tax reduction support
+    if (isIstanbulTargetInvestment(incentiveResult.location.province, isTarget)) {
+      targetSupports.taxDiscount = "Uygulanmaz (İstanbul'da hedef yatırımlarda)";
+    }
     
     let prioritySupports = {
       taxDiscount: "30", // Always 20%
@@ -429,6 +434,16 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
             </div>
           </div>
 
+          {/* Istanbul Target Investment Tax Reduction Warning */}
+          {incentiveResult.sector.isTarget && incentiveResult.location.province === "İstanbul" && (
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Önemli Bilgi:</strong> İstanbul ilinde hedef yatırımlar için Vergi İndirimi Desteği uygulanmamaktadır.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Target Sector Interest/Profit Share Support Warning */}
           {incentiveResult.sector.isTarget && [1, 2, 3].includes(incentiveResult.location.region) && (
             <Alert className="border-red-200 bg-red-50">
@@ -486,7 +501,17 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm text-blue-600">Hedef Yatırım Destekleri</h5>
                         <div className="text-xs space-y-1">
-                          <div>Vergi İndirim Desteği Yatırıma Katkı Oranı: {formatPercentage(supportValues.target.taxDiscount)}</div>
+                          <div className="flex items-center gap-2">
+                            <span>Vergi İndirim Desteği Yatırıma Katkı Oranı:</span>
+                            {supportValues.target.taxDiscount.includes("Uygulanmaz") ? (
+                              <span className="text-orange-600 font-medium flex items-center gap-1">
+                                <XCircle className="h-3 w-3" />
+                                {supportValues.target.taxDiscount}
+                              </span>
+                            ) : (
+                              <span>{formatPercentage(supportValues.target.taxDiscount)}</span>
+                            )}
+                          </div>
                           <div>
                             Faiz/Kar Payı Desteği Oranı: {
                               supportValues.target.interestSupport === "N/A" 

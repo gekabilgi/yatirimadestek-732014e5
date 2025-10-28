@@ -39,6 +39,17 @@ export const isResGesInvestment = (sector: SectorData): boolean => {
 };
 
 /**
+ * Check if the investment is a target investment in Istanbul
+ * Target investments in Istanbul are not eligible for tax reduction support
+ */
+export const isIstanbulTargetInvestment = (
+  province: string,
+  isTargetInvestment: boolean
+): boolean => {
+  return province === "İstanbul" && isTargetInvestment === true;
+};
+
+/**
  * Get modified support values for GES/RES investments
  */
 export const getGesResOverrideValues = () => ({
