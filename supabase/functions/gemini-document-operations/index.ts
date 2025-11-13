@@ -147,7 +147,7 @@ serve(async (req) => {
 
         // Step 2: Import into the store via REST API (SDK fileSearchStores not available in this env)
         const importResp = await fetch(
-          `${GEMINI_API_BASE}/${storeName}:import?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/${storeName}:importFile?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
