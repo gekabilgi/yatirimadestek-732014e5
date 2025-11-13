@@ -48,8 +48,9 @@ serve(async (req) => {
         
         console.log('Listing documents for store:', storeName);
         
+        const normalizedStoreName = storeName.startsWith('fileSearchStores/') ? storeName : `fileSearchStores/${storeName}`;
         const response = await fetch(
-          `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/${normalizedStoreName}/documents?key=${GEMINI_API_KEY}`,
           { method: 'GET' }
         );
 
@@ -84,7 +85,54 @@ serve(async (req) => {
         
         if (!file) throw new Error("No file provided");
 
-        console.log('Starting file upload for store:', storeName);
+        // Normalize store name to required prefix
+        const normalizedStoreName = storeName && storeName.startsWith('fileSearchStores/') ? storeName : `fileSearchStores/${storeName}`;
+        console.log('Starting file upload for store:', normalizedStoreName);
+
+        // Try ONE-STEP upload via SDK first; fall back to RAW+import if it fails
+        try {
+          const ai = getAiClient();
+          const finalDisplayName = (displayName as string) || ((file as File).name || 'uploaded-file');
+          const op: any = await (ai as any).fileSearchStores.uploadToFileSearchStore({
+            file: file as File,
+            fileSearchStoreName: normalizedStoreName,
+            config: {
+              displayName: finalDisplayName,
+            },
+          });
+
+          const sdkOperationName = op?.name;
+          console.log('SDK upload started:', sdkOperationName);
+
+          // Poll operation until done
+          if (sdkOperationName) {
+            let attempts = 0; let done = false;
+            while (!done && attempts < 30) {
+              await new Promise(r => setTimeout(r, 3000));
+              const opResp = await fetch(`${GEMINI_API_BASE}/${sdkOperationName}?key=${GEMINI_API_KEY}`, { method: 'GET' });
+              if (!opResp.ok) {
+                const t = await opResp.text();
+                console.error('SDK operation check failed:', t);
+                throw new Error(`SDK operation check failed: ${t}`);
+              }
+              const opData = await opResp.json();
+              done = opData.done === true;
+              attempts++;
+              console.log(`SDK import check ${attempts}:`, done ? 'done' : 'processing');
+              if (opData.error) {
+                console.error('SDK import failed:', opData.error);
+                throw new Error(`SDK import failed: ${JSON.stringify(opData.error)}`);
+              }
+            }
+          }
+
+          console.log('Upload completed successfully via SDK');
+          return new Response(JSON.stringify({ success: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (sdkErr) {
+          console.warn('SDK upload failed, falling back to RAW upload:', sdkErr && (sdkErr as any).message ? (sdkErr as any).message : sdkErr);
+        }
 
         const fileBuffer = await (file as File).arrayBuffer();
         const fileName = (file as File).name;
@@ -131,9 +179,9 @@ serve(async (req) => {
         // Step 2: Import file into store (try primary endpoint, then fallback to alternate RPC if needed)
         let importData: any | undefined;
 
-        const primaryImportUrl = `${GEMINI_API_BASE}/${storeName}/documents:import?key=${GEMINI_API_KEY}`;
+        const primaryImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
         const primaryPayload = { fileName: fileResourceName };
-        console.log('Importing file into store using documents:import', { storeName, fileResourceName });
+        console.log('Importing file into store using documents:import', { storeName: normalizedStoreName, fileResourceName });
 
         let importResponse = await fetch(primaryImportUrl, {
           method: 'POST',
@@ -149,8 +197,8 @@ serve(async (req) => {
 
           if (importResponse.status === 404) {
             // Some environments expose an alternate RPC for FileSearch stores
-            const altImportUrl = `${GEMINI_API_BASE}/${storeName}:importFiles?key=${GEMINI_API_KEY}`;
-            const altPayload = { files: [{ file: fileResourceName }] };
+             const altImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFiles?key=${GEMINI_API_KEY}`;
+             const altPayload = { files: [{ file: fileResourceName }] };
             console.warn('Primary import 404. Trying alternate import RPC importFiles', { altImportUrl });
 
             const altResp = await fetch(altImportUrl, {
