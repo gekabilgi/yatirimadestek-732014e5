@@ -86,20 +86,24 @@ serve(async (req) => {
         uploadFormData.append('file', fileBlob, (file as File).name);
 
         const uploadResponse = await fetch(
-          `${GEMINI_API_BASE}/files?key=${GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
+            headers: {
+              'X-Goog-Upload-Protocol': 'multipart',
+            },
             body: uploadFormData,
           }
         );
 
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
-          console.error('File upload failed:', errorText);
+          console.error('File upload failed:', uploadResponse.status, errorText);
           throw new Error(`File upload error: ${errorText}`);
         }
 
         const uploadedFile = await uploadResponse.json();
+        console.log('Upload response:', JSON.stringify(uploadedFile));
         const fileName = uploadedFile.file?.name || uploadedFile.name;
         console.log('File uploaded, waiting for processing:', fileName);
 
