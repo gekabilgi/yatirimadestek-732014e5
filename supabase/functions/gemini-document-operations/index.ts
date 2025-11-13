@@ -128,38 +128,55 @@ serve(async (req) => {
         console.log('File uploaded:', fileResourceName, 'displayName:', displayName || fileName);
 
         // Step 2: Import file into store
-        const importResponse = await fetch(
-          `${GEMINI_API_BASE}/${storeName}/documents:import?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              fileName: fileResourceName,
-              // Persist original filename for UI display
-              customMetadata: [
-                { key: 'fileName', stringValue: (displayName || fileName) }
-              ],
-              chunkingConfig: {
-                whiteSpaceConfig: {
-                  maxTokensPerChunk: 200,
-                  maxOverlapTokens: 20
-                }
-              }
-            })
-          }
-        );
+        // Step 2: Import file into store (try primary endpoint, then fallback to alternate RPC if needed)
+        let importData: any | undefined;
+
+        const primaryImportUrl = `${GEMINI_API_BASE}/${storeName}/documents:import?key=${GEMINI_API_KEY}`;
+        const primaryPayload = { fileName: fileResourceName };
+        console.log('Importing file into store using documents:import', { storeName, fileResourceName });
+
+        let importResponse = await fetch(primaryImportUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(primaryPayload),
+        });
 
         if (!importResponse.ok) {
           const errorText = await importResponse.text();
           console.error('Import failed with status:', importResponse.status);
           console.error('Import error response:', errorText);
           console.error('Import request was for file:', fileResourceName, 'to store:', storeName);
-          throw new Error(`Import failed (${importResponse.status}): ${errorText || 'No error details'}`);
+
+          if (importResponse.status === 404) {
+            // Some environments expose an alternate RPC for FileSearch stores
+            const altImportUrl = `${GEMINI_API_BASE}/${storeName}:importFiles?key=${GEMINI_API_KEY}`;
+            const altPayload = { files: [{ file: fileResourceName }] };
+            console.warn('Primary import 404. Trying alternate import RPC importFiles', { altImportUrl });
+
+            const altResp = await fetch(altImportUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(altPayload),
+            });
+
+            if (!altResp.ok) {
+              const altText = await altResp.text();
+              console.error('Alternate import (importFiles) failed with status:', altResp.status);
+              console.error('Alternate import error response:', altText);
+              throw new Error(`Import failed after fallback. documents:import(${importResponse.status}) -> importFiles(${altResp.status})`);
+            }
+
+            importData = await altResp.json();
+          } else {
+            throw new Error(`Import failed (${importResponse.status}): ${errorText || 'No error details'}`);
+          }
+        } else {
+          importData = await importResponse.json();
         }
 
-        const importData = await importResponse.json();
+
+        // Note: legacy importResponse error handling block removed due to new fallback logic above
+
         const operationName = importData.name;
         console.log('Import operation started:', operationName);
 
