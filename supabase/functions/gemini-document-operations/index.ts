@@ -91,12 +91,14 @@ serve(async (req) => {
         const mimeType = (file as File).type || 'application/octet-stream';
 
         // Step 1: Upload file bytes to Gemini Files API using RAW protocol (works reliably in Deno)
+        // IMPORTANT: Encode filename to ASCII for HTTP header (fixes ByteString error with Turkish chars)
+        const encodedFileName = encodeURIComponent(fileName);
         const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`;
         const uploadResponse = await fetch(uploadUrl, {
           method: 'POST',
           headers: {
             'X-Goog-Upload-Protocol': 'raw',
-            'X-Goog-Upload-File-Name': fileName,
+            'X-Goog-Upload-File-Name': encodedFileName,
             'Content-Type': mimeType,
           },
           body: fileBuffer,
