@@ -21,6 +21,8 @@ serve(async (req) => {
   try {
     const { storeName, messages } = await req.json();
     
+    console.log('chat-gemini: Processing request with storeName:', storeName);
+    
     if (!storeName || !messages || !Array.isArray(messages)) {
       throw new Error("storeName and messages array are required");
     }

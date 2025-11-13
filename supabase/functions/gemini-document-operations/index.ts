@@ -22,6 +22,8 @@ serve(async (req) => {
 
   try {
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
+    
+    console.log('gemini-document-operations: Processing request');
 
     // Check content type to determine how to parse request
     const contentType = req.headers.get('content-type') || '';

@@ -21,6 +21,8 @@ serve(async (req) => {
   try {
     const { storeName, query, isPreciseMode = false } = await req.json();
 
+    console.log('gemini-file-search: Processing query for store:', storeName);
+
     if (!storeName || !query) {
       throw new Error("storeName and query are required");
     }
