@@ -39,14 +39,12 @@ Türkçe konuş ve profesyonel bir üslup kullan.`,
       parts: [{ text: m.content }]
     }));
 
-    // Generate content with corpus grounding
+    // Generate content with file search grounding
     const result = await model.generateContent({
       contents,
       tools: [{
-        retrieval: {
-          vertexAiSearch: {
-            datastore: storeName,
-          },
+        fileSearch: {
+          dataStore: `fileSearchStores/${storeName}`,
         },
       }],
     });

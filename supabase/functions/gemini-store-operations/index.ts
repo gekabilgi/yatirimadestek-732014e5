@@ -20,9 +20,9 @@ serve(async (req) => {
 
     switch (operation) {
       case 'list': {
-        // List corpora
+        // List file search stores
         const response = await fetch(
-          `${GEMINI_API_BASE}/corpora?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/fileSearchStores?key=${GEMINI_API_KEY}`,
           { method: 'GET' }
         );
 
@@ -32,11 +32,11 @@ serve(async (req) => {
         }
 
         const data = await response.json();
-        const corpora = data.corpora || [];
+        const stores = data.fileSearchStores || [];
         
-        const result = corpora.map((corpus: any) => ({
-          name: corpus.name,
-          displayName: corpus.displayName || corpus.name?.split("/").pop() || "Untitled Store",
+        const result = stores.map((store: any) => ({
+          name: store.name,
+          displayName: store.displayName || store.name?.split("/").pop() || "Untitled Store",
         }));
 
         return new Response(JSON.stringify(result), {
@@ -48,7 +48,7 @@ serve(async (req) => {
         if (!displayName) throw new Error("displayName required for create");
         
         const response = await fetch(
-          `${GEMINI_API_BASE}/corpora?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/fileSearchStores?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -61,11 +61,11 @@ serve(async (req) => {
           throw new Error(`Gemini API error: ${errorText}`);
         }
 
-        const corpus = await response.json();
+        const store = await response.json();
 
         return new Response(JSON.stringify({ 
-          name: corpus.name, 
-          displayName: corpus.displayName 
+          name: store.name, 
+          displayName: store.displayName 
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -75,7 +75,7 @@ serve(async (req) => {
         if (!storeName) throw new Error("storeName required for delete");
         
         const response = await fetch(
-          `${GEMINI_API_BASE}/${storeName}?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/fileSearchStores/${storeName}?key=${GEMINI_API_KEY}`,
           { method: 'DELETE' }
         );
 

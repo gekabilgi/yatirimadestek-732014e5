@@ -34,14 +34,12 @@ serve(async (req) => {
       finalQuery = `Based on the provided documents, find the single most relevant document to answer the user's question and provide a precise answer based ONLY on that document. Do not mix information from multiple documents. User question: "${query}"`;
     }
 
-    // Generate content with corpus grounding
+    // Generate content with file search grounding
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: finalQuery }] }],
       tools: [{
-        retrieval: {
-          vertexAiSearch: {
-            datastore: storeName,
-          },
+        fileSearch: {
+          dataStore: `fileSearchStores/${storeName}`,
         },
       }],
     });

@@ -23,7 +23,7 @@ serve(async (req) => {
         if (!storeName) throw new Error("storeName required for list");
         
         const response = await fetch(
-          `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/fileSearchStores/${storeName}/documents?key=${GEMINI_API_KEY}`,
           { method: 'GET' }
         );
 
@@ -94,9 +94,9 @@ serve(async (req) => {
           throw new Error('File processing failed');
         }
 
-        // Create document in corpus
+        // Create document in file search store
         const createDocResponse = await fetch(
-          `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/fileSearchStores/${storeName}/documents?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -126,7 +126,7 @@ serve(async (req) => {
         if (!documentName) throw new Error("documentName required for delete");
         
         const response = await fetch(
-          `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/fileSearchStores/${documentName}?key=${GEMINI_API_KEY}`,
           { method: 'DELETE' }
         );
 
