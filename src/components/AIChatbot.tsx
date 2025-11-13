@@ -107,6 +107,7 @@ export function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
+  const [activeStoreCache, setActiveStoreCache] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -125,6 +126,11 @@ export function AIChatbot() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Load active store on mount
+  useEffect(() => {
+    getActiveStore().then(setActiveStoreCache);
+  }, []);
 
   // Load chat sessions when opened
   useEffect(() => {
@@ -224,15 +230,14 @@ export function AIChatbot() {
     abortControllerRef.current = new AbortController();
 
     try {
-      // Get active store
-      const activeStore = getActiveStore();
-      if (!activeStore) {
+      // Use cached active store
+      if (!activeStoreCache) {
         throw new Error("Lütfen önce admin panelinden bir bilgi bankası seçin");
       }
 
       const { data, error } = await supabase.functions.invoke("chat-gemini", {
         body: { 
-          storeName: activeStore,
+          storeName: activeStoreCache,
           messages: [...messages, { role: "user", content: userMessage }] 
         },
       });

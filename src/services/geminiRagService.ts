@@ -117,17 +117,34 @@ export async function fileSearch(
   return data;
 }
 
-// Local storage for active store
-const ACTIVE_STORE_KEY = 'gemini_active_store';
+// Database storage for active store (centralized across all devices)
+import { adminSettingsService } from './adminSettingsService';
 
-export function getActiveStore(): string | null {
-  return localStorage.getItem(ACTIVE_STORE_KEY);
+const ACTIVE_STORE_KEY = 'gemini_active_store'; // Keep for migration
+
+export async function getActiveStore(): Promise<string | null> {
+  // Migration: Move from localStorage to database if exists
+  const localStore = localStorage.getItem(ACTIVE_STORE_KEY);
+  if (localStore) {
+    try {
+      await adminSettingsService.setActiveGeminiStore(localStore);
+      localStorage.removeItem(ACTIVE_STORE_KEY);
+      console.log('Migrated active store from localStorage to database');
+    } catch (error) {
+      console.error('Failed to migrate active store:', error);
+    }
+  }
+
+  return await adminSettingsService.getActiveGeminiStore();
 }
 
-export function setActiveStore(storeName: string): void {
-  localStorage.setItem(ACTIVE_STORE_KEY, storeName);
+export async function setActiveStore(storeName: string): Promise<void> {
+  await adminSettingsService.setActiveGeminiStore(storeName);
+  // Also remove from localStorage if it exists
+  localStorage.removeItem(ACTIVE_STORE_KEY);
 }
 
-export function clearActiveStore(): void {
+export async function clearActiveStore(): Promise<void> {
+  await adminSettingsService.setActiveGeminiStore(null);
   localStorage.removeItem(ACTIVE_STORE_KEY);
 }
