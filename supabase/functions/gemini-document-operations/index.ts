@@ -88,28 +88,19 @@ serve(async (req) => {
 
         const fileBuffer = await (file as File).arrayBuffer();
         const fileName = (file as File).name;
-        const mimeType = (file as File).type;
+        const mimeType = (file as File).type || 'application/octet-stream';
 
-        // Step 1: Upload file to Gemini Files API
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', new Blob([fileBuffer], { type: mimeType }), fileName);
-        
-        const uploadMetadata = {
-          file: {
-            displayName: displayName || fileName
-          }
-        };
-
-        const uploadResponse = await fetch(
-          `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Goog-Upload-Protocol': 'multipart',
-            },
-            body: uploadFormData,
-          }
-        );
+        // Step 1: Upload file bytes to Gemini Files API using RAW protocol (works reliably in Deno)
+        const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`;
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'X-Goog-Upload-Protocol': 'raw',
+            'X-Goog-Upload-File-Name': fileName,
+            'Content-Type': mimeType,
+          },
+          body: fileBuffer,
+        });
 
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
@@ -117,9 +108,22 @@ serve(async (req) => {
           throw new Error(`File upload failed: ${errorText}`);
         }
 
-        const uploadData = await uploadResponse.json();
-        const fileResourceName = uploadData.file.name;
-        console.log('File uploaded:', fileResourceName);
+        // Some environments return empty body on .json(); safely parse text
+        const uploadText = await uploadResponse.text();
+        let uploadData: any;
+        try {
+          uploadData = uploadText ? JSON.parse(uploadText) : {};
+        } catch (e) {
+          console.error('Invalid JSON in upload response:', uploadText);
+          throw new Error('Upload returned invalid JSON');
+        }
+
+        const fileResourceName = uploadData.name || uploadData?.file?.name;
+        if (!fileResourceName) {
+          console.error('No file resource name in response:', uploadData);
+          throw new Error('Upload did not return a file resource name');
+        }
+        console.log('File uploaded:', fileResourceName, 'displayName:', displayName || fileName);
 
         // Step 2: Import file into store
         const importResponse = await fetch(
@@ -140,6 +144,52 @@ serve(async (req) => {
             })
           }
         );
+
+        if (!importResponse.ok) {
+          const errorText = await importResponse.text();
+          console.error('Import failed:', errorText);
+          throw new Error(`Import failed: ${errorText}`);
+        }
+
+        const importData = await importResponse.json();
+        const operationName = importData.name;
+        console.log('Import operation started:', operationName);
+
+        // Step 3: Poll for operation completion
+        let attempts = 0;
+        let operationComplete = false;
+        
+        while (!operationComplete && attempts < 30) {
+          await new Promise(r => setTimeout(r, 3000));
+          
+          const opResponse = await fetch(
+            `${GEMINI_API_BASE}/${operationName}?key=${GEMINI_API_KEY}`,
+            { method: 'GET' }
+          );
+
+          if (!opResponse.ok) {
+            const errorText = await opResponse.text();
+            console.error('Operation check failed:', errorText);
+            throw new Error(`Operation check failed: ${errorText}`);
+          }
+
+          const opData = await opResponse.json();
+          operationComplete = opData.done === true;
+          attempts++;
+          console.log(`Import check ${attempts}:`, operationComplete ? 'done' : 'processing');
+
+          if (opData.error) {
+            console.error('Import failed:', opData.error);
+            throw new Error(`Import failed: ${JSON.stringify(opData.error)}`);
+          }
+        }
+
+        console.log('Upload completed successfully');
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
         if (!importResponse.ok) {
           const errorText = await importResponse.text();
