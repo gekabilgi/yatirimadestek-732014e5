@@ -242,6 +242,31 @@ export function AIChatbot() {
         throw error;
       }
 
+      // Check if response was blocked
+      if (data?.blocked === true) {
+        const blockedMessage = data.error || "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.";
+        
+        toast({
+          title: "Yanıt Engellenmiş",
+          description: blockedMessage,
+          variant: "default",
+        });
+
+        const assistantId = crypto.randomUUID();
+        const blockedMsg: Message = { 
+          id: assistantId, 
+          role: "assistant", 
+          content: `⚠️ ${blockedMessage}` 
+        };
+        
+        setMessages((prev) => [...prev, blockedMsg]);
+        await saveMessage(blockedMsg, currentSessionId);
+        loadChatSessions();
+        
+        setIsLoading(false);
+        return;
+      }
+
       if (!data || !data.text) {
         console.error("Invalid response data:", data);
         throw new Error("Geçersiz yanıt formatı");
