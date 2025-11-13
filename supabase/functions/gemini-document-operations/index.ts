@@ -86,41 +86,98 @@ serve(async (req) => {
 
         console.log('Starting file upload for store:', storeName);
 
-        const ai = getAiClient();
         const fileBuffer = await (file as File).arrayBuffer();
         const fileName = (file as File).name;
         const mimeType = (file as File).type;
 
-        // Use SDK method to upload and import to store
-        let operation = await ai.fileSearchStores.uploadToFileSearchStore({
-          file: fileBuffer,
-          fileSearchStoreName: storeName,
-          config: { 
-            displayName: displayName || fileName,
-            mimeType: mimeType,
-            chunkingConfig: {
-              whiteSpaceConfig: {
-                maxTokensPerChunk: 200,
-                maxOverlapTokens: 20
-              }
-            }
+        // Step 1: Upload file to Gemini Files API
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', new Blob([fileBuffer], { type: mimeType }), fileName);
+        
+        const uploadMetadata = {
+          file: {
+            displayName: displayName || fileName
           }
-        });
+        };
 
-        console.log('Upload operation started:', operation.name);
+        const uploadResponse = await fetch(
+          `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Goog-Upload-Protocol': 'multipart',
+            },
+            body: uploadFormData,
+          }
+        );
 
-        // Poll for operation completion
-        let attempts = 0;
-        while (!operation.done && attempts < 30) {
-          await new Promise(r => setTimeout(r, 3000));
-          operation = await ai.operations.get({ operation });
-          attempts++;
-          console.log(`Upload check ${attempts}:`, operation.done ? 'done' : 'processing');
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error('File upload failed:', errorText);
+          throw new Error(`File upload failed: ${errorText}`);
         }
 
-        if (operation.error) {
-          console.error('Upload failed:', operation.error);
-          throw new Error(`Upload failed: ${JSON.stringify(operation.error)}`);
+        const uploadData = await uploadResponse.json();
+        const fileResourceName = uploadData.file.name;
+        console.log('File uploaded:', fileResourceName);
+
+        // Step 2: Import file into store
+        const importResponse = await fetch(
+          `${GEMINI_API_BASE}/${storeName}/documents:import?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fileName: fileResourceName,
+              chunkingConfig: {
+                whiteSpaceConfig: {
+                  maxTokensPerChunk: 200,
+                  maxOverlapTokens: 20
+                }
+              }
+            })
+          }
+        );
+
+        if (!importResponse.ok) {
+          const errorText = await importResponse.text();
+          console.error('Import failed:', errorText);
+          throw new Error(`Import failed: ${errorText}`);
+        }
+
+        const importData = await importResponse.json();
+        const operationName = importData.name;
+        console.log('Import operation started:', operationName);
+
+        // Step 3: Poll for operation completion
+        let attempts = 0;
+        let operationComplete = false;
+        
+        while (!operationComplete && attempts < 30) {
+          await new Promise(r => setTimeout(r, 3000));
+          
+          const opResponse = await fetch(
+            `${GEMINI_API_BASE}/${operationName}?key=${GEMINI_API_KEY}`,
+            { method: 'GET' }
+          );
+
+          if (!opResponse.ok) {
+            const errorText = await opResponse.text();
+            console.error('Operation check failed:', errorText);
+            throw new Error(`Operation check failed: ${errorText}`);
+          }
+
+          const opData = await opResponse.json();
+          operationComplete = opData.done === true;
+          attempts++;
+          console.log(`Import check ${attempts}:`, operationComplete ? 'done' : 'processing');
+
+          if (opData.error) {
+            console.error('Import failed:', opData.error);
+            throw new Error(`Import failed: ${JSON.stringify(opData.error)}`);
+          }
         }
 
         console.log('Upload completed successfully');
