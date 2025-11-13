@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getActiveStore } from "@/services/geminiRagService";
 
 interface Message {
   role: "user" | "assistant";
@@ -223,8 +224,17 @@ export function AIChatbot() {
     abortControllerRef.current = new AbortController();
 
     try {
-      const { data, error } = await supabase.functions.invoke("chat-rag-v2", {
-        body: { messages: [...messages, { role: "user", content: userMessage }] },
+      // Get active store
+      const activeStore = getActiveStore();
+      if (!activeStore) {
+        throw new Error("Lütfen önce admin panelinden bir bilgi bankası seçin");
+      }
+
+      const { data, error } = await supabase.functions.invoke("chat-gemini", {
+        body: { 
+          storeName: activeStore,
+          messages: [...messages, { role: "user", content: userMessage }] 
+        },
       });
 
       if (error) {
@@ -232,7 +242,7 @@ export function AIChatbot() {
         throw error;
       }
 
-      if (!data || !data.answer) {
+      if (!data || !data.text) {
         console.error("Invalid response data:", data);
         throw new Error("Geçersiz yanıt formatı");
       }
@@ -242,7 +252,7 @@ export function AIChatbot() {
 
       // Simulate typing effect
       setIsStreaming(true);
-      const fullResponse = data.answer;
+      const fullResponse = data.text;
       const words = fullResponse.split(" ");
       let currentText = "";
 
