@@ -84,35 +84,66 @@ serve(async (req) => {
 
         console.log('Starting file upload for store:', storeName);
 
-        const ai = getAiClient();
-        
-        // Step 1: Upload to Files API using SDK
+        // Step 1: Upload to Files API using REST API
         const fileBuffer = await (file as File).arrayBuffer();
-        const fileBlob = new Blob([fileBuffer], { type: (file as File).type });
+        const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
         
-        const uploadedFile = await ai.files.upload({
-          file: fileBlob,
-          config: { 
-            name: displayName || (file as File).name,
-          },
-        });
+        const metadata = {
+          file: {
+            display_name: displayName || (file as File).name,
+          }
+        };
+        
+        let body = '';
+        body += `--${boundary}\r\n`;
+        body += 'Content-Type: application/json; charset=utf-8\r\n\r\n';
+        body += JSON.stringify(metadata) + '\r\n';
+        body += `--${boundary}\r\n`;
+        body += `Content-Type: ${(file as File).type || 'application/octet-stream'}\r\n\r\n`;
+        
+        const encoder = new TextEncoder();
+        const textParts = encoder.encode(body);
+        const endBoundary = encoder.encode(`\r\n--${boundary}--\r\n`);
+        
+        const finalBody = new Uint8Array(textParts.length + fileBuffer.byteLength + endBoundary.length);
+        finalBody.set(textParts, 0);
+        finalBody.set(new Uint8Array(fileBuffer), textParts.length);
+        finalBody.set(endBoundary, textParts.length + fileBuffer.byteLength);
 
-        console.log('File uploaded:', uploadedFile.name);
+        const uploadResponse = await fetch(
+          `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': `multipart/related; boundary=${boundary}`,
+            },
+            body: finalBody,
+          }
+        );
 
-        // Step 2: Import into the store
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error('File upload failed:', uploadResponse.status, errorText);
+          throw new Error(`File upload error: ${errorText}`);
+        }
+
+        const uploadedFile = await uploadResponse.json();
+        console.log('File uploaded:', uploadedFile.file?.name);
+
+        // Step 2: Import into the store using SDK
+        const ai = getAiClient();
         const importOperation = await ai.fileSearchStores.importFile({
           fileSearchStoreName: storeName,
-          fileName: uploadedFile.name,
+          fileName: uploadedFile.file.name,
         });
 
-        console.log('Import operation:', importOperation.name);
+        console.log('Import operation started:', importOperation.name);
 
         // Wait for import operation to complete
         let attempts = 0;
         let operation = importOperation;
         while (!operation.done && attempts < 30) {
           await new Promise(r => setTimeout(r, 2000));
-          const opName = operation.name.split('/').pop();
           operation = await ai.operations.get({ name: operation.name });
           attempts++;
           console.log(`Import operation check ${attempts}:`, operation.done ? 'done' : 'processing');
@@ -125,7 +156,7 @@ serve(async (req) => {
 
         console.log('Import completed successfully');
 
-        return new Response(JSON.stringify({ success: true, fileName: uploadedFile.name }), {
+        return new Response(JSON.stringify({ success: true, fileName: uploadedFile.file.name }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
