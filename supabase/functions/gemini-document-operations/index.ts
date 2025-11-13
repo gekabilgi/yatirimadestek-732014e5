@@ -153,8 +153,10 @@ serve(async (req) => {
 
         if (!importResponse.ok) {
           const errorText = await importResponse.text();
-          console.error('Import failed:', errorText);
-          throw new Error(`Import failed: ${errorText}`);
+          console.error('Import failed with status:', importResponse.status);
+          console.error('Import error response:', errorText);
+          console.error('Import request was for file:', fileResourceName, 'to store:', storeName);
+          throw new Error(`Import failed (${importResponse.status}): ${errorText || 'No error details'}`);
         }
 
         const importData = await importResponse.json();
