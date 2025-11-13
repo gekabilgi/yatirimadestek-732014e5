@@ -145,21 +145,36 @@ serve(async (req) => {
         const uploadedFile = await uploadResponse.json();
         console.log('File uploaded:', uploadedFile.file?.name);
 
-        // Step 2: Import into the store
-        const ai = getAiClient();
-        const importOperation = await ai.fileSearchStores.importFile({
-          fileSearchStoreName: storeName,
-          fileName: uploadedFile.file.name,
-        });
+        // Step 2: Import into the store via REST API (SDK fileSearchStores not available in this env)
+        const importResp = await fetch(
+          `${GEMINI_API_BASE}/${storeName}:import?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: uploadedFile.file.name }),
+          }
+        );
 
-        console.log('Import operation started:', importOperation.name);
+        if (!importResp.ok) {
+          const t = await importResp.text();
+          console.error('Import start failed:', importResp.status, t);
+          throw new Error(`Import start error: ${t}`);
+        }
+
+        let operation = await importResp.json();
+        console.log('Import operation started:', operation.name);
 
         // Wait for import to complete
         let attempts = 0;
-        let operation = importOperation;
         while (!operation.done && attempts < 30) {
           await new Promise(r => setTimeout(r, 2000));
-          operation = await ai.operations.get({ name: operation.name });
+          const poll = await fetch(`${GEMINI_API_BASE}/${operation.name}?key=${GEMINI_API_KEY}`);
+          if (!poll.ok) {
+            const pt = await poll.text();
+            console.error('Import poll failed:', poll.status, pt);
+            throw new Error(`Import poll error: ${pt}`);
+          }
+          operation = await poll.json();
           attempts++;
           console.log(`Import check ${attempts}:`, operation.done ? 'done' : 'processing');
         }
