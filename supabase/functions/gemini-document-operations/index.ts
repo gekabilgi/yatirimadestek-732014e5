@@ -1,15 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenAI } from "npm:@google/genai@0.21.0";
+import { GoogleGenerativeAI, FileState } from "npm:@google/generative-ai@0.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function getAiClient(): GoogleGenAI {
+function getAiClient(): GoogleGenerativeAI {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenerativeAI(apiKey);
 }
 
 function basenameSafe(p: string): string {
@@ -17,10 +17,14 @@ function basenameSafe(p: string): string {
   return i >= 0 ? p.slice(i + 1) : p;
 }
 
-async function waitForOperation(ai: GoogleGenAI, op: any, pollMs = 3000): Promise<void> {
-  while (!op?.done) {
-    await new Promise(r => setTimeout(r, pollMs));
-    op = await ai.operations.get({ operation: op });
+async function waitForFile(ai: GoogleGenerativeAI, fileName: string): Promise<void> {
+  let file = await ai.files.get(fileName);
+  while (file.state === FileState.PROCESSING) {
+    await new Promise(r => setTimeout(r, 3000));
+    file = await ai.files.get(fileName);
+  }
+  if (file.state === FileState.FAILED) {
+    throw new Error("File processing failed");
   }
 }
 
@@ -37,26 +41,13 @@ serve(async (req) => {
       case 'list': {
         if (!storeName) throw new Error("storeName required for list");
         
-        const pager = await ai.fileSearchStores.documents.list({ parent: storeName });
-        const docs: any[] = [];
-        for await (const d of pager) docs.push(d);
-
-        const result = docs.map((doc: any) => {
-          const title =
-            doc.displayName ||
-            doc.file?.displayName ||
-            (doc.file?.uri ? basenameSafe(doc.file.uri) : "") ||
-            "Untitled Document";
-          
-          return {
-            name: doc.name,
-            displayName: title,
-            customMetadata: (doc.customMetadata || []).map((m: any) => ({
-              key: m.key,
-              stringValue: typeof m.stringValue === "string" ? m.stringValue : m.value ?? "",
-            })),
-          };
-        });
+        // List documents in corpus
+        const documents = await ai.corpora.documents.list(storeName);
+        const result = documents.map((doc: any) => ({
+          name: doc.name,
+          displayName: doc.displayName || doc.name?.split("/").pop() || "Untitled Document",
+          customMetadata: doc.customMetadata || [],
+        }));
 
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -72,19 +63,31 @@ serve(async (req) => {
         
         if (!file) throw new Error("No file provided");
 
-        // Convert file to buffer for Gemini
+        // Upload file to Gemini Files API
         const fileBuffer = await (file as File).arrayBuffer();
-        const fileBlob = new Blob([fileBuffer], { type: (file as File).type });
-
-        const op = await ai.fileSearchStores.uploadToFileSearchStore({
-          file: fileBlob as any,
-          fileSearchStoreName: storeName,
+        const uploadedFile = await ai.files.upload({
+          file: {
+            data: new Uint8Array(fileBuffer),
+            mimeType: (file as File).type,
+          },
           config: {
             displayName: displayName || (file as File).name,
           },
         });
 
-        await waitForOperation(ai, op);
+        // Wait for file processing
+        await waitForFile(ai, uploadedFile.name);
+
+        // Create document in corpus
+        await ai.corpora.documents.create(storeName, {
+          displayName: displayName || (file as File).name,
+          parts: [{
+            fileData: {
+              fileUri: uploadedFile.uri,
+              mimeType: uploadedFile.mimeType,
+            },
+          }],
+        });
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -94,7 +97,7 @@ serve(async (req) => {
       case 'delete': {
         if (!documentName) throw new Error("documentName required for delete");
         
-        await ai.fileSearchStores.documents.delete({ name: documentName });
+        await ai.corpora.documents.delete(documentName);
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,15 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenAI } from "npm:@google/genai@0.21.0";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function getAiClient(): GoogleGenAI {
+function getAiClient(): GoogleGenerativeAI {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenerativeAI(apiKey);
 }
 
 serve(async (req) => {
@@ -25,31 +25,33 @@ serve(async (req) => {
     }
 
     const ai = getAiClient();
-
-    const fileSearchTool: any = {
-      fileSearch: {
-        fileSearchStoreNames: [storeName],
-      },
-    };
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+    });
 
     let finalQuery = query;
     if (isPreciseMode) {
       finalQuery = `Based on the provided documents, find the single most relevant document to answer the user's question and provide a precise answer based ONLY on that document. Do not mix information from multiple documents. User question: "${query}"`;
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: finalQuery,
-      config: {
-        tools: [fileSearchTool],
-      },
+    // Generate content with corpus grounding
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: finalQuery }] }],
+      tools: [{
+        retrieval: {
+          vertexAiSearch: {
+            datastore: storeName,
+          },
+        },
+      }],
     });
 
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const response = result.response;
+    const groundingChunks = response.groundingMetadata?.groundingChunks || [];
     
     return new Response(
       JSON.stringify({ 
-        text: response.text, 
+        text: response.text(), 
         groundingChunks,
       }),
       {

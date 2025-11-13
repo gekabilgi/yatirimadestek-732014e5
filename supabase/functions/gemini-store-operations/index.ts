@@ -1,15 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenAI } from "npm:@google/genai@0.21.0";
+import { GoogleGenerativeAI, FileState } from "npm:@google/generative-ai@0.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function getAiClient(): GoogleGenAI {
+function getAiClient(): GoogleGenerativeAI {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenerativeAI(apiKey);
 }
 
 serve(async (req) => {
@@ -23,13 +23,11 @@ serve(async (req) => {
 
     switch (operation) {
       case 'list': {
-        const pager = await ai.fileSearchStores.list();
-        const stores: any[] = [];
-        for await (const s of pager) stores.push(s);
-        
-        const result = stores.map(s => ({
-          name: s.name,
-          displayName: s.displayName || s.name?.split("/").pop() || "Untitled Store",
+        // List corpora (vector stores)
+        const corpora = await ai.corpora.list();
+        const result = corpora.map((corpus: any) => ({
+          name: corpus.name,
+          displayName: corpus.displayName || corpus.name?.split("/").pop() || "Untitled Store",
         }));
 
         return new Response(JSON.stringify(result), {
@@ -40,10 +38,10 @@ serve(async (req) => {
       case 'create': {
         if (!displayName) throw new Error("displayName required for create");
         
-        const store = await ai.fileSearchStores.create({ config: { displayName } });
-        if (!store?.name) throw new Error("Failed to create store");
+        const corpus = await ai.corpora.create({ displayName });
+        if (!corpus?.name) throw new Error("Failed to create corpus");
 
-        return new Response(JSON.stringify({ name: store.name, displayName: store.displayName }), {
+        return new Response(JSON.stringify({ name: corpus.name, displayName: corpus.displayName }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -51,8 +49,7 @@ serve(async (req) => {
       case 'delete': {
         if (!storeName) throw new Error("storeName required for delete");
         
-        // @ts-ignore - force parameter not in type definition
-        await ai.fileSearchStores.delete({ name: storeName, force: true });
+        await ai.corpora.delete(storeName);
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
