@@ -44,7 +44,7 @@ Türkçe konuş ve profesyonel bir üslup kullan.`,
       contents,
       tools: [{
         fileSearch: {
-          dataStore: `fileSearchStores/${storeName}`,
+          fileSearchStoreNames: [storeName],
         },
       }],
     });

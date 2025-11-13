@@ -20,28 +20,40 @@ serve(async (req) => {
 
     switch (operation) {
       case 'list': {
-        // List file search stores
-        const response = await fetch(
-          `${GEMINI_API_BASE}/fileSearchStores?key=${GEMINI_API_KEY}`,
-          { method: 'GET' }
-        );
+        // List file search stores; fallback to provided default store if listing fails
+        const DEFAULT_STORE = 'fileSearchStores/aicb-xehflr037liz';
+        try {
+          const response = await fetch(
+            `${GEMINI_API_BASE}/fileSearchStores?key=${GEMINI_API_KEY}`,
+            { method: 'GET' }
+          );
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Gemini API error: ${errorText}`);
+          if (!response.ok) {
+            // Fallback to default store when listing is not available
+            return new Response(JSON.stringify([
+              { name: DEFAULT_STORE, displayName: 'Default File Search Store' },
+            ]), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+
+          const data = await response.json();
+          const stores = data.fileSearchStores || [];
+
+          // If API returns empty, still provide the default store
+          const result = (stores.length ? stores : [ { name: DEFAULT_STORE, displayName: 'Default File Search Store' } ])
+            .map((store: any) => ({
+              name: store.name,
+              displayName: store.displayName || store.name?.split("/").pop() || "Untitled Store",
+            }));
+
+          return new Response(JSON.stringify(result), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (_) {
+          // Network or other errors -> fallback
+          return new Response(JSON.stringify([
+            { name: DEFAULT_STORE, displayName: 'Default File Search Store' },
+          ]), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
-
-        const data = await response.json();
-        const stores = data.fileSearchStores || [];
-        
-        const result = stores.map((store: any) => ({
-          name: store.name,
-          displayName: store.displayName || store.name?.split("/").pop() || "Untitled Store",
-        }));
-
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
       }
 
       case 'create': {
@@ -75,7 +87,7 @@ serve(async (req) => {
         if (!storeName) throw new Error("storeName required for delete");
         
         const response = await fetch(
-          `${GEMINI_API_BASE}/fileSearchStores/${storeName}?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/${storeName}?key=${GEMINI_API_KEY}`,
           { method: 'DELETE' }
         );
 

@@ -39,7 +39,7 @@ serve(async (req) => {
       contents: [{ role: "user", parts: [{ text: finalQuery }] }],
       tools: [{
         fileSearch: {
-          dataStore: `fileSearchStores/${storeName}`,
+          fileSearchStoreNames: [storeName],
         },
       }],
     });
