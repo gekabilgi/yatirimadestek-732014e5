@@ -184,4 +184,29 @@ export const adminSettingsService = {
 
     return data || [];
   },
+
+  async getActiveGeminiStore(): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'active_gemini_store')
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data.setting_value_text;
+  },
+
+  async setActiveGeminiStore(storeName: string | null): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ setting_value_text: storeName })
+      .eq('setting_key', 'active_gemini_store');
+
+    if (error) {
+      throw new Error(`Failed to set active Gemini store: ${error.message}`);
+    }
+  },
 };

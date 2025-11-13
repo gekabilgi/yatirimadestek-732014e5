@@ -45,7 +45,7 @@ export const GeminiStoreManager = () => {
 
   useEffect(() => {
     loadStores();
-    setActiveStoreState(getActiveStore());
+    getActiveStore().then(setActiveStoreState);
   }, []);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export const GeminiStoreManager = () => {
       }
       if (activeStore === storeName) {
         setActiveStoreState(null);
-        setActiveStore('');
+        await setActiveStore('');
       }
       toast({
         title: 'Success',
@@ -217,13 +217,21 @@ export const GeminiStoreManager = () => {
     }
   };
 
-  const handleSetActiveStore = (storeName: string) => {
-    setActiveStore(storeName);
-    setActiveStoreState(storeName);
-    toast({
-      title: 'Success',
-      description: 'Active chatbot store updated',
-    });
+  const handleSetActiveStore = async (storeName: string) => {
+    try {
+      await setActiveStore(storeName);
+      setActiveStoreState(storeName);
+      toast({
+        title: 'Success',
+        description: 'Active chatbot store updated',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update active store',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
