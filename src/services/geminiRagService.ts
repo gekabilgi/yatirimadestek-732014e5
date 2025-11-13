@@ -50,7 +50,16 @@ export async function listDocuments(storeName: string): Promise<Document[]> {
   });
 
   if (error) throw error;
-  return data;
+  // Normalize displayName so UI can show original filename when Gemini doesn't return one
+  return (data || []).map((d: any) => ({
+    name: d.name,
+    displayName:
+      d.displayName ||
+      (d.customMetadata?.find((m: any) => m.key === 'fileName')?.stringValue) ||
+      d.name?.split('/')?.pop() ||
+      'Untitled Document',
+    customMetadata: d.customMetadata || [],
+  }));
 }
 
 export async function uploadDocument(
@@ -76,8 +85,13 @@ export async function uploadDocument(
   );
 
   if (!uploadResponse.ok) {
-    const error = await uploadResponse.json();
-    throw new Error(error.error || 'Upload failed');
+    const text = await uploadResponse.text();
+    let message = 'Upload failed';
+    try {
+      const err = text ? JSON.parse(text) : null;
+      message = err?.error || message;
+    } catch {}
+    throw new Error(message);
   }
 }
 

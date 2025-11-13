@@ -135,6 +135,10 @@ serve(async (req) => {
             },
             body: JSON.stringify({
               fileName: fileResourceName,
+              // Persist original filename for UI display
+              customMetadata: [
+                { key: 'fileName', stringValue: (displayName || fileName) }
+              ],
               chunkingConfig: {
                 whiteSpaceConfig: {
                   maxTokensPerChunk: 200,
