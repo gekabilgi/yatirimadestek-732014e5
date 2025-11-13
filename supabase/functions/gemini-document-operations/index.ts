@@ -84,42 +84,57 @@ serve(async (req) => {
 
         console.log('Starting file upload for store:', storeName);
 
-        // Step 1: Upload to Files API using REST API
+        // Step 1: Upload file using Gemini Files API
         const fileBuffer = await (file as File).arrayBuffer();
-        const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+        const fileSize = fileBuffer.byteLength;
+        const mimeType = (file as File).type || 'application/octet-stream';
         
+        // Create metadata
         const metadata = {
           file: {
             display_name: displayName || (file as File).name,
           }
         };
-        
-        let body = '';
-        body += `--${boundary}\r\n`;
-        body += 'Content-Type: application/json; charset=utf-8\r\n\r\n';
-        body += JSON.stringify(metadata) + '\r\n';
-        body += `--${boundary}\r\n`;
-        body += `Content-Type: ${(file as File).type || 'application/octet-stream'}\r\n\r\n`;
-        
-        const encoder = new TextEncoder();
-        const textParts = encoder.encode(body);
-        const endBoundary = encoder.encode(`\r\n--${boundary}--\r\n`);
-        
-        const finalBody = new Uint8Array(textParts.length + fileBuffer.byteLength + endBoundary.length);
-        finalBody.set(textParts, 0);
-        finalBody.set(new Uint8Array(fileBuffer), textParts.length);
-        finalBody.set(endBoundary, textParts.length + fileBuffer.byteLength);
 
-        const uploadResponse = await fetch(
+        // Initial upload request to get upload URL
+        const initResponse = await fetch(
           `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
             headers: {
-              'Content-Type': `multipart/related; boundary=${boundary}`,
+              'X-Goog-Upload-Protocol': 'resumable',
+              'X-Goog-Upload-Command': 'start',
+              'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
+              'X-Goog-Upload-Header-Content-Type': mimeType,
+              'Content-Type': 'application/json',
             },
-            body: finalBody,
+            body: JSON.stringify(metadata),
           }
         );
+
+        if (!initResponse.ok) {
+          const errorText = await initResponse.text();
+          console.error('Upload init failed:', initResponse.status, errorText);
+          throw new Error(`Upload init error: ${errorText}`);
+        }
+
+        const uploadUrl = initResponse.headers.get('x-goog-upload-url');
+        if (!uploadUrl) {
+          throw new Error('No upload URL returned');
+        }
+
+        console.log('Got upload URL, uploading file...');
+
+        // Upload the actual file
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Length': fileSize.toString(),
+            'X-Goog-Upload-Offset': '0',
+            'X-Goog-Upload-Command': 'upload, finalize',
+          },
+          body: fileBuffer,
+        });
 
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
@@ -130,7 +145,7 @@ serve(async (req) => {
         const uploadedFile = await uploadResponse.json();
         console.log('File uploaded:', uploadedFile.file?.name);
 
-        // Step 2: Import into the store using SDK
+        // Step 2: Import into the store
         const ai = getAiClient();
         const importOperation = await ai.fileSearchStores.importFile({
           fileSearchStoreName: storeName,
@@ -139,18 +154,18 @@ serve(async (req) => {
 
         console.log('Import operation started:', importOperation.name);
 
-        // Wait for import operation to complete
+        // Wait for import to complete
         let attempts = 0;
         let operation = importOperation;
         while (!operation.done && attempts < 30) {
           await new Promise(r => setTimeout(r, 2000));
           operation = await ai.operations.get({ name: operation.name });
           attempts++;
-          console.log(`Import operation check ${attempts}:`, operation.done ? 'done' : 'processing');
+          console.log(`Import check ${attempts}:`, operation.done ? 'done' : 'processing');
         }
 
         if (operation.error) {
-          console.error('Import operation failed:', operation.error);
+          console.error('Import failed:', operation.error);
           throw new Error(`Import failed: ${JSON.stringify(operation.error)}`);
         }
 
