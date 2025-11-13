@@ -129,8 +129,7 @@ serve(async (req) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              fileName: fileData.name,
-              displayName: displayName || (file as File).name,
+              file: fileData.name,
             }),
           }
         );
