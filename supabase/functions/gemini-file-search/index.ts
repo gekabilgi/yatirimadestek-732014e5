@@ -1,15 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
+import { GoogleGenAI } from "npm:@google/genai@1.29.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function getAiClient(): GoogleGenerativeAI {
+function getAiClient(): GoogleGenAI {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  return new GoogleGenerativeAI(apiKey);
+  Deno.env.set('GOOGLE_GENAI_API_KEY', apiKey);
+  return new GoogleGenAI({});
 }
 
 serve(async (req) => {
@@ -25,9 +26,6 @@ serve(async (req) => {
     }
 
     const ai = getAiClient();
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.5-flash",
-    });
 
     let finalQuery = query;
     if (isPreciseMode) {
@@ -35,23 +33,25 @@ serve(async (req) => {
     }
 
     // Generate content with file search grounding
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: finalQuery }] }],
-      tools: [
-        {
-          fileSearch: {
-            fileSearchStoreNames: [storeName],
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: finalQuery,
+      config: {
+        tools: [
+          {
+            fileSearch: {
+              fileSearchStoreNames: [storeName],
+            },
           },
-        },
-      ],
+        ],
+      },
     });
 
-    const response = result.response;
-    const groundingChunks = response.groundingMetadata?.groundingChunks || [];
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
     return new Response(
       JSON.stringify({
-        text: response.text(),
+        text: response.text,
         groundingChunks,
       }),
       {
