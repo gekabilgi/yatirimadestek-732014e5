@@ -16,7 +16,23 @@ serve(async (req) => {
   try {
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
 
-    const { operation, storeName, documentName } = await req.json();
+    // Check content type to determine how to parse request
+    const contentType = req.headers.get('content-type') || '';
+    let operation, storeName, documentName, formData;
+
+    if (contentType.includes('multipart/form-data')) {
+      // For file uploads - parse formData once
+      formData = await req.formData();
+      operation = formData.get('operation') as string;
+      storeName = formData.get('storeName') as string;
+      documentName = formData.get('documentName') as string;
+    } else {
+      // For JSON requests
+      const body = await req.json();
+      operation = body.operation;
+      storeName = body.storeName;
+      documentName = body.documentName;
+    }
 
     switch (operation) {
       case 'list': {
@@ -53,8 +69,8 @@ serve(async (req) => {
 
       case 'upload': {
         if (!storeName) throw new Error("storeName required for upload");
+        if (!formData) throw new Error("FormData required for upload");
         
-        const formData = await req.formData();
         const file = formData.get('file');
         const displayName = formData.get('displayName') as string;
         
