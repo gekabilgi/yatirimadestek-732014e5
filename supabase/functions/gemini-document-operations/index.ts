@@ -89,6 +89,7 @@ serve(async (req) => {
         const ai = getAiClient();
         const fileBuffer = await (file as File).arrayBuffer();
         const fileName = (file as File).name;
+        const mimeType = (file as File).type;
 
         // Use SDK method to upload and import to store
         let operation = await ai.fileSearchStores.uploadToFileSearchStore({
@@ -96,6 +97,7 @@ serve(async (req) => {
           fileSearchStoreName: storeName,
           config: { 
             displayName: displayName || fileName,
+            mimeType: mimeType,
             chunkingConfig: {
               whiteSpaceConfig: {
                 maxTokensPerChunk: 200,
