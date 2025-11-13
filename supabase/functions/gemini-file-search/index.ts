@@ -9,8 +9,7 @@ const corsHeaders = {
 function getAiClient(): GoogleGenAI {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  Deno.env.set('GOOGLE_GENAI_API_KEY', apiKey);
-  return new GoogleGenAI({});
+  return new GoogleGenAI({ apiKey });
 }
 
 serve(async (req) => {

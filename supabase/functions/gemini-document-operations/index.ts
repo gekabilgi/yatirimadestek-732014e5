@@ -11,8 +11,7 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 function getAiClient(): GoogleGenAI {
   if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
-  Deno.env.set('GOOGLE_GENAI_API_KEY', GEMINI_API_KEY);
-  return new GoogleGenAI({});
+  return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 }
 
 serve(async (req) => {
