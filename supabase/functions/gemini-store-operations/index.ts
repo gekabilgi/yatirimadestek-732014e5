@@ -86,19 +86,59 @@ serve(async (req) => {
       case 'delete': {
         if (!storeName) throw new Error("storeName required for delete");
         
-        const response = await fetch(
-          `${GEMINI_API_BASE}/${storeName}?force=true&key=${GEMINI_API_KEY}`,
-          { method: 'DELETE' }
-        );
+        console.log('Starting cascade delete for store:', storeName);
+        
+        try {
+          // Step 1: List all documents in the store
+          const listResponse = await fetch(
+            `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
+            { method: 'GET' }
+          );
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Gemini API error: ${errorText}`);
+          if (listResponse.ok) {
+            const data = await listResponse.json();
+            const documents = data.documents || [];
+            
+            console.log(`Found ${documents.length} documents to delete`);
+            
+            // Step 2: Delete all documents
+            for (const doc of documents) {
+              console.log('Deleting document:', doc.name);
+              const deleteDocResponse = await fetch(
+                `${GEMINI_API_BASE}/${doc.name}?force=true&key=${GEMINI_API_KEY}`,
+                { method: 'DELETE' }
+              );
+              
+              if (!deleteDocResponse.ok) {
+                const errorText = await deleteDocResponse.text();
+                console.error('Failed to delete document:', doc.name, errorText);
+                // Continue anyway to try to delete other documents
+              }
+            }
+          }
+          
+          // Step 3: Now delete the empty store
+          console.log('Deleting store:', storeName);
+          const response = await fetch(
+            `${GEMINI_API_BASE}/${storeName}?key=${GEMINI_API_KEY}`,
+            { method: 'DELETE' }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Store delete failed:', errorText);
+            throw new Error(`Gemini API error: ${errorText}`);
+          }
+
+          console.log('Store deleted successfully');
+          return new Response(JSON.stringify({ success: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+          
+        } catch (error) {
+          console.error('Cascade delete error:', error);
+          throw error;
         }
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
       }
 
       default:
