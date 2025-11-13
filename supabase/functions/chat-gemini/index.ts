@@ -26,7 +26,7 @@ serve(async (req) => {
 
     const ai = getAiClient();
     const model = ai.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-2.5-flash",
       systemInstruction: `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
 Verilen dökümanlardan yararlanarak doğru ve güncel bilgiler ver.
