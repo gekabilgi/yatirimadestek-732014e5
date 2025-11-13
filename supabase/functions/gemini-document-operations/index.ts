@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +8,11 @@ const corsHeaders = {
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+function getAiClient(): GoogleGenerativeAI {
+  if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
+  return new GoogleGenerativeAI(GEMINI_API_KEY);
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -78,84 +84,48 @@ serve(async (req) => {
 
         console.log('Starting file upload for store:', storeName);
 
-        // First, upload file to Files API
+        const ai = getAiClient();
+        
+        // Step 1: Upload to Files API using SDK
         const fileBuffer = await (file as File).arrayBuffer();
         const fileBlob = new Blob([fileBuffer], { type: (file as File).type });
         
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', fileBlob, (file as File).name);
+        const uploadedFile = await ai.files.upload({
+          file: fileBlob,
+          config: { 
+            name: displayName || (file as File).name,
+          },
+        });
 
-        const uploadResponse = await fetch(
-          `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Goog-Upload-Protocol': 'multipart',
-            },
-            body: uploadFormData,
-          }
-        );
+        console.log('File uploaded:', uploadedFile.name);
 
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          console.error('File upload failed:', uploadResponse.status, errorText);
-          throw new Error(`File upload error: ${errorText}`);
-        }
+        // Step 2: Import into the store
+        const importOperation = await ai.fileSearchStores.importFile({
+          fileSearchStoreName: storeName,
+          fileName: uploadedFile.name,
+        });
 
-        const uploadedFile = await uploadResponse.json();
-        console.log('Upload response:', JSON.stringify(uploadedFile));
-        const fileName = uploadedFile.file?.name || uploadedFile.name;
-        console.log('File uploaded, waiting for processing:', fileName);
+        console.log('Import operation:', importOperation.name);
 
-        if (!fileName) {
-          console.error('Upload response:', JSON.stringify(uploadedFile));
-          throw new Error('Failed to get file name from upload response');
-        }
-
-        // Wait for file to be processed
-        let fileData = uploadedFile.file || uploadedFile;
+        // Wait for import operation to complete
         let attempts = 0;
-        while (fileData.state === 'PROCESSING' && attempts < 30) {
+        let operation = importOperation;
+        while (!operation.done && attempts < 30) {
           await new Promise(r => setTimeout(r, 2000));
-          const fileId = fileName.split('/').pop();
-          const checkResponse = await fetch(
-            `${GEMINI_API_BASE}/files/${fileId}?key=${GEMINI_API_KEY}`,
-            { method: 'GET' }
-          );
-          const checkData = await checkResponse.json();
-          fileData = checkData.file || checkData;
+          const opName = operation.name.split('/').pop();
+          operation = await ai.operations.get({ name: operation.name });
           attempts++;
-          console.log(`File processing check ${attempts}:`, fileData.state);
+          console.log(`Import operation check ${attempts}:`, operation.done ? 'done' : 'processing');
         }
 
-        if (fileData.state === 'FAILED') {
-          throw new Error('File processing failed');
+        if (operation.error) {
+          console.error('Import operation failed:', operation.error);
+          throw new Error(`Import failed: ${JSON.stringify(operation.error)}`);
         }
 
-        console.log('File processed successfully, importing to store');
+        console.log('Import completed successfully');
 
-        // Import file to file search store
-        const importResponse = await fetch(
-          `${GEMINI_API_BASE}/${storeName}:importFile?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              file: fileName,
-            }),
-          }
-        );
-
-        if (!importResponse.ok) {
-          const errorText = await importResponse.text();
-          console.error('Import failed:', errorText);
-          throw new Error(`Import error: ${errorText}`);
-        }
-
-        const operation = await importResponse.json();
-        console.log('Import operation started:', operation.name);
-
-        return new Response(JSON.stringify({ success: true, operation: operation.name }), {
+        return new Response(JSON.stringify({ success: true, fileName: uploadedFile.name }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
