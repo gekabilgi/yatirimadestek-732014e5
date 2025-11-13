@@ -50,6 +50,23 @@ Türkçe konuş ve profesyonel bir üslup kullan.`,
     });
 
     const response = result.response;
+    
+    // Check if response was blocked
+    const finishReason = response.candidates?.[0]?.finishReason;
+    if (finishReason === 'RECITATION' || finishReason === 'SAFETY') {
+      return new Response(
+        JSON.stringify({ 
+          error: "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.",
+          blocked: true,
+          reason: finishReason
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
     const groundingChunks = response.groundingMetadata?.groundingChunks || [];
     
     return new Response(
