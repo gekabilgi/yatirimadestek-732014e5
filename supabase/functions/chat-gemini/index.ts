@@ -69,9 +69,27 @@ Türkçe konuş ve profesyonel bir üslup kullan.`,
     
     const groundingChunks = response.groundingMetadata?.groundingChunks || [];
     
+    let textOut = "";
+    try {
+      textOut = response.text();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg?.includes('RECITATION') || msg?.includes('SAFETY')) {
+        return new Response(
+          JSON.stringify({
+            error: "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.",
+            blocked: true,
+            reason: 'RECITATION',
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      throw e;
+    }
+
     return new Response(
       JSON.stringify({ 
-        text: response.text(), 
+        text: textOut, 
         groundingChunks,
         sources: groundingChunks.map((chunk: any) => ({
           title: chunk.web?.title || 'Document',
