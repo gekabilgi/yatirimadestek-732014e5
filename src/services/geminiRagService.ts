@@ -58,25 +58,6 @@ export async function uploadDocument(
   file: File,
   displayName?: string
 ): Promise<void> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('displayName', displayName || file.name);
-
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-document-operations`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({
-        operation: 'upload',
-        storeName,
-      }),
-    }
-  );
-
-  // Use multipart for actual upload
   const uploadFormData = new FormData();
   uploadFormData.append('operation', 'upload');
   uploadFormData.append('storeName', storeName);
@@ -84,11 +65,11 @@ export async function uploadDocument(
   uploadFormData.append('displayName', displayName || file.name);
 
   const uploadResponse = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-document-operations`,
+    'https://zyxiznikuvpwmopraauj.supabase.co/functions/v1/gemini-document-operations',
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5eGl6bmlrdXZwd21vcHJhYXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NDU5ODQsImV4cCI6MjA2NDQyMTk4NH0.YNf5WA5grzswrRKl5SfiZh1dZM9esA66vvHI5fATPm8',
       },
       body: uploadFormData,
     }
