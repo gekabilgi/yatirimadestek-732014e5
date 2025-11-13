@@ -22,6 +22,8 @@ serve(async (req) => {
       case 'list': {
         if (!storeName) throw new Error("storeName required for list");
         
+        console.log('Listing documents for store:', storeName);
+        
         const response = await fetch(
           `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
           { method: 'GET' }
@@ -29,11 +31,14 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errorText = await response.text();
+          console.error('List documents failed:', errorText);
           throw new Error(`Gemini API error: ${errorText}`);
         }
 
         const data = await response.json();
         const documents = data.documents || [];
+        
+        console.log(`Found ${documents.length} documents`);
         
         const result = documents.map((doc: any) => ({
           name: doc.name,
@@ -55,6 +60,8 @@ serve(async (req) => {
         
         if (!file) throw new Error("No file provided");
 
+        console.log('Starting file upload for store:', storeName);
+
         // First, upload file to Files API
         const fileBuffer = await (file as File).arrayBuffer();
         const fileBlob = new Blob([fileBuffer], { type: (file as File).type });
@@ -72,10 +79,12 @@ serve(async (req) => {
 
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
+          console.error('File upload failed:', errorText);
           throw new Error(`File upload error: ${errorText}`);
         }
 
         const uploadedFile = await uploadResponse.json();
+        console.log('File uploaded, waiting for processing:', uploadedFile.name);
 
         // Wait for file to be processed
         let fileData = uploadedFile;
@@ -88,36 +97,38 @@ serve(async (req) => {
           );
           fileData = await checkResponse.json();
           attempts++;
+          console.log(`File processing check ${attempts}:`, fileData.state);
         }
 
         if (fileData.state === 'FAILED') {
           throw new Error('File processing failed');
         }
 
-        // Create document in file search store
-        const createDocResponse = await fetch(
-          `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
+        console.log('File processed successfully, importing to store');
+
+        // Import file to file search store
+        const importResponse = await fetch(
+          `${GEMINI_API_BASE}/${storeName}:importFile?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              fileName: fileData.name,
               displayName: displayName || (file as File).name,
-              parts: [{
-                fileData: {
-                  fileUri: fileData.uri,
-                  mimeType: fileData.mimeType,
-                },
-              }],
             }),
           }
         );
 
-        if (!createDocResponse.ok) {
-          const errorText = await createDocResponse.text();
-          throw new Error(`Document creation error: ${errorText}`);
+        if (!importResponse.ok) {
+          const errorText = await importResponse.text();
+          console.error('Import failed:', errorText);
+          throw new Error(`Import error: ${errorText}`);
         }
 
-        return new Response(JSON.stringify({ success: true }), {
+        const operation = await importResponse.json();
+        console.log('Import operation started:', operation.name);
+
+        return new Response(JSON.stringify({ success: true, operation: operation.name }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -125,15 +136,20 @@ serve(async (req) => {
       case 'delete': {
         if (!documentName) throw new Error("documentName required for delete");
         
+        console.log('Deleting document:', documentName);
+        
         const response = await fetch(
-          `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/${documentName}?force=true&key=${GEMINI_API_KEY}`,
           { method: 'DELETE' }
         );
 
         if (!response.ok) {
           const errorText = await response.text();
+          console.error('Delete failed:', errorText);
           throw new Error(`Gemini API error: ${errorText}`);
         }
+
+        console.log('Document deleted successfully');
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -87,7 +87,7 @@ serve(async (req) => {
         if (!storeName) throw new Error("storeName required for delete");
         
         const response = await fetch(
-          `${GEMINI_API_BASE}/${storeName}?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/${storeName}?force=true&key=${GEMINI_API_KEY}`,
           { method: 'DELETE' }
         );
 
