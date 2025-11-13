@@ -191,52 +191,6 @@ serve(async (req) => {
         });
       }
 
-        if (!importResponse.ok) {
-          const errorText = await importResponse.text();
-          console.error('Import failed:', errorText);
-          throw new Error(`Import failed: ${errorText}`);
-        }
-
-        const importData = await importResponse.json();
-        const operationName = importData.name;
-        console.log('Import operation started:', operationName);
-
-        // Step 3: Poll for operation completion
-        let attempts = 0;
-        let operationComplete = false;
-        
-        while (!operationComplete && attempts < 30) {
-          await new Promise(r => setTimeout(r, 3000));
-          
-          const opResponse = await fetch(
-            `${GEMINI_API_BASE}/${operationName}?key=${GEMINI_API_KEY}`,
-            { method: 'GET' }
-          );
-
-          if (!opResponse.ok) {
-            const errorText = await opResponse.text();
-            console.error('Operation check failed:', errorText);
-            throw new Error(`Operation check failed: ${errorText}`);
-          }
-
-          const opData = await opResponse.json();
-          operationComplete = opData.done === true;
-          attempts++;
-          console.log(`Import check ${attempts}:`, operationComplete ? 'done' : 'processing');
-
-          if (opData.error) {
-            console.error('Import failed:', opData.error);
-            throw new Error(`Import failed: ${JSON.stringify(opData.error)}`);
-          }
-        }
-
-        console.log('Upload completed successfully');
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
       case 'delete': {
         if (!documentName) throw new Error("documentName required for delete");
         
