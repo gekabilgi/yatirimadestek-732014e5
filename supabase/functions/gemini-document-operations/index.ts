@@ -100,18 +100,26 @@ serve(async (req) => {
         }
 
         const uploadedFile = await uploadResponse.json();
-        console.log('File uploaded, waiting for processing:', uploadedFile.name);
+        const fileName = uploadedFile.file?.name || uploadedFile.name;
+        console.log('File uploaded, waiting for processing:', fileName);
+
+        if (!fileName) {
+          console.error('Upload response:', JSON.stringify(uploadedFile));
+          throw new Error('Failed to get file name from upload response');
+        }
 
         // Wait for file to be processed
-        let fileData = uploadedFile;
+        let fileData = uploadedFile.file || uploadedFile;
         let attempts = 0;
         while (fileData.state === 'PROCESSING' && attempts < 30) {
           await new Promise(r => setTimeout(r, 2000));
+          const fileId = fileName.split('/').pop();
           const checkResponse = await fetch(
-            `${GEMINI_API_BASE}/files/${fileData.name.split('/').pop()}?key=${GEMINI_API_KEY}`,
+            `${GEMINI_API_BASE}/files/${fileId}?key=${GEMINI_API_KEY}`,
             { method: 'GET' }
           );
-          fileData = await checkResponse.json();
+          const checkData = await checkResponse.json();
+          fileData = checkData.file || checkData;
           attempts++;
           console.log(`File processing check ${attempts}:`, fileData.state);
         }
@@ -129,7 +137,7 @@ serve(async (req) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              file: fileData.name,
+              file: fileName,
             }),
           }
         );
