@@ -1,16 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenerativeAI, FileState } from "npm:@google/generative-ai@0.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function getAiClient(): GoogleGenerativeAI {
-  const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  return new GoogleGenerativeAI(apiKey);
-}
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,13 +14,26 @@ serve(async (req) => {
   }
 
   try {
+    if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
+
     const { operation, storeName, displayName } = await req.json();
-    const ai = getAiClient();
 
     switch (operation) {
       case 'list': {
-        // List corpora (vector stores)
-        const corpora = await ai.corpora.list();
+        // List corpora
+        const response = await fetch(
+          `${GEMINI_API_BASE}/corpora?key=${GEMINI_API_KEY}`,
+          { method: 'GET' }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API error: ${errorText}`);
+        }
+
+        const data = await response.json();
+        const corpora = data.corpora || [];
+        
         const result = corpora.map((corpus: any) => ({
           name: corpus.name,
           displayName: corpus.displayName || corpus.name?.split("/").pop() || "Untitled Store",
@@ -38,10 +47,26 @@ serve(async (req) => {
       case 'create': {
         if (!displayName) throw new Error("displayName required for create");
         
-        const corpus = await ai.corpora.create({ displayName });
-        if (!corpus?.name) throw new Error("Failed to create corpus");
+        const response = await fetch(
+          `${GEMINI_API_BASE}/corpora?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ displayName }),
+          }
+        );
 
-        return new Response(JSON.stringify({ name: corpus.name, displayName: corpus.displayName }), {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API error: ${errorText}`);
+        }
+
+        const corpus = await response.json();
+
+        return new Response(JSON.stringify({ 
+          name: corpus.name, 
+          displayName: corpus.displayName 
+        }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -49,7 +74,15 @@ serve(async (req) => {
       case 'delete': {
         if (!storeName) throw new Error("storeName required for delete");
         
-        await ai.corpora.delete(storeName);
+        const response = await fetch(
+          `${GEMINI_API_BASE}/${storeName}?key=${GEMINI_API_KEY}`,
+          { method: 'DELETE' }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API error: ${errorText}`);
+        }
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

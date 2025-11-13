@@ -1,32 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenerativeAI, FileState } from "npm:@google/generative-ai@0.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function getAiClient(): GoogleGenerativeAI {
-  const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  return new GoogleGenerativeAI(apiKey);
-}
-
-function basenameSafe(p: string): string {
-  const i = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
-  return i >= 0 ? p.slice(i + 1) : p;
-}
-
-async function waitForFile(ai: GoogleGenerativeAI, fileName: string): Promise<void> {
-  let file = await ai.files.get(fileName);
-  while (file.state === FileState.PROCESSING) {
-    await new Promise(r => setTimeout(r, 3000));
-    file = await ai.files.get(fileName);
-  }
-  if (file.state === FileState.FAILED) {
-    throw new Error("File processing failed");
-  }
-}
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -34,15 +14,27 @@ serve(async (req) => {
   }
 
   try {
+    if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
+
     const { operation, storeName, documentName } = await req.json();
-    const ai = getAiClient();
 
     switch (operation) {
       case 'list': {
         if (!storeName) throw new Error("storeName required for list");
         
-        // List documents in corpus
-        const documents = await ai.corpora.documents.list(storeName);
+        const response = await fetch(
+          `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
+          { method: 'GET' }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API error: ${errorText}`);
+        }
+
+        const data = await response.json();
+        const documents = data.documents || [];
+        
         const result = documents.map((doc: any) => ({
           name: doc.name,
           displayName: doc.displayName || doc.name?.split("/").pop() || "Untitled Document",
@@ -63,31 +55,67 @@ serve(async (req) => {
         
         if (!file) throw new Error("No file provided");
 
-        // Upload file to Gemini Files API
+        // First, upload file to Files API
         const fileBuffer = await (file as File).arrayBuffer();
-        const uploadedFile = await ai.files.upload({
-          file: {
-            data: new Uint8Array(fileBuffer),
-            mimeType: (file as File).type,
-          },
-          config: {
-            displayName: displayName || (file as File).name,
-          },
-        });
+        const fileBlob = new Blob([fileBuffer], { type: (file as File).type });
+        
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', fileBlob, (file as File).name);
 
-        // Wait for file processing
-        await waitForFile(ai, uploadedFile.name);
+        const uploadResponse = await fetch(
+          `${GEMINI_API_BASE}/files?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            body: uploadFormData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          throw new Error(`File upload error: ${errorText}`);
+        }
+
+        const uploadedFile = await uploadResponse.json();
+
+        // Wait for file to be processed
+        let fileData = uploadedFile;
+        let attempts = 0;
+        while (fileData.state === 'PROCESSING' && attempts < 30) {
+          await new Promise(r => setTimeout(r, 2000));
+          const checkResponse = await fetch(
+            `${GEMINI_API_BASE}/files/${fileData.name.split('/').pop()}?key=${GEMINI_API_KEY}`,
+            { method: 'GET' }
+          );
+          fileData = await checkResponse.json();
+          attempts++;
+        }
+
+        if (fileData.state === 'FAILED') {
+          throw new Error('File processing failed');
+        }
 
         // Create document in corpus
-        await ai.corpora.documents.create(storeName, {
-          displayName: displayName || (file as File).name,
-          parts: [{
-            fileData: {
-              fileUri: uploadedFile.uri,
-              mimeType: uploadedFile.mimeType,
-            },
-          }],
-        });
+        const createDocResponse = await fetch(
+          `${GEMINI_API_BASE}/${storeName}/documents?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              displayName: displayName || (file as File).name,
+              parts: [{
+                fileData: {
+                  fileUri: fileData.uri,
+                  mimeType: fileData.mimeType,
+                },
+              }],
+            }),
+          }
+        );
+
+        if (!createDocResponse.ok) {
+          const errorText = await createDocResponse.text();
+          throw new Error(`Document creation error: ${errorText}`);
+        }
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -97,7 +125,15 @@ serve(async (req) => {
       case 'delete': {
         if (!documentName) throw new Error("documentName required for delete");
         
-        await ai.corpora.documents.delete(documentName);
+        const response = await fetch(
+          `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}`,
+          { method: 'DELETE' }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API error: ${errorText}`);
+        }
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

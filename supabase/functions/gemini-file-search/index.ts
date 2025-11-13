@@ -26,7 +26,7 @@ serve(async (req) => {
 
     const ai = getAiClient();
     const model = ai.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
     });
 
     let finalQuery = query;
