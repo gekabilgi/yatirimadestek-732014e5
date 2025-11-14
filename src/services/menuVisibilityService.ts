@@ -35,6 +35,7 @@ export const menuVisibilityService = {
         menu_item_yatirim_firsatlari: { ...DEFAULT_VISIBILITY },
         menu_item_yatirimci_sozlugu: { ...DEFAULT_VISIBILITY },
         menu_item_basvuru_sureci: { ...DEFAULT_VISIBILITY },
+        menu_item_chat: { admin: true, registered: true, anonymous: false },
       };
 
       data?.forEach((row) => {
@@ -63,6 +64,7 @@ export const menuVisibilityService = {
         menu_item_yatirim_firsatlari: { ...DEFAULT_VISIBILITY },
         menu_item_yatirimci_sozlugu: { ...DEFAULT_VISIBILITY },
         menu_item_basvuru_sureci: { ...DEFAULT_VISIBILITY },
+        menu_item_chat: { admin: true, registered: true, anonymous: false },
       };
     }
   },

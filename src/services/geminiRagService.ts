@@ -158,3 +158,16 @@ export async function clearActiveStore(): Promise<void> {
   await adminSettingsService.setActiveGeminiStore(null);
   localStorage.removeItem(ACTIVE_STORE_KEY);
 }
+
+export const geminiRagService = {
+  listRagStores,
+  createRagStore,
+  deleteRagStore,
+  listDocuments,
+  uploadDocument,
+  deleteDocument,
+  fileSearch,
+  getActiveStore,
+  setActiveStore,
+  clearActiveStore,
+};
