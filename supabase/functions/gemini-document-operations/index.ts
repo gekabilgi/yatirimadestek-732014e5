@@ -49,26 +49,43 @@ serve(async (req) => {
         console.log('Listing documents for store:', storeName);
         
         const normalizedStoreName = storeName.startsWith('fileSearchStores/') ? storeName : `fileSearchStores/${storeName}`;
-        const response = await fetch(
-          `${GEMINI_API_BASE}/${normalizedStoreName}/documents?key=${GEMINI_API_KEY}`,
-          { method: 'GET' }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('List documents failed:', errorText);
-          throw new Error(`Gemini API error: ${errorText}`);
-        }
-
-        const data = await response.json();
-        const documents = data.documents || [];
         
-        console.log(`Found ${documents.length} documents`);
+        // Fetch all documents with pagination
+        let allDocuments: any[] = [];
+        let pageToken: string | undefined = undefined;
         
-        const result = documents.map((doc: any) => ({
+        do {
+          const url = new URL(`${GEMINI_API_BASE}/${normalizedStoreName}/documents`);
+          url.searchParams.set('key', GEMINI_API_KEY);
+          url.searchParams.set('pageSize', '100'); // Max page size
+          if (pageToken) {
+            url.searchParams.set('pageToken', pageToken);
+          }
+          
+          const response = await fetch(url.toString(), { method: 'GET' });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('List documents failed:', errorText);
+            throw new Error(`Gemini API error: ${errorText}`);
+          }
+
+          const data = await response.json();
+          const documents = data.documents || [];
+          allDocuments = allDocuments.concat(documents);
+          pageToken = data.nextPageToken;
+          
+          console.log(`Fetched ${documents.length} documents (total: ${allDocuments.length})`);
+        } while (pageToken);
+        
+        console.log(`Found ${allDocuments.length} total documents`);
+        
+        const result = allDocuments.map((doc: any) => ({
           name: doc.name,
           displayName: doc.displayName || doc.name?.split("/").pop() || "Untitled Document",
           customMetadata: doc.customMetadata || [],
+          createTime: doc.createTime,
+          sizeBytes: doc.sizeBytes,
         }));
 
         return new Response(JSON.stringify(result), {
