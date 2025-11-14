@@ -196,6 +196,9 @@ serve(async (req) => {
           },
         });
 
+        if (!op) {
+          throw new Error("Upload operation failed to start");
+        }
         const operationName = typeof op === 'string' ? op : op.name;
         console.log("🟡 Upload operation started:", operationName);
 
