@@ -32,6 +32,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 export const GeminiStoreManager = () => {
   const { toast } = useToast();
@@ -42,6 +50,8 @@ export const GeminiStoreManager = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     loadStores();
@@ -51,6 +61,7 @@ export const GeminiStoreManager = () => {
   useEffect(() => {
     if (selectedStore) {
       loadDocuments(selectedStore);
+      setCurrentPage(1);
     } else {
       setDocuments([]);
     }
@@ -319,6 +330,7 @@ export const GeminiStoreManager = () => {
             <CardDescription>
               Manage documents in{' '}
               {stores.find((s) => s.name === selectedStore)?.displayName || selectedStore}
+              {documents.length > 0 && ` (${documents.length} document${documents.length === 1 ? '' : 's'})`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -342,35 +354,92 @@ export const GeminiStoreManager = () => {
             ) : documents.length === 0 ? (
               <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Document Name</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {documents.map((doc) => (
-                    <TableRow key={doc.name}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          {doc.displayName}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteDocument(doc.name)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Document Name</TableHead>
+                      <TableHead>Upload Date & Time</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {documents
+                      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                      .map((doc) => (
+                        <TableRow key={doc.name}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              {doc.displayName}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {doc.createTime
+                                ? new Date(doc.createTime).toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })
+                                : 'N/A'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteDocument(doc.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+                {documents.length > itemsPerPage && (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                          className={
+                            currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                          }
+                        />
+                      </PaginationItem>
+                      {Array.from({ length: Math.ceil(documents.length / itemsPerPage) }, (_, i) => i + 1).map(
+                        (page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      )}
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() =>
+                            setCurrentPage((p) => Math.min(Math.ceil(documents.length / itemsPerPage), p + 1))
+                          }
+                          className={
+                            currentPage === Math.ceil(documents.length / itemsPerPage)
+                              ? 'pointer-events-none opacity-50'
+                              : 'cursor-pointer'
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

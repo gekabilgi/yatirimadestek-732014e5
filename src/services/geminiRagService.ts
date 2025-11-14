@@ -8,7 +8,8 @@ export type RagStore = {
 export type Document = { 
   name: string; 
   displayName: string; 
-  customMetadata: { key: string; stringValue: string }[] 
+  customMetadata: { key: string; stringValue: string }[];
+  createTime?: string;
 };
 
 export type QueryResult = { 
