@@ -10,6 +10,7 @@ export type Document = {
   displayName: string; 
   customMetadata: { key: string; stringValue: string }[];
   createTime?: string;
+  sizeBytes?: string;
 };
 
 export type QueryResult = { 
@@ -60,6 +61,8 @@ export async function listDocuments(storeName: string): Promise<Document[]> {
       d.name?.split('/')?.pop() ||
       'Untitled Document',
     customMetadata: d.customMetadata || [],
+    createTime: d.createTime,
+    sizeBytes: d.sizeBytes,
   }));
 }
 
