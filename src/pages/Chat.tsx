@@ -31,10 +31,10 @@ export default function Chat() {
   useEffect(() => {
     const initialize = async () => {
       await loadActiveStore();
-      await loadSessions();
+      const loadedSessions = await loadSessions();
       
       // Create first session if none exists after loading
-      if (sessions.length === 0) {
+      if (loadedSessions.length === 0) {
         await createSession();
       }
     };

@@ -101,14 +101,37 @@ Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatı
       throw e;
     }
 
+    // Extract sources with proper filename handling
+    const sources = groundingChunks.map((chunk: any) => {
+      let title = "Document";
+      
+      // Try to get filename from customMetadata
+      if (chunk.retrievedContext?.customMetadata) {
+        const metadata = chunk.retrievedContext.customMetadata;
+        if (Array.isArray(metadata)) {
+          const filenameMeta = metadata.find((m: any) => m.key === 'filename');
+          if (filenameMeta) {
+            title = filenameMeta.stringValue || filenameMeta.value || title;
+          }
+        }
+      }
+      
+      // Fallback to web title if available
+      if (title === "Document" && chunk.web?.title) {
+        title = chunk.web.title;
+      }
+      
+      return {
+        title,
+        uri: chunk.web?.uri || "",
+      };
+    });
+
     return new Response(
       JSON.stringify({
         text: textOut,
         groundingChunks,
-        sources: groundingChunks.map((chunk: any) => ({
-          title: chunk.web?.title || "Document",
-          uri: chunk.web?.uri || "",
-        })),
+        sources,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
