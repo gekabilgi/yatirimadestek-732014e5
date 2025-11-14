@@ -87,7 +87,7 @@ export const GeminiStoreManager = () => {
       setLoading(false);
     }
   };
-
+  console.log(loadDocuments);
   const handleCreateStore = async () => {
     if (!newStoreName.trim()) {
       toast({
@@ -440,24 +440,24 @@ export const GeminiStoreManager = () => {
                               <div className="text-xs text-muted-foreground truncate max-w-md">
                                 {doc.name.split("/").pop()}
                               </div>
-                              
+
                               {doc.customMetadata && doc.customMetadata.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-border text-xs">
                                   <h4 className="font-semibold text-muted-foreground mb-1">Metadata:</h4>
                                   <dl className="space-y-1">
-                                    {doc.customMetadata.map((meta, index) => (
-                                  console.log("meta", meta)
-                                      meta.key && (
-                                        <div key={index} className="flex gap-2">
-                                          <dt className="font-medium text-foreground/80 truncate" title={meta.key}>
-                                            {meta.key}:
-                                          </dt>
-                                          <dd className="text-muted-foreground truncate" title={meta.stringValue}>
-                                            {meta.stringValue}
-                                          </dd>
-                                        </div>
-                                      )
-                                    ))}
+                                    {doc.customMetadata.map(
+                                      (meta, index) =>
+                                        meta.key && (
+                                          <div key={index} className="flex gap-2">
+                                            <dt className="font-medium text-foreground/80 truncate" title={meta.key}>
+                                              {meta.key}:
+                                            </dt>
+                                            <dd className="text-muted-foreground truncate" title={meta.stringValue}>
+                                              {meta.stringValue}
+                                            </dd>
+                                          </div>
+                                        ),
+                                    )}
                                   </dl>
                                 </div>
                               )}
