@@ -90,13 +90,21 @@ serve(async (req) => {
         
         console.log(`Found ${allDocuments.length} total documents`);
         
-        const result = allDocuments.map((doc: any) => ({
-          name: doc.name,
-          displayName: doc.displayName || doc.name?.split("/").pop() || "Untitled Document",
-          customMetadata: doc.customMetadata || [],
-          createTime: doc.createTime,
-          sizeBytes: doc.sizeBytes,
-        }));
+        const result = allDocuments.map((doc: any) => {
+          console.log('Document from Gemini API:', {
+            name: doc.name,
+            displayName: doc.displayName,
+            customMetadata: doc.customMetadata,
+          });
+          
+          return {
+            name: doc.name,
+            displayName: doc.displayName || doc.name?.split("/").pop() || "Untitled Document",
+            customMetadata: doc.customMetadata || [],
+            createTime: doc.createTime,
+            sizeBytes: doc.sizeBytes,
+          };
+        });
 
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
