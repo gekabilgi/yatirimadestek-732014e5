@@ -443,7 +443,6 @@ export const GeminiStoreManager = () => {
 
                               {doc.customMetadata && doc.customMetadata.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-border text-xs">
-                                  <h4 className="font-semibold text-muted-foreground mb-1">Metadata:</h4>
                                   <dl className="space-y-1">
                                     {doc.customMetadata.map(
                                       (meta, index) =>
