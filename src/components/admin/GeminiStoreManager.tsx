@@ -435,11 +435,31 @@ export const GeminiStoreManager = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            <div>
+                            <div className="flex-1">
                               <div className="font-medium">{doc.displayName}</div>
                               <div className="text-xs text-muted-foreground truncate max-w-md">
                                 {doc.name.split("/").pop()}
                               </div>
+                              
+                              {doc.customMetadata && doc.customMetadata.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-border text-xs">
+                                  <h4 className="font-semibold text-muted-foreground mb-1">Metadata:</h4>
+                                  <dl className="space-y-1">
+                                    {doc.customMetadata.map((meta, index) => (
+                                      meta.key && (
+                                        <div key={index} className="flex gap-2">
+                                          <dt className="font-medium text-foreground/80 truncate" title={meta.key}>
+                                            {meta.key}:
+                                          </dt>
+                                          <dd className="text-muted-foreground truncate" title={meta.stringValue}>
+                                            {meta.stringValue}
+                                          </dd>
+                                        </div>
+                                      )
+                                    ))}
+                                  </dl>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </TableCell>

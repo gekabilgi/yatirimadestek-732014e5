@@ -24,6 +24,35 @@ function toGeminiMetadata(meta?: { key: string; stringValue: string }[]): Custom
   return arr.length ? arr : undefined;
 }
 
+async function patchDocumentMetadata(
+  documentName: string, 
+  displayName: string, 
+  customMetadata: CustomMetadata[]
+): Promise<void> {
+  const payload = {
+    displayName,
+    customMetadata,
+  };
+  
+  const url = `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}&updateMask=displayName,customMetadata`;
+  
+  console.log('Patching document metadata:', { documentName, displayName, customMetadata });
+  
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.warn('Failed to PATCH document metadata:', errorText);
+    throw new Error(`PATCH failed: ${errorText}`);
+  }
+  
+  console.log('Successfully patched document metadata:', documentName);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -169,6 +198,32 @@ serve(async (req) => {
           }
 
           console.log('Upload completed successfully via SDK');
+          
+          // PATCH the document to set metadata
+          try {
+            const listUrl = new URL(`${GEMINI_API_BASE}/${normalizedStoreName}/documents`);
+            listUrl.searchParams.set('key', GEMINI_API_KEY!);
+            listUrl.searchParams.set('pageSize', '1');
+            listUrl.searchParams.set('orderBy', 'create_time desc');
+
+            const listResponse = await fetch(listUrl.toString(), { method: 'GET' });
+            if (listResponse.ok) {
+              const listData = await listResponse.json();
+              const latestDoc = listData.documents?.[0];
+              
+              if (latestDoc?.name) {
+                console.log('Patching SDK uploaded document:', latestDoc.name);
+                await patchDocumentMetadata(
+                  latestDoc.name,
+                  finalDisplayName,
+                  customMetadata || []
+                );
+              }
+            }
+          } catch (patchErr) {
+            console.warn('Failed to patch document after SDK upload:', patchErr);
+          }
+          
           return new Response(JSON.stringify({ success: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -317,6 +372,33 @@ serve(async (req) => {
         }
 
         console.log('Upload completed successfully');
+
+        // PATCH the imported document with metadata
+        try {
+          // Get the imported document name from the operation response
+          const opResponse = await fetch(
+            `${GEMINI_API_BASE}/${operationName}?key=${GEMINI_API_KEY}`,
+            { method: 'GET' }
+          );
+          
+          if (opResponse.ok) {
+            const opData = await opResponse.json();
+            const importedDocumentName = opData.response?.documents?.[0]?.name || opData.response?.document?.name;
+            
+            if (importedDocumentName) {
+              console.log('Patching RAW imported document:', importedDocumentName);
+              await patchDocumentMetadata(
+                importedDocumentName,
+                finalDisplayName,
+                toGeminiMetadata(customMetadata) || []
+              );
+            } else {
+              console.warn('Could not find document name in operation response to patch metadata');
+            }
+          }
+        } catch (patchErr) {
+          console.warn('Failed to patch document after RAW import:', patchErr);
+        }
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
