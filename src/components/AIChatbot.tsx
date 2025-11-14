@@ -4,7 +4,20 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Bot, Send, X, Loader2, Sparkles, RotateCcw, Square, Trash2, Download, PlusCircle, History, Search } from "lucide-react";
+import {
+  Bot,
+  Send,
+  X,
+  Loader2,
+  Sparkles,
+  RotateCcw,
+  Square,
+  Trash2,
+  Download,
+  PlusCircle,
+  History,
+  Search,
+} from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -148,36 +161,36 @@ export function AIChatbot() {
 
   const loadChatSessions = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_chat_sessions');
+      const { data, error } = await supabase.rpc("get_chat_sessions");
       if (error) throw error;
       setChatSessions(data || []);
     } catch (error) {
-      console.error('Error loading chat sessions:', error);
+      console.error("Error loading chat sessions:", error);
     }
   };
 
   const loadSessionMessages = async (sessionId: string) => {
     try {
       const { data, error } = await supabase
-        .from('cb_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .from("cb_messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const loadedMessages: Message[] = data.map(msg => ({
+        const loadedMessages: Message[] = data.map((msg) => ({
           id: msg.id,
           role: msg.role as "user" | "assistant",
-          content: msg.content
+          content: msg.content,
         }));
         setMessages(loadedMessages);
         setCurrentSessionId(sessionId);
         setShowHistory(false);
       }
     } catch (error) {
-      console.error('Error loading session messages:', error);
+      console.error("Error loading session messages:", error);
       toast({
         title: "Hata",
         description: "Sohbet geçmişi yüklenemedi",
@@ -188,14 +201,14 @@ export function AIChatbot() {
 
   const saveMessage = async (message: Message, sessionId: string) => {
     try {
-      await supabase.from('cb_messages').insert({
+      await supabase.from("cb_messages").insert({
         id: message.id,
         session_id: sessionId,
         role: message.role,
         content: message.content,
       });
     } catch (error) {
-      console.error('Error saving message:', error);
+      console.error("Error saving message:", error);
     }
   };
 
@@ -219,10 +232,10 @@ export function AIChatbot() {
     const userMsgId = crypto.randomUUID();
     const newUserMsg: Message = { id: userMsgId, role: "user", content: userMessage };
     setMessages((prev) => [...prev, newUserMsg]);
-    
+
     // Save user message to database
     await saveMessage(newUserMsg, currentSessionId);
-    
+
     setIsLoading(true);
     setShouldAutoScroll(true);
 
@@ -236,9 +249,9 @@ export function AIChatbot() {
       }
 
       const { data, error } = await supabase.functions.invoke("chat-gemini", {
-        body: { 
+        body: {
           storeName: activeStoreCache,
-          messages: [...messages, { role: "user", content: userMessage }] 
+          messages: [...messages, { role: "user", content: userMessage }],
         },
       });
 
@@ -249,8 +262,10 @@ export function AIChatbot() {
 
       // Check if response was blocked
       if (data?.blocked === true) {
-        const blockedMessage = data.error || "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.";
-        
+        const blockedMessage =
+          data.error ||
+          "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.";
+
         toast({
           title: "Yanıt Engellenmiş",
           description: blockedMessage,
@@ -258,16 +273,16 @@ export function AIChatbot() {
         });
 
         const assistantId = crypto.randomUUID();
-        const blockedMsg: Message = { 
-          id: assistantId, 
-          role: "assistant", 
-          content: `⚠️ ${blockedMessage}` 
+        const blockedMsg: Message = {
+          id: assistantId,
+          role: "assistant",
+          content: `⚠️ ${blockedMessage}`,
         };
-        
+
         setMessages((prev) => [...prev, blockedMsg]);
         await saveMessage(blockedMsg, currentSessionId);
         loadChatSessions();
-        
+
         setIsLoading(false);
         return;
       }
@@ -303,20 +318,20 @@ export function AIChatbot() {
       // Ensure full response is shown
       const finalAssistantMsg: Message = { id: assistantId, role: "assistant", content: fullResponse };
       setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? finalAssistantMsg : msg)));
-      
+
       // Save assistant message to database
       await saveMessage(finalAssistantMsg, currentSessionId);
-      
+
       // Reload sessions to update list
       loadChatSessions();
 
       setIsStreaming(false);
     } catch (error: any) {
       console.error("Chat error:", error);
-      console.error("Chat error details:", { 
-        message: error.message, 
+      console.error("Chat error details:", {
+        message: error.message,
         status: error.status,
-        context: error.context 
+        context: error.context,
       });
 
       let errorMessage = "Bir hata oluştu. Lütfen tekrar deneyin.";
@@ -410,13 +425,11 @@ export function AIChatbot() {
     }
   };
 
-  const filteredSessions = chatSessions.filter(session =>
-    session.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSessions = chatSessions.filter((session) =>
+    session.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const displayedSessions = showAllHistory 
-    ? filteredSessions 
-    : filteredSessions.slice(0, 10);
+  const displayedSessions = showAllHistory ? filteredSessions : filteredSessions.slice(0, 10);
 
   return (
     <>
@@ -435,11 +448,11 @@ export function AIChatbot() {
       {/* Chat Modal */}
       {isOpen && (
         <Card
-          className={`fixed ${isMobile ? "top-16 left-0 right-0 bottom-0" : "bottom-6 right-6 w-[480px] h-[680px]"} shadow-2xl z-50 flex ${showHistory ? 'flex-row' : 'flex-col'} border-2 animate-in slide-in-from-bottom-5 duration-300`}
+          className={`fixed ${isMobile ? "top-16 left-0 right-0 bottom-0" : "bottom-6 right-6 w-[480px] h-[680px]"} shadow-2xl z-50 flex ${showHistory ? "flex-row" : "flex-col"} border-2 animate-in slide-in-from-bottom-5 duration-300`}
         >
           {/* Chat History Sidebar */}
           {showHistory && (
-            <div className={`${isMobile ? 'absolute inset-0 bg-background z-10' : 'w-64'} border-r flex flex-col`}>
+            <div className={`${isMobile ? "absolute inset-0 bg-background z-10" : "w-64"} border-r flex flex-col`}>
               <div className="p-3 border-b">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-sm flex items-center gap-2">
@@ -447,12 +460,7 @@ export function AIChatbot() {
                     Sohbet Geçmişi
                   </h3>
                   {isMobile && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowHistory(false)}
-                      className="h-6 w-6"
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => setShowHistory(false)} className="h-6 w-6">
                       <X className="h-4 w-4" />
                     </Button>
                   )}
@@ -474,7 +482,7 @@ export function AIChatbot() {
                       key={session.session_id}
                       onClick={() => loadSessionMessages(session.session_id)}
                       className={`w-full text-left p-2 rounded-lg hover:bg-muted transition-colors text-sm ${
-                        currentSessionId === session.session_id ? 'bg-muted' : ''
+                        currentSessionId === session.session_id ? "bg-muted" : ""
                       }`}
                     >
                       <div className="truncate">{session.title}</div>
@@ -482,7 +490,7 @@ export function AIChatbot() {
                   ))}
                   {filteredSessions.length === 0 && (
                     <p className="text-center text-muted-foreground text-xs py-4">
-                      {searchQuery ? 'Sonuç bulunamadı' : 'Henüz sohbet yok'}
+                      {searchQuery ? "Sonuç bulunamadı" : "Henüz sohbet yok"}
                     </p>
                   )}
                 </div>
@@ -495,7 +503,7 @@ export function AIChatbot() {
                     onClick={() => setShowAllHistory(!showAllHistory)}
                     className="w-full text-xs"
                   >
-                    {showAllHistory ? 'Daha Az Göster' : `${filteredSessions.length - 10} Daha Fazla`}
+                    {showAllHistory ? "Daha Az Göster" : `${filteredSessions.length - 10} Daha Fazla`}
                   </Button>
                 </div>
               )}
@@ -504,146 +512,144 @@ export function AIChatbot() {
 
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
-                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 absolute -top-1 -right-1 text-yellow-300" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm sm:text-base">AI Asistan</h3>
-                <p className="text-xs opacity-90 hidden sm:block">Sorularınızı cevaplayabilirim</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20 h-8 w-8"
-              aria-label="Kapat"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-1 sm:gap-2 p-2 border-b bg-muted/30">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-              className="flex-1 text-xs sm:text-sm h-8"
-            >
-              <History className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Geçmiş</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleNewChat}
-              className="flex-1 text-xs sm:text-sm h-8"
-              disabled={isLoading}
-            >
-              <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Yeni</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClear}
-              className="flex-1 text-xs sm:text-sm h-8"
-              disabled={isLoading || messages.length === 0}
-            >
-              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Temizle</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleExport}
-              className="flex-1 text-xs sm:text-sm h-8"
-              disabled={messages.length === 0}
-            >
-              <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Dışa Aktar</span>
-            </Button>
-          </div>
-
-          {/* Messages */}
-          <div 
-            className="flex-1 overflow-y-auto overflow-x-hidden" 
-            ref={scrollRef} 
-            onScroll={handleScroll}
-          >
-            <div className="space-y-4 p-3 sm:p-4">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-
-              {isLoading && !isStreaming && (
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg">
-                    <TypingDots />
-                  </div>
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 absolute -top-1 -right-1 text-yellow-300" />
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Stop/Regenerate Button */}
-          {(isStreaming ||
-            (!isLoading && messages.length > 1 && messages[messages.length - 1].role === "assistant")) && (
-            <div className="px-3 sm:px-4 pb-2">
+                <div>
+                  <h3 className="font-semibold text-sm sm:text-base">AI Asistan</h3>
+                  <p className="text-xs opacity-90 hidden sm:block">
+                    Yatırım Teşvik ve Destekleri Hakkındaki Sorularınızı cevaplayabilirim
+                  </p>
+                </div>
+              </div>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={isStreaming ? handleStop : handleRegenerate}
-                className="w-full text-xs sm:text-sm h-8"
-              >
-                {isStreaming ? (
-                  <>
-                    <Square className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Durdur
-                  </>
-                ) : (
-                  <>
-                    <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Yeniden Oluştur
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-
-          {/* Input */}
-          <div className="p-3 sm:p-4 border-t">
-            <div className="flex gap-2">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Sorunuzu yazın..."
-                className="resize-none text-sm"
-                rows={2}
-                disabled={isLoading}
-                aria-label="Soru girin"
-              />
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                variant="ghost"
                 size="icon"
-                className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto min-w-[44px]"
-                aria-label="Gönder"
+                onClick={() => setIsOpen(false)}
+                className="text-white hover:bg-white/20 h-8 w-8"
+                aria-label="Kapat"
               >
-                {isLoading && !isStreaming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-1 sm:gap-2 p-2 border-b bg-muted/30">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowHistory(!showHistory)}
+                className="flex-1 text-xs sm:text-sm h-8"
+              >
+                <History className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Geçmiş</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleNewChat}
+                className="flex-1 text-xs sm:text-sm h-8"
+                disabled={isLoading}
+              >
+                <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Yeni</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClear}
+                className="flex-1 text-xs sm:text-sm h-8"
+                disabled={isLoading || messages.length === 0}
+              >
+                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Temizle</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExport}
+                className="flex-1 text-xs sm:text-sm h-8"
+                disabled={messages.length === 0}
+              >
+                <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Dışa Aktar</span>
+              </Button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={scrollRef} onScroll={handleScroll}>
+              <div className="space-y-4 p-3 sm:p-4">
+                {messages.map((message) => (
+                  <MessageBubble key={message.id} message={message} />
+                ))}
+
+                {isLoading && !isStreaming && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-lg">
+                      <TypingDots />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stop/Regenerate Button */}
+            {(isStreaming ||
+              (!isLoading && messages.length > 1 && messages[messages.length - 1].role === "assistant")) && (
+              <div className="px-3 sm:px-4 pb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={isStreaming ? handleStop : handleRegenerate}
+                  className="w-full text-xs sm:text-sm h-8"
+                >
+                  {isStreaming ? (
+                    <>
+                      <Square className="h-3 w-3 sm:h-4 sm:w-4" />
+                      Durdur
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+                      Yeniden Oluştur
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Input */}
+            <div className="p-3 sm:p-4 border-t">
+              <div className="flex gap-2">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Sorunuzu yazın..."
+                  className="resize-none text-sm"
+                  rows={2}
+                  disabled={isLoading}
+                  aria-label="Soru girin"
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isLoading}
+                  size="icon"
+                  className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto min-w-[44px]"
+                  aria-label="Gönder"
+                >
+                  {isLoading && !isStreaming ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </Card>
       )}
