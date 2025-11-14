@@ -215,13 +215,25 @@ serve(async (req) => {
         // STEP 3: Import file into store using the correct REST API format
         console.log("🟡 STEP 5: Importing file into store with metadata...");
 
+        // Filter custom metadata (exclude internal metadata like fileName, uploadDate)
+        const customOnlyMetadata = metadata.filter(m => 
+          m.key !== 'fileName' && m.key !== 'uploadDate'
+        );
+
         // Use the correct SDK-based import pattern
         const importUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFile?key=${GEMINI_API_KEY}`;
-        const importPayload = {
+        const importPayload: any = {
           fileName: fileResourceName,
         };
+
+        // Add config with customMetadata if we have any
+        if (customOnlyMetadata.length > 0) {
+          importPayload.config = {
+            customMetadata: customOnlyMetadata,
+          };
+        }
         
-        console.log("🟡 Import payload:", JSON.stringify(importPayload, null, 2));
+        console.log("🟡 Import payload with metadata:", JSON.stringify(importPayload, null, 2));
         
         const importResponse = await fetch(importUrl, {
           method: "POST",
