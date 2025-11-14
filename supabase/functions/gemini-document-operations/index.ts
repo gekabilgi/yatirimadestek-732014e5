@@ -24,42 +24,7 @@ function toGeminiMetadata(meta?: { key: string; stringValue: string }[]): Custom
   return arr.length ? arr : undefined;
 }
 
-async function patchDocumentMetadata(
-  documentName: string,
-  displayName: string,
-  customMetadata: CustomMetadata[],
-): Promise<void> {
-  const payload = {
-    displayName,
-    customMetadata,
-  };
-
-  const url = `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}&updateMask=displayName,customMetadata`;
-
-  console.log("🟣 STEP 6: PATCH Request Details:");
-  console.log("🟣 URL:", url.replace(GEMINI_API_KEY!, "REDACTED"));
-  console.log("🟣 Payload:", JSON.stringify(payload, null, 2));
-
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("❌ PATCH FAILED:", errorText);
-    throw new Error(`PATCH failed: ${errorText}`);
-  }
-
-  // Log the PATCH response
-  const patchResult = await response.json();
-  console.log("✅ STEP 7: PATCH Response from API:");
-  console.log("✅ Response displayName:", patchResult?.displayName);
-  console.log("✅ Response customMetadata:", JSON.stringify(patchResult?.customMetadata, null, 2));
-
-  console.log("✅ Successfully patched document metadata");
-}
+// Removed patchDocumentMetadata - metadata is now set during import
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -170,115 +135,28 @@ serve(async (req) => {
 
         if (!file) throw new Error("No file provided");
 
-        // Normalize store name to required prefix
         const normalizedStoreName =
           storeName && storeName.startsWith("fileSearchStores/") ? storeName : `fileSearchStores/${storeName}`;
-        console.log("Starting file upload for store:", normalizedStoreName);
 
-        // Try ONE-STEP upload via SDK first; fall back to RAW+import if it fails
-        try {
-          const ai = getAiClient();
-          const finalDisplayName = (displayName as string) || (file as File).name || "uploaded-file";
-
-          const customMetadata = toGeminiMetadata([
-            { key: "fileName", stringValue: finalDisplayName },
-            { key: "uploadDate", stringValue: new Date().toISOString() },
-          ]);
-
-          console.log("🔵 STEP 1: Created customMetadata:", JSON.stringify(customMetadata, null, 2));
-          console.log("🔵 finalDisplayName:", finalDisplayName);
-          console.log("🔵 Original file name:", (file as File).name);
-
-          const uploadConfig = {
-            displayName: finalDisplayName,
-            metadata: customMetadata,
-          };
-
-          console.log("🔵 STEP 2: SDK upload config:", JSON.stringify(uploadConfig, null, 2));
-
-          const op: any = await (ai as any).fileSearchStores.uploadToFileSearchStore({
-            file: file as File,
-            fileSearchStoreName: normalizedStoreName,
-            config: uploadConfig,
-          });
-
-          const sdkOperationName = op?.name;
-          console.log("SDK upload started:", sdkOperationName);
-
-          // Poll operation until done
-          if (sdkOperationName) {
-            let attempts = 0;
-            let done = false;
-            while (!done && attempts < 30) {
-              await new Promise((r) => setTimeout(r, 3000));
-              const opResp = await fetch(`${GEMINI_API_BASE}/${sdkOperationName}?key=${GEMINI_API_KEY}`, {
-                method: "GET",
-              });
-              if (!opResp.ok) {
-                const t = await opResp.text();
-                console.error("SDK operation check failed:", t);
-                throw new Error(`SDK operation check failed: ${t}`);
-              }
-              const opData = await opResp.json();
-              done = opData.done === true;
-              attempts++;
-              console.log(`SDK import check ${attempts}:`, done ? "done" : "processing");
-              if (opData.error) {
-                console.error("SDK import failed:", opData.error);
-                throw new Error(`SDK import failed: ${JSON.stringify(opData.error)}`);
-              }
-            }
-          }
-
-          console.log("🟢 STEP 3: Upload completed successfully via SDK");
-          console.log("🟢 Now fetching latest document to verify metadata...");
-
-          // PATCH the document to set metadata
-          try {
-            const listUrl = new URL(`${GEMINI_API_BASE}/${normalizedStoreName}/documents`);
-            listUrl.searchParams.set("key", GEMINI_API_KEY!);
-            listUrl.searchParams.set("pageSize", "1");
-            listUrl.searchParams.set("orderBy", "create_time desc");
-
-            const listResponse = await fetch(listUrl.toString(), { method: "GET" });
-            if (listResponse.ok) {
-              const listData = await listResponse.json();
-              const latestDoc = listData.documents?.[0];
-
-              console.log("🟡 STEP 4: Latest document from API BEFORE PATCH:");
-              console.log("🟡 Document name:", latestDoc?.name);
-              console.log("🟡 Document displayName:", latestDoc?.displayName);
-              console.log("🟡 Document customMetadata:", JSON.stringify(latestDoc?.customMetadata, null, 2));
-
-              if (latestDoc?.name) {
-                console.log("🟠 STEP 5: Calling patchDocumentMetadata with:");
-                console.log("🟠 Document name:", latestDoc.name);
-                console.log("🟠 Display name:", finalDisplayName);
-                console.log("🟠 Custom metadata:", JSON.stringify(customMetadata, null, 2));
-
-                await patchDocumentMetadata(latestDoc.name, finalDisplayName, customMetadata || []);
-              }
-            }
-          } catch (patchErr) {
-            console.warn("Failed to patch document after SDK upload:", patchErr);
-          }
-
-          return new Response(JSON.stringify({ success: true }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        } catch (sdkErr) {
-          console.warn(
-            "SDK upload failed, falling back to RAW upload:",
-            sdkErr && (sdkErr as any).message ? (sdkErr as any).message : sdkErr,
-          );
-        }
+        console.log("🔵 Starting TWO-STEP upload process for store:", normalizedStoreName);
 
         const fileBuffer = await (file as File).arrayBuffer();
         const fileName = (file as File).name;
         const mimeType = (file as File).type || "application/octet-stream";
+        const finalDisplayName = displayName || fileName;
 
-        // Step 1: Upload file bytes to Gemini Files API using RAW protocol (works reliably in Deno)
-        // IMPORTANT: Encode filename to ASCII for HTTP header (fixes ByteString error with Turkish chars)
+        // Prepare metadata including fileName
+        const metadata = [
+          { key: "fileName", stringValue: finalDisplayName },
+          { key: "uploadDate", stringValue: new Date().toISOString() },
+        ];
+
+        console.log("🔵 STEP 1: Prepared metadata:", JSON.stringify(metadata, null, 2));
+        console.log("🔵 File name:", fileName);
+        console.log("🔵 Display name:", finalDisplayName);
+
+        // STEP 1: Upload to Files API
+        console.log("🟢 STEP 2: Uploading to Files API...");
         const encodedFileName = encodeURIComponent(fileName);
         const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`;
         const uploadResponse = await fetch(uploadUrl, {
@@ -293,190 +171,84 @@ serve(async (req) => {
 
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
-          console.error("File upload failed:", errorText);
-          throw new Error(`File upload failed: ${errorText}`);
+          throw new Error(`Files API upload failed: ${errorText}`);
         }
 
-        // Some environments return empty body on .json(); safely parse text
         const uploadText = await uploadResponse.text();
-        let uploadData: any;
-        try {
-          uploadData = uploadText ? JSON.parse(uploadText) : {};
-        } catch (e) {
-          console.error("Invalid JSON in upload response:", uploadText);
-          throw new Error("Upload returned invalid JSON");
-        }
+        const uploadedFile = uploadText ? JSON.parse(uploadText) : {};
+        const fileResourceName = uploadedFile.name || uploadedFile?.file?.name;
 
-        const fileResourceName = uploadData.name || uploadData?.file?.name;
         if (!fileResourceName) {
-          console.error("No file resource name in response:", uploadData);
           throw new Error("Upload did not return a file resource name");
         }
-        console.log("File uploaded:", fileResourceName, "displayName:", displayName || fileName);
 
-        // Step 2: Import file into store
-        // Step 2: Import file into store (try primary endpoint, then fallback to alternate RPC if needed)
-        let importData: any | undefined;
+        console.log("🟢 STEP 3: File uploaded to Files API:", fileResourceName);
 
-        const finalDisplayName = displayName || fileName;
-
-        const customMetadata = [
-          { key: "fileName", stringValue: finalDisplayName },
-          { key: "uploadDate", stringValue: new Date().toISOString() },
-        ];
-
-        const primaryImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
-        const primaryPayload = {
-          fileName: fileResourceName,
-          displayName: finalDisplayName,
-          metadata: toGeminiMetadata(customMetadata),
-        };
-        console.log("Importing file into store using documents:import", {
-          storeName: normalizedStoreName,
-          fileResourceName,
-          displayName: finalDisplayName,
-          metadata: customMetadata,
+        // STEP 2: Set display name on the uploaded file
+        const patchFileUrl = `${GEMINI_API_BASE}/${fileResourceName}?key=${GEMINI_API_KEY}&updateMask=displayName`;
+        const patchFileResponse = await fetch(patchFileUrl, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ displayName: finalDisplayName }),
         });
 
-        let importResponse = await fetch(primaryImportUrl, {
+        if (!patchFileResponse.ok) {
+          console.warn("⚠️ Failed to set displayName on file, continuing anyway");
+        } else {
+          console.log("🟢 STEP 4: Display name set on file");
+        }
+
+        // STEP 3: Import file into store WITH metadata
+        console.log("🟡 STEP 5: Importing file into store with metadata...");
+        const importUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
+        const importResponse = await fetch(importUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(primaryPayload),
+          body: JSON.stringify({
+            fileName: fileResourceName,
+            customMetadata: toGeminiMetadata(metadata),
+          }),
         });
 
         if (!importResponse.ok) {
           const errorText = await importResponse.text();
-          console.error("Import failed with status:", importResponse.status);
-          console.error("Import error response:", errorText);
-          console.error("Import request was for file:", fileResourceName, "to store:", storeName);
-
-          if (importResponse.status === 404) {
-            // Some environments expose an alternate RPC for FileSearch stores
-            const altImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFiles?key=${GEMINI_API_KEY}`;
-            const altPayload = {
-              files: [
-                {
-                  file: fileResourceName,
-                  displayName: finalDisplayName,
-                  metadata: toGeminiMetadata(customMetadata),
-                },
-              ],
-            };
-            console.warn("Primary import 404. Trying alternate import RPC importFiles", {
-              altImportUrl,
-              displayName: finalDisplayName,
-              metadata: customMetadata,
-            });
-
-            const altResp = await fetch(altImportUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(altPayload),
-            });
-
-            if (!altResp.ok) {
-              const altText = await altResp.text();
-              console.error("Alternate import (importFiles) failed with status:", altResp.status);
-              console.error("Alternate import error response:", altText);
-              throw new Error(
-                `Import failed after fallback. documents:import(${importResponse.status}) -> importFiles(${altResp.status})`,
-              );
-            }
-
-            importData = await altResp.json();
-          } else {
-            throw new Error(`Import failed (${importResponse.status}): ${errorText || "No error details"}`);
-          }
-        } else {
-          importData = await importResponse.json();
+          throw new Error(`Import failed: ${errorText}`);
         }
 
-        // Note: legacy importResponse error handling block removed due to new fallback logic above
+        const importOp = await importResponse.json();
+        console.log("🟡 STEP 6: Import operation started:", importOp.name);
 
-        const operationName = importData.name;
-        console.log("Import operation started:", operationName);
-
-        // Step 3: Poll for operation completion
+        // STEP 4: Poll the operation until complete
+        let operation = importOp;
         let attempts = 0;
-        let operationComplete = false;
+        const maxAttempts = 60; // 3 minutes max
 
-        while (!operationComplete && attempts < 30) {
-          await new Promise((r) => setTimeout(r, 3000));
+        while (!operation.done && attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
 
-          const opResponse = await fetch(`${GEMINI_API_BASE}/${operationName}?key=${GEMINI_API_KEY}`, {
+          const pollResponse = await fetch(`${GEMINI_API_BASE}/${operation.name}?key=${GEMINI_API_KEY}`, {
             method: "GET",
           });
 
-          if (!opResponse.ok) {
-            const errorText = await opResponse.text();
-            console.error("Operation check failed:", errorText);
-            throw new Error(`Operation check failed: ${errorText}`);
+          if (!pollResponse.ok) {
+            throw new Error("Failed to poll operation status");
           }
 
-          const opData = await opResponse.json();
-          operationComplete = opData.done === true;
+          operation = await pollResponse.json();
           attempts++;
-          console.log(`Import check ${attempts}:`, operationComplete ? "done" : "processing");
-
-          if (opData.error) {
-            console.error("Import failed:", opData.error);
-            throw new Error(`Import failed: ${JSON.stringify(opData.error)}`);
-          }
+          console.log(`🔄 Polling attempt ${attempts}: done=${operation.done}`);
         }
 
-        console.log("Upload completed successfully");
-
-        // PATCH the imported document with metadata
-        try {
-          // Get the imported document name from the operation response
-          const opResponse = await fetch(`${GEMINI_API_BASE}/${operationName}?key=${GEMINI_API_KEY}`, {
-            method: "GET",
-          });
-
-          if (opResponse.ok) {
-            const opData = await opResponse.json();
-            const importedDocumentName = opData.response?.documents?.[0]?.name || opData.response?.document?.name;
-
-            if (importedDocumentName) {
-              console.log("🟠 RAW: Calling patchDocumentMetadata with:");
-              console.log("🟠 RAW: Document name:", importedDocumentName);
-              console.log("🟠 RAW: Display name:", finalDisplayName);
-              console.log("🟠 RAW: Custom metadata:", JSON.stringify(toGeminiMetadata(customMetadata), null, 2));
-
-              await patchDocumentMetadata(
-                importedDocumentName,
-                finalDisplayName,
-                toGeminiMetadata(customMetadata) || [],
-              );
-            } else {
-              console.warn("Could not find document name in operation response to patch metadata");
-            }
-          }
-        } catch (patchErr) {
-          console.warn("Failed to patch document after RAW import:", patchErr);
+        if (!operation.done) {
+          throw new Error("Import operation timed out");
         }
 
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      case "delete": {
-        if (!documentName) throw new Error("documentName required for delete");
-
-        console.log("Deleting document:", documentName);
-
-        const response = await fetch(`${GEMINI_API_BASE}/${documentName}?force=true&key=${GEMINI_API_KEY}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Delete failed:", errorText);
-          throw new Error(`Gemini API error: ${errorText}`);
+        if (operation.error) {
+          throw new Error(`Import operation failed: ${JSON.stringify(operation.error)}`);
         }
 
-        console.log("Document deleted successfully");
+        console.log("✅ STEP 7: Import completed successfully!");
+        console.log("✅ Document should now have customMetadata set");
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
