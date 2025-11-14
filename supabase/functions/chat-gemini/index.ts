@@ -33,7 +33,7 @@ Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda y
 Verilen dökümanlardan yararlanarak doğru ve güncel bilgiler ver. 
 Türkçe konuş ve profesyonel bir üslup kullan.
 Konudan saptıracak gereksiz bilgi verme.
-Mümkün olduğunca kısa ve net cevaplar ver.
+Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
 Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve sorunun bağlamına göre cevabı bulduğun yerlerle birleştirerek ver. `;
 
     // Build conversation history with system instruction
