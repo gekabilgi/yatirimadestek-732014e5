@@ -30,12 +30,11 @@ serve(async (req) => {
 
     const systemInstruction = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
-Verilen dökümanlardan yararlanarak doğru ve güncel bilgiler ver. 
+Verilen dökümanlardan yararlanarak bilgileri KENDI KELİMELERİNLE özetle ve yeniden formüle et.
+Dökümanlardan aldığın bilgiyi aynen kopyalama, anlamını koruyarak sentetle ve açıkla.
 Türkçe konuş ve profesyonel bir üslup kullan.
-Konudan saptıracak gereksiz bilgi verme.
-Verilen dokümanların dışında olabilecek kendi yorumunu ekleme ve yapma.
 Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
-Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve sorunun bağlamına göre cevabı bulduğun yerlerle birleştirerek ver.
+Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek mantıklı bir açıklama yap.
 Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.`;
 
     // Build conversation history with system instruction
@@ -53,6 +52,7 @@ Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatı
       model: "gemini-2.5-flash",
       contents,
       config: {
+        temperature: 0.7, // Add creativity to avoid verbatim recitation
         tools: [
           {
             fileSearch: {
