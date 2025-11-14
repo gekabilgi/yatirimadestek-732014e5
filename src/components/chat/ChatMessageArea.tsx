@@ -115,12 +115,30 @@ export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
               {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
                 <div className="text-xs space-y-1 pl-2">
                   <div className="font-semibold text-muted-foreground">Kaynaklar:</div>
-                  {message.sources.map((source, idx) => (
-                    <div key={idx} className="text-muted-foreground flex items-center gap-1">
-                      <ExternalLink className="h-3 w-3" />
-                      <span>{source}</span>
-                    </div>
-                  ))}
+                  {message.sources.map((source: any, idx) => {
+                    // Handle both string sources and object sources like { title, uri }
+                    const isObject = typeof source === 'object' && source !== null;
+                    const href = isObject ? (source.uri || source.url) : undefined;
+                    const label = isObject ? (source.title || source.uri || source.url) : String(source);
+
+                    return href ? (
+                      <a
+                        key={idx}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span>{label}</span>
+                      </a>
+                    ) : (
+                      <div key={idx} className="text-muted-foreground flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3" />
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
