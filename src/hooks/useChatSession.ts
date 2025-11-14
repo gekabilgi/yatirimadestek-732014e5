@@ -5,6 +5,10 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
+  sources?: string[];
+  groundingChunks?: Array<{
+    web?: { uri: string; title: string };
+  }>;
 }
 
 export interface ChatSession {
@@ -15,66 +19,126 @@ export interface ChatSession {
   updatedAt: number;
 }
 
-const SESSIONS_KEY = 'chat_sessions';
-const ACTIVE_SESSION_KEY = 'active_chat_session';
-
 export function useChatSession() {
-  const [sessions, setSessions] = useState<ChatSession[]>(() => {
-    const stored = localStorage.getItem(SESSIONS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
-    return localStorage.getItem(ACTIVE_SESSION_KEY);
-  });
-
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const saveToStorage = useCallback((newSessions: ChatSession[]) => {
-    localStorage.setItem(SESSIONS_KEY, JSON.stringify(newSessions));
-    setSessions(newSessions);
+  // Load sessions from database
+  const loadSessions = useCallback(async () => {
+    try {
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('chat_sessions')
+        .select('id, created_at')
+        .order('created_at', { ascending: false });
+
+      if (sessionsError) throw sessionsError;
+
+      const sessionsWithMessages = await Promise.all(
+        (sessionsData || []).map(async (session) => {
+          const { data: messagesData, error: messagesError } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('session_id', session.id)
+            .order('created_at', { ascending: true });
+
+          if (messagesError) throw messagesError;
+
+          const messages: ChatMessage[] = (messagesData || []).map((msg: any) => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.created_at).getTime(),
+            sources: msg.sources,
+            groundingChunks: msg.grounding_chunks,
+          }));
+
+          // Generate title from first message
+          const title = messages[0]?.content.slice(0, 50) + (messages[0]?.content.length > 50 ? '...' : '') || 'New Chat';
+
+          return {
+            id: session.id,
+            title,
+            messages,
+            createdAt: new Date(session.created_at).getTime(),
+            updatedAt: new Date(session.created_at).getTime(),
+          };
+        })
+      );
+
+      setSessions(sessionsWithMessages);
+      
+      // Set active session to first one if none selected
+      if (!activeSessionId && sessionsWithMessages.length > 0) {
+        setActiveSessionId(sessionsWithMessages[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  }, [activeSessionId]);
+
+  const createSession = useCallback(async (title: string = 'New Chat') => {
+    try {
+      const sessionId = crypto.randomUUID();
+      
+      const { error } = await supabase
+        .from('chat_sessions')
+        .insert({ id: sessionId });
+
+      if (error) throw error;
+
+      const newSession: ChatSession = {
+        id: sessionId,
+        title,
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      setSessions(prev => [newSession, ...prev]);
+      setActiveSessionId(sessionId);
+
+      return newSession;
+    } catch (error) {
+      console.error('Error creating session:', error);
+      throw error;
+    }
   }, []);
 
-  const createSession = useCallback((title: string = 'New Chat') => {
-    const newSession: ChatSession = {
-      id: crypto.randomUUID(),
-      title,
-      messages: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-
-    const newSessions = [newSession, ...sessions];
-    saveToStorage(newSessions);
-    setActiveSessionId(newSession.id);
-    localStorage.setItem(ACTIVE_SESSION_KEY, newSession.id);
-
-    return newSession;
-  }, [sessions, saveToStorage]);
-
   const updateSession = useCallback((sessionId: string, updates: Partial<ChatSession>) => {
-    const newSessions = sessions.map(session =>
+    setSessions(prev => prev.map(session =>
       session.id === sessionId
         ? { ...session, ...updates, updatedAt: Date.now() }
         : session
-    );
-    saveToStorage(newSessions);
-  }, [sessions, saveToStorage]);
+    ));
+  }, []);
 
-  const deleteSession = useCallback((sessionId: string) => {
-    const newSessions = sessions.filter(s => s.id !== sessionId);
-    saveToStorage(newSessions);
-    
-    if (activeSessionId === sessionId) {
-      const newActiveId = newSessions[0]?.id || null;
-      setActiveSessionId(newActiveId);
-      if (newActiveId) {
-        localStorage.setItem(ACTIVE_SESSION_KEY, newActiveId);
-      } else {
-        localStorage.removeItem(ACTIVE_SESSION_KEY);
+  const deleteSession = useCallback(async (sessionId: string) => {
+    try {
+      // Delete messages first
+      await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // Delete session
+      const { error } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      
+      if (activeSessionId === sessionId) {
+        const remainingSessions = sessions.filter(s => s.id !== sessionId);
+        setActiveSessionId(remainingSessions[0]?.id || null);
       }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      throw error;
     }
-  }, [sessions, activeSessionId, saveToStorage]);
+  }, [sessions, activeSessionId]);
 
   const sendMessage = useCallback(async (
     sessionId: string,
@@ -92,6 +156,15 @@ export function useChatSession() {
         content: message,
         timestamp: Date.now(),
       };
+
+      // Save user message to database
+      await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: sessionId,
+          role: 'user',
+          content: message,
+        });
 
       const updatedMessages = [...session.messages, userMessage];
       updateSession(sessionId, { messages: updatedMessages });
@@ -112,7 +185,20 @@ export function useChatSession() {
         role: 'assistant',
         content: data.text,
         timestamp: Date.now(),
+        sources: data.sources,
+        groundingChunks: data.groundingChunks,
       };
+
+      // Save assistant message to database
+      await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: sessionId,
+          role: 'assistant',
+          content: data.text,
+          sources: data.sources,
+          grounding_chunks: data.groundingChunks,
+        });
 
       const finalMessages = [...updatedMessages, assistantMessage];
       updateSession(sessionId, { messages: finalMessages });
@@ -139,13 +225,11 @@ export function useChatSession() {
     activeSession,
     activeSessionId,
     isLoading,
+    loadSessions,
     createSession,
     updateSession,
     deleteSession,
     sendMessage,
-    setActiveSessionId: (id: string) => {
-      setActiveSessionId(id);
-      localStorage.setItem(ACTIVE_SESSION_KEY, id);
-    },
+    setActiveSessionId,
   };
 }

@@ -1,13 +1,56 @@
 import { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import type { ChatMessage } from '@/hooks/useChatSession';
 import ReactMarkdown from 'react-markdown';
+import { Badge } from '@/components/ui/badge';
 
 interface ChatMessageAreaProps {
   messages: ChatMessage[];
   isLoading: boolean;
 }
+
+// Render content with badges
+const renderContentWithBadges = (text: string) => {
+  const badgeRegex = /\[badge:\s*([^\]|]+)\|([^\]]+)\]/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = badgeRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    const label = match[1].trim();
+    const url = match[2].trim();
+    parts.push(
+      <Badge
+        key={match.index}
+        variant="secondary"
+        className="mx-1 cursor-pointer hover:bg-primary/20"
+        onClick={() => window.open(url, '_blank')}
+      >
+        {label}
+      </Badge>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+};
+
+// Typing dots animation
+const TypingDots = () => (
+  <div className="flex gap-1 p-3">
+    <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+    <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+    <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+  </div>
+);
 
 export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -35,38 +78,80 @@ export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
               message.role === 'user' ? 'justify-end' : 'justify-start'
             }`}
           >
-            <div
-              className={`max-w-[80%] rounded-lg p-4 ${
-                message.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
-              }`}
-            >
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown
-                  components={{
-                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                    li: ({ children }) => <li className="mb-1">{children}</li>,
-                    code: ({ children }) => (
-                      <code className="bg-background/50 px-1 py-0.5 rounded text-sm">
-                        {children}
-                      </code>
-                    ),
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
+            <div className="max-w-[80%] space-y-2">
+              <div
+                className={`rounded-lg p-4 ${
+                  message.role === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted'
+                }`}
+              >
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  {message.role === 'assistant' ? (
+                    <div className="space-y-2">
+                      {renderContentWithBadges(message.content)}
+                    </div>
+                  ) : (
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        code: ({ children }) => (
+                          <code className="bg-background/50 px-1 py-0.5 rounded text-sm">
+                            {children}
+                          </code>
+                        ),
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  )}
+                </div>
               </div>
+
+              {/* Display sources for assistant messages */}
+              {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                <div className="text-xs space-y-1 pl-2">
+                  <div className="font-semibold text-muted-foreground">Kaynaklar:</div>
+                  {message.sources.map((source, idx) => (
+                    <div key={idx} className="text-muted-foreground flex items-center gap-1">
+                      <ExternalLink className="h-3 w-3" />
+                      <span>{source}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Display grounding chunks */}
+              {message.role === 'assistant' && message.groundingChunks && message.groundingChunks.length > 0 && (
+                <div className="text-xs space-y-1 pl-2">
+                  <div className="font-semibold text-muted-foreground">Referans Dökümanlar:</div>
+                  {message.groundingChunks.map((chunk, idx) => (
+                    chunk.web && (
+                      <a
+                        key={idx}
+                        href={chunk.web.uri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span>{chunk.web.title || chunk.web.uri}</span>
+                      </a>
+                    )
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
 
         {isLoading && (
           <div className="flex gap-3">
-            <div className="bg-muted rounded-lg p-4">
-              <Loader2 className="h-5 w-5 animate-spin" />
+            <div className="bg-muted rounded-lg">
+              <TypingDots />
             </div>
           </div>
         )}
