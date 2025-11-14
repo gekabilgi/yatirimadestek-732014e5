@@ -446,6 +446,7 @@ export const GeminiStoreManager = () => {
                                   <h4 className="font-semibold text-muted-foreground mb-1">Metadata:</h4>
                                   <dl className="space-y-1">
                                     {doc.customMetadata.map((meta, index) => (
+                                  {console.log("meta", meta)}
                                       meta.key && (
                                         <div key={index} className="flex gap-2">
                                           <dt className="font-medium text-foreground/80 truncate" title={meta.key}>
