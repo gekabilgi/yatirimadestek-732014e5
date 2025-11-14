@@ -110,22 +110,22 @@ export default function Chat() {
           {SidebarContent}
         </div>
 
-        {/* Mobile Sidebar */}
-        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-          <SheetContent side="left" className="w-80 p-0">
-            {SidebarContent}
-          </SheetContent>
-        </Sheet>
-
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
-          <div className="lg:hidden border-b p-2">
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-          </div>
+          {/* Mobile Sidebar */}
+          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <div className="lg:hidden border-b p-2">
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+            </div>
+            
+            <SheetContent side="left" className="w-80 p-0">
+              {SidebarContent}
+            </SheetContent>
+          </Sheet>
 
           <ChatHeader
             activeStore={activeStore}
