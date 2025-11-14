@@ -206,11 +206,22 @@ serve(async (req) => {
         
         while (!isDone && attempts < maxAttempts) {
           await new Promise((r) => setTimeout(r, 3000));
-          const opStatus = await ai.operations.get(operationName);
-          isDone = opStatus.done || false;
+
+          // Poll operation status via REST to avoid SDK param issues
+          const url = new URL(`${GEMINI_API_BASE}/${operationName}`);
+          url.searchParams.set("key", GEMINI_API_KEY!);
+          const statusResp = await fetch(url.toString(), { method: "GET" });
+          if (!statusResp.ok) {
+            const t = await statusResp.text();
+            console.error("Operation status fetch failed:", t);
+            throw new Error(`Operation status error: ${t}`);
+          }
+
+          const opStatus: any = await statusResp.json();
+          isDone = !!opStatus.done;
           attempts++;
           console.log(`🔄 Polling attempt ${attempts}: done=${isDone}`);
-          
+
           if (isDone && opStatus.error) {
             throw new Error(`Upload operation failed: ${JSON.stringify(opStatus.error)}`);
           }
