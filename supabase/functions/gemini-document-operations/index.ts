@@ -206,27 +206,61 @@ serve(async (req) => {
         const importPayload = {
           fileName: fileResourceName,
           config: {
+            displayName: finalDisplayName,
             customMetadata: toGeminiMetadata(metadata),
           },
         };
         
-        console.log("🟡 Import payload:", JSON.stringify(importPayload, null, 2));
+        console.log("🟡 Import payload (primary):", JSON.stringify(importPayload, null, 2));
         
-        const importResponse = await fetch(importUrl, {
+        let importOp: any | undefined;
+        let primaryStatus = 0;
+        let primaryText = "";
+        
+        const primaryResp = await fetch(importUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(importPayload),
         });
-
-        if (!importResponse.ok) {
-          const errorText = await importResponse.text();
-          console.error("❌ Import failed - Status:", importResponse.status);
-          console.error("❌ Import failed - Response:", errorText);
-          throw new Error(`Import failed (${importResponse.status}): ${errorText || 'No error details'}`);
+        primaryStatus = primaryResp.status;
+        if (!primaryResp.ok) {
+          primaryText = await primaryResp.text();
+          console.error("❌ Primary import failed - Status:", primaryStatus);
+          console.error("❌ Primary import failed - Response:", primaryText);
+          
+          // Fallback to alternate RPC importFiles
+          const altUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFiles?key=${GEMINI_API_KEY}`;
+          const altPayload = {
+            files: [
+              {
+                file: fileResourceName,
+                config: {
+                  displayName: finalDisplayName,
+                  customMetadata: toGeminiMetadata(metadata),
+                },
+              },
+            ],
+          };
+          console.warn("🟠 Trying alternate importFiles RPC with payload:", JSON.stringify(altPayload, null, 2));
+          const altResp = await fetch(altUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(altPayload),
+          });
+          if (!altResp.ok) {
+            const altText = await altResp.text();
+            console.error("❌ Alternate import failed - Status:", altResp.status);
+            console.error("❌ Alternate import failed - Response:", altText);
+            throw new Error(
+              `Import failed. primary=${primaryStatus} ${primaryText || 'No body'}; alternate=${altResp.status} ${altText || 'No body'}`,
+            );
+          }
+          importOp = await altResp.json();
+        } else {
+          importOp = await primaryResp.json();
         }
 
-        const importOp = await importResponse.json();
-        console.log("🟡 STEP 6: Import operation started:", importOp.name);
+        console.log("🟡 STEP 6: Import operation started:", importOp.name || importOp?.operation || importOp);
 
         // STEP 4: Poll the operation until complete
         let operation = importOp;
