@@ -268,7 +268,7 @@ serve(async (req) => {
         console.log("Deleting document:", documentName);
 
         const deleteResponse = await fetch(
-          `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}`,
+          `${GEMINI_API_BASE}/${documentName}?force=true&key=${GEMINI_API_KEY}`,
           { method: "DELETE" }
         );
 
