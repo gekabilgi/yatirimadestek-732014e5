@@ -201,18 +201,28 @@ serve(async (req) => {
         // STEP 3: Import file into store WITH metadata
         console.log("🟡 STEP 5: Importing file into store with metadata...");
         const importUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
+        
+        // Correct payload format: fileName + config with metadata nested
+        const importPayload = {
+          fileName: fileResourceName,
+          config: {
+            customMetadata: toGeminiMetadata(metadata),
+          },
+        };
+        
+        console.log("🟡 Import payload:", JSON.stringify(importPayload, null, 2));
+        
         const importResponse = await fetch(importUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: fileResourceName,
-            customMetadata: toGeminiMetadata(metadata),
-          }),
+          body: JSON.stringify(importPayload),
         });
 
         if (!importResponse.ok) {
           const errorText = await importResponse.text();
-          throw new Error(`Import failed: ${errorText}`);
+          console.error("❌ Import failed - Status:", importResponse.status);
+          console.error("❌ Import failed - Response:", errorText);
+          throw new Error(`Import failed (${importResponse.status}): ${errorText || 'No error details'}`);
         }
 
         const importOp = await importResponse.json();
