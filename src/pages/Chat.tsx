@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import Header from '@/components/Header';
+import { useState, useEffect, useRef } from 'react';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatMessageArea } from '@/components/chat/ChatMessageArea';
@@ -26,11 +25,14 @@ export default function Chat() {
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const initialize = async () => {
-      await loadActiveStore();
+      const store = await geminiRagService.getActiveStore();
+      setActiveStore(store);
+      
       const loadedSessions = await loadSessions();
       
       // Create first session if none exists after loading
@@ -41,31 +43,12 @@ export default function Chat() {
     initialize();
   }, []);
 
-  const loadActiveStore = async () => {
-    try {
-      const store = await geminiRagService.getActiveStore();
-      setActiveStore(store);
-    } catch (error) {
-      console.error('Error loading active store:', error);
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  };
-
-  const handleStoreChange = async (storeName: string) => {
-    try {
-      await geminiRagService.setActiveStore(storeName);
-      setActiveStore(storeName);
-      toast({
-        title: 'Bilgi tabanı güncellendi',
-        description: 'Yeni bilgi tabanı aktif edildi.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Hata',
-        description: 'Bilgi tabanı güncellenirken bir hata oluştu.',
-        variant: 'destructive',
-      });
-    }
-  };
+  }, [activeSession?.messages]);
 
   const handleSendMessage = async (message: string) => {
     if (!activeStore) {
@@ -106,48 +89,42 @@ export default function Chat() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="h-screen flex overflow-hidden">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block w-80">
+        {SidebarContent}
+      </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-80">
-          {SidebarContent}
-        </div>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Mobile Sidebar */}
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+          <div className="lg:hidden border-b p-2">
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+          </div>
+          
+          <SheetContent side="left" className="w-80 p-0">
+            {SidebarContent}
+          </SheetContent>
+        </Sheet>
 
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Mobile Sidebar */}
-          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-            <div className="lg:hidden border-b p-2">
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-            </div>
-            
-            <SheetContent side="left" className="w-80 p-0">
-              {SidebarContent}
-            </SheetContent>
-          </Sheet>
+        <ChatHeader sessionTitle={activeSession?.title || 'Yeni Sohbet'} />
 
-          <ChatHeader
-            activeStore={activeStore}
-            onStoreChange={handleStoreChange}
-            sessionTitle={activeSession?.title || 'Yeni Sohbet'}
-          />
-
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <ChatMessageArea
             messages={activeSession?.messages || []}
             isLoading={isLoading}
           />
-
-          <ChatInput
-            onSendMessage={handleSendMessage}
-            disabled={isLoading || !activeStore}
-          />
         </div>
+
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={isLoading || !activeStore}
+        />
       </div>
     </div>
   );

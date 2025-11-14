@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExternalLink } from 'lucide-react';
 import type { ChatMessage } from '@/hooks/useChatSession';
 import ReactMarkdown from 'react-markdown';
@@ -20,16 +18,8 @@ const TypingDots = () => (
 );
 
 export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
   return (
-    <ScrollArea className="flex-1 p-4">
+    <div className="p-4">
       <div className="max-w-3xl mx-auto space-y-6">
         {messages.length === 0 && (
           <div className="text-center text-muted-foreground py-12">
@@ -168,9 +158,7 @@ export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
             </div>
           </div>
         )}
-
-        <div ref={scrollRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }
