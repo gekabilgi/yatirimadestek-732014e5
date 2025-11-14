@@ -126,10 +126,16 @@ serve(async (req) => {
             customMetadata: doc.customMetadata,
           });
           
+          // Parse customMetadata correctly - API may return 'value' or 'stringValue'
+          const parsedMetadata = (doc.customMetadata || []).map((m: any) => ({
+            key: m.key,
+            stringValue: typeof m.stringValue === "string" ? m.stringValue : (m.value ?? ""),
+          }));
+          
           return {
             name: doc.name,
             displayName: doc.displayName || doc.name?.split("/").pop() || "Untitled Document",
-            customMetadata: doc.customMetadata || [],
+            customMetadata: parsedMetadata,
             createTime: doc.createTime,
             sizeBytes: doc.sizeBytes,
           };
