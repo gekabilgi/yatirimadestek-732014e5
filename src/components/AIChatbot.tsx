@@ -521,9 +521,7 @@ export function AIChatbot() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-sm sm:text-base">AI Asistan</h3>
-                  <p className="text-xs opacity-90 hidden sm:block">
-                    Yatırım Teşvik ve Destekleri Hakkındaki Sorularınızı cevaplayabilirim
-                  </p>
+                  <p className="text-xs opacity-90 hidden sm:block">Yatırım Teşvikleri ve Destekleri</p>
                 </div>
               </div>
               <Button
