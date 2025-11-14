@@ -57,7 +57,7 @@ serve(async (req) => {
         do {
           const url = new URL(`${GEMINI_API_BASE}/${normalizedStoreName}/documents`);
           url.searchParams.set('key', GEMINI_API_KEY);
-          url.searchParams.set('pageSize', '100'); // Max page size
+          url.searchParams.set('pageSize', '20'); // Gemini API max is 20
           if (pageToken) {
             url.searchParams.set('pageToken', pageToken);
           }
