@@ -198,42 +198,45 @@ serve(async (req) => {
 
         console.log("🟢 STEP 3: File uploaded to Files API:", fileResourceName);
 
-        // STEP 2: Set display name on the uploaded file
-        const patchFileUrl = `${GEMINI_API_BASE}/${fileResourceName}?key=${GEMINI_API_KEY}&updateMask=displayName`;
-        const patchFileResponse = await fetch(patchFileUrl, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ displayName: finalDisplayName }),
-        });
-
-        if (!patchFileResponse.ok) {
-          console.warn("⚠️ Failed to set displayName on file, continuing anyway");
-        } else {
-          console.log("🟢 STEP 4: Display name set on file");
-        }
-
-        // STEP 3: Import file into store using the correct REST API format
-        console.log("🟡 STEP 5: Importing file into store with metadata...");
-
         // Filter custom metadata (exclude internal metadata like fileName, uploadDate)
         const customOnlyMetadata = metadata.filter(m => 
           m.key !== 'fileName' && m.key !== 'uploadDate'
         );
 
-        // Use the correct SDK-based import pattern
+        // STEP 2: Set display name and custom metadata on the uploaded file
+        const updateFields = ["displayName"];
+        const patchBody: any = { displayName: finalDisplayName };
+        
+        if (customOnlyMetadata.length > 0) {
+          updateFields.push("customMetadata");
+          patchBody.customMetadata = customOnlyMetadata;
+        }
+
+        const patchFileUrl = `${GEMINI_API_BASE}/${fileResourceName}?key=${GEMINI_API_KEY}&updateMask=${updateFields.join(",")}`;
+        console.log("🟢 STEP 4: Setting file metadata:", JSON.stringify(patchBody, null, 2));
+        
+        const patchFileResponse = await fetch(patchFileUrl, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patchBody),
+        });
+
+        if (!patchFileResponse.ok) {
+          const patchError = await patchFileResponse.text();
+          console.warn("⚠️ Failed to set metadata on file:", patchError);
+        } else {
+          console.log("✅ STEP 4: Display name and metadata set on file");
+        }
+
+        // STEP 3: Import file into store (metadata already set on file)
+        console.log("🟡 STEP 5: Importing file into store...");
+
         const importUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFile?key=${GEMINI_API_KEY}`;
-        const importPayload: any = {
+        const importPayload = {
           fileName: fileResourceName,
         };
-
-        // Add config with customMetadata if we have any
-        if (customOnlyMetadata.length > 0) {
-          importPayload.config = {
-            customMetadata: customOnlyMetadata,
-          };
-        }
         
-        console.log("🟡 Import payload with metadata:", JSON.stringify(importPayload, null, 2));
+        console.log("🟡 Import payload:", JSON.stringify(importPayload, null, 2));
         
         const importResponse = await fetch(importUrl, {
           method: "POST",
