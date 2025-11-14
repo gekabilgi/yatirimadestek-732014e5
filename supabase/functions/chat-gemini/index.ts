@@ -82,6 +82,14 @@ Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatı
 
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
+    // Log grounding chunks to understand structure
+    console.log("=== GROUNDING CHUNKS DEBUG ===");
+    console.log("Total chunks:", groundingChunks.length);
+    if (groundingChunks.length > 0) {
+      console.log("First chunk full structure:", JSON.stringify(groundingChunks[0], null, 2));
+      console.log("First chunk keys:", Object.keys(groundingChunks[0]));
+    }
+
     let textOut = "";
     try {
       textOut = response.text;
