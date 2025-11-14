@@ -87,7 +87,7 @@ export const GeminiStoreManager = () => {
       setLoading(false);
     }
   };
-  console.log(loadDocuments);
+  console.log("loadDocuments", loadDocuments);
   const handleCreateStore = async () => {
     if (!newStoreName.trim()) {
       toast({
