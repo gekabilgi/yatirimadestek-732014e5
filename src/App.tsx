@@ -52,6 +52,7 @@ import TZYSupplierApplications from "./pages/admin/TZYSupplierApplications";
 import Legislation from "./pages/Legislation";
 import AdminLegislation from "./pages/AdminLegislation";
 import AdminKnowledgeBase from "./pages/AdminKnowledgeBase";
+import Chat from "./pages/Chat";
 import { AIChatbot } from "./components/AIChatbot";
 
 const queryClient = new QueryClient({
@@ -104,6 +105,11 @@ const App = () => {
               <Route path="/basvuru-sureci" element={
                 <ProtectedMenuRoute settingKey="menu_item_basvuru_sureci">
                   <ApplicationProcess />
+                </ProtectedMenuRoute>
+              } />
+              <Route path="/chat" element={
+                <ProtectedMenuRoute settingKey="menu_item_chat">
+                  <Chat />
                 </ProtectedMenuRoute>
               } />
               <Route path="/qna" element={

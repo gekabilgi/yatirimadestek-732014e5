@@ -12,6 +12,7 @@ export interface MenuVisibilitySettings {
   menu_item_yatirim_firsatlari: MenuItemVisibility;
   menu_item_yatirimci_sozlugu: MenuItemVisibility;
   menu_item_basvuru_sureci: MenuItemVisibility;
+  menu_item_chat: MenuItemVisibility;
 }
 
 export const DEFAULT_VISIBILITY: MenuItemVisibility = {
@@ -69,5 +70,11 @@ export const MENU_ITEMS: MenuItem[] = [
     url: '/basvuru-sureci',
     settingKey: 'menu_item_basvuru_sureci',
     description: 'Başvuru adımları ve süreçleri',
+  },
+  {
+    title: 'AI Sohbet',
+    url: '/chat',
+    settingKey: 'menu_item_chat',
+    description: 'Yapay zeka destekli tam sayfa sohbet',
   },
 ];
