@@ -198,82 +198,31 @@ serve(async (req) => {
           console.log("🟢 STEP 4: Display name set on file");
         }
 
-        // STEP 3: Import file into store WITH metadata (try multiple RPCs)
+        // STEP 3: Import file into store using the correct REST API format
         console.log("🟡 STEP 5: Importing file into store with metadata...");
 
-        let importOp: any | undefined;
-
-        // Attempt 1: importFile (singular RPC)
-        const importFileUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFile?key=${GEMINI_API_KEY}`;
-        const importFilePayload = {
+        // Use the correct SDK-based import pattern
+        const importUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFile?key=${GEMINI_API_KEY}`;
+        const importPayload = {
           fileName: fileResourceName,
-          config: {
-            displayName: finalDisplayName,
-            customMetadata: toGeminiMetadata(metadata),
-          },
         };
-        console.log("🟡 Trying importFile RPC:", JSON.stringify(importFilePayload, null, 2));
-        let resp = await fetch(importFileUrl, {
+        
+        console.log("🟡 Import payload:", JSON.stringify(importPayload, null, 2));
+        
+        const importResponse = await fetch(importUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(importFilePayload),
+          body: JSON.stringify(importPayload),
         });
-        let status = resp.status;
-        let text = resp.ok ? "" : await resp.text();
-        if (!resp.ok) {
-          console.warn("⚠️ importFile failed:", status, text || "No body");
 
-          // Attempt 2: documents:import (with fileName)
-          const documentsImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
-          const documentsImportPayload = {
-            fileName: fileResourceName,
-            config: {
-              displayName: finalDisplayName,
-              customMetadata: toGeminiMetadata(metadata),
-            },
-          };
-          console.log("🟡 Trying documents:import:", JSON.stringify(documentsImportPayload, null, 2));
-          resp = await fetch(documentsImportUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(documentsImportPayload),
-          });
-          status = resp.status;
-          text = resp.ok ? "" : await resp.text();
-          if (!resp.ok) {
-            console.warn("⚠️ documents:import failed:", status, text || "No body");
-
-            // Attempt 3: importFiles (batch RPC)
-            const importFilesUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFiles?key=${GEMINI_API_KEY}`;
-            const importFilesPayload = {
-              files: [
-                {
-                  fileName: fileResourceName,
-                  config: {
-                    displayName: finalDisplayName,
-                    customMetadata: toGeminiMetadata(metadata),
-                  },
-                },
-              ],
-            };
-            console.log("🟡 Trying importFiles RPC:", JSON.stringify(importFilesPayload, null, 2));
-            resp = await fetch(importFilesUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(importFilesPayload),
-            });
-            status = resp.status;
-            text = resp.ok ? "" : await resp.text();
-            if (!resp.ok) {
-              console.error("❌ All import attempts failed.");
-              throw new Error(
-                `Import failed. importFile=${status} ${text || 'No body'}; documents:import failed earlier; importFiles failed too.`,
-              );
-            }
-          }
+        if (!importResponse.ok) {
+          const errorText = await importResponse.text();
+          console.error("❌ Import failed - Status:", importResponse.status);
+          console.error("❌ Import failed - Response:", errorText);
+          throw new Error(`Import failed (${importResponse.status}): ${errorText || 'No error details'}`);
         }
-        importOp = await resp.json();
 
+        const importOp = await importResponse.json();
         console.log("🟡 STEP 6: Import operation started:", importOp.name || importOp?.operation || importOp);
 
         // STEP 4: Poll the operation until complete
