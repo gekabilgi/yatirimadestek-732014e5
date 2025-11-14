@@ -196,24 +196,28 @@ serve(async (req) => {
           },
         });
 
-        console.log("🟡 Upload operation started:", op.name);
+        const operationName = typeof op === 'string' ? op : op.name;
+        console.log("🟡 Upload operation started:", operationName);
 
         // Poll operation until complete
         let attempts = 0;
         const maxAttempts = 60;
-        while (!op.done && attempts < maxAttempts) {
+        let isDone = false;
+        
+        while (!isDone && attempts < maxAttempts) {
           await new Promise((r) => setTimeout(r, 3000));
-          op = await ai.operations.get(op.name);
+          const opStatus = await ai.operations.get(operationName);
+          isDone = opStatus.done || false;
           attempts++;
-          console.log(`🔄 Polling attempt ${attempts}: done=${op.done}`);
+          console.log(`🔄 Polling attempt ${attempts}: done=${isDone}`);
+          
+          if (isDone && opStatus.error) {
+            throw new Error(`Upload operation failed: ${JSON.stringify(opStatus.error)}`);
+          }
         }
 
-        if (!op.done) {
+        if (!isDone) {
           throw new Error("Upload operation timed out");
-        }
-
-        if (op.error) {
-          throw new Error(`Upload operation failed: ${JSON.stringify(op.error)}`);
         }
 
         console.log("✅ Upload completed successfully!");
