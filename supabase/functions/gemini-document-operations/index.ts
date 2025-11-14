@@ -132,6 +132,7 @@ serve(async (req) => {
 
         const file = formData.get("file");
         const displayName = formData.get("displayName") as string;
+        const customMetadataStr = formData.get("customMetadata") as string;
 
         if (!file) throw new Error("No file provided");
 
@@ -145,11 +146,24 @@ serve(async (req) => {
         const mimeType = (file as File).type || "application/octet-stream";
         const finalDisplayName = displayName || fileName;
 
-        // Prepare metadata including fileName
-        const metadata = [
+        // Prepare metadata including fileName and custom metadata
+        const metadata: { key: string; stringValue: string }[] = [
           { key: "fileName", stringValue: finalDisplayName },
           { key: "uploadDate", stringValue: new Date().toISOString() },
         ];
+
+        // Add custom metadata if provided
+        if (customMetadataStr) {
+          try {
+            const customMeta = JSON.parse(customMetadataStr);
+            if (Array.isArray(customMeta)) {
+              const filteredMeta = customMeta.filter(m => m.key && m.key.trim());
+              metadata.push(...filteredMeta);
+            }
+          } catch (e) {
+            console.warn("Failed to parse customMetadata:", e);
+          }
+        }
 
         console.log("🔵 STEP 1: Prepared metadata:", JSON.stringify(metadata, null, 2));
         console.log("🔵 File name:", fileName);
