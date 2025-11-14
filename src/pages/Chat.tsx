@@ -17,6 +17,7 @@ export default function Chat() {
     activeSession,
     activeSessionId,
     isLoading,
+    loadSessions,
     createSession,
     deleteSession,
     sendMessage,
@@ -28,12 +29,16 @@ export default function Chat() {
   const { toast } = useToast();
 
   useEffect(() => {
-    loadActiveStore();
-    
-    // Create first session if none exists
-    if (sessions.length === 0) {
-      createSession();
-    }
+    const initialize = async () => {
+      await loadActiveStore();
+      await loadSessions();
+      
+      // Create first session if none exists after loading
+      if (sessions.length === 0) {
+        await createSession();
+      }
+    };
+    initialize();
   }, []);
 
   const loadActiveStore = async () => {
@@ -73,15 +78,15 @@ export default function Chat() {
     }
 
     if (!activeSessionId) {
-      const newSession = createSession();
+      const newSession = await createSession();
       await sendMessage(newSession.id, message, activeStore);
     } else {
       await sendMessage(activeSessionId, message, activeStore);
     }
   };
 
-  const handleCreateSession = () => {
-    createSession();
+  const handleCreateSession = async () => {
+    await createSession();
     setIsSidebarOpen(false);
   };
 
