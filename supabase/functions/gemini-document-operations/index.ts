@@ -169,122 +169,55 @@ serve(async (req) => {
         console.log("🔵 File name:", fileName);
         console.log("🔵 Display name:", finalDisplayName);
 
-        // STEP 1: Upload to Files API
-        console.log("🟢 STEP 2: Uploading to Files API...");
-        const encodedFileName = encodeURIComponent(fileName);
-        const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`;
-        const uploadResponse = await fetch(uploadUrl, {
-          method: "POST",
-          headers: {
-            "X-Goog-Upload-Protocol": "raw",
-            "X-Goog-Upload-File-Name": encodedFileName,
-            "Content-Type": mimeType,
-          },
-          body: fileBuffer,
-        });
-
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          throw new Error(`Files API upload failed: ${errorText}`);
-        }
-
-        const uploadText = await uploadResponse.text();
-        const uploadedFile = uploadText ? JSON.parse(uploadText) : {};
-        const fileResourceName = uploadedFile.name || uploadedFile?.file?.name;
-
-        if (!fileResourceName) {
-          throw new Error("Upload did not return a file resource name");
-        }
-
-        console.log("🟢 STEP 3: File uploaded to Files API:", fileResourceName);
-
         // Filter custom metadata (exclude internal metadata like fileName, uploadDate)
         const customOnlyMetadata = metadata.filter(m => 
           m.key !== 'fileName' && m.key !== 'uploadDate'
         );
+        const geminiMetadata = toGeminiMetadata(customOnlyMetadata);
 
-        // STEP 2: Set display name and custom metadata on the uploaded file
-        const updateFields = ["displayName"];
-        const patchBody: any = { displayName: finalDisplayName };
-        
-        if (customOnlyMetadata.length > 0) {
-          updateFields.push("customMetadata");
-          patchBody.customMetadata = customOnlyMetadata;
-        }
-
-        const patchFileUrl = `${GEMINI_API_BASE}/${fileResourceName}?key=${GEMINI_API_KEY}&updateMask=${updateFields.join(",")}`;
-        console.log("🟢 STEP 4: Setting file metadata:", JSON.stringify(patchBody, null, 2));
-        
-        const patchFileResponse = await fetch(patchFileUrl, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patchBody),
+        console.log("🟢 Using SDK uploadToFileSearchStore with metadata:", {
+          finalDisplayName,
+          customMetadata: geminiMetadata,
         });
 
-        if (!patchFileResponse.ok) {
-          const patchError = await patchFileResponse.text();
-          console.warn("⚠️ Failed to set metadata on file:", patchError);
-        } else {
-          console.log("✅ STEP 4: Display name and metadata set on file");
-        }
-
-        // STEP 3: Import file into store (metadata already set on file)
-        console.log("🟡 STEP 5: Importing file into store...");
-
-        const importUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFile?key=${GEMINI_API_KEY}`;
-        const importPayload = {
-          fileName: fileResourceName,
-        };
+        // Use SDK to upload directly to store with metadata
+        const ai = getAiClient();
         
-        console.log("🟡 Import payload:", JSON.stringify(importPayload, null, 2));
-        
-        const importResponse = await fetch(importUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(importPayload),
+        // Create a File object from the buffer for the SDK
+        const fileBlob = new Blob([fileBuffer], { type: mimeType });
+        const fileForSdk = new File([fileBlob], fileName, { type: mimeType });
+
+        let op = await ai.fileSearchStores.uploadToFileSearchStore({
+          file: fileForSdk,
+          fileSearchStoreName: normalizedStoreName,
+          config: {
+            displayName: finalDisplayName,
+            customMetadata: geminiMetadata,
+          },
         });
 
-        if (!importResponse.ok) {
-          const errorText = await importResponse.text();
-          console.error("❌ Import failed - Status:", importResponse.status);
-          console.error("❌ Import failed - Response:", errorText);
-          throw new Error(`Import failed (${importResponse.status}): ${errorText || 'No error details'}`);
-        }
+        console.log("🟡 Upload operation started:", op.name);
 
-        const importOp = await importResponse.json();
-        console.log("🟡 STEP 6: Import operation started:", importOp.name || importOp?.operation || importOp);
-
-        // STEP 4: Poll the operation until complete
-        let operation = importOp;
+        // Poll operation until complete
         let attempts = 0;
-        const maxAttempts = 60; // 3 minutes max
-
-        while (!operation.done && attempts < maxAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-
-          const pollResponse = await fetch(`${GEMINI_API_BASE}/${operation.name}?key=${GEMINI_API_KEY}`, {
-            method: "GET",
-          });
-
-          if (!pollResponse.ok) {
-            throw new Error("Failed to poll operation status");
-          }
-
-          operation = await pollResponse.json();
+        const maxAttempts = 60;
+        while (!op.done && attempts < maxAttempts) {
+          await new Promise((r) => setTimeout(r, 3000));
+          op = await ai.operations.get({ operation: op.name });
           attempts++;
-          console.log(`🔄 Polling attempt ${attempts}: done=${operation.done}`);
+          console.log(`🔄 Polling attempt ${attempts}: done=${op.done}`);
         }
 
-        if (!operation.done) {
-          throw new Error("Import operation timed out");
+        if (!op.done) {
+          throw new Error("Upload operation timed out");
         }
 
-        if (operation.error) {
-          throw new Error(`Import operation failed: ${JSON.stringify(operation.error)}`);
+        if (op.error) {
+          throw new Error(`Upload operation failed: ${JSON.stringify(op.error)}`);
         }
 
-        console.log("✅ STEP 7: Import completed successfully!");
-        console.log("✅ Document should now have customMetadata set");
+        console.log("✅ Upload completed successfully!");
+        console.log("✅ Document created with displayName and customMetadata");
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
