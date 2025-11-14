@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Upload, FileText, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, FileText, CheckCircle2, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   listRagStores,
   createRagStore,
@@ -40,6 +41,13 @@ export const GeminiStoreManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
+
+  // Upload modal state
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [customFileName, setCustomFileName] = useState("");
+  const [metadata, setMetadata] = useState<Array<{ key: string; value: string }>>([{ key: '', value: '' }]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadStores();
@@ -149,9 +157,23 @@ export const GeminiStoreManager = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadClick = () => {
+    setIsUploadModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsUploadModalOpen(false);
+    setSelectedFile(null);
+    setCustomFileName("");
+    setMetadata([{ key: '', value: '' }]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !selectedStore) return;
+    if (!files || files.length === 0) return;
 
     const file = files[0];
     const allowedTypes = [
@@ -176,26 +198,67 @@ export const GeminiStoreManager = () => {
       return;
     }
 
+    setSelectedFile(file);
+    setCustomFileName(file.name);
+  };
+
+  const handleMetadataChange = (index: number, field: 'key' | 'value', value: string) => {
+    const newMetadata = [...metadata];
+    newMetadata[index][field] = value;
+    setMetadata(newMetadata);
+  };
+
+  const addMetadataRow = () => {
+    setMetadata([...metadata, { key: '', value: '' }]);
+  };
+
+  const removeMetadataRow = (index: number) => {
+    if (metadata.length > 1) {
+      setMetadata(metadata.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleModalUpload = async () => {
+    if (!selectedFile || !selectedStore) {
+      toast({
+        title: "Error",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUploading(true);
     try {
-      await uploadDocument(selectedStore, file);
+      // Filter out empty metadata rows
+      const validMetadata = metadata
+        .filter(m => m.key.trim() !== '')
+        .map(m => ({ key: m.key.trim(), stringValue: m.value.trim() }));
+
+      await uploadDocument(
+        selectedStore, 
+        selectedFile, 
+        customFileName || selectedFile.name,
+        validMetadata.length > 0 ? validMetadata : undefined
+      );
+      
       toast({
         title: "Success",
         description: "Document uploaded successfully",
       });
+      
       await loadDocuments(selectedStore);
+      handleModalClose();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to upload document",
+        description: error instanceof Error ? error.message : "Failed to upload document",
         variant: "destructive",
       });
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   };
-  console.log("loadDocuments", handleFileUpload);
   const handleDeleteDocument = async (docName: string) => {
     if (!confirm("Are you sure you want to delete this document?")) {
       return;
@@ -378,16 +441,10 @@ export const GeminiStoreManager = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <Input
-                  type="file"
-                  accept=".docx,.xlsx,.pdf,.txt,.csv"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground mt-2">Supported formats: DOCX, XLSX, PDF, TXT, CSV</p>
-              </div>
+              <Button onClick={handleUploadClick} disabled={uploading}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Document
+              </Button>
               {selectedDocs.size > 0 && (
                 <Button variant="destructive" onClick={handleBulkDelete} disabled={loading}>
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -530,6 +587,120 @@ export const GeminiStoreManager = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Upload Modal */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload a document to {stores.find((s) => s.name === selectedStore)?.displayName || selectedStore}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* File Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select File</label>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,.xlsx,.pdf,.txt,.csv"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full justify-start"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {selectedFile ? selectedFile.name : "Choose File"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Supported: DOCX, XLSX, PDF, TXT, CSV
+              </p>
+            </div>
+
+            {/* Custom File Name */}
+            {selectedFile && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Display Name (Optional)</label>
+                <Input
+                  placeholder="Custom file name"
+                  value={customFileName}
+                  onChange={(e) => setCustomFileName(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Custom Metadata */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Custom Metadata (Optional)</label>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {metadata.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      placeholder="Key"
+                      value={item.key}
+                      onChange={(e) => handleMetadataChange(index, 'key', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Value"
+                      value={item.value}
+                      onChange={(e) => handleMetadataChange(index, 'value', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeMetadataRow(index)}
+                      disabled={metadata.length === 1}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addMetadataRow}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Metadata
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleModalClose} disabled={uploading}>
+              Cancel
+            </Button>
+            <Button onClick={handleModalUpload} disabled={uploading || !selectedFile}>
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

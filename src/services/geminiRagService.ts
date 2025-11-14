@@ -69,13 +69,19 @@ export async function listDocuments(storeName: string): Promise<Document[]> {
 export async function uploadDocument(
   storeName: string,
   file: File,
-  displayName?: string
+  displayName?: string,
+  customMetadata?: { key: string; stringValue: string }[]
 ): Promise<void> {
   const uploadFormData = new FormData();
   uploadFormData.append('operation', 'upload');
   uploadFormData.append('storeName', storeName);
   uploadFormData.append('file', file);
   uploadFormData.append('displayName', displayName || file.name);
+  
+  // Add custom metadata if provided
+  if (customMetadata && customMetadata.length > 0) {
+    uploadFormData.append('customMetadata', JSON.stringify(customMetadata));
+  }
 
   const uploadResponse = await fetch(
     'https://zyxiznikuvpwmopraauj.supabase.co/functions/v1/gemini-document-operations',
