@@ -128,8 +128,9 @@ export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
               {message.role === 'assistant' && message.groundingChunks && message.groundingChunks.length > 0 && (
                 <div className="text-xs space-y-1 pl-2">
                   <div className="font-semibold text-muted-foreground">Referans Dökümanlar:</div>
-                  {message.groundingChunks.map((chunk, idx) => (
-                    chunk.web && (
+                  {message.groundingChunks.map((chunk, idx) => {
+                    if (!chunk.web) return null;
+                    return (
                       <a
                         key={idx}
                         href={chunk.web.uri}
@@ -140,8 +141,8 @@ export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
                         <ExternalLink className="h-3 w-3" />
                         <span>{chunk.web.title || chunk.web.uri}</span>
                       </a>
-                    )
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
