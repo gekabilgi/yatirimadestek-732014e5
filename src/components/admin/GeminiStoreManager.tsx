@@ -87,7 +87,7 @@ export const GeminiStoreManager = () => {
       setLoading(false);
     }
   };
-  console.log("loadDocuments", loadDocuments);
+
   const handleCreateStore = async () => {
     if (!newStoreName.trim()) {
       toast({
@@ -195,7 +195,7 @@ export const GeminiStoreManager = () => {
       e.target.value = "";
     }
   };
-
+  console.log("loadDocuments", handleFileUpload);
   const handleDeleteDocument = async (docName: string) => {
     if (!confirm("Are you sure you want to delete this document?")) {
       return;
