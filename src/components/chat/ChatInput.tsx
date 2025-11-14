@@ -1,7 +1,7 @@
-import { useState, KeyboardEvent } from 'react';
-import { Send, Paperclip } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, KeyboardEvent } from "react";
+import { Send, Paperclip } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -9,17 +9,17 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
 
   const handleSend = () => {
     if (!input.trim() || disabled) return;
-    
+
     onSendMessage(input.trim());
-    setInput('');
+    setInput("");
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -29,14 +29,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
     <div className="border-t bg-background p-4">
       <div className="max-w-3xl mx-auto">
         <div className="flex gap-2 items-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={disabled}
-            className="flex-shrink-0"
-          >
-            <Paperclip className="h-5 w-5" />
-          </Button>
+          <Button variant="ghost" size="icon" disabled={disabled} className="flex-shrink-0"></Button>
 
           <Textarea
             value={input}
@@ -48,19 +41,12 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
             rows={2}
           />
 
-          <Button
-            onClick={handleSend}
-            disabled={disabled || !input.trim()}
-            size="icon"
-            className="flex-shrink-0"
-          >
+          <Button onClick={handleSend} disabled={disabled || !input.trim()} size="icon" className="flex-shrink-0">
             <Send className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="text-xs text-muted-foreground mt-2 text-center">
-          {input.length} karakter
-        </div>
+        <div className="text-xs text-muted-foreground mt-2 text-center">{input.length} karakter</div>
       </div>
     </div>
   );
