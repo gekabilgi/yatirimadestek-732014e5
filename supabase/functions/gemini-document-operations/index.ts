@@ -196,9 +196,13 @@ serve(async (req) => {
         // Step 2: Import file into store (try primary endpoint, then fallback to alternate RPC if needed)
         let importData: any | undefined;
 
+        const finalDisplayName = displayName || fileName;
         const primaryImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
-        const primaryPayload = { fileName: fileResourceName };
-        console.log('Importing file into store using documents:import', { storeName: normalizedStoreName, fileResourceName });
+        const primaryPayload = { 
+          fileName: fileResourceName,
+          displayName: finalDisplayName
+        };
+        console.log('Importing file into store using documents:import', { storeName: normalizedStoreName, fileResourceName, displayName: finalDisplayName });
 
         let importResponse = await fetch(primaryImportUrl, {
           method: 'POST',
@@ -215,8 +219,13 @@ serve(async (req) => {
           if (importResponse.status === 404) {
             // Some environments expose an alternate RPC for FileSearch stores
              const altImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFiles?key=${GEMINI_API_KEY}`;
-             const altPayload = { files: [{ file: fileResourceName }] };
-            console.warn('Primary import 404. Trying alternate import RPC importFiles', { altImportUrl });
+             const altPayload = { 
+               files: [{ 
+                 file: fileResourceName,
+                 displayName: finalDisplayName
+               }] 
+             };
+            console.warn('Primary import 404. Trying alternate import RPC importFiles', { altImportUrl, displayName: finalDisplayName });
 
             const altResp = await fetch(altImportUrl, {
               method: 'POST',
