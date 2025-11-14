@@ -203,7 +203,7 @@ serve(async (req) => {
         const maxAttempts = 60;
         while (!op.done && attempts < maxAttempts) {
           await new Promise((r) => setTimeout(r, 3000));
-          op = await ai.operations.get({ operation: op.name });
+          op = await ai.operations.get(op.name);
           attempts++;
           console.log(`🔄 Polling attempt ${attempts}: done=${op.done}`);
         }
