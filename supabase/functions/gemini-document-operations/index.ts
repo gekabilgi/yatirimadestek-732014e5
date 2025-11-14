@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenAI } from "npm:@google/genai@1.29.1";
+import { GoogleGenAI, CustomMetadata } from "npm:@google/genai@1.29.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +12,16 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 function getAiClient(): GoogleGenAI {
   if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
   return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+}
+
+function toGeminiMetadata(meta?: { key: string; stringValue: string }[]): CustomMetadata[] | undefined {
+  const arr = (meta ?? [])
+    .filter(m => m.key && m.key.trim())
+    .map(m => ({ 
+      key: m.key!.trim(), 
+      stringValue: m.stringValue?.trim() ?? "" 
+    }));
+  return arr.length ? arr : undefined;
 }
 
 serve(async (req) => {
@@ -110,11 +120,18 @@ serve(async (req) => {
         try {
           const ai = getAiClient();
           const finalDisplayName = (displayName as string) || ((file as File).name || 'uploaded-file');
+          
+          const customMetadata = toGeminiMetadata([
+            { key: 'fileName', stringValue: finalDisplayName },
+            { key: 'uploadDate', stringValue: new Date().toISOString() }
+          ]);
+          
           const op: any = await (ai as any).fileSearchStores.uploadToFileSearchStore({
             file: file as File,
             fileSearchStoreName: normalizedStoreName,
             config: {
               displayName: finalDisplayName,
+              metadata: customMetadata,
             },
           });
 
@@ -197,12 +214,19 @@ serve(async (req) => {
         let importData: any | undefined;
 
         const finalDisplayName = displayName || fileName;
+        
+        const customMetadata = [
+          { key: 'fileName', stringValue: finalDisplayName },
+          { key: 'uploadDate', stringValue: new Date().toISOString() }
+        ];
+        
         const primaryImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
         const primaryPayload = { 
           fileName: fileResourceName,
-          displayName: finalDisplayName
+          displayName: finalDisplayName,
+          metadata: toGeminiMetadata(customMetadata)
         };
-        console.log('Importing file into store using documents:import', { storeName: normalizedStoreName, fileResourceName, displayName: finalDisplayName });
+        console.log('Importing file into store using documents:import', { storeName: normalizedStoreName, fileResourceName, displayName: finalDisplayName, metadata: customMetadata });
 
         let importResponse = await fetch(primaryImportUrl, {
           method: 'POST',
@@ -222,10 +246,11 @@ serve(async (req) => {
              const altPayload = { 
                files: [{ 
                  file: fileResourceName,
-                 displayName: finalDisplayName
+                 displayName: finalDisplayName,
+                 metadata: toGeminiMetadata(customMetadata)
                }] 
              };
-            console.warn('Primary import 404. Trying alternate import RPC importFiles', { altImportUrl, displayName: finalDisplayName });
+            console.warn('Primary import 404. Trying alternate import RPC importFiles', { altImportUrl, displayName: finalDisplayName, metadata: customMetadata });
 
             const altResp = await fetch(altImportUrl, {
               method: 'POST',
