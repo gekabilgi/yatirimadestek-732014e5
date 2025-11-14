@@ -53,7 +53,9 @@ export function useChatSession() {
           }));
 
           // Generate title from first message
-          const title = messages[0]?.content.slice(0, 50) + (messages[0]?.content.length > 50 ? '...' : '') || 'New Chat';
+          const title = messages.length > 0 && messages[0]?.content
+            ? messages[0].content.slice(0, 50) + (messages[0].content.length > 50 ? '...' : '')
+            : 'New Chat';
 
           return {
             id: session.id,
@@ -71,8 +73,11 @@ export function useChatSession() {
       if (!activeSessionId && sessionsWithMessages.length > 0) {
         setActiveSessionId(sessionsWithMessages[0].id);
       }
+
+      return sessionsWithMessages;
     } catch (error) {
       console.error('Error loading sessions:', error);
+      return [];
     }
   }, [activeSessionId]);
 
