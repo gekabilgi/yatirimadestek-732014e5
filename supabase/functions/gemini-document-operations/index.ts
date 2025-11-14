@@ -198,67 +198,81 @@ serve(async (req) => {
           console.log("🟢 STEP 4: Display name set on file");
         }
 
-        // STEP 3: Import file into store WITH metadata
+        // STEP 3: Import file into store WITH metadata (try multiple RPCs)
         console.log("🟡 STEP 5: Importing file into store with metadata...");
-        const importUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
-        
-        // Correct payload format: fileName + config with metadata nested
-        const importPayload = {
-          fileName: fileResourceName,
+
+        let importOp: any | undefined;
+
+        // Attempt 1: importFile (singular RPC)
+        const importFileUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFile?key=${GEMINI_API_KEY}`;
+        const importFilePayload = {
+          file: fileResourceName,
           config: {
             displayName: finalDisplayName,
             customMetadata: toGeminiMetadata(metadata),
           },
         };
-        
-        console.log("🟡 Import payload (primary):", JSON.stringify(importPayload, null, 2));
-        
-        let importOp: any | undefined;
-        let primaryStatus = 0;
-        let primaryText = "";
-        
-        const primaryResp = await fetch(importUrl, {
+        console.log("🟡 Trying importFile RPC:", JSON.stringify(importFilePayload, null, 2));
+        let resp = await fetch(importFileUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(importPayload),
+          body: JSON.stringify(importFilePayload),
         });
-        primaryStatus = primaryResp.status;
-        if (!primaryResp.ok) {
-          primaryText = await primaryResp.text();
-          console.error("❌ Primary import failed - Status:", primaryStatus);
-          console.error("❌ Primary import failed - Response:", primaryText);
-          
-          // Fallback to alternate RPC importFiles
-          const altUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFiles?key=${GEMINI_API_KEY}`;
-          const altPayload = {
-            files: [
-              {
-                file: fileResourceName,
-                config: {
-                  displayName: finalDisplayName,
-                  customMetadata: toGeminiMetadata(metadata),
-                },
-              },
-            ],
+        let status = resp.status;
+        let text = resp.ok ? "" : await resp.text();
+        if (!resp.ok) {
+          console.warn("⚠️ importFile failed:", status, text || "No body");
+
+          // Attempt 2: documents:import (with fileName)
+          const documentsImportUrl = `${GEMINI_API_BASE}/${normalizedStoreName}/documents:import?key=${GEMINI_API_KEY}`;
+          const documentsImportPayload = {
+            fileName: fileResourceName,
+            config: {
+              displayName: finalDisplayName,
+              customMetadata: toGeminiMetadata(metadata),
+            },
           };
-          console.warn("🟠 Trying alternate importFiles RPC with payload:", JSON.stringify(altPayload, null, 2));
-          const altResp = await fetch(altUrl, {
+          console.log("🟡 Trying documents:import:", JSON.stringify(documentsImportPayload, null, 2));
+          resp = await fetch(documentsImportUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(altPayload),
+            body: JSON.stringify(documentsImportPayload),
           });
-          if (!altResp.ok) {
-            const altText = await altResp.text();
-            console.error("❌ Alternate import failed - Status:", altResp.status);
-            console.error("❌ Alternate import failed - Response:", altText);
-            throw new Error(
-              `Import failed. primary=${primaryStatus} ${primaryText || 'No body'}; alternate=${altResp.status} ${altText || 'No body'}`,
-            );
+          status = resp.status;
+          text = resp.ok ? "" : await resp.text();
+          if (!resp.ok) {
+            console.warn("⚠️ documents:import failed:", status, text || "No body");
+
+            // Attempt 3: importFiles (batch RPC)
+            const importFilesUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFiles?key=${GEMINI_API_KEY}`;
+            const importFilesPayload = {
+              files: [
+                {
+                  file: fileResourceName,
+                  config: {
+                    displayName: finalDisplayName,
+                    customMetadata: toGeminiMetadata(metadata),
+                  },
+                },
+              ],
+            };
+            console.log("🟡 Trying importFiles RPC:", JSON.stringify(importFilesPayload, null, 2));
+            resp = await fetch(importFilesUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(importFilesPayload),
+            });
+            status = resp.status;
+            text = resp.ok ? "" : await resp.text();
+            if (!resp.ok) {
+              console.error("❌ All import attempts failed.");
+              throw new Error(
+                `Import failed. importFile=${status} ${text || 'No body'}; documents:import failed earlier; importFiles failed too.`,
+              );
+            }
           }
-          importOp = await altResp.json();
-        } else {
-          importOp = await primaryResp.json();
         }
+        importOp = await resp.json();
 
         console.log("🟡 STEP 6: Import operation started:", importOp.name || importOp?.operation || importOp);
 
