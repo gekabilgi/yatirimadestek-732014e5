@@ -262,6 +262,28 @@ serve(async (req) => {
         });
       }
 
+      case "delete": {
+        if (!documentName) throw new Error("documentName required for delete");
+
+        console.log("Deleting document:", documentName);
+
+        const deleteResponse = await fetch(
+          `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}`,
+          { method: "DELETE" }
+        );
+
+        if (!deleteResponse.ok) {
+          const errorText = await deleteResponse.text();
+          console.error("Delete document failed:", errorText);
+          throw new Error(`Gemini API error: ${errorText}`);
+        }
+
+        console.log("Document deleted successfully");
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         throw new Error(`Unknown operation: ${operation}`);
     }
