@@ -206,7 +206,7 @@ serve(async (req) => {
         // Attempt 1: importFile (singular RPC)
         const importFileUrl = `${GEMINI_API_BASE}/${normalizedStoreName}:importFile?key=${GEMINI_API_KEY}`;
         const importFilePayload = {
-          file: fileResourceName,
+          fileName: fileResourceName,
           config: {
             displayName: finalDisplayName,
             customMetadata: toGeminiMetadata(metadata),
@@ -248,7 +248,7 @@ serve(async (req) => {
             const importFilesPayload = {
               files: [
                 {
-                  file: fileResourceName,
+                  fileName: fileResourceName,
                   config: {
                     displayName: finalDisplayName,
                     customMetadata: toGeminiMetadata(metadata),
