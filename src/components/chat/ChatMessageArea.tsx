@@ -10,39 +10,6 @@ interface ChatMessageAreaProps {
   isLoading: boolean;
 }
 
-// Render content with badges
-const renderContentWithBadges = (text: string) => {
-  const badgeRegex = /\[badge:\s*([^\]|]+)\|([^\]]+)\]/g;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = badgeRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.substring(lastIndex, match.index));
-    }
-    const label = match[1].trim();
-    const url = match[2].trim();
-    parts.push(
-      <Badge
-        key={match.index}
-        variant="secondary"
-        className="mx-1 cursor-pointer hover:bg-primary/20"
-        onClick={() => window.open(url, '_blank')}
-      >
-        {label}
-      </Badge>
-    );
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : text;
-};
-
 // Typing dots animation
 const TypingDots = () => (
   <div className="flex gap-1 p-3">
@@ -86,28 +53,55 @@ export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
                     : 'bg-muted'
                 }`}
               >
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  {message.role === 'assistant' ? (
-                    <div className="space-y-2">
-                      {renderContentWithBadges(message.content)}
-                    </div>
-                  ) : (
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                        li: ({ children }) => <li className="mb-1">{children}</li>,
-                        code: ({ children }) => (
-                          <code className="bg-background/50 px-1 py-0.5 rounded text-sm">
+                <div className={`prose prose-sm max-w-none ${
+                  message.role === 'user' 
+                    ? 'prose-invert' 
+                    : 'dark:prose-invert'
+                }`}>
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                      li: ({ children }) => <li className="mb-1">{children}</li>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      code: ({ children }) => (
+                        <code className="bg-background/50 px-1.5 py-0.5 rounded text-sm font-mono">
+                          {children}
+                        </code>
+                      ),
+                      a: ({ href, children }) => {
+                        // Check if it's a badge format [badge: label|url]
+                        const text = String(children);
+                        if (href && text.startsWith('badge:')) {
+                          const label = text.replace('badge:', '').trim();
+                          return (
+                            <Badge
+                              variant="secondary"
+                              className="mx-1 cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => window.open(href, '_blank')}
+                            >
+                              {label}
+                            </Badge>
+                          );
+                        }
+                        // Regular link
+                        return (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline inline-flex items-center gap-1"
+                          >
                             {children}
-                          </code>
-                        ),
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
-                  )}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        );
+                      },
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
                 </div>
               </div>
 

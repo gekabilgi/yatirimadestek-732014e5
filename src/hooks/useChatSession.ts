@@ -181,9 +181,43 @@ export function useChatSession() {
 
       if (error) throw error;
 
+      const fullResponse = data.text;
+      const words = fullResponse.split(' ');
+      
+      // Add empty assistant message for streaming
+      const assistantId = crypto.randomUUID();
+      const emptyAssistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        sources: data.sources,
+        groundingChunks: data.groundingChunks,
+      };
+      
+      let streamingMessages = [...updatedMessages, emptyAssistantMessage];
+      updateSession(sessionId, { messages: streamingMessages });
+
+      // Stream words with typewriter effect
+      let currentText = '';
+      for (let i = 0; i < words.length; i++) {
+        currentText += (i > 0 ? ' ' : '') + words[i];
+        
+        const updatedAssistantMessage: ChatMessage = {
+          ...emptyAssistantMessage,
+          content: currentText,
+        };
+        
+        streamingMessages = [...updatedMessages, updatedAssistantMessage];
+        updateSession(sessionId, { messages: streamingMessages });
+        
+        // Variable delay for natural typing
+        await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 20));
+      }
+
+      // Final assistant message with full content
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: data.text,
+        content: fullResponse,
         timestamp: Date.now(),
         sources: data.sources,
         groundingChunks: data.groundingChunks,
@@ -195,7 +229,7 @@ export function useChatSession() {
         .insert({
           session_id: sessionId,
           role: 'assistant',
-          content: data.text,
+          content: fullResponse,
           sources: data.sources,
           grounding_chunks: data.groundingChunks,
         });
