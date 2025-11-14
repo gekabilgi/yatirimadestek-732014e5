@@ -36,7 +36,9 @@ async function patchDocumentMetadata(
   
   const url = `${GEMINI_API_BASE}/${documentName}?key=${GEMINI_API_KEY}&updateMask=displayName,customMetadata`;
   
-  console.log('Patching document metadata:', { documentName, displayName, customMetadata });
+  console.log('🟣 STEP 6: PATCH Request Details:');
+  console.log('🟣 URL:', url.replace(GEMINI_API_KEY!, 'REDACTED'));
+  console.log('🟣 Payload:', JSON.stringify(payload, null, 2));
   
   const response = await fetch(url, {
     method: 'PATCH',
@@ -46,11 +48,17 @@ async function patchDocumentMetadata(
   
   if (!response.ok) {
     const errorText = await response.text();
-    console.warn('Failed to PATCH document metadata:', errorText);
+    console.error('❌ PATCH FAILED:', errorText);
     throw new Error(`PATCH failed: ${errorText}`);
   }
   
-  console.log('Successfully patched document metadata:', documentName);
+  // Log the PATCH response
+  const patchResult = await response.json();
+  console.log('✅ STEP 7: PATCH Response from API:');
+  console.log('✅ Response displayName:', patchResult?.displayName);
+  console.log('✅ Response customMetadata:', JSON.stringify(patchResult?.customMetadata, null, 2));
+  
+  console.log('✅ Successfully patched document metadata');
 }
 
 serve(async (req) => {
@@ -119,18 +127,23 @@ serve(async (req) => {
         
         console.log(`Found ${allDocuments.length} total documents`);
         
-        const result = allDocuments.map((doc: any) => {
-          console.log('Document from Gemini API:', {
+          const result = allDocuments.map((doc: any) => {
+          console.log('📄 Document from Gemini API:', {
             name: doc.name,
             displayName: doc.displayName,
             customMetadata: doc.customMetadata,
           });
           
           // Parse customMetadata correctly - API may return 'value' or 'stringValue'
-          const parsedMetadata = (doc.customMetadata || []).map((m: any) => ({
-            key: m.key,
-            stringValue: typeof m.stringValue === "string" ? m.stringValue : (m.value ?? ""),
-          }));
+          const parsedMetadata = (doc.customMetadata || []).map((m: any) => {
+            console.log('📋 Parsing metadata item:', { key: m.key, stringValue: m.stringValue, value: m.value });
+            return {
+              key: m.key,
+              stringValue: typeof m.stringValue === "string" ? m.stringValue : (m.value ?? ""),
+            };
+          });
+          
+          console.log('📋 Parsed metadata:', parsedMetadata);
           
           return {
             name: doc.name,
@@ -169,13 +182,21 @@ serve(async (req) => {
             { key: 'uploadDate', stringValue: new Date().toISOString() }
           ]);
           
+          console.log('🔵 STEP 1: Created customMetadata:', JSON.stringify(customMetadata, null, 2));
+          console.log('🔵 finalDisplayName:', finalDisplayName);
+          console.log('🔵 Original file name:', (file as File).name);
+          
+          const uploadConfig = {
+            displayName: finalDisplayName,
+            metadata: customMetadata,
+          };
+          
+          console.log('🔵 STEP 2: SDK upload config:', JSON.stringify(uploadConfig, null, 2));
+          
           const op: any = await (ai as any).fileSearchStores.uploadToFileSearchStore({
             file: file as File,
             fileSearchStoreName: normalizedStoreName,
-            config: {
-              displayName: finalDisplayName,
-              metadata: customMetadata,
-            },
+            config: uploadConfig,
           });
 
           const sdkOperationName = op?.name;
@@ -203,7 +224,8 @@ serve(async (req) => {
             }
           }
 
-          console.log('Upload completed successfully via SDK');
+          console.log('🟢 STEP 3: Upload completed successfully via SDK');
+          console.log('🟢 Now fetching latest document to verify metadata...');
           
           // PATCH the document to set metadata
           try {
@@ -217,8 +239,17 @@ serve(async (req) => {
               const listData = await listResponse.json();
               const latestDoc = listData.documents?.[0];
               
+              console.log('🟡 STEP 4: Latest document from API BEFORE PATCH:');
+              console.log('🟡 Document name:', latestDoc?.name);
+              console.log('🟡 Document displayName:', latestDoc?.displayName);
+              console.log('🟡 Document customMetadata:', JSON.stringify(latestDoc?.customMetadata, null, 2));
+              
               if (latestDoc?.name) {
-                console.log('Patching SDK uploaded document:', latestDoc.name);
+                console.log('🟠 STEP 5: Calling patchDocumentMetadata with:');
+                console.log('🟠 Document name:', latestDoc.name);
+                console.log('🟠 Display name:', finalDisplayName);
+                console.log('🟠 Custom metadata:', JSON.stringify(customMetadata, null, 2));
+                
                 await patchDocumentMetadata(
                   latestDoc.name,
                   finalDisplayName,
@@ -392,7 +423,11 @@ serve(async (req) => {
             const importedDocumentName = opData.response?.documents?.[0]?.name || opData.response?.document?.name;
             
             if (importedDocumentName) {
-              console.log('Patching RAW imported document:', importedDocumentName);
+              console.log('🟠 RAW: Calling patchDocumentMetadata with:');
+              console.log('🟠 RAW: Document name:', importedDocumentName);
+              console.log('🟠 RAW: Display name:', finalDisplayName);
+              console.log('🟠 RAW: Custom metadata:', JSON.stringify(toGeminiMetadata(customMetadata), null, 2));
+              
               await patchDocumentMetadata(
                 importedDocumentName,
                 finalDisplayName,
