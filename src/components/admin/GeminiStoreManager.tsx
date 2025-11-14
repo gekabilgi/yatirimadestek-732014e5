@@ -51,6 +51,7 @@ export const GeminiStoreManager = () => {
   const [uploading, setUploading] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export const GeminiStoreManager = () => {
     if (selectedStore) {
       loadDocuments(selectedStore);
       setCurrentPage(1);
+      setSelectedDocs(new Set());
     } else {
       setDocuments([]);
     }
@@ -228,6 +230,67 @@ export const GeminiStoreManager = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedDocs.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedDocs.size} document(s)?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await Promise.all(Array.from(selectedDocs).map(docName => deleteDocument(docName)));
+      toast({
+        title: 'Success',
+        description: `${selectedDocs.size} document(s) deleted successfully`,
+      });
+      setSelectedDocs(new Set());
+      if (selectedStore) {
+        await loadDocuments(selectedStore);
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete some documents',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleDocSelection = (docName: string) => {
+    const newSelected = new Set(selectedDocs);
+    if (newSelected.has(docName)) {
+      newSelected.delete(docName);
+    } else {
+      newSelected.add(docName);
+    }
+    setSelectedDocs(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDocs.size === documents.length) {
+      setSelectedDocs(new Set());
+    } else {
+      setSelectedDocs(new Set(documents.map(d => d.name)));
+    }
+  };
+
+  const formatFileSize = (bytes?: string) => {
+    if (!bytes) return 'N/A';
+    const size = parseInt(bytes);
+    if (isNaN(size)) return 'N/A';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let unitIndex = 0;
+    let fileSize = size;
+    while (fileSize >= 1024 && unitIndex < units.length - 1) {
+      fileSize /= 1024;
+      unitIndex++;
+    }
+    return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
+  };
+
   const handleSetActiveStore = async (storeName: string) => {
     try {
       await setActiveStore(storeName);
@@ -334,17 +397,29 @@ export const GeminiStoreManager = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Input
-                type="file"
-                accept=".docx,.xlsx,.pdf,.txt,.csv"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                className="cursor-pointer"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Supported formats: DOCX, XLSX, PDF, TXT, CSV
-              </p>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <Input
+                  type="file"
+                  accept=".docx,.xlsx,.pdf,.txt,.csv"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Supported formats: DOCX, XLSX, PDF, TXT, CSV
+                </p>
+              </div>
+              {selectedDocs.size > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={handleBulkDelete}
+                  disabled={loading}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected ({selectedDocs.size})
+                </Button>
+              )}
             </div>
 
             {loading ? (
@@ -358,7 +433,16 @@ export const GeminiStoreManager = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Document Name</TableHead>
+                      <TableHead className="w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedDocs.size === documents.length && documents.length > 0}
+                          onChange={toggleSelectAll}
+                          className="cursor-pointer"
+                        />
+                      </TableHead>
+                      <TableHead>File Name</TableHead>
+                      <TableHead>File Size</TableHead>
                       <TableHead>Upload Date & Time</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -369,10 +453,26 @@ export const GeminiStoreManager = () => {
                       .map((doc) => (
                         <TableRow key={doc.name}>
                           <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={selectedDocs.has(doc.name)}
+                              onChange={() => toggleDocSelection(doc.name)}
+                              className="cursor-pointer"
+                            />
+                          </TableCell>
+                          <TableCell>
                             <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4" />
-                              {doc.displayName}
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <div className="font-medium">{doc.displayName}</div>
+                                <div className="text-xs text-muted-foreground truncate max-w-md">
+                                  {doc.name.split('/').pop()}
+                                </div>
+                              </div>
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">{formatFileSize(doc.sizeBytes)}</span>
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-muted-foreground">
@@ -400,7 +500,7 @@ export const GeminiStoreManager = () => {
                       ))}
                   </TableBody>
                 </Table>
-                {documents.length > itemsPerPage && (
+                <div className="mt-4">
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
@@ -438,7 +538,7 @@ export const GeminiStoreManager = () => {
                       </PaginationItem>
                     </PaginationContent>
                   </Pagination>
-                )}
+                </div>
               </>
             )}
           </CardContent>
