@@ -198,23 +198,29 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          grounding_chunks: Json | null
           id: string
           role: string
           session_id: string
+          sources: string[] | null
         }
         Insert: {
           content: string
           created_at?: string | null
+          grounding_chunks?: Json | null
           id?: string
           role: string
           session_id: string
+          sources?: string[] | null
         }
         Update: {
           content?: string
           created_at?: string | null
+          grounding_chunks?: Json | null
           id?: string
           role?: string
           session_id?: string
+          sources?: string[] | null
         }
         Relationships: []
       }
@@ -340,6 +346,30 @@ export type Database = {
           icon?: string | null
           id?: number
           name?: string
+        }
+        Relationships: []
+      }
+      document_chunks: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string
+          id: number
+          metadata: Json
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding: string
+          id?: number
+          metadata: Json
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string
+          id?: number
+          metadata?: Json
         }
         Relationships: []
       }
@@ -702,33 +732,6 @@ export type Database = {
           id?: number
           investment_name?: string
           province?: string
-        }
-        Relationships: []
-      }
-      karar_chunks: {
-        Row: {
-          chunk_id: string | null
-          content: string | null
-          embedding: string | null
-          end_char: number | null
-          id: number
-          start_char: number | null
-        }
-        Insert: {
-          chunk_id?: string | null
-          content?: string | null
-          embedding?: string | null
-          end_char?: number | null
-          id?: number
-          start_char?: number | null
-        }
-        Update: {
-          chunk_id?: string | null
-          content?: string | null
-          embedding?: string | null
-          end_char?: number | null
-          id?: number
-          start_char?: number | null
         }
         Relationships: []
       }
@@ -1381,7 +1384,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           embedding: string | null
-          fts_vector: unknown | null
+          fts_vector: unknown
           id: string
           metadata: Json | null
           source_document: string | null
@@ -1395,7 +1398,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           embedding?: string | null
-          fts_vector?: unknown | null
+          fts_vector?: unknown
           id?: string
           metadata?: Json | null
           source_document?: string | null
@@ -1409,7 +1412,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           embedding?: string | null
-          fts_vector?: unknown | null
+          fts_vector?: unknown
           id?: string
           metadata?: Json | null
           source_document?: string | null
@@ -2048,10 +2051,6 @@ export type Database = {
       }
     }
     Functions: {
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
-      }
       check_chat_rate_limit: {
         Args: { session_id_param: string }
         Returns: boolean
@@ -2064,20 +2063,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_old_sensitive_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_pre_requests_audit_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      expire_old_products: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_old_sensitive_data: { Args: never; Returns: undefined }
+      cleanup_pre_requests_audit_logs: { Args: never; Returns: undefined }
+      expire_old_products: { Args: never; Returns: undefined }
       get_approved_pre_requests: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           firma_kisa_adi: string
@@ -2088,7 +2078,7 @@ export type Database = {
         }[]
       }
       get_chat_sessions: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           session_id: string
           title: string
@@ -2107,50 +2097,8 @@ export type Database = {
           question_number: number
         }[]
       }
-      get_public_qna_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_ydo_user_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_avg: {
-        Args: { "": number[] }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
+      get_public_qna_count: { Args: never; Returns: number }
+      get_ydo_user_count: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2161,22 +2109,6 @@ export type Database = {
       has_ydo_province_access: {
         Args: { _province: string; _user_id: string }
         Returns: boolean
-      }
-      hnsw_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: { "": unknown }
-        Returns: unknown
       }
       hybrid_match_question_variants: {
         Args: {
@@ -2196,34 +2128,8 @@ export type Database = {
           variants: string[]
         }[]
       }
-      increment_stat: {
-        Args: { stat_name_param: string }
-        Returns: undefined
-      }
-      is_admin: {
-        Args: { user_id?: string }
-        Returns: boolean
-      }
-      ivfflat_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: unknown
-      }
+      increment_stat: { Args: { stat_name_param: string }; Returns: undefined }
+      is_admin: { Args: { user_id?: string }; Returns: boolean }
       log_qna_audit: {
         Args: {
           p_action: string
@@ -2247,40 +2153,69 @@ export type Database = {
           similarity: number
         }[]
       }
-      match_chatbot_embedding_768: {
-        Args:
-          | {
+      match_chatbot_embedding_768:
+        | {
+            Args: {
               match_count: number
               match_threshold: number
               query_embedding: number[]
             }
-          | {
+            Returns: {
+              answer: string
+              id: string
+              question: string
+              similarity: number
+            }[]
+          }
+        | {
+            Args: {
               match_count: number
               match_threshold: number
               query_embedding: string
             }
-        Returns: {
-          answer: string
-          id: string
-          question: string
-          similarity: number
-        }[]
-      }
-      match_chatbot_knowledge: {
-        Args:
-          | {
+            Returns: {
+              answer: string
+              id: string
+              question: string
+              similarity: number
+            }[]
+          }
+      match_chatbot_knowledge:
+        | {
+            Args: { p_limit?: number; query_embedding: string }
+            Returns: {
+              answer: string
+              created_at: string
+              embedding: string
+              id: string
+              question: string
+              updated_at: string
+            }[]
+          }
+        | {
+            Args: {
               match_count?: number
               match_threshold?: number
               query_embedding: string
             }
-          | { p_limit?: number; query_embedding: string }
+            Returns: {
+              answer: string
+              id: string
+              question: string
+              similarity: number
+            }[]
+          }
+      match_document_chunks: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
         Returns: {
-          answer: string
-          created_at: string
-          embedding: string
-          id: string
-          question: string
-          updated_at: string
+          content: string
+          id: number
+          metadata: Json
+          similarity: number
         }[]
       }
       match_documents: {
@@ -2342,68 +2277,36 @@ export type Database = {
         Args: { p_identifier: string; p_submission_type: string }
         Returns: undefined
       }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
-      sparsevec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      test_final_security: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      test_final_security: { Args: never; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
       update_chatbot_768: {
         Args: { row_id: string; vals: number }
         Returns: undefined
       }
-      update_chatbot_embedding: {
-        Args:
-          | {
-              match_count: number
-              match_threshold: number
-              query_embedding: number[]
-            }
-          | {
+      update_chatbot_embedding:
+        | { Args: { payload: Json }; Returns: undefined }
+        | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }
+        | {
+            Args: {
               match_count: number
               match_threshold: number
               query_embedding: string
             }
-          | { p_row_id: string; p_vals: number[] }
-          | { payload: Json }
-        Returns: undefined
-      }
-      update_chatbot_embedding_768: {
-        Args:
-          | { p_row_id: string; p_vals: number[] }
-          | { p_row_id: string; p_vals: number }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              match_count: number
+              match_threshold: number
+              query_embedding: number[]
+            }
+            Returns: undefined
+          }
+      update_chatbot_embedding_768:
+        | { Args: { p_row_id: string; p_vals: number }; Returns: undefined }
+        | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }
       update_chatbot_embedding_768_array: {
         Args: { p_row_id: string; p_vals: number[] }
         Returns: undefined
@@ -2427,30 +2330,6 @@ export type Database = {
       update_embedding: {
         Args: { row_id: string; vals: number[] }
         Returns: undefined
-      }
-      vector_avg: {
-        Args: { "": number[] }
-        Returns: string
-      }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
-      vector_norm: {
-        Args: { "": string }
-        Returns: number
-      }
-      vector_out: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: { "": string }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
       }
     }
     Enums: {
