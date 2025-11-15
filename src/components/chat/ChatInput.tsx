@@ -6,16 +6,27 @@ import { Textarea } from "@/components/ui/textarea";
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled: boolean;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }
 
-export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
-  const [input, setInput] = useState("");
+export function ChatInput({ 
+  onSendMessage, 
+  disabled, 
+  value, 
+  onValueChange 
+}: ChatInputProps) {
+  const [internalValue, setInternalValue] = useState("");
+  
+  // Use external value if provided, otherwise internal
+  const currentValue = value !== undefined ? value : internalValue;
+  const setValue = onValueChange || setInternalValue;
 
   const handleSend = () => {
-    if (!input.trim() || disabled) return;
+    if (!currentValue.trim() || disabled) return;
 
-    onSendMessage(input.trim());
-    setInput("");
+    onSendMessage(currentValue.trim());
+    setValue("");
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -32,8 +43,8 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
           <Button variant="ghost" size="icon" disabled={disabled} className="flex-shrink-0"></Button>
 
           <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={currentValue}
+            onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Mesajınızı yazın... (Enter ile gönderin, Shift+Enter ile yeni satır)"
             disabled={disabled}
@@ -41,12 +52,12 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
             rows={2}
           />
 
-          <Button onClick={handleSend} disabled={disabled || !input.trim()} size="icon" className="flex-shrink-0">
+          <Button onClick={handleSend} disabled={disabled || !currentValue.trim()} size="icon" className="flex-shrink-0">
             <Send className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="text-xs text-muted-foreground mt-2 text-center">{input.length} karakter</div>
+        <div className="text-xs text-muted-foreground mt-2 text-center">{currentValue.length} karakter</div>
       </div>
     </div>
   );

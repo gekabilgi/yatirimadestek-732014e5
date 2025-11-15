@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 interface ChatMessageAreaProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  currentSuggestion?: string;
+  onSuggestionClick?: (suggestion: string) => void;
+  isGeneratingQuestions?: boolean;
 }
 
 // Typing dots animation
@@ -17,14 +20,53 @@ const TypingDots = () => (
   </div>
 );
 
-export function ChatMessageArea({ messages, isLoading }: ChatMessageAreaProps) {
+export function ChatMessageArea({ 
+  messages, 
+  isLoading, 
+  currentSuggestion, 
+  onSuggestionClick, 
+  isGeneratingQuestions 
+}: ChatMessageAreaProps) {
   return (
     <div className="p-4">
       <div className="max-w-3xl mx-auto space-y-6">
         {messages.length === 0 && (
-          <div className="text-center text-muted-foreground py-12">
-            <h2 className="text-2xl font-semibold mb-2">Nasıl yardımcı olabilirim?</h2>
-            <p>Yatırım teşvikleri hakkında soru sorabilirsiniz.</p>
+          <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+            <div className="max-w-2xl w-full text-center space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold mb-2">Nasıl yardımcı olabilirim?</h2>
+                <p className="text-muted-foreground">
+                  Yatırım teşvikleri, destek programları ve mevzuat hakkında sorularınızı cevaplayabilirim.
+                </p>
+              </div>
+
+              {/* Rotating Suggestion */}
+              <div className="min-h-[4rem] flex items-center justify-center">
+                {isGeneratingQuestions ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                    <span className="text-sm">Örnek sorular hazırlanıyor...</span>
+                  </div>
+                ) : currentSuggestion && !isLoading ? (
+                  <button
+                    onClick={() => onSuggestionClick?.(currentSuggestion)}
+                    className="group relative px-6 py-3 rounded-full border border-primary/20 
+                               bg-primary/5 hover:bg-primary/10 hover:border-primary/40
+                               transition-all duration-200 shadow-sm hover:shadow-md
+                               max-w-xl w-full"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Örnek soru:
+                      </span>
+                      <span className="text-sm font-medium text-foreground">
+                        "{currentSuggestion}"
+                      </span>
+                    </div>
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
         )}
 

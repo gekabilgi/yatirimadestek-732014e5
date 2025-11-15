@@ -64,3 +64,6 @@ verify_jwt = true
 
 [functions.manage-user-roles]
 verify_jwt = true
+
+[functions.generate-example-questions]
+verify_jwt = false

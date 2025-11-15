@@ -25,6 +25,10 @@ export default function Chat() {
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
+  const [currentSuggestion, setCurrentSuggestion] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -42,6 +46,47 @@ export default function Chat() {
     };
     initialize();
   }, []);
+
+  // Load example questions when active store changes
+  useEffect(() => {
+    const loadExampleQuestions = async () => {
+      if (!activeStore) {
+        setExampleQuestions([]);
+        return;
+      }
+
+      setIsGeneratingQuestions(true);
+      try {
+        const questions = await geminiRagService.generateExampleQuestions(activeStore);
+        setExampleQuestions(questions);
+      } catch (error) {
+        console.error('Failed to load example questions:', error);
+        setExampleQuestions([]);
+      } finally {
+        setIsGeneratingQuestions(false);
+      }
+    };
+
+    loadExampleQuestions();
+  }, [activeStore]);
+
+  // Rotate through example questions
+  useEffect(() => {
+    if (exampleQuestions.length === 0) {
+      setCurrentSuggestion('');
+      return;
+    }
+
+    setCurrentSuggestion(exampleQuestions[0]);
+    let suggestionIndex = 0;
+    
+    const intervalId = setInterval(() => {
+      suggestionIndex = (suggestionIndex + 1) % exampleQuestions.length;
+      setCurrentSuggestion(exampleQuestions[suggestionIndex]);
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [exampleQuestions]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -76,6 +121,10 @@ export default function Chat() {
   const handleSelectSession = (id: string) => {
     setActiveSessionId(id);
     setIsSidebarOpen(false);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion);
   };
 
   const SidebarContent = (
@@ -118,12 +167,17 @@ export default function Chat() {
           <ChatMessageArea
             messages={activeSession?.messages || []}
             isLoading={isLoading}
+            currentSuggestion={currentSuggestion}
+            onSuggestionClick={handleSuggestionClick}
+            isGeneratingQuestions={isGeneratingQuestions}
           />
         </div>
 
         <ChatInput
           onSendMessage={handleSendMessage}
           disabled={isLoading || !activeStore}
+          value={inputValue}
+          onValueChange={setInputValue}
         />
       </div>
     </div>
