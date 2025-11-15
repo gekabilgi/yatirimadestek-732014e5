@@ -43,6 +43,7 @@ yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru soruldu�
 Temel Kurallar:
 Türkçe konuş ve profesyonel bir üslup kullan.
 Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
+ÖNEMLİ: Dokümanlardaki bilgileri kendi cümlelerinle yeniden ifade et. Direkt alıntı yapma, parafraze et.
 Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek mantıklı bir açıklama yap.
 Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
 Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
@@ -62,7 +63,7 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
       model: "gemini-2.5-flash",
       contents,
       config: {
-        temperature: 0.7, // Add creativity to avoid verbatim recitation
+        temperature: 1.2, // Higher temperature to avoid verbatim recitation
         tools: [
           {
             fileSearch: {
