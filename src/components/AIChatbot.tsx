@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -117,6 +118,13 @@ function MessageBubble({ message }: { message: Message }) {
 }
 
 export function AIChatbot() {
+  const location = useLocation();
+  
+  // Hide chatbot on the /chat page
+  if (location.pathname === '/chat') {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
