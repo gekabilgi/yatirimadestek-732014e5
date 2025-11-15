@@ -11,6 +11,14 @@ interface ChatMessageAreaProps {
   isGeneratingQuestions?: boolean;
 }
 
+const [modalContent, setModalContent] = useState<string | null>(null);
+const handleSourceClick = (text: string) => {
+  setModalContent(text);
+};
+
+const closeModal = () => {
+  setModalContent(null);
+};
 // Typing dots animation
 const TypingDots = () => (
   <div className="flex gap-1 p-3">
@@ -27,14 +35,6 @@ export function ChatMessageArea({
   onSuggestionClick,
   isGeneratingQuestions,
 }: ChatMessageAreaProps) {
-  const [modalContent, setModalContent] = useState<string | null>(null);
-  const handleSourceClick = (text: string) => {
-    setModalContent(text);
-  };
-
-  const closeModal = () => {
-    setModalContent(null);
-  };
   return (
     <div className="p-4">
       <div className="max-w-3xl mx-auto space-y-6">
