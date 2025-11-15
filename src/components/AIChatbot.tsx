@@ -22,7 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getActiveStore } from "@/services/geminiRagService";
+import { getActiveStore, generateExampleQuestions } from "@/services/geminiRagService";
 
 interface Message {
   role: "user" | "assistant";
@@ -135,6 +135,8 @@ export function AIChatbot() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllHistory, setShowAllHistory] = useState(false);
+  const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
@@ -144,6 +146,29 @@ export function AIChatbot() {
   useEffect(() => {
     getActiveStore().then(setActiveStoreCache);
   }, []);
+
+  // Load example questions when store is loaded
+  useEffect(() => {
+    const loadExampleQuestions = async () => {
+      if (!activeStoreCache) {
+        setExampleQuestions([]);
+        return;
+      }
+
+      setIsGeneratingQuestions(true);
+      try {
+        const questions = await generateExampleQuestions(activeStoreCache);
+        setExampleQuestions(questions);
+      } catch (error) {
+        console.error('Failed to load example questions:', error);
+        setExampleQuestions([]);
+      } finally {
+        setIsGeneratingQuestions(false);
+      }
+    };
+
+    loadExampleQuestions();
+  }, [activeStoreCache]);
 
   // Load chat sessions when opened
   useEffect(() => {
@@ -425,6 +450,10 @@ export function AIChatbot() {
     }
   };
 
+  const handleQuestionClick = (question: string) => {
+    setInput(question);
+  };
+
   const filteredSessions = chatSessions.filter((session) =>
     session.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -617,6 +646,79 @@ export function AIChatbot() {
                     </>
                   )}
                 </Button>
+              </div>
+            )}
+
+            {/* Example Questions Loading State */}
+            {isGeneratingQuestions && messages.length <= 2 && (
+              <div className="px-3 sm:px-4 py-2 border-t border-b bg-muted/20">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Örnek sorular hazırlanıyor...
+                </p>
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div 
+                      key={i} 
+                      className="h-8 bg-muted/50 rounded-lg animate-pulse"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Example Questions Section */}
+            {!isLoading && 
+             messages.length <= 2 && 
+             exampleQuestions.length > 0 && (
+              <div className="px-3 sm:px-4 py-2 border-t border-b bg-muted/20">
+                <div className="mb-1">
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Örnek sorular:
+                  </p>
+                </div>
+                
+                {/* Mobile: Horizontal scroll */}
+                {isMobile ? (
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    {exampleQuestions.slice(0, 4).map((question, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleQuestionClick(question)}
+                        className="flex-shrink-0 text-xs px-3 py-2 rounded-full 
+                                   bg-gradient-to-r from-purple-100 to-blue-100 
+                                   dark:from-purple-900/30 dark:to-blue-900/30
+                                   hover:from-purple-200 hover:to-blue-200
+                                   dark:hover:from-purple-900/50 dark:hover:to-blue-900/50
+                                   border border-purple-200 dark:border-purple-800
+                                   transition-colors duration-200
+                                   text-foreground whitespace-nowrap"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  /* Desktop: Grid layout */
+                  <div className="grid grid-cols-1 gap-2">
+                    {exampleQuestions.slice(0, 3).map((question, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleQuestionClick(question)}
+                        className="text-xs text-left px-3 py-2 rounded-lg
+                                   bg-gradient-to-r from-purple-50 to-blue-50
+                                   dark:from-purple-900/20 dark:to-blue-900/20
+                                   hover:from-purple-100 hover:to-blue-100
+                                   dark:hover:from-purple-900/40 dark:hover:to-blue-900/40
+                                   border border-purple-200 dark:border-purple-800
+                                   transition-all duration-200 hover:shadow-sm
+                                   text-foreground line-clamp-2"
+                      >
+                        <span className="text-purple-600 dark:text-purple-400 mr-1">→</span>
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
