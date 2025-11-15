@@ -3,6 +3,8 @@ import { ExternalLink } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChatSession";
 import ReactMarkdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface ChatMessageAreaProps {
   messages: ChatMessage[];
@@ -167,22 +169,26 @@ export function ChatMessageArea({
               {/* Display grounding chunks */}
               {message.role === "assistant" && message.groundingChunks && message.groundingChunks.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-gem-mist/50">
-                  <h4 className="text-xs font-semibold text-gem-offwhite/70 mb-2 text-right">Sources:</h4>
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    {message.groundingChunks.map(
-                      (chunk, chunkIndex) =>
-                        chunk.web?.uri && (
-                          <button
-                            key={chunkIndex}
-                            onClick={() => handleSourceClick(chunk.web!.uri!)}
-                            className="bg-gem-mist/50 hover:bg-gem-mist text-xs px-3 py-1 rounded-md transition-colors"
-                            aria-label={`View source ${chunkIndex + 1}`}
-                            title="View source document chunk"
-                          >
-                            Source {chunkIndex + 1}
-                          </button>
-                        ),
-                    )}
+                  <h4 className="text-xs font-semibold text-gem-offwhite/70 mb-2 text-right">Kaynaklar:</h4>
+                  <div className="flex flex-wrap gap-2 justify-end max-h-32 overflow-y-auto">
+                    {message.groundingChunks.map((chunk, chunkIndex) => {
+                      const title = chunk.web?.title || `Kaynak ${chunkIndex + 1}`;
+                      const uri = chunk.web?.uri || '';
+                      
+                      return (
+                        <button
+                          key={chunkIndex}
+                          onClick={() => handleSourceClick(uri)}
+                          className="group flex items-center gap-2 bg-gem-mist/50 hover:bg-gem-mist 
+                                   text-xs px-3 py-1.5 rounded-md transition-all border border-gem-mist/30
+                                   hover:border-primary/50"
+                          title={title}
+                        >
+                          <ExternalLink className="h-3 w-3 text-gem-offwhite/70 group-hover:text-primary" />
+                          <span className="max-w-[200px] truncate">{title}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -198,6 +204,34 @@ export function ChatMessageArea({
           </div>
         )}
       </div>
+
+      {/* Citation Modal */}
+      {modalContent && (
+        <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
+          <DialogContent className="max-w-2xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Kaynak Bilgisi</DialogTitle>
+              <DialogDescription>
+                Bu cevap için kullanılan kaynak bilgileri
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto max-h-[60vh] space-y-4">
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm font-mono break-all">{modalContent}</p>
+              </div>
+              {modalContent.startsWith('http') && (
+                <Button
+                  onClick={() => window.open(modalContent, '_blank')}
+                  className="w-full"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Kaynak Belgesini Aç
+                </Button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
