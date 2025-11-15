@@ -234,7 +234,7 @@ export function ChatMessageArea({
               <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
                 <DialogContent className="max-w-2xl max-h-[80vh]">
                   <DialogHeader>
-                    <DialogTitle>Kaynak: {sourceData.title}</DialogTitle>
+                    <DialogTitle>Kaynak: {sourceData.text}</DialogTitle>
                     <DialogDescription>Bu cevap için kullanılan kaynak içeriği</DialogDescription>
                   </DialogHeader>
                   <div className="overflow-y-auto max-h-[60vh] space-y-4">
