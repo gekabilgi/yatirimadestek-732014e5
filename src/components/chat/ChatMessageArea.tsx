@@ -172,12 +172,14 @@ export function ChatMessageArea({
                   <h4 className="text-xs font-semibold text-gem-offwhite/70 mb-2 text-right">Kaynaklar:</h4>
                   <div className="flex flex-wrap gap-2 justify-end max-h-32 overflow-y-auto">
               {message.groundingChunks.map((chunk, chunkIndex) => {
-                // For File Search, use retrievedContext instead of web
+                // For File Search, use retrievedContext
                 let title = `Kaynak ${chunkIndex + 1}`;
-                let uri = '';
+                let sourceData = '';
                 
-                // Try to get title from customMetadata first
-                if (chunk.retrievedContext?.customMetadata) {
+                // Try to get title from retrievedContext.title or customMetadata
+                if (chunk.retrievedContext?.title) {
+                  title = chunk.retrievedContext.title;
+                } else if (chunk.retrievedContext?.customMetadata) {
                   const metadata = chunk.retrievedContext.customMetadata;
                   if (Array.isArray(metadata)) {
                     const filenameMeta = metadata.find((m: any) => m.key === "filename");
@@ -187,19 +189,16 @@ export function ChatMessageArea({
                   }
                 }
                 
-                // Fallback to uri as title if available
-                if (title.startsWith('Kaynak') && chunk.retrievedContext?.uri) {
-                  const uriParts = chunk.retrievedContext.uri.split('/');
-                  title = uriParts[uriParts.length - 1] || title;
-                }
-                
-                // Get URI from retrievedContext
-                uri = chunk.retrievedContext?.uri || '';
+                // Store the text content to display in modal
+                sourceData = JSON.stringify({
+                  title,
+                  text: chunk.retrievedContext?.text || 'İçerik bulunamadı',
+                });
                 
                 return (
                   <button
                     key={chunkIndex}
-                    onClick={() => handleSourceClick(uri)}
+                    onClick={() => handleSourceClick(sourceData)}
                     className="group flex items-center gap-2 bg-gem-mist/50 hover:bg-gem-mist 
                                text-xs px-3 py-1.5 rounded-md transition-all border border-gem-mist/30
                                hover:border-primary/50"
@@ -227,32 +226,47 @@ export function ChatMessageArea({
       </div>
 
       {/* Citation Modal */}
-      {modalContent && (
-        <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
-          <DialogContent className="max-w-2xl max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle>Kaynak Bilgisi</DialogTitle>
-              <DialogDescription>
-                Bu cevap için kullanılan kaynak bilgileri
-              </DialogDescription>
-            </DialogHeader>
-            <div className="overflow-y-auto max-h-[60vh] space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <p className="text-sm font-mono break-all">{modalContent}</p>
-              </div>
-              {modalContent.startsWith('http') && (
-                <Button
-                  onClick={() => window.open(modalContent, '_blank')}
-                  className="w-full"
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Kaynak Belgesini Aç
-                </Button>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      {modalContent && (() => {
+        try {
+          const sourceData = JSON.parse(modalContent);
+          return (
+            <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
+              <DialogContent className="max-w-2xl max-h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle>Kaynak: {sourceData.title}</DialogTitle>
+                  <DialogDescription>
+                    Bu cevap için kullanılan kaynak içeriği
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="overflow-y-auto max-h-[60vh] space-y-4">
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{sourceData.text}</p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          );
+        } catch {
+          // Fallback for non-JSON content (if any)
+          return (
+            <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
+              <DialogContent className="max-w-2xl max-h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle>Kaynak</DialogTitle>
+                  <DialogDescription>
+                    Bu cevap için kullanılan kaynak bilgisi
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="overflow-y-auto max-h-[60vh] space-y-4">
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="text-sm font-mono break-all">{modalContent}</p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          );
+        }
+      })()}
     </div>
   );
 }
