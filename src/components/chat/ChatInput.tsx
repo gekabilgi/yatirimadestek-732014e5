@@ -37,18 +37,18 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t bg-background p-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex gap-2 items-end">
-          <Button variant="ghost" size="icon" disabled={disabled} className="flex-shrink-0"></Button>
+    <div className="border-t bg-background p-3 sm:p-4">
+      <div className="max-w-3xl mx-auto px-2 sm:px-0">
+        <div className="flex gap-3 sm:gap-2 items-end">
+          <Button variant="ghost" size="icon" disabled={disabled} className="flex-shrink-0 hidden sm:flex"></Button>
 
           <Textarea
             value={currentValue}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Mesajınızı yazın... (Enter ile gönderin, Shift+Enter ile yeni satır)"
+            placeholder="Mesajınızı yazın..."
             disabled={disabled}
-            className="min-h-[60px] max-h-[200px] resize-none"
+            className="min-h-[60px] max-h-[200px] resize-none text-base"
             rows={2}
           />
 
@@ -57,7 +57,7 @@ export function ChatInput({
           </Button>
         </div>
 
-        <div className="text-xs text-muted-foreground mt-2 text-center">{currentValue.length} karakter</div>
+        <div className="text-xs text-muted-foreground mt-2 text-center px-2">{currentValue.length} karakter</div>
       </div>
     </div>
   );
