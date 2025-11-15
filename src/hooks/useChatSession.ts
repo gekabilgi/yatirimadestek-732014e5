@@ -5,9 +5,17 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
-  sources?: string[];
+  sources?: Array<{
+    title: string;
+    uri: string;
+    snippet?: string;
+  }>;
   groundingChunks?: Array<{
     web?: { uri: string; title: string };
+    retrievedContext?: {
+      customMetadata?: Array<{ key: string; stringValue: string }>;
+      text?: string;
+    };
   }>;
 }
 

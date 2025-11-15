@@ -122,8 +122,9 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
     }
 
     // Extract sources with proper filename handling
-    const sources = groundingChunks.map((chunk: any) => {
-      let title = "Document";
+    const sources = groundingChunks.map((chunk: any, index: number) => {
+      let title = `Document ${index + 1}`;
+      let pageInfo = '';
 
       // Try to get filename from customMetadata
       if (chunk.retrievedContext?.customMetadata) {
@@ -133,17 +134,24 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
           if (filenameMeta) {
             title = filenameMeta.stringValue || filenameMeta.value || title;
           }
+          
+          // Extract page number if available
+          const pageMeta = metadata.find((m: any) => m.key === "page");
+          if (pageMeta) {
+            pageInfo = ` (Sayfa ${pageMeta.stringValue || pageMeta.value})`;
+          }
         }
       }
 
       // Fallback to web title if available
-      if (title === "Document" && chunk.web?.title) {
+      if (title.startsWith('Document') && chunk.web?.title) {
         title = chunk.web.title;
       }
 
       return {
-        title,
+        title: title + pageInfo,
         uri: chunk.web?.uri || "",
+        snippet: chunk.retrievedContext?.text?.substring(0, 200) || ""
       };
     });
 
