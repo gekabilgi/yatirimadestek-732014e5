@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChatSession";
 import ReactMarkdown from "react-markdown";
@@ -166,24 +165,23 @@ export function ChatMessageArea({
 
               {/* Display grounding chunks */}
               {message.role === "assistant" && message.groundingChunks && message.groundingChunks.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-border/50">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">Grounding Sources:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {message.groundingChunks.map((chunk, chunkIndex) => {
-                      const webSource = chunk.web;
-                      return webSource ? (
-                        <a
-                          key={chunkIndex}
-                          href={webSource.uri}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs px-3 py-1 rounded-md bg-secondary hover:bg-secondary/80 transition-colors inline-flex items-center gap-1"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          {webSource.title || `Source ${chunkIndex + 1}`}
-                        </a>
-                      ) : null;
-                    })}
+                <div className="mt-4 pt-3 border-t border-gem-mist/50">
+                  <h4 className="text-xs font-semibold text-gem-offwhite/70 mb-2 text-right">Sources:</h4>
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    {message.groundingChunks.map(
+                      (chunk, chunkIndex) =>
+                        chunk.retrievedContext?.text && (
+                          <button
+                            key={chunkIndex}
+                            onClick={() => handleSourceClick(chunk.retrievedContext!.text!)}
+                            className="bg-gem-mist/50 hover:bg-gem-mist text-xs px-3 py-1 rounded-md transition-colors"
+                            aria-label={`View source ${chunkIndex + 1}`}
+                            title="View source document chunk"
+                          >
+                            Source {chunkIndex + 1}
+                          </button>
+                        ),
+                    )}
                   </div>
                 </div>
               )}
