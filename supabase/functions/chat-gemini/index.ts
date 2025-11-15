@@ -46,7 +46,8 @@ Dökümanlardan aldığın bilgiyi aynen kopyalama, anlamını koruyarak sentezl
 Türkçe konuş ve profesyonel bir üslup kullan.
 Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
 Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek mantıklı bir açıklama yap.
-Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.`;
+Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
+Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
 
     // Build conversation history with system instruction
     const contents = [
