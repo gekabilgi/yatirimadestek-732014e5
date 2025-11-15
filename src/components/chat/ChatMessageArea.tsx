@@ -171,10 +171,10 @@ export function ChatMessageArea({
                   <div className="flex flex-wrap gap-2 justify-end">
                     {message.groundingChunks.map(
                       (chunk, chunkIndex) =>
-                        chunk.retrievedContext?.text && (
+                        chunk.web?.uri && (
                           <button
                             key={chunkIndex}
-                            onClick={() => handleSourceClick(chunk.retrievedContext!.text!)}
+                            onClick={() => handleSourceClick(chunk.web!.uri!)}
                             className="bg-gem-mist/50 hover:bg-gem-mist text-xs px-3 py-1 rounded-md transition-colors"
                             aria-label={`View source ${chunkIndex + 1}`}
                             title="View source document chunk"
