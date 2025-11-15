@@ -30,8 +30,19 @@ serve(async (req) => {
 
     const systemInstruction = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
+Özel Kurallar:
+9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara
+9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, Teşvik belgesi başvuru şartları, yöntemi ve gerekli belgeler, Hangi yatırım türlerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, Özel sektör projeleri için stratejik hamle programı değerlendirme kriterleri ve süreci, Güneş, rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için ek şartlar, Faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama esasları sorulduğunda sorunun cevaplarını mümkün mertebe "2025-1-9903_teblig.pdf" dosyasında ara
+9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara
+9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara
+HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara
+yatırım taahhütlü avans kredisi, ytak hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara
+9903 saylı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara
+yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, yada Pektin yatırımını nerde yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara
+
+Temel Kurallar:
 Verilen dökümanlardan yararlanarak bilgileri KENDI KELİMELERİNLE özetle ve yeniden formüle et.
-Dökümanlardan aldığın bilgiyi aynen kopyalama, anlamını koruyarak sentetle ve açıkla.
+Dökümanlardan aldığın bilgiyi aynen kopyalama, anlamını koruyarak sentezle ve açıkla.
 Türkçe konuş ve profesyonel bir üslup kullan.
 Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
 Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek mantıklı bir açıklama yap.
@@ -112,23 +123,23 @@ Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatı
     // Extract sources with proper filename handling
     const sources = groundingChunks.map((chunk: any) => {
       let title = "Document";
-      
+
       // Try to get filename from customMetadata
       if (chunk.retrievedContext?.customMetadata) {
         const metadata = chunk.retrievedContext.customMetadata;
         if (Array.isArray(metadata)) {
-          const filenameMeta = metadata.find((m: any) => m.key === 'filename');
+          const filenameMeta = metadata.find((m: any) => m.key === "filename");
           if (filenameMeta) {
             title = filenameMeta.stringValue || filenameMeta.value || title;
           }
         }
       }
-      
+
       // Fallback to web title if available
       if (title === "Document" && chunk.web?.title) {
         title = chunk.web.title;
       }
-      
+
       return {
         title,
         uri: chunk.web?.uri || "",
