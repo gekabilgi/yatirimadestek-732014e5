@@ -137,6 +137,7 @@ export function AIChatbot() {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [currentSuggestion, setCurrentSuggestion] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
@@ -169,6 +170,24 @@ export function AIChatbot() {
 
     loadExampleQuestions();
   }, [activeStoreCache]);
+
+  // Rotate through example questions
+  useEffect(() => {
+    if (exampleQuestions.length === 0) {
+      setCurrentSuggestion('');
+      return;
+    }
+
+    setCurrentSuggestion(exampleQuestions[0]);
+    let suggestionIndex = 0;
+    
+    const intervalId = setInterval(() => {
+      suggestionIndex = (suggestionIndex + 1) % exampleQuestions.length;
+      setCurrentSuggestion(exampleQuestions[suggestionIndex]);
+    }, 4000);
+
+    return () => clearInterval(intervalId);
+  }, [exampleQuestions]);
 
   // Load chat sessions when opened
   useEffect(() => {
@@ -652,73 +671,40 @@ export function AIChatbot() {
             {/* Example Questions Loading State */}
             {isGeneratingQuestions && messages.length <= 2 && (
               <div className="px-3 sm:px-4 py-2 border-t border-b bg-muted/20">
-                <p className="text-xs text-muted-foreground mb-2">
-                  Örnek sorular hazırlanıyor...
-                </p>
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <div 
-                      key={i} 
-                      className="h-8 bg-muted/50 rounded-lg animate-pulse"
-                    />
-                  ))}
-                </div>
+                <div className="h-16 bg-muted/50 rounded-lg animate-pulse" />
               </div>
             )}
 
-            {/* Example Questions Section */}
+            {/* Example Questions Section - Single Rotating Question */}
             {!isLoading && 
              messages.length <= 2 && 
-             exampleQuestions.length > 0 && (
+             currentSuggestion && (
               <div className="px-3 sm:px-4 py-2 border-t border-b bg-muted/20">
-                <div className="mb-1">
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Örnek sorular:
-                  </p>
-                </div>
-                
-                {/* Mobile: Horizontal scroll */}
-                {isMobile ? (
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {exampleQuestions.slice(0, 4).map((question, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleQuestionClick(question)}
-                        className="flex-shrink-0 text-xs px-3 py-2 rounded-full 
-                                   bg-gradient-to-r from-purple-100 to-blue-100 
-                                   dark:from-purple-900/30 dark:to-blue-900/30
-                                   hover:from-purple-200 hover:to-blue-200
-                                   dark:hover:from-purple-900/50 dark:hover:to-blue-900/50
-                                   border border-purple-200 dark:border-purple-800
-                                   transition-colors duration-200
-                                   text-foreground whitespace-nowrap"
-                      >
-                        {question}
-                      </button>
-                    ))}
+                <button
+                  onClick={() => handleQuestionClick(currentSuggestion)}
+                  className="w-full text-left px-4 py-3 rounded-lg
+                             bg-gradient-to-r from-purple-50 to-blue-50
+                             dark:from-purple-900/20 dark:to-blue-900/20
+                             hover:from-purple-100 hover:to-blue-100
+                             dark:hover:from-purple-900/40 dark:hover:to-blue-900/40
+                             border border-purple-200 dark:border-purple-800
+                             transition-all duration-300 hover:shadow-sm
+                             group animate-fade-in"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-purple-600 dark:text-purple-400 text-sm shrink-0 mt-0.5 group-hover:translate-x-1 transition-transform">
+                      →
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground font-medium mb-1">
+                        Örnek soru:
+                      </p>
+                      <p className="text-sm text-foreground line-clamp-2">
+                        {currentSuggestion}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  /* Desktop: Grid layout */
-                  <div className="grid grid-cols-1 gap-2">
-                    {exampleQuestions.slice(0, 3).map((question, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleQuestionClick(question)}
-                        className="text-xs text-left px-3 py-2 rounded-lg
-                                   bg-gradient-to-r from-purple-50 to-blue-50
-                                   dark:from-purple-900/20 dark:to-blue-900/20
-                                   hover:from-purple-100 hover:to-blue-100
-                                   dark:hover:from-purple-900/40 dark:hover:to-blue-900/40
-                                   border border-purple-200 dark:border-purple-800
-                                   transition-all duration-200 hover:shadow-sm
-                                   text-foreground line-clamp-2"
-                      >
-                        <span className="text-purple-600 dark:text-purple-400 mr-1">→</span>
-                        {question}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                </button>
               </div>
             )}
 
