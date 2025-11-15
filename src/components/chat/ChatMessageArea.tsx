@@ -178,7 +178,7 @@ export function ChatMessageArea({
 
                       // Try to get title from retrievedContext.title or customMetadata
                       if (chunk.retrievedContext?.title) {
-                        title = chunk.retrievedContext.stringValue;
+                        title = chunk.retrievedContext.title;
                       } else if (chunk.retrievedContext?.customMetadata) {
                         const metadata = chunk.retrievedContext.customMetadata;
                         if (Array.isArray(metadata)) {
