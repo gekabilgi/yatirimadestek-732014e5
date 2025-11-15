@@ -159,6 +159,25 @@ export async function clearActiveStore(): Promise<void> {
   localStorage.removeItem(ACTIVE_STORE_KEY);
 }
 
+// Example questions generation
+export async function generateExampleQuestions(storeName: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-example-questions', {
+      body: { storeName }
+    });
+
+    if (error) {
+      console.error('Error generating example questions:', error);
+      return [];
+    }
+
+    return data?.questions || [];
+  } catch (error) {
+    console.error('Failed to generate example questions:', error);
+    return [];
+  }
+}
+
 export const geminiRagService = {
   listRagStores,
   createRagStore,
@@ -170,4 +189,5 @@ export const geminiRagService = {
   getActiveStore,
   setActiveStore,
   clearActiveStore,
+  generateExampleQuestions,
 };
