@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from "react";
 import { ExternalLink } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChatSession";
 import ReactMarkdown from "react-markdown";
