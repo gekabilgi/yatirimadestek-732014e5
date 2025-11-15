@@ -94,12 +94,13 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
 
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
-    // Log grounding chunks to understand structure
-    console.log("=== GROUNDING CHUNKS DEBUG ===");
-    console.log("Total chunks:", groundingChunks.length);
+    // Enhanced logging for File Search grounding
     if (groundingChunks.length > 0) {
+      console.log("groundingChunks count:", groundingChunks.length);
       console.log("First chunk full structure:", JSON.stringify(groundingChunks[0], null, 2));
-      console.log("First chunk keys:", Object.keys(groundingChunks[0]));
+      console.log("Has web?:", !!groundingChunks[0].web);
+      console.log("Has retrievedContext?:", !!groundingChunks[0].retrievedContext);
+      console.log("retrievedContext.uri:", groundingChunks[0].retrievedContext?.uri);
     }
 
     let textOut = "";
@@ -121,45 +122,12 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
       throw e;
     }
 
-    // Extract sources with proper filename handling
-    const sources = groundingChunks.map((chunk: any, index: number) => {
-      let title = `Document ${index + 1}`;
-      let pageInfo = '';
-
-      // Try to get filename from customMetadata
-      if (chunk.retrievedContext?.customMetadata) {
-        const metadata = chunk.retrievedContext.customMetadata;
-        if (Array.isArray(metadata)) {
-          const filenameMeta = metadata.find((m: any) => m.key === "filename");
-          if (filenameMeta) {
-            title = filenameMeta.stringValue || filenameMeta.value || title;
-          }
-          
-          // Extract page number if available
-          const pageMeta = metadata.find((m: any) => m.key === "page");
-          if (pageMeta) {
-            pageInfo = ` (Sayfa ${pageMeta.stringValue || pageMeta.value})`;
-          }
-        }
-      }
-
-      // Fallback to web title if available
-      if (title.startsWith('Document') && chunk.web?.title) {
-        title = chunk.web.title;
-      }
-
-      return {
-        title: title + pageInfo,
-        uri: chunk.web?.uri || "",
-        snippet: chunk.retrievedContext?.text?.substring(0, 200) || ""
-      };
-    });
+    console.log("Final response:", { textLength: textOut.length, groundingChunksCount: groundingChunks.length });
 
     return new Response(
       JSON.stringify({
         text: textOut,
         groundingChunks,
-        sources,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

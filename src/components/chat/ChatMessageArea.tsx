@@ -171,24 +171,45 @@ export function ChatMessageArea({
                 <div className="mt-4 pt-3 border-t border-gem-mist/50">
                   <h4 className="text-xs font-semibold text-gem-offwhite/70 mb-2 text-right">Kaynaklar:</h4>
                   <div className="flex flex-wrap gap-2 justify-end max-h-32 overflow-y-auto">
-                    {message.groundingChunks.map((chunk, chunkIndex) => {
-                      const title = chunk.web?.title || `Kaynak ${chunkIndex + 1}`;
-                      const uri = chunk.web?.uri || '';
-                      
-                      return (
-                        <button
-                          key={chunkIndex}
-                          onClick={() => handleSourceClick(uri)}
-                          className="group flex items-center gap-2 bg-gem-mist/50 hover:bg-gem-mist 
-                                   text-xs px-3 py-1.5 rounded-md transition-all border border-gem-mist/30
-                                   hover:border-primary/50"
-                          title={title}
-                        >
-                          <ExternalLink className="h-3 w-3 text-gem-offwhite/70 group-hover:text-primary" />
-                          <span className="max-w-[200px] truncate">{title}</span>
-                        </button>
-                      );
-                    })}
+              {message.groundingChunks.map((chunk, chunkIndex) => {
+                // For File Search, use retrievedContext instead of web
+                let title = `Kaynak ${chunkIndex + 1}`;
+                let uri = '';
+                
+                // Try to get title from customMetadata first
+                if (chunk.retrievedContext?.customMetadata) {
+                  const metadata = chunk.retrievedContext.customMetadata;
+                  if (Array.isArray(metadata)) {
+                    const filenameMeta = metadata.find((m: any) => m.key === "filename");
+                    if (filenameMeta) {
+                      title = filenameMeta.stringValue || filenameMeta.value || title;
+                    }
+                  }
+                }
+                
+                // Fallback to uri as title if available
+                if (title.startsWith('Kaynak') && chunk.retrievedContext?.uri) {
+                  const uriParts = chunk.retrievedContext.uri.split('/');
+                  title = uriParts[uriParts.length - 1] || title;
+                }
+                
+                // Get URI from retrievedContext
+                uri = chunk.retrievedContext?.uri || '';
+                
+                return (
+                  <button
+                    key={chunkIndex}
+                    onClick={() => handleSourceClick(uri)}
+                    className="group flex items-center gap-2 bg-gem-mist/50 hover:bg-gem-mist 
+                               text-xs px-3 py-1.5 rounded-md transition-all border border-gem-mist/30
+                               hover:border-primary/50"
+                    title={title}
+                  >
+                    <ExternalLink className="h-3 w-3 text-gem-offwhite/70 group-hover:text-primary" />
+                    <span className="max-w-[200px] truncate">{title}</span>
+                  </button>
+                );
+              })}
                   </div>
                 </div>
               )}

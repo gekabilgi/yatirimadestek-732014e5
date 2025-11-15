@@ -11,11 +11,13 @@ export interface ChatMessage {
     snippet?: string;
   }>;
   groundingChunks?: Array<{
-    web?: { uri: string; title: string };
     retrievedContext?: {
-      customMetadata?: Array<{ key: string; stringValue: string }>;
+      uri?: string;
+      title?: string;
       text?: string;
+      customMetadata?: Array<{ key: string; stringValue?: string; value?: string }>;
     };
+    web?: { uri: string; title: string }; // Keep for backward compatibility
   }>;
 }
 
