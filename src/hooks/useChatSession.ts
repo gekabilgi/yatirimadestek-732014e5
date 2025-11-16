@@ -197,6 +197,27 @@ export function useChatSession() {
 
       if (error) throw error;
 
+      // Handle blocked/safety responses
+      if (data.blocked) {
+        const errorMessage: ChatMessage = {
+          role: 'assistant',
+          content: data.error || 'Üzgünüm, bu soruya cevap veremiyorum.',
+          timestamp: Date.now(),
+        };
+
+        // Save error message to database
+        await supabase
+          .from('chat_messages')
+          .insert({
+            session_id: sessionId,
+            role: 'assistant',
+            content: errorMessage.content,
+          });
+
+        updateSession(sessionId, { messages: [...updatedMessages, errorMessage] });
+        return;
+      }
+
       const fullResponse = data.text;
       const words = fullResponse.split(' ');
       
