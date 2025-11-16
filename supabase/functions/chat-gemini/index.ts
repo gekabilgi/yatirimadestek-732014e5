@@ -28,6 +28,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // <<< DEĞİŞİKLİK: Bu flag, tetikleyici mesajı ve cevap mesajını ayırmak için kritik
+  let isNewIncentiveQuery = false;
+  // >>> DEĞİŞİKLİK
+
   try {
     const { storeName, messages, sessionId } = await req.json();
 
@@ -42,12 +46,12 @@ serve(async (req) => {
     if (sessionId) {
       const supabaseAdmin = getSupabaseAdmin();
       const { data, error } = await supabaseAdmin
-        .from('incentive_queries')
-        .select('*')
-        .eq('session_id', sessionId)
-        .eq('status', 'collecting')
+        .from("incentive_queries")
+        .select("*")
+        .eq("session_id", sessionId)
+        .eq("status", "collecting")
         .maybeSingle();
-      
+
       if (error) {
         console.error("Error loading incentive query:", error);
       } else if (data) {
@@ -55,26 +59,27 @@ serve(async (req) => {
         console.log("Loaded incentive query state:", incentiveQuery);
       } else {
         console.log("No active incentive query for session:", sessionId);
-        
+
         // Auto-start incentive mode if user message contains relevant keywords
-        const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
-        const incentiveKeywords = ['teşvik', 'hesapla', 'yatırım', 'destek', 'sektör', 'üretim', 'imalat'];
-        const shouldStartIncentiveMode = incentiveKeywords.some(keyword => 
-          lastUserMessage.includes(keyword)
-        );
-        
+        const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || "";
+        const incentiveKeywords = ["teşvik", "hesapla", "yatırım", "destek", "sektör", "üretim", "imalat"];
+        const shouldStartIncentiveMode = incentiveKeywords.some((keyword) => lastUserMessage.includes(keyword));
+
         if (shouldStartIncentiveMode) {
           const { data: newQuery, error: insertError } = await supabaseAdmin
-            .from('incentive_queries')
+            .from("incentive_queries")
             .insert({
               session_id: sessionId,
-              status: 'collecting',
+              status: "collecting",
             })
             .select()
             .single();
-          
+
           if (!insertError && newQuery) {
             incentiveQuery = newQuery;
+            // <<< DEĞİŞİKLİK: Flag'i ayarla
+            isNewIncentiveQuery = true;
+            // >>> DEĞİŞİKLİK
             console.log("✓ Started new incentive query:", incentiveQuery);
           } else {
             console.error("Error starting incentive query:", insertError);
@@ -87,8 +92,8 @@ serve(async (req) => {
 
     // Helper functions for slot-filling
     const getSlotFillingStatus = (query: any): string => {
-      const slots = ['sector', 'province', 'district', 'osb_status'];
-      const filled = slots.filter(slot => query[slot]).length;
+      const slots = ["sector", "province", "district", "osb_status"];
+      const filled = slots.filter((slot) => query[slot]).length;
       return `${filled}/4 bilgi toplandı`;
     };
 
@@ -100,7 +105,8 @@ serve(async (req) => {
       return "Tüm bilgiler toplandı - Hesaplama yap";
     };
 
-    const incentiveSlotFillingInstruction = incentiveQuery ? `
+    const incentiveSlotFillingInstruction = incentiveQuery
+      ? `
 
 ## ⚠️ SERT KURALLAR - UZUN AÇIKLAMA YAPMA - YASAK! ⚠️
 
@@ -112,40 +118,58 @@ serve(async (req) => {
 
 **Mevcut Durum:** ${getSlotFillingStatus(incentiveQuery)}
 **Toplanan Bilgiler:**
-${incentiveQuery.sector ? `✓ Sektör: ${incentiveQuery.sector}` : '○ Sektör: Bekleniyor'}
-${incentiveQuery.province ? `✓ İl: ${incentiveQuery.province}` : '○ İl: Bekleniyor'}
-${incentiveQuery.district ? `✓ İlçe: ${incentiveQuery.district}` : '○ İlçe: Bekleniyor'}
-${incentiveQuery.osb_status ? `✓ OSB Durumu: ${incentiveQuery.osb_status}` : '○ OSB Durumu: Bekleniyor'}
+${incentiveQuery.sector ? `✓ Sektör: ${incentiveQuery.sector}` : "○ Sektör: Bekleniyor"}
+${incentiveQuery.province ? `✓ İl: ${incentiveQuery.province}` : "○ İl: Bekleniyor"}
+${incentiveQuery.district ? `✓ İlçe: ${incentiveQuery.district}` : "○ İlçe: Bekleniyor"}
+${incentiveQuery.osb_status ? `✓ OSB Durumu: ${incentiveQuery.osb_status}` : "○ OSB Durumu: Bekleniyor"}
 
 **SONRAKİ ADIM:** ${getNextSlotToFill(incentiveQuery)}
 
 ### SORU ÖRNEKLERİ (TAM OLARAK BU ŞEKİLDE):
 
-${!incentiveQuery.sector ? `
+${
+  !incentiveQuery.sector
+    ? `
 **SEKTÖR SORGUSU:**
 ✅ DOĞRU: "Anladım. Hangi sektörde yatırım yapacaksınız?"
 ❌ YANLIŞ: "Türkiye'deki yatırım teşvik sisteminde... [uzun açıklama]... hangi sektörde yatırım yapmayı düşünüyorsunuz?"
-` : ''}
+`
+    : ""
+}
 
-${incentiveQuery.sector && !incentiveQuery.province ? `
+${
+  incentiveQuery.sector && !incentiveQuery.province
+    ? `
 **İL SORGUSU:**
 ✅ DOĞRU: "Teşekkürler. Hangi ilde yatırım yapacaksınız?"
 ❌ YANLIŞ: "Gömlek üretimi için Türkiye'de birçok teşvik var... [uzun açıklama]... hangi ilde?"
-` : ''}
+`
+    : ""
+}
 
-${incentiveQuery.province && !incentiveQuery.district ? `
+${
+  incentiveQuery.province && !incentiveQuery.district
+    ? `
 **İLÇE SORGUSU:**
 ✅ DOĞRU: "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)"
 ❌ YANLIŞ: "İl bilgisini aldım. Türkiye'de ilçelere göre farklı... [uzun açıklama]... hangi ilçe?"
-` : ''}
+`
+    : ""
+}
 
-${incentiveQuery.district && !incentiveQuery.osb_status ? `
+${
+  incentiveQuery.district && !incentiveQuery.osb_status
+    ? `
 **OSB SORGUSU:**
 ✅ DOĞRU: "Anladım. OSB içinde mi dışında mı olacak?"
 ❌ YANLIŞ: "OSB'ler organize sanayi bölgeleridir ve... [uzun açıklama]... OSB içi mi dışı mı?"
-` : ''}
+`
+    : ""
+}
 
-${incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status ? `
+${
+  incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status
+    ? `
 **HESAPLAMA ZAMANI:**
 Tüm bilgiler toplandı. Şimdi "tesvik_sorgusu.pdf" dosyasındaki SÜREÇ AKIŞI'na göre:
 
@@ -161,16 +185,19 @@ GÖREV:
 2. İstanbul ve GES/RES istisnalarını kontrol et
 3. Öncelikli/Hedef yatırım kategorisini belirle
 4. Alacağı destekleri hesapla:
-   - Faiz/Kar Payı Desteği (oran ve üst limit)
-   - Vergi İndirimi (yatırıma katkı oranı)
-   - SGK İşveren Primi Desteği (süre ve alt bölge)
-   - KDV İstisnası (var/yok)
-   - Gümrük Vergisi Muafiyeti (var/yok)
+  - Faiz/Kar Payı Desteği (oran ve üst limit)
+  - Vergi İndirimi (yatırıma katkı oranı)
+  - SGK İşveren Primi Desteği (süre ve alt bölge)
+  - KDV İstisnası (var/yok)
+  - Gümrük Vergisi Muafiyeti (var/yok)
 5. Detaylı rapor sun"
-` : ''}
-` : '';
+`
+    : ""
+}
+`
+      : "";
 
-    const systemInstruction = incentiveQuery 
+    const systemInstruction = incentiveQuery
       ? `Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 
 ⚠️ KRİTİK KURALLAR:
@@ -206,6 +233,7 @@ Yüklediğim "tesvik_sorgusu.pdf" dosyasında yer alan "TEMEL KURALLAR", "VERİ 
 ${incentiveSlotFillingInstruction}
 
 Temel Kurallar:
+
 Türkçe konuş ve profesyonel bir üslup kullan.
 Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
 ÖNEMLİ: Dokümanlardaki bilgileri kendi cümlelerinle yeniden ifade et. Direkt alıntı yapma, parafraze et.
@@ -213,15 +241,80 @@ Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri bir
 Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
 Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
 
+    // <<< DEĞİŞİKLİK: TÜM GUARDRAIL MANTIĞI YENİDEN DÜZENLENDİ
     // GUARDRAIL: If collecting mode with missing slots, generate deterministic short question
     // This bypasses LLM to guarantee 2-sentence responses
-    if (incentiveQuery && incentiveQuery.status === 'collecting') {
-      const hasAllSlots = incentiveQuery.sector && incentiveQuery.province && 
-                          incentiveQuery.district && incentiveQuery.osb_status;
-      
+    if (incentiveQuery && incentiveQuery.status === "collecting") {
+      const supabaseAdmin = getSupabaseAdmin();
+      const lastUserMessage = messages[messages.length - 1]?.content || "";
+      const normalizedMessage = lastUserMessage.trim();
+      const lowerMsg = normalizedMessage.toLowerCase();
+      const updates: any = {};
+
+      // 1. Gelen mesajı işle (Eğer bu tetikleyici mesaj DEĞİLSE)
+      // isNewIncentiveQuery bayrağı burada devreye giriyor
+      if (!isNewIncentiveQuery && normalizedMessage) {
+        if (!incentiveQuery.sector) {
+          updates.sector = normalizedMessage;
+        } else if (incentiveQuery.sector && !incentiveQuery.province) {
+          const cleanedProvince = normalizedMessage
+            .replace(/'da$/i, "")
+            .replace(/'de$/i, "")
+            .replace(/\sda$/i, "")
+            .replace(/\sde$/i, "")
+            .replace(/\sta$/i, "")
+            .replace(/\ste$/i, "")
+            .replace(/\sili$/i, "")
+            .replace(/\sİli$/i, "")
+            .trim();
+          updates.province = cleanedProvince.charAt(0).toUpperCase() + cleanedProvince.slice(1);
+        } else if (incentiveQuery.province && !incentiveQuery.district) {
+          const cleanedDistrict = normalizedMessage.trim();
+          updates.district = cleanedDistrict.charAt(0).toUpperCase() + cleanedDistrict.slice(1);
+        } else if (incentiveQuery.district && !incentiveQuery.osb_status) {
+          if (
+            lowerMsg.includes("içi") ||
+            lowerMsg.includes("içinde") ||
+            lowerMsg.includes("osb içi") ||
+            lowerMsg.includes("organize sanayi içi") ||
+            lowerMsg === "içi" ||
+            lowerMsg === "ici" ||
+            lowerMsg === "evet" ||
+            lowerMsg === "var"
+          ) {
+            updates.osb_status = "İÇİ";
+          } else if (
+            lowerMsg.includes("dışı") ||
+            lowerMsg.includes("dışında") ||
+            lowerMsg.includes("osb dışı") ||
+            lowerMsg === "dışı" ||
+            lowerMsg === "disi" ||
+            lowerMsg.includes("hayır") ||
+            lowerMsg.includes("değil") ||
+            lowerMsg === "yok"
+          ) {
+            updates.osb_status = "DIŞI";
+          }
+        }
+      }
+
+      // 2. Güncellemeler varsa veritabanına ve YEREL OBJE'ye işle
+      if (Object.keys(updates).length > 0) {
+        await supabaseAdmin.from("incentive_queries").update(updates).eq("session_id", sessionId);
+        console.log("✓ Updated slots:", updates);
+
+        // KRİTİK: Bir sonraki soruyu doğru belirlemek için yerel kopyayı da güncelle
+        Object.assign(incentiveQuery, updates);
+      }
+
+      // 3. GÜNCEL duruma göre tüm slotların dolu olup olmadığını KONTROL ET
+      const hasAllSlots =
+        incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
+
+      // 4. Eğer TÜM SLOTLAR DOLMAMIŞSA, bir sonraki soruyu sor
       if (!hasAllSlots) {
         console.log("⚡ GUARDRAIL: Generating deterministic short question");
-        
+
         let deterministicResponse = "";
         if (!incentiveQuery.sector) {
           deterministicResponse = "Anladım. Hangi sektörde yatırım yapacaksınız?";
@@ -232,56 +325,20 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
         } else if (!incentiveQuery.osb_status) {
           deterministicResponse = "Anladım. OSB içinde mi dışında mı olacak?";
         }
-        
-        // Update slot from user's last message
-        const supabaseAdmin = getSupabaseAdmin();
-        const lastUserMessage = messages[messages.length - 1]?.content || '';
-        const normalizedMessage = lastUserMessage.trim();
-        const lowerMsg = normalizedMessage.toLowerCase();
-        const updates: any = {};
-        
-        if (!incentiveQuery.sector && normalizedMessage) {
-          updates.sector = normalizedMessage;
-        } else if (incentiveQuery.sector && !incentiveQuery.province && normalizedMessage) {
-          const cleanedProvince = normalizedMessage
-            .replace(/'da$/i, '').replace(/'de$/i, '')
-            .replace(/\sda$/i, '').replace(/\sde$/i, '')
-            .replace(/\sta$/i, '').replace(/\ste$/i, '')
-            .replace(/\sili$/i, '').replace(/\sİli$/i, '')
-            .trim();
-          updates.province = cleanedProvince.charAt(0).toUpperCase() + cleanedProvince.slice(1);
-        } else if (incentiveQuery.province && !incentiveQuery.district && normalizedMessage) {
-          const cleanedDistrict = normalizedMessage.trim();
-          updates.district = cleanedDistrict.charAt(0).toUpperCase() + cleanedDistrict.slice(1);
-        } else if (incentiveQuery.district && !incentiveQuery.osb_status) {
-          if (lowerMsg.includes('içi') || lowerMsg.includes('içinde') || lowerMsg.includes('osb içi') || 
-              lowerMsg.includes('organize sanayi içi') || lowerMsg === 'içi' || lowerMsg === 'ici' ||
-              lowerMsg === 'evet' || lowerMsg === 'var') {
-            updates.osb_status = 'İÇİ';
-          } else if (lowerMsg.includes('dışı') || lowerMsg.includes('dışında') || lowerMsg.includes('osb dışı') || 
-                     lowerMsg === 'dışı' || lowerMsg === 'disi' || lowerMsg.includes('hayır') || 
-                     lowerMsg.includes('değil') || lowerMsg === 'yok') {
-            updates.osb_status = 'DIŞI';
-          }
-        }
-        
-        if (Object.keys(updates).length > 0) {
-          await supabaseAdmin
-            .from('incentive_queries')
-            .update(updates)
-            .eq('session_id', sessionId);
-          console.log("✓ Updated slots:", updates);
-        }
-        
+
         return new Response(
           JSON.stringify({
             text: deterministicResponse,
             groundingChunks: [],
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
+
+      // 5. Eğer tüm slotlar DOLMUŞSA, bu 'if' bloğu atlanacak
+      // ve kod, hesaplama yapmak üzere LLM'e (Gemini) gidecek.
     }
+    // >>> DEĞİŞİKLİK: GUARDRAIL MANTIĞI BURADA BİTİYOR
 
     // Build conversation history
     const contents = messages.map((m: any) => ({
@@ -353,32 +410,34 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
       throw e;
     }
 
-    console.log("Final response:", { textLength: textOut.length, groundingChunksCount: groundingChunks.length });
+    console.log("Final response:", {
+      textLength: textOut.length,
+      groundingChunksCount: groundingChunks.length,
+    });
 
     // Update incentive query state if all slots filled - mark as completed
+    // <<< DEĞİŞİKLİK: Bu blok artık gereksiz, çünkü tüm slotlar dolduğunda LLM'e gidiliyor
+    // ve LLM hesaplama yapıyor. 'completed' durumunu LLM cevabından sonra ayarlamak daha mantıklı.
+    // Şimdilik bu kısmı basitleştiriyoruz, Guardrail'in dışına taşıdık.
     if (sessionId && incentiveQuery) {
       try {
         const supabaseAdmin = getSupabaseAdmin();
-        
+
         // Check if all slots are now filled
-        const allSlotsFilled = 
-          incentiveQuery.sector &&
-          incentiveQuery.province &&
-          incentiveQuery.district &&
-          incentiveQuery.osb_status;
-        
-        if (allSlotsFilled && incentiveQuery.status === 'collecting') {
-          await supabaseAdmin
-            .from('incentive_queries')
-            .update({ status: 'completed' })
-            .eq('session_id', sessionId);
-          
+        const allSlotsFilled =
+          incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
+
+        if (allSlotsFilled && incentiveQuery.status === "collecting") {
+          // Bu, hesaplama yapıldıktan *sonra* çalışır
+          await supabaseAdmin.from("incentive_queries").update({ status: "completed" }).eq("session_id", sessionId);
+
           console.log("✓ All slots filled - marked as completed");
         }
       } catch (error) {
         console.error("Error updating incentive query:", error);
       }
     }
+    // >>> DEĞİŞİKLİK
 
     return new Response(
       JSON.stringify({
