@@ -163,8 +163,18 @@ export function useChatSession() {
     setIsLoading(true);
 
     try {
-      const session = sessions.find(s => s.id === sessionId);
-      if (!session) throw new Error('Session not found');
+      // Find session or create a temporary one if not found (race condition fix)
+      let session = sessions.find(s => s.id === sessionId);
+      if (!session) {
+        console.warn('Session not found in local state, creating temporary session object');
+        session = {
+          id: sessionId,
+          title: 'New Chat',
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+      }
 
       const userMessage: ChatMessage = {
         role: 'user',
