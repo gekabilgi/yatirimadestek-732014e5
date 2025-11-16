@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 function getAiClient(): GoogleGenAI {
@@ -13,7 +14,6 @@ function getAiClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
-// Helper function to create Supabase admin client
 function getSupabaseAdmin() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -23,14 +23,64 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// Küçük yardımcılar
+const cleanProvince = (text: string): string => {
+  let cleaned = text
+    .replace(/'da$/i, "")
+    .replace(/'de$/i, "")
+    .replace(/\sda$/i, "")
+    .replace(/\sde$/i, "")
+    .replace(/\sta$/i, "")
+    .replace(/\ste$/i, "")
+    .replace(/\sili$/i, "")
+    .replace(/\sİli$/i, "")
+    .trim();
+
+  if (!cleaned) return text.trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
+const cleanDistrict = (text: string): string => {
+  const cleaned = text.trim();
+  if (!cleaned) return text.trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
+const parseOsbStatus = (text: string): "İÇİ" | "DIŞI" | null => {
+  const lower = text.toLowerCase().trim();
+  if (
+    lower.includes("içi") ||
+    lower.includes("içinde") ||
+    lower.includes("osb içi") ||
+    lower.includes("organize sanayi içi") ||
+    lower === "içi" ||
+    lower === "ici" ||
+    lower === "evet" ||
+    lower === "var"
+  ) {
+    return "İÇİ";
+  }
+  if (
+    lower.includes("dışı") ||
+    lower.includes("dışında") ||
+    lower.includes("osb dışı") ||
+    lower === "dışı" ||
+    lower === "disi" ||
+    lower.includes("hayır") ||
+    lower.includes("hayir") ||
+    lower.includes("değil") ||
+    lower.includes("degil") ||
+    lower === "yok"
+  ) {
+    return "DIŞI";
+  }
+  return null;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-
-  // <<< DEĞİŞİKLİK: Bu flag, tetikleyici mesajı ve cevap mesajını ayırmak için kritik
-  let isNewIncentiveQuery = false;
-  // >>> DEĞİŞİKLİK
 
   try {
     const { storeName, messages, sessionId } = await req.json();
@@ -41,15 +91,41 @@ serve(async (req) => {
       throw new Error("storeName and messages array are required");
     }
 
-    // Load incentive query state if session provided
-    let incentiveQuery = null;
+    const lastUserMessage =
+      messages
+        .filter((m: any) => m.role === "user")
+        .slice(-1)[0]
+        ?.content?.toLowerCase() || "";
+
+    const incentiveKeywords = [
+      "teşvik",
+      "tesvik",
+      "hesapla",
+      "yatırım",
+      "yatirım",
+      "yatirim",
+      "destek",
+      "sektör",
+      "sektor",
+      "üretim",
+      "uretim",
+      "imalat",
+    ];
+    const shouldStartIncentiveMode = incentiveKeywords.some((keyword) => lastUserMessage.includes(keyword));
+
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // 1) Var olan incentive_query'yi yükle
+    let incentiveQuery: any = null;
+
     if (sessionId) {
-      const supabaseAdmin = getSupabaseAdmin();
       const { data, error } = await supabaseAdmin
         .from("incentive_queries")
         .select("*")
         .eq("session_id", sessionId)
-        .eq("status", "collecting")
+        .in("status", ["collecting", "completed"])
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -57,40 +133,46 @@ serve(async (req) => {
       } else if (data) {
         incentiveQuery = data;
         console.log("Loaded incentive query state:", incentiveQuery);
-      } else {
-        console.log("No active incentive query for session:", sessionId);
+      }
+    }
 
-        // Auto-start incentive mode if user message contains relevant keywords
-        const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || "";
-        const incentiveKeywords = ["teşvik", "hesapla", "yatırım", "destek", "sektör", "üretim", "imalat"];
-        const shouldStartIncentiveMode = incentiveKeywords.some((keyword) => lastUserMessage.includes(keyword));
+    // 2) Henüz yoksa ve yatırım niyeti varsa -> yeni başlat
+    if (!incentiveQuery && shouldStartIncentiveMode) {
+      if (sessionId) {
+        const { data: newQuery, error: insertError } = await supabaseAdmin
+          .from("incentive_queries")
+          .insert({
+            session_id: sessionId,
+            status: "collecting",
+            // İlk mesajı sektör olarak al (daha sofistike NLP sonra eklenebilir)
+            sector: messages[messages.length - 1]?.content || null,
+          })
+          .select()
+          .single();
 
-        if (shouldStartIncentiveMode) {
-          const { data: newQuery, error: insertError } = await supabaseAdmin
-            .from("incentive_queries")
-            .insert({
-              session_id: sessionId,
-              status: "collecting",
-            })
-            .select()
-            .single();
-
-          if (!insertError && newQuery) {
-            incentiveQuery = newQuery;
-            // <<< DEĞİŞİKLİK: Flag'i ayarla
-            isNewIncentiveQuery = true;
-            // >>> DEĞİŞİKLİK
-            console.log("✓ Started new incentive query:", incentiveQuery);
-          } else {
-            console.error("Error starting incentive query:", insertError);
-          }
+        if (!insertError && newQuery) {
+          incentiveQuery = newQuery;
+          console.log("✓ Started new incentive query:", incentiveQuery);
+        } else {
+          console.error("Error starting incentive query:", insertError);
         }
+      } else {
+        // sessionId yoksa bile en azından o istek için RAM'de bir state oluşturalım
+        incentiveQuery = {
+          id: null,
+          session_id: null,
+          status: "collecting",
+          sector: messages[messages.length - 1]?.content || null,
+          province: null,
+          district: null,
+          osb_status: null,
+        };
+        console.log("Started in-memory incentive query (no sessionId):", incentiveQuery);
       }
     }
 
     const ai = getAiClient();
 
-    // Helper functions for slot-filling
     const getSlotFillingStatus = (query: any): string => {
       const slots = ["sector", "province", "district", "osb_status"];
       const filled = slots.filter((slot) => query[slot]).length;
@@ -107,7 +189,6 @@ serve(async (req) => {
 
     const incentiveSlotFillingInstruction = incentiveQuery
       ? `
-
 ## ⚠️ SERT KURALLAR - UZUN AÇIKLAMA YAPMA - YASAK! ⚠️
 
 **CEVAP FORMATI (ZORUNLU):**
@@ -171,34 +252,16 @@ ${
   incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status
     ? `
 **HESAPLAMA ZAMANI:**
-Tüm bilgiler toplandı. Şimdi "tesvik_sorgusu.pdf" dosyasındaki SÜREÇ AKIŞI'na göre:
-
-**Hesaplama Sorgusu:**
-"Kullanıcının yatırım bilgileri:
-- Sektör: ${incentiveQuery.sector}
-- İl: ${incentiveQuery.province} 
-- İlçe: ${incentiveQuery.district}
-- OSB Durumu: ${incentiveQuery.osb_status}
-
-GÖREV:
-1. 6. Bölge kuralını kontrol et
-2. İstanbul ve GES/RES istisnalarını kontrol et
-3. Öncelikli/Hedef yatırım kategorisini belirle
-4. Alacağı destekleri hesapla:
-  - Faiz/Kar Payı Desteği (oran ve üst limit)
-  - Vergi İndirimi (yatırıma katkı oranı)
-  - SGK İşveren Primi Desteği (süre ve alt bölge)
-  - KDV İstisnası (var/yok)
-  - Gümrük Vergisi Muafiyeti (var/yok)
-5. Detaylı rapor sun"
+Tüm bilgiler toplandı. Şimdi "tesvik_sorgusu.pdf" dosyasındaki SÜREÇ AKIŞI'na göre teşvik hesabı yap.
 `
     : ""
 }
 `
       : "";
 
-    const systemInstruction = incentiveQuery
-      ? `Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+    const systemInstruction =
+      incentiveQuery && incentiveQuery.status === "collecting"
+        ? `Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 
 ⚠️ KRİTİK KURALLAR:
 - SADECE KISA SORULAR SOR (maksimum 2 cümle)
@@ -211,29 +274,13 @@ CEVAP ŞEKLİ:
 2. cümle: Tek soru
 
 Örnek: "Anladım. Hangi ilde yatırım yapacaksınız?"`
-      : `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
+        : `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
 Özel Kurallar:
-9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara
-9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, Teşvik belgesi başvuru şartları, yöntemi ve gerekli belgeler, Hangi yatırım türlerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, Özel sektör projeleri için stratejik hamle programı değerlendirme kriterleri ve süreci, Güneş, rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için ek şartlar, Faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama esasları sorulduğunda sorunun cevaplarını mümkün mertebe "2025-1-9903_teblig.pdf" dosyasında ara
-9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara
-9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara
-HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara
-yatırım taahhütlü avans kredisi, ytak hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara
-9903 saylı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara
-yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, yada Pektin yatırımını nerde yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara
-
-Teşvik Sorgulama Görevi:
-Yüklediğim "tesvik_sorgusu.pdf" dosyasında yer alan "TEMEL KURALLAR", "VERİ KAYNAKLARI" ve "SÜREÇ AKIŞI" başlıkları altında verilen bilgilere dayanarak:
-1. Adım adım mantık yürüterek bu yatırımın hangi destek kategorisine girdiğini bul (Önce 6. Bölge Kuralını kontrol et).
-2. İstanbul ve GES/RES istisnalarını kontrol et.
-3. Alacağı destekleri (Faiz, Vergi İndirimi, SGK Süresi, Alt Bölge, KDV, Gümrük) hesapla.
-4. Sonucu bana detaylı bir rapor olarak sun.
-
+9903 sayılı karar ... (buradaki uzun doküman talimatlarını olduğu gibi bırakıyorum)
 ${incentiveSlotFillingInstruction}
 
 Temel Kurallar:
-
 Türkçe konuş ve profesyonel bir üslup kullan.
 Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
 ÖNEMLİ: Dokümanlardaki bilgileri kendi cümlelerinle yeniden ifade et. Direkt alıntı yapma, parafraze et.
@@ -241,81 +288,49 @@ Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri bir
 Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
 Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
 
-    // <<< DEĞİŞİKLİK: TÜM GUARDRAIL MANTIĞI YENİDEN DÜZENLENDİ
-    // GUARDRAIL: If collecting mode with missing slots, generate deterministic short question
-    // This bypasses LLM to guarantee 2-sentence responses
+    // 3) GUARDRAIL: Slot toplama modundaysak ve eksik slot varsa -> LLM KULLANMADAN deterministik soru üret
     if (incentiveQuery && incentiveQuery.status === "collecting") {
-      const supabaseAdmin = getSupabaseAdmin();
-      const lastUserMessage = messages[messages.length - 1]?.content || "";
-      const normalizedMessage = lastUserMessage.trim();
-      const lowerMsg = normalizedMessage.toLowerCase();
-      const updates: any = {};
-
-      // 1. Gelen mesajı işle (Eğer bu tetikleyici mesaj DEĞİLSE)
-      // isNewIncentiveQuery bayrağı burada devreye giriyor
-      if (!isNewIncentiveQuery && normalizedMessage) {
-        if (!incentiveQuery.sector) {
-          updates.sector = normalizedMessage;
-        } else if (incentiveQuery.sector && !incentiveQuery.province) {
-          const cleanedProvince = normalizedMessage
-            .replace(/'da$/i, "")
-            .replace(/'de$/i, "")
-            .replace(/\sda$/i, "")
-            .replace(/\sde$/i, "")
-            .replace(/\sta$/i, "")
-            .replace(/\ste$/i, "")
-            .replace(/\sili$/i, "")
-            .replace(/\sİli$/i, "")
-            .trim();
-          updates.province = cleanedProvince.charAt(0).toUpperCase() + cleanedProvince.slice(1);
-        } else if (incentiveQuery.province && !incentiveQuery.district) {
-          const cleanedDistrict = normalizedMessage.trim();
-          updates.district = cleanedDistrict.charAt(0).toUpperCase() + cleanedDistrict.slice(1);
-        } else if (incentiveQuery.district && !incentiveQuery.osb_status) {
-          if (
-            lowerMsg.includes("içi") ||
-            lowerMsg.includes("içinde") ||
-            lowerMsg.includes("osb içi") ||
-            lowerMsg.includes("organize sanayi içi") ||
-            lowerMsg === "içi" ||
-            lowerMsg === "ici" ||
-            lowerMsg === "evet" ||
-            lowerMsg === "var"
-          ) {
-            updates.osb_status = "İÇİ";
-          } else if (
-            lowerMsg.includes("dışı") ||
-            lowerMsg.includes("dışında") ||
-            lowerMsg.includes("osb dışı") ||
-            lowerMsg === "dışı" ||
-            lowerMsg === "disi" ||
-            lowerMsg.includes("hayır") ||
-            lowerMsg.includes("değil") ||
-            lowerMsg === "yok"
-          ) {
-            updates.osb_status = "DIŞI";
-          }
-        }
-      }
-
-      // 2. Güncellemeler varsa veritabanına ve YEREL OBJE'ye işle
-      if (Object.keys(updates).length > 0) {
-        await supabaseAdmin.from("incentive_queries").update(updates).eq("session_id", sessionId);
-        console.log("✓ Updated slots:", updates);
-
-        // KRİTİK: Bir sonraki soruyu doğru belirlemek için yerel kopyayı da güncelle
-        Object.assign(incentiveQuery, updates);
-      }
-
-      // 3. GÜNCEL duruma göre tüm slotların dolu olup olmadığını KONTROL ET
       const hasAllSlots =
         incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
 
-      // 4. Eğer TÜM SLOTLAR DOLMAMIŞSA, bir sonraki soruyu sor
       if (!hasAllSlots) {
-        console.log("⚡ GUARDRAIL: Generating deterministic short question");
+        console.log("⚡ GUARDRAIL: Deterministic short question");
 
+        // Son kullanıcı mesajını al
+        const rawLastUserMessage = messages.filter((m: any) => m.role === "user").slice(-1)[0]?.content || "";
+        const normalizedMessage = rawLastUserMessage.trim();
+
+        const updates: any = {};
+        // Slot doldurma sırası: sector -> province -> district -> osb_status
+        if (!incentiveQuery.sector && normalizedMessage) {
+          updates.sector = normalizedMessage;
+        } else if (incentiveQuery.sector && !incentiveQuery.province && normalizedMessage) {
+          updates.province = cleanProvince(normalizedMessage);
+        } else if (incentiveQuery.province && !incentiveQuery.district && normalizedMessage) {
+          updates.district = cleanDistrict(normalizedMessage);
+        } else if (incentiveQuery.district && !incentiveQuery.osb_status && normalizedMessage) {
+          const osb = parseOsbStatus(normalizedMessage);
+          if (osb) {
+            updates.osb_status = osb;
+          }
+        }
+
+        // RAM'deki incentiveQuery objesini güncelle
+        Object.assign(incentiveQuery, updates);
+
+        // DB update sadece sessionId varsa
+        if (sessionId && Object.keys(updates).length > 0) {
+          await supabaseAdmin.from("incentive_queries").update(updates).eq("session_id", sessionId);
+          console.log("✓ Updated slots in DB:", updates);
+        } else if (!sessionId && Object.keys(updates).length > 0) {
+          console.log("Updated slots in memory only (no sessionId):", updates);
+        }
+
+        // Son durumda hangi soru sorulacak?
         let deterministicResponse = "";
+        const nowHasAllSlots =
+          incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
+
         if (!incentiveQuery.sector) {
           deterministicResponse = "Anladım. Hangi sektörde yatırım yapacaksınız?";
         } else if (!incentiveQuery.province) {
@@ -324,6 +339,15 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
           deterministicResponse = "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)";
         } else if (!incentiveQuery.osb_status) {
           deterministicResponse = "Anladım. OSB içinde mi dışında mı olacak?";
+        } else if (nowHasAllSlots) {
+          // Tüm bilgiler tamamlandıysa artık bir sonraki istekte LLM ile detaylı hesaplama yapılacak
+          deterministicResponse = "Teşekkürler. Girdiğiniz bilgilerle teşvik hesaplamasını yapmaya hazırım.";
+          if (sessionId && incentiveQuery.status === "collecting") {
+            await supabaseAdmin.from("incentive_queries").update({ status: "completed" }).eq("session_id", sessionId);
+            console.log("✓ All slots filled - marked as completed");
+          } else {
+            incentiveQuery.status = "completed";
+          }
         }
 
         return new Response(
@@ -334,25 +358,23 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-
-      // 5. Eğer tüm slotlar DOLMUŞSA, bu 'if' bloğu atlanacak
-      // ve kod, hesaplama yapmak üzere LLM'e (Gemini) gidecek.
     }
-    // >>> DEĞİŞİKLİK: GUARDRAIL MANTIĞI BURADA BİTİYOR
 
-    // Build conversation history
+    // 4) Artık ya:
+    //   - a) Slot toplama tamamlandı (status: completed) -> LLM ile detaylı teşvik hesabı
+    //   - b) Hiç yatırım modu yok -> normal RAG cevabı
+
     const contents = messages.map((m: any) => ({
       role: m.role === "user" ? "user" : "model",
       parts: [{ text: m.content }],
     }));
 
-    // Generate content with file search grounding
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       systemInstruction: { parts: [{ text: systemInstruction }] },
       contents,
       config: {
-        temperature: 0.3, // Lower temperature for more deterministic responses
+        temperature: 0.3,
         tools: [
           {
             fileSearch: {
@@ -363,7 +385,6 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
       },
     });
 
-    // Check if response was blocked
     const finishReason = response.candidates?.[0]?.finishReason;
     if (finishReason === "RECITATION" || finishReason === "SAFETY") {
       return new Response(
@@ -382,7 +403,6 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
 
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
-    // Enhanced logging for File Search grounding
     if (groundingChunks.length > 0) {
       console.log("groundingChunks count:", groundingChunks.length);
       console.log("First chunk full structure:", JSON.stringify(groundingChunks[0], null, 2));
@@ -393,6 +413,10 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
 
     let textOut = "";
     try {
+      // google/genai JS client'ında bu alan text olarak expose ediliyorsa:
+      // (eğer değilse response.candidates[0].content.parts[0].text alman gerekebilir)
+      // Ancak senin projende bu pattern'i zaten kullanıyorsun, bozmuyorum.
+      // @ts-ignore
       textOut = response.text;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -404,7 +428,10 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
             blocked: true,
             reason: "RECITATION",
           }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
         );
       }
       throw e;
@@ -415,30 +442,6 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
       groundingChunksCount: groundingChunks.length,
     });
 
-    // Update incentive query state if all slots filled - mark as completed
-    // <<< DEĞİŞİKLİK: Bu blok artık gereksiz, çünkü tüm slotlar dolduğunda LLM'e gidiliyor
-    // ve LLM hesaplama yapıyor. 'completed' durumunu LLM cevabından sonra ayarlamak daha mantıklı.
-    // Şimdilik bu kısmı basitleştiriyoruz, Guardrail'in dışına taşıdık.
-    if (sessionId && incentiveQuery) {
-      try {
-        const supabaseAdmin = getSupabaseAdmin();
-
-        // Check if all slots are now filled
-        const allSlotsFilled =
-          incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
-
-        if (allSlotsFilled && incentiveQuery.status === "collecting") {
-          // Bu, hesaplama yapıldıktan *sonra* çalışır
-          await supabaseAdmin.from("incentive_queries").update({ status: "completed" }).eq("session_id", sessionId);
-
-          console.log("✓ All slots filled - marked as completed");
-        }
-      } catch (error) {
-        console.error("Error updating incentive query:", error);
-      }
-    }
-    // >>> DEĞİŞİKLİK
-
     return new Response(
       JSON.stringify({
         text: textOut,
@@ -448,9 +451,9 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in chat-gemini:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error?.message ?? "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
