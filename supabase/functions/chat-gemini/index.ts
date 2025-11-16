@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+maimport { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI } from "npm:@google/genai@1.29.1";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -252,7 +252,7 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 2.  **GENEL SORU:** Eğer kullanıcı sadece "yatırım yapmak istiyorum" gibi genel bir ifade kullanırsa, "Hangi sektörde?" [kaynak 64] diye sor.
 3.  **TEK SORU:** Her seferinde SADECE TEK BİR soru sor.
 4.  **KISA CEVAP:** Maksimum 2 cümle kullan. (1. Onay, 2. Soru).
-5.  **YASAK:** Genel bilgi VERME, uzun açıklama YAPMA.
+5.  **YASAK:** Genel bilgi VERME, uzun açıklama YAPMA. Rasgele kaydaklar dışında cevap ÜRETME. Sadece Kaynaklara bağlı KAL.
 
 ${incentiveSlotFillingInstruction}
 `;
