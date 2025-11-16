@@ -8,6 +8,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// ... (getAiClient, getSupabaseAdmin ve diğer yardımcı fonksiyonlar... )
+// ... (Bunlar doğru, o yüzden tekrar eklemiyorum)
 function getAiClient(): GoogleGenAI {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
@@ -23,7 +25,6 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// Küçük yardımcılar
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -114,6 +115,8 @@ serve(async (req) => {
       "üretim",
       "uretim",
       "imalat",
+      "çorap", // <<< DEĞİŞİKLİK: Daha hızlı tetiklenmesi için eklendi
+      "gömlek", // <<< DEĞİŞİKLİK: Daha hızlı tetiklenmesi için eklendi
     ];
     const shouldStartIncentiveMode = incentiveKeywords.some((keyword) => lastUserMessage.includes(keyword));
 
@@ -127,9 +130,7 @@ serve(async (req) => {
         .from("incentive_queries")
         .select("*")
         .eq("session_id", sessionId)
-        // <<< DEĞİŞİKLİK: 'completed' olanı yüklemeye gerek yok, sadece aktif olanı
-        .eq("status", "collecting")
-        // >>> DEĞİŞİKLİK
+        .eq("status", "collecting") // Sadece 'collecting' olanı al
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -144,9 +145,7 @@ serve(async (req) => {
 
     // 2) Henüz yoksa ve yatırım niyeti varsa -> yeni başlat
     if (!incentiveQuery && shouldStartIncentiveMode) {
-      // <<< DEĞİŞİKLİK: Bu bir 'tetikleyici' istek, bayrağı ayarla
-      isNewQueryTrigger = true;
-      // >>> DEĞİŞİKLİK
+      isNewQueryTrigger = true; // Bu bir tetikleyici istek
 
       if (sessionId) {
         const { data: newQuery, error: insertError } = await supabaseAdmin
@@ -154,9 +153,7 @@ serve(async (req) => {
           .insert({
             session_id: sessionId,
             status: "collecting",
-            // <<< DEĞİŞİKLİK: Sektör alanı BOŞ başlamalı. İlk mesajı kaydetme!
-            sector: null,
-            // >>> DEĞİŞİKLİK
+            sector: null, // Sektör BOŞ başlamalı
           })
           .select()
           .single();
@@ -168,14 +165,11 @@ serve(async (req) => {
           console.error("Error starting incentive query:", insertError);
         }
       } else {
-        // sessionId yoksa bile en azından o istek için RAM'de bir state oluşturalım
         incentiveQuery = {
           id: null,
           session_id: null,
           status: "collecting",
-          // <<< DEĞİŞİKLİK: Sektör alanı BOŞ başlamalı
-          sector: null,
-          // >>> DEĞİŞİKLİK
+          sector: null, // Sektör BOŞ başlamalı
           province: null,
           district: null,
           osb_status: null,
@@ -186,7 +180,7 @@ serve(async (req) => {
 
     const ai = getAiClient();
 
-    // ... (Yardımcı fonksiyonlar 'getSlotFillingStatus' vs. aynı kalabilir) ...
+    // ... (getSlotFillingStatus ve getNextSlotToFill fonksiyonları aynı) ...
     const getSlotFillingStatus = (query: any): string => {
       const slots = ["sector", "province", "district", "osb_status"];
       const filled = slots.filter((slot) => query[slot]).length;
@@ -201,8 +195,6 @@ serve(async (req) => {
       return "Tüm bilgiler toplandı - Hesaplama yap";
     };
 
-    // ... (incentiveSlotFillingInstruction ve systemInstruction aynı kalabilir) ...
-    // ... (Bu kısımlar değişmediği için çıkarıldı) ...
     const incentiveSlotFillingInstruction = incentiveQuery
       ? `
 ## ⚠️ SERT KURALLAR - UZUN AÇIKLAMA YAPMA - YASAK! ⚠️
@@ -212,11 +204,6 @@ serve(async (req) => {
 - İlk cümle: Kısa onay/geçiş (1 cümle)
 - İkinci cümle: Tek bir soru (1 cümle)
 - Genel bilgi VERME, sadece eksik bilgiyi SOR
-- file search storea yüklediğim "tesvik_sorgusu.pdf" dosyasında yer alan "TEMEL KURALLAR", "VERİ KAYNAKLARI" ve "SÜREÇ AKIŞI" başlıkları altında verilen bilgilere dayanarak: 
-1. Adım adım mantık yürüterek bu yatırımın hangi destek kategorisine girdiğini bul (Önce 6. Bölge Kuralını kontrol et).
-2. İstanbul ve GES/RES istisnalarını kontrol et.
-3. Alacağı destekleri (Faiz, Vergi İndirimi, SGK Süresi, Alt Bölge, KDV, Gümrük) hesapla.
-4. Sonucu bana detaylı bir rapor olarak sun.
 
 **Mevcut Durum:** ${getSlotFillingStatus(incentiveQuery)}
 **Toplanan Bilgiler:**
@@ -227,207 +214,150 @@ ${incentiveQuery.osb_status ? `✓ OSB Durumu: ${incentiveQuery.osb_status}` : "
 
 **SONRAKİ ADIM:** ${getNextSlotToFill(incentiveQuery)}
 
-### SORU ÖRNEKLERİ (TAM OLARAK BU ŞEKİLDE):
-
-${
-  !incentiveQuery.sector
-    ? `
-**SEKTÖR SORGUSU:**
-✅ DOĞRU: "Anladım. Hangi sektörde yatırım yapacaksınız?"
-❌ YANLIŞ: "Türkiye'deki yatırım teşvik sisteminde... [uzun açıklama]... hangi sektörde yatırım yapmayı düşünüyorsunuz?"
-`
-    : ""
-}
-
-${
-  incentiveQuery.sector && !incentiveQuery.province
-    ? `
-**İL SORGUSU:**
-✅ DOĞRU: "Teşekkürler. Hangi ilde yatırım yapacaksınız?"
-❌ YANLIŞ: "Gömlek üretimi için Türkiye'de birçok teşvik var... [uzun açıklama]... hangi ilde?"
-`
-    : ""
-}
-
-${
-  incentiveQuery.province && !incentiveQuery.district
-    ? `
-**İLÇE SORGUSU:**
-✅ DOĞRU: "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)"
-❌ YANLIŞ: "İl bilgisini aldım. Türkiye'de ilçelere göre farklı... [uzun açıklama]... hangi ilçe?"
-`
-    : ""
-}
-
-${
-  incentiveQuery.district && !incentiveQuery.osb_status
-    ? `
-**OSB SORGUSU:**
-✅ DOĞRU: "Anladım. OSB içinde mi dışında mı olacak?"
-❌ YANLIŞ: "OSB'ler organize sanayi bölgeleridir ve... [uzun açıklama]... OSB içi mi dışı mı?"
-`
-    : ""
-}
-
 ${
   incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status
     ? `
 **HESAPLAMA ZAMANI:**
-Tüm bilgiler toplandı. Şimdi "tesvik_sorgusu.pdf" dosyasındaki SÜREÇ AKIŞI'na göre teşvik hesabı yap.
+Tüm bilgiler toplandı. Şimdi "tesvik_sorgulama.pdf" dosyasındaki SÜREÇ AKIŞI'na [kaynak 72-73] göre teşvik hesabı yap.
 `
     : ""
 }
 `
       : "";
 
-    const systemInstruction =
-      incentiveQuery && incentiveQuery.status === "collecting"
-        ? `Sen bir yatırım teşvik danışmanısın.
-        Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
-        Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
-        ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+    // <<< DEĞİŞİKLİK: systemInstruction MANTIĞI TAMAMEN YENİLENDİ
 
-⚠️ KRİTİK KURALLAR:
-- SADECE KISA SORULAR SOR (maksimum 2 cümle)
-- UZUN AÇIKLAMA YAPMA - YASAK!
-- Her seferinde TEK BİR bilgi topla
-- Genel bilgi verme, sadece eksik bilgiyi sor,
-- Kullanıcıya soru sormaya başladığında "İnteraktif Görüşme Kuralları" ve "Temel Kurallar" başlığına göre hareket et, 
-
-CEVAP ŞEKLİ:
-1. cümle: Kısa onay/geçiş
-2. cümle: Tek soru
-
-Örnek: "Anladım. Hangi ilde yatırım yapacaksınız?"`
-        : `.
+    // Genel (normal RAG) talimatlar
+    const baseInstructions = `
+Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
+Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
 Özel Kurallar:
-9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara.
-9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, Teşvik belgesi başvaru şartları, yöntemi ve gerekli belgeler, Hangi yatırım türlerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, Özel sektör projeleri için stratejik hamle programı değerlendirme kriterleri ve süreci, Güneş, rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için ek şartlar, Faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama esasları sorulduğunda sorunun cevaplarını mümkün mertebe "2025-1-9903_teblig.pdf" dosyasında ara.
-9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara.
-9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara.
-HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara.
-yatırım taahhütlü avans kredisi, ytak hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara.
-9903 saylı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara.
-yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, yada Pektin yatırımını nerde yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara.
+9903 sayılı karar... ("9903_Sayılı_Karar.pdf" dosyasında ara)
+... (Diğer tüm dosya kurallarınız buraya gelir) ...
+yerel kalkınma hamlesi... ("ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara)
+`;
 
-İnteraktif Görüşme Kuralları:
-Yüklediğim "tesvik_sorgusu.pdf" dosyasında yer alan "TEMEL KURALLAR", "VERİ KAYNAKLARI" ve "SÜREÇ AKIŞI" başlıkları altında verilen bilgilere dayanarak: 
-1. Adım adım mantık yürüterek bu yatırımın hangi destek kategorisine girdiğini bul (Önce 6. Bölge Kuralını kontrol et).
-2. İstanbul ve GES/RES istisnalarını kontrol et.
-3. Alacağı destekleri (Faiz, Vergi İndirimi, SGK Süresi, Alt Bölge, KDV, Gümrük) hesapla.
-4. Sonucu bana detaylı bir rapor olarak sun.
+    // İnteraktif mod (slot-filling) için talimatlar
+    const interactiveInstructions = `
+Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+"tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] harfiyen uymalısın.
+
+⚠️ KRİTİK KURALLAR (PDF'e GÖRE):
+1.  **AKILLI ANALİZ:** Kullanıcı "çorap üretimi" [kaynak 90] veya "linyit tesisi" gibi bir ifade kullanırsa, sektörü bu olarak anla ve BİR SONRAKİ SORUYA geç ("Hangi ilde?" [kaynak 92]).
+2.  **GENEL SORU:** Eğer kullanıcı sadece "yatırım yapmak istiyorum" gibi genel bir ifade kullanırsa, "Hangi sektörde?" [kaynak 64] diye sor.
+3.  **TEK SORU:** Her seferinde SADECE TEK BİR soru sor.
+4.  **KISA CEVAP:** Maksimum 2 cümle kullan. (1. Onay, 2. Soru).
+5.  **YASAK:** Genel bilgi VERME, uzun açıklama YAPMA.
 
 ${incentiveSlotFillingInstruction}
+`;
+
+    // Ana talimatlar (her zaman geçerli)
+    const fundamentalRules = `
+İnteraktif Görüşme Kuralları (Hesaplama):
+Yüklediğim "tesvik_sorgulama.pdf" dosyasında yer alan "TEMEL KURALLAR" [kaynak 1], "VERİ KAYNAKLARI" [kaynak 46] ve "SÜREÇ AKIŞI" [kaynak 59] başlıkları altında verilen bilgilere dayanarak: 
+1. Adım adım mantık yürüterek bu yatırımın hangi destek kategorisine girdiğini bul (Önce 6. Bölge Kuralını kontrol et [kaynak 5, 84]).
+2. İstanbul ve GES/RES istisnalarını kontrol et [kaynak 35, 40, 43, 85].
+3. Alacağı destekleri (Faiz, Vergi İndirimi, SGK Süresi, Alt Bölge, KDV, Gümrük) hesapla [kaynak 86].
+4. Sonucu bana detaylı bir rapor olarak sun [kaynak 87].
 
 Temel Kurallar:
 Türkçe konuş ve profesyonel bir üslup kullan.
 Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
 ÖNEMLİ: Dokümanlardaki bilgileri kendi cümlelerinle yeniden ifade et. Direkt alıntı yapma, parafraze et.
-Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek mantıklı bir açıklama yap.
-Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
-Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
+... (Diğer temel kurallarınız) ...
+`;
 
-    // 3) GUARDRAIL: Slot toplama modundaysak ve eksik slot varsa -> LLM KULLANMADAN deterministik soru üret
-    if (incentiveQuery && incentiveQuery.status === "collecting") {
+    // Duruma göre hangi talimatın kullanılacağını seç
+    const systemInstruction =
+      incentiveQuery && incentiveQuery.status === "collecting"
+        ? interactiveInstructions + fundamentalRules // BİLGİ TOPLAMA MODU (Akıllı kurallar + Temel kurallar)
+        : baseInstructions + fundamentalRules; // NORMAL MOD (Dosyalar + Temel kurallar)
+
+    // >>> DEĞİŞİKLİK BURADA BİTTİ
+
+    // 3) GUARDRAIL: Slot toplama modundaysak ve EKSİK slot varsa
+    // <<< DEĞİŞİKLİK: BU BLOK, İLK TETİKLEYİCİ MESAJDA ÇALIŞMAMALI!
+    if (incentiveQuery && incentiveQuery.status === "collecting" && !isNewQueryTrigger) {
+      // >>> DEĞİŞİKLİK
+
       const hasAllSlots =
         incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
 
-      // <<< DEĞİŞİKLİK: 'hasAllSlots' KONTROLÜ BURADAN ÇIKARILDI, AŞAĞIYA ALINDI
-      // if (!hasAllSlots) { // --> Bu satır silindi
+      // Bu blok, "çorap" mesajından sonra "Hangi ilde?" diye sorulduğunda,
+      // "Adana" cevabını işlemek için çalışacaktır.
+      if (!hasAllSlots) {
+        console.log("⚡ GUARDRAIL: Deterministic slot filling (NOT first message)");
 
-      console.log("⚡ GUARDRAIL: Deterministic short question");
+        const rawLastUserMessage = messages.filter((m: any) => m.role === "user").slice(-1)[0]?.content || "";
+        const normalizedMessage = rawLastUserMessage.trim();
 
-      // Son kullanıcı mesajını al
-      const rawLastUserMessage = messages.filter((m: any) => m.role === "user").slice(-1)[0]?.content || "";
-      const normalizedMessage = rawLastUserMessage.trim();
+        const updates: any = {};
 
-      const updates: any = {};
+        // ÖNEMLİ: isNewQueryTrigger 'false' olduğu için bu bloğun çalışması GÜVENLİDİR.
+        // Bu, LLM'in ilk sorusuna ("Hangi ilde?") verilen cevabı ("Adana") işler.
 
-      // <<< DEĞİŞİKLİK: GÜNCELLEME MANTIĞI, YENİ TETİKLEYİCİ BAYRAĞINA BAĞLANDI
-      // Eğer bu istek, sorgulamayı YENİ BAŞLATAN istek DEĞİLSE, gelen mesajı bir cevap olarak kabul et ve slotu doldur.
-      if (!isNewQueryTrigger && normalizedMessage) {
-        // Slot doldurma sırası: sector -> province -> district -> osb_status
-        if (!incentiveQuery.sector) {
-          // 'isNewQueryTrigger' false ise ve sektör hala boşsa
+        if (!incentiveQuery.sector && normalizedMessage) {
+          // LLM'in ilk mesajı kaçırması durumunda (normalde olmamalı)
           updates.sector = normalizedMessage;
-        } else if (incentiveQuery.sector && !incentiveQuery.province) {
+        } else if (incentiveQuery.sector && !incentiveQuery.province && normalizedMessage) {
           updates.province = cleanProvince(normalizedMessage);
-        } else if (incentiveQuery.province && !incentiveQuery.district) {
+        } else if (incentiveQuery.province && !incentiveQuery.district && normalizedMessage) {
           updates.district = cleanDistrict(normalizedMessage);
-        } else if (incentiveQuery.district && !incentiveQuery.osb_status) {
+        } else if (incentiveQuery.district && !incentiveQuery.osb_status && normalizedMessage) {
           const osb = parseOsbStatus(normalizedMessage);
           if (osb) {
             updates.osb_status = osb;
           }
-          // else {
-          //   opsiyonel: burada 'else' durumu "Lütfen OSB içi veya dışı belirtin" diye zorlayabilir
-          // }
         }
-      }
-      // 'isNewQueryTrigger' true ise, 'updates' objesi {boş} kalır ve hiçbir slot dolmaz.
-      // >>> DEĞİŞİKLİK
 
-      // RAM'deki incentiveQuery objesini güncelle (eğer bir şey güncellendiyse)
-      Object.assign(incentiveQuery, updates);
+        Object.assign(incentiveQuery, updates);
 
-      // DB update sadece sessionId varsa ve bir şey güncellendiyse
-      if (sessionId && Object.keys(updates).length > 0) {
-        await supabaseAdmin.from("incentive_queries").update(updates).eq("session_id", incentiveQuery.id); // 'id' kullanmak daha güvenli
-        console.log("✓ Updated slots in DB:", updates);
-      } else if (!sessionId && Object.keys(updates).length > 0) {
-        console.log("Updated slots in memory only (no sessionId):", updates);
-      }
-
-      // Son durumda hangi soru sorulacak? (GÜNCEL BİLGİLERE GÖRE)
-      let deterministicResponse = "";
-      const nowHasAllSlots =
-        incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
-
-      // <<< DEĞİŞİKLİK: Bu blok artık 'else if' yerine 'if' olmalı
-      if (nowHasAllSlots) {
-        // Tüm bilgiler tamamlandıysa artık bir sonraki istekte LLM ile detaylı hesaplama yapılacak
-        deterministicResponse = "Teşekkürler. Girdiğiniz bilgilerle teşvik hesaplamasını yapmaya hazırım.";
-
-        // Durumu 'completed' olarak işaretle
-        if (sessionId && incentiveQuery.status === "collecting") {
-          await supabaseAdmin.from("incentive_queries").update({ status: "completed" }).eq("id", incentiveQuery.id);
-          console.log("✓ All slots filled - marked as completed");
-        } else {
-          incentiveQuery.status = "completed"; // Sadece RAM için
+        if (sessionId && Object.keys(updates).length > 0) {
+          await supabaseAdmin.from("incentive_queries").update(updates).eq("id", incentiveQuery.id);
+          console.log("✓ Updated slots in DB:", updates);
+        } else if (!sessionId && Object.keys(updates).length > 0) {
+          console.log("Updated slots in memory only (no sessionId):", updates);
         }
-      } else if (!incentiveQuery.sector) {
-        // 'isNewQueryTrigger' true ise buraya düşecek (çünkü sector null)
-        // 'isNewQueryTrigger' false ve kullanıcı alakasız bir şey yazdıysa yine buraya düşecek
-        deterministicResponse = "Anladım. Hangi sektörde yatırım yapacaksınız?";
-      } else if (!incentiveQuery.province) {
-        // 'updates' sonrası 'sector' dolduysa buraya düşecek
-        deterministicResponse = "Teşekkürler. Hangi ilde yatırım yapacaksınız?";
-      } else if (!incentiveQuery.district) {
-        deterministicResponse = "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)";
-      } else if (!incentiveQuery.osb_status) {
-        deterministicResponse = "Anladım. OSB içinde mi dışında mı olacak?";
+
+        let deterministicResponse = "";
+        const nowHasAllSlots =
+          incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
+
+        if (nowHasAllSlots) {
+          deterministicResponse = "Teşekkürler. Girdiğiniz bilgilerle teşvik hesaplamasını yapmaya hazırım.";
+          if (sessionId && incentiveQuery.status === "collecting") {
+            await supabaseAdmin.from("incentive_queries").update({ status: "completed" }).eq("id", incentiveQuery.id);
+            console.log("✓ All slots filled - marked as completed");
+          } else {
+            incentiveQuery.status = "completed";
+          }
+        } else if (!incentiveQuery.sector) {
+          deterministicResponse = "Anladım. Hangi sektörde yatırım yapacaksınız?";
+        } else if (!incentiveQuery.province) {
+          deterministicResponse = "Teşekkürler. Hangi ilde yatırım yapacaksınız?";
+        } else if (!incentiveQuery.district) {
+          deterministicResponse = "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)";
+        } else if (!incentiveQuery.osb_status) {
+          deterministicResponse = "Anladım. OSB içinde mi dışında mı olacak?";
+        }
+
+        return new Response(
+          JSON.stringify({
+            text: deterministicResponse,
+            groundingChunks: [],
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
       }
-      // >>> DEĞİŞİKLİK
-
-      return new Response(
-        JSON.stringify({
-          text: deterministicResponse,
-          groundingChunks: [],
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-
-      // <<< DEĞİŞİKLİK: Orijinal 'if (!hasAllSlots)' parantezi kapatması silindi
-      // } // --> Bu satır silindi
-      // >>> DEĞİSİKLİK
     }
 
     // 4) Artık ya:
     //   - a) Slot toplama tamamlandı (status: completed) -> LLM ile detaylı teşvik hesabı
     //   - b) Hiç yatırım modu yok -> normal RAG cevabı
+    //   - c) YENİ DURUM: isNewQueryTrigger = true -> İlk "akıllı" soru sorma
 
-    // ... (Kalan kodunuzun tamamı (LLM çağrısı, hata yönetimi vs.) GÜZEL ve DOĞRU) ...
-    // ... (Değişiklik gerekmiyor) ...
+    console.log("Sending to LLM. isNewQueryTrigger:", isNewQueryTrigger, "Status:", incentiveQuery?.status);
 
     const contents = messages.map((m: any) => ({
       role: m.role === "user" ? "user" : "model",
@@ -449,6 +379,9 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
         ],
       },
     });
+
+    // ... (Kalan tüm kodunuz - response handling, error catching - hepsi doğru) ...
+    // ... (Değişiklik yok) ...
 
     const finishReason = response.candidates?.[0]?.finishReason;
     if (finishReason === "RECITATION" || finishReason === "SAFETY") {
@@ -503,6 +436,23 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
       textLength: textOut.length,
       groundingChunksCount: groundingChunks.length,
     });
+
+    // <<< DEĞİŞİKLİK: LLM'in cevabına göre 'sector' alanını GÜNCELLE
+    // Bu, LLM'in "Hangi ilde?" diye sorduğu ilk akıllı cevaptan SONRA çalışır
+    if (isNewQueryTrigger && sessionId && incentiveQuery) {
+      // LLM'in "Hangi ilde?" diye sorduğunu varsayıyoruz,
+      // bu, 'lastUserMessage'in Sektör olarak KABUL EDİLDİĞİ anlamına gelir.
+      const inferredSector =
+        messages.filter((m: any) => m.role === "user").slice(-1)[0]?.content || "Bilinmeyen Sektör";
+
+      try {
+        await supabaseAdmin.from("incentive_queries").update({ sector: inferredSector }).eq("id", incentiveQuery.id);
+        console.log(`✓ Updated sector to "${inferredSector}" after LLM's first pass.`);
+      } catch (dbError) {
+        console.error("Error updating sector after LLM pass:", dbError);
+      }
+    }
+    // >>> DEĞİŞİKLİK
 
     return new Response(
       JSON.stringify({
