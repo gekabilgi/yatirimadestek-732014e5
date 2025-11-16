@@ -102,7 +102,13 @@ serve(async (req) => {
 
     const incentiveSlotFillingInstruction = incentiveQuery ? `
 
-## TEŞVİK SORGULAMA MOD AKIŞI (ÖNCELİKLİ)
+## ⚠️ SERT KURALLAR - UZUN AÇIKLAMA YAPMA - YASAK! ⚠️
+
+**CEVAP FORMATI (ZORUNLU):**
+- Maksimum 2 cümle kullan
+- İlk cümle: Kısa onay/geçiş (1 cümle)
+- İkinci cümle: Tek bir soru (1 cümle)
+- Genel bilgi VERME, sadece eksik bilgiyi SOR
 
 **Mevcut Durum:** ${getSlotFillingStatus(incentiveQuery)}
 **Toplanan Bilgiler:**
@@ -113,50 +119,72 @@ ${incentiveQuery.osb_status ? `✓ OSB Durumu: ${incentiveQuery.osb_status}` : '
 
 **SONRAKİ ADIM:** ${getNextSlotToFill(incentiveQuery)}
 
-### BİLGİ TOPLAMA SIRASI:
+### SORU ÖRNEKLERİ (TAM OLARAK BU ŞEKİLDE):
 
-1. **SEKTÖR SORGUSU** (Eğer sector == null):
-   "Hangi sektörde yatırım yapmayı planlıyorsunuz? (Örnek: Gömlek üretimi, tekstil, otomotiv, vb.)"
-   
-2. **İL SORGUSU** (Eğer sector != null && province == null):
-   "Yatırımı hangi ilde gerçekleştirmeyi düşünüyorsunuz?"
-   
-3. **İLÇE SORGUSU** (Eğer province != null && district == null):
-   "Hangi ilçede? (Şehir merkezi için 'Merkez' yazabilirsiniz)"
-   
-4. **OSB DURUMU SORGUSU** (Eğer district != null && osb_status == null):
-   "Yatırım Organize Sanayi Bölgesi (OSB) veya Endüstri Bölgesi içinde mi, dışında mı olacak?"
-   
-5. **FİNAL HESAPLAMA** (Eğer tüm bilgiler dolu):
-   "tesvik_sorgusu.pdf" dosyasındaki TEMEL KURALLAR, VERİ KAYNAKLARI ve SÜREÇ AKIŞI bölümlerine göre:
-   
-   **Hesaplama Sorgusu:**
-   "Kullanıcının yatırım bilgileri:
-   - Sektör: ${incentiveQuery.sector || '[Bekleniyor]'}
-   - İl: ${incentiveQuery.province || '[Bekleniyor]'} 
-   - İlçe: ${incentiveQuery.district || '[Bekleniyor]'}
-   - OSB Durumu: ${incentiveQuery.osb_status || '[Bekleniyor]'}
-   
-   GÖREV:
-   1. 6. Bölge kuralını kontrol et
-   2. İstanbul ve GES/RES istisnalarını kontrol et
-   3. Öncelikli/Hedef yatırım kategorisini belirle
-   4. Alacağı destekleri hesapla:
-      - Faiz/Kar Payı Desteği (oran ve üst limit)
-      - Vergi İndirimi (yatırıma katkı oranı)
-      - SGK İşveren Primi Desteği (süre ve alt bölge)
-      - KDV İstisnası (var/yok)
-      - Gümrük Vergisi Muafiyeti (var/yok)
-   5. Detaylı rapor sun"
+${!incentiveQuery.sector ? `
+**SEKTÖR SORGUSU:**
+✅ DOĞRU: "Anladım. Hangi sektörde yatırım yapacaksınız?"
+❌ YANLIŞ: "Türkiye'deki yatırım teşvik sisteminde... [uzun açıklama]... hangi sektörde yatırım yapmayı düşünüyorsunuz?"
+` : ''}
 
-### ÖNEMLİ KURALLAR:
-- Her seferinde SADECE BİR soru sor
-- Kullanıcının verdiği cevabı session state'e kaydet
-- Tüm bilgiler toplanmadan hesaplama yapma
-- Kullanıcı konuyu değiştirirse, slot-filling'i duraklat ama bilgileri kaybetme
+${incentiveQuery.sector && !incentiveQuery.province ? `
+**İL SORGUSU:**
+✅ DOĞRU: "Teşekkürler. Hangi ilde yatırım yapacaksınız?"
+❌ YANLIŞ: "Gömlek üretimi için Türkiye'de birçok teşvik var... [uzun açıklama]... hangi ilde?"
+` : ''}
+
+${incentiveQuery.province && !incentiveQuery.district ? `
+**İLÇE SORGUSU:**
+✅ DOĞRU: "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)"
+❌ YANLIŞ: "İl bilgisini aldım. Türkiye'de ilçelere göre farklı... [uzun açıklama]... hangi ilçe?"
+` : ''}
+
+${incentiveQuery.district && !incentiveQuery.osb_status ? `
+**OSB SORGUSU:**
+✅ DOĞRU: "Anladım. OSB içinde mi dışında mı olacak?"
+❌ YANLIŞ: "OSB'ler organize sanayi bölgeleridir ve... [uzun açıklama]... OSB içi mi dışı mı?"
+` : ''}
+
+${incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status ? `
+**HESAPLAMA ZAMANI:**
+Tüm bilgiler toplandı. Şimdi "tesvik_sorgusu.pdf" dosyasındaki SÜREÇ AKIŞI'na göre:
+
+**Hesaplama Sorgusu:**
+"Kullanıcının yatırım bilgileri:
+- Sektör: ${incentiveQuery.sector}
+- İl: ${incentiveQuery.province} 
+- İlçe: ${incentiveQuery.district}
+- OSB Durumu: ${incentiveQuery.osb_status}
+
+GÖREV:
+1. 6. Bölge kuralını kontrol et
+2. İstanbul ve GES/RES istisnalarını kontrol et
+3. Öncelikli/Hedef yatırım kategorisini belirle
+4. Alacağı destekleri hesapla:
+   - Faiz/Kar Payı Desteği (oran ve üst limit)
+   - Vergi İndirimi (yatırıma katkı oranı)
+   - SGK İşveren Primi Desteği (süre ve alt bölge)
+   - KDV İstisnası (var/yok)
+   - Gümrük Vergisi Muafiyeti (var/yok)
+5. Detaylı rapor sun"
+` : ''}
 ` : '';
 
-    const systemInstruction = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
+    const systemInstruction = incentiveQuery 
+      ? `Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+
+⚠️ KRİTİK KURALLAR:
+- SADECE KISA SORULAR SOR (maksimum 2 cümle)
+- UZUN AÇIKLAMA YAPMA - YASAK!
+- Her seferinde TEK BİR bilgi topla
+- Genel bilgi verme, sadece eksik bilgiyi sor
+
+CEVAP ŞEKLİ:
+1. cümle: Kısa onay/geçiş
+2. cümle: Tek soru
+
+Örnek: "Anladım. Hangi ilde yatırım yapacaksınız?"`
+      : `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
 Özel Kurallar:
 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara
@@ -266,27 +294,36 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
         const supabaseAdmin = getSupabaseAdmin();
         const lastUserMessage = messages[messages.length - 1]?.content || '';
         
-        // Simple pattern matching to extract slot values from user's last message
+        // Enhanced pattern matching to extract slot values from user's last message
         const updates: any = {};
+        const normalizedMessage = lastUserMessage.trim();
+        const lowerMsg = normalizedMessage.toLowerCase();
         
         // If no sector yet, assume this message contains the sector
-        if (!incentiveQuery.sector && lastUserMessage) {
-          updates.sector = lastUserMessage;
+        if (!incentiveQuery.sector && normalizedMessage) {
+          updates.sector = normalizedMessage;
         }
         // If sector exists but no province, assume this is the province
-        else if (incentiveQuery.sector && !incentiveQuery.province && lastUserMessage) {
-          updates.province = lastUserMessage;
+        else if (incentiveQuery.sector && !incentiveQuery.province && normalizedMessage) {
+          // Clean up common suffixes like "'da", "'de", "ili" etc.
+          const cleanedProvince = normalizedMessage
+            .replace(/'da$/i, '')
+            .replace(/'de$/i, '')
+            .replace(/\sili$/i, '')
+            .trim();
+          updates.province = cleanedProvince;
         }
         // If province exists but no district, assume this is the district
-        else if (incentiveQuery.province && !incentiveQuery.district && lastUserMessage) {
-          updates.district = lastUserMessage;
+        else if (incentiveQuery.province && !incentiveQuery.district && normalizedMessage) {
+          updates.district = normalizedMessage;
         }
-        // If district exists but no OSB status, check for İÇİ/DIŞI keywords
-        else if (incentiveQuery.district && !incentiveQuery.osb_status && lastUserMessage) {
-          const lowerMsg = lastUserMessage.toLowerCase();
-          if (lowerMsg.includes('içi') || lowerMsg.includes('içinde')) {
+        // If district exists but no OSB status, check for İÇİ/DIŞI keywords with more patterns
+        else if (incentiveQuery.district && !incentiveQuery.osb_status && normalizedMessage) {
+          if (lowerMsg.includes('içi') || lowerMsg.includes('içinde') || lowerMsg.includes('osb içi') || 
+              lowerMsg.includes('organize sanayi') || lowerMsg === 'içi' || lowerMsg === 'ici') {
             updates.osb_status = 'İÇİ';
-          } else if (lowerMsg.includes('dışı') || lowerMsg.includes('dışında')) {
+          } else if (lowerMsg.includes('dışı') || lowerMsg.includes('dışında') || lowerMsg.includes('osb dışı') || 
+                     lowerMsg === 'dışı' || lowerMsg === 'disi' || lowerMsg.includes('hayır') || lowerMsg.includes('değil')) {
             updates.osb_status = 'DIŞI';
           }
         }
