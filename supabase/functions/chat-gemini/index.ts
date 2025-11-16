@@ -40,44 +40,44 @@ serve(async (req) => {
     // Load incentive query state if session provided
     let incentiveQuery = null;
     if (sessionId) {
-      try {
-        const supabaseAdmin = getSupabaseAdmin();
-        const { data } = await supabaseAdmin
-          .from('incentive_queries')
-          .select('*')
-          .eq('session_id', sessionId)
-          .eq('status', 'collecting')
-          .single();
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data, error } = await supabaseAdmin
+        .from('incentive_queries')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('status', 'collecting')
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error loading incentive query:", error);
+      } else if (data) {
         incentiveQuery = data;
         console.log("Loaded incentive query state:", incentiveQuery);
-      } catch (error) {
+      } else {
         console.log("No active incentive query for session:", sessionId);
         
         // Auto-start incentive mode if user message contains relevant keywords
         const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
-        const incentiveKeywords = ['teşvik', 'hesapla', 'yatırım', 'destek', 'sektör'];
+        const incentiveKeywords = ['teşvik', 'hesapla', 'yatırım', 'destek', 'sektör', 'üretim', 'imalat'];
         const shouldStartIncentiveMode = incentiveKeywords.some(keyword => 
           lastUserMessage.includes(keyword)
         );
         
         if (shouldStartIncentiveMode) {
-          try {
-            const supabaseAdmin = getSupabaseAdmin();
-            const { data: newQuery, error: insertError } = await supabaseAdmin
-              .from('incentive_queries')
-              .insert({
-                session_id: sessionId,
-                status: 'collecting',
-              })
-              .select()
-              .single();
-            
-            if (!insertError && newQuery) {
-              incentiveQuery = newQuery;
-              console.log("Started new incentive query:", incentiveQuery);
-            }
-          } catch (insertErr) {
-            console.error("Error starting incentive query:", insertErr);
+          const { data: newQuery, error: insertError } = await supabaseAdmin
+            .from('incentive_queries')
+            .insert({
+              session_id: sessionId,
+              status: 'collecting',
+            })
+            .select()
+            .single();
+          
+          if (!insertError && newQuery) {
+            incentiveQuery = newQuery;
+            console.log("✓ Started new incentive query:", incentiveQuery);
+          } else {
+            console.error("Error starting incentive query:", insertError);
           }
         }
       }
@@ -213,22 +213,89 @@ Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri bir
 Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
 Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
 
-    // Build conversation history with system instruction
-    const contents = [
-      { role: "user", parts: [{ text: systemInstruction }] },
-      { role: "model", parts: [{ text: "Anladım, yatırım teşvikleri konusunda yardımcı olmaya hazırım." }] },
-      ...messages.map((m: any) => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }],
-      })),
-    ];
+    // GUARDRAIL: If collecting mode with missing slots, generate deterministic short question
+    // This bypasses LLM to guarantee 2-sentence responses
+    if (incentiveQuery && incentiveQuery.status === 'collecting') {
+      const hasAllSlots = incentiveQuery.sector && incentiveQuery.province && 
+                          incentiveQuery.district && incentiveQuery.osb_status;
+      
+      if (!hasAllSlots) {
+        console.log("⚡ GUARDRAIL: Generating deterministic short question");
+        
+        let deterministicResponse = "";
+        if (!incentiveQuery.sector) {
+          deterministicResponse = "Anladım. Hangi sektörde yatırım yapacaksınız?";
+        } else if (!incentiveQuery.province) {
+          deterministicResponse = "Teşekkürler. Hangi ilde yatırım yapacaksınız?";
+        } else if (!incentiveQuery.district) {
+          deterministicResponse = "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)";
+        } else if (!incentiveQuery.osb_status) {
+          deterministicResponse = "Anladım. OSB içinde mi dışında mı olacak?";
+        }
+        
+        // Update slot from user's last message
+        const supabaseAdmin = getSupabaseAdmin();
+        const lastUserMessage = messages[messages.length - 1]?.content || '';
+        const normalizedMessage = lastUserMessage.trim();
+        const lowerMsg = normalizedMessage.toLowerCase();
+        const updates: any = {};
+        
+        if (!incentiveQuery.sector && normalizedMessage) {
+          updates.sector = normalizedMessage;
+        } else if (incentiveQuery.sector && !incentiveQuery.province && normalizedMessage) {
+          const cleanedProvince = normalizedMessage
+            .replace(/'da$/i, '').replace(/'de$/i, '')
+            .replace(/\sda$/i, '').replace(/\sde$/i, '')
+            .replace(/\sta$/i, '').replace(/\ste$/i, '')
+            .replace(/\sili$/i, '').replace(/\sİli$/i, '')
+            .trim();
+          updates.province = cleanedProvince.charAt(0).toUpperCase() + cleanedProvince.slice(1);
+        } else if (incentiveQuery.province && !incentiveQuery.district && normalizedMessage) {
+          const cleanedDistrict = normalizedMessage.trim();
+          updates.district = cleanedDistrict.charAt(0).toUpperCase() + cleanedDistrict.slice(1);
+        } else if (incentiveQuery.district && !incentiveQuery.osb_status) {
+          if (lowerMsg.includes('içi') || lowerMsg.includes('içinde') || lowerMsg.includes('osb içi') || 
+              lowerMsg.includes('organize sanayi içi') || lowerMsg === 'içi' || lowerMsg === 'ici' ||
+              lowerMsg === 'evet' || lowerMsg === 'var') {
+            updates.osb_status = 'İÇİ';
+          } else if (lowerMsg.includes('dışı') || lowerMsg.includes('dışında') || lowerMsg.includes('osb dışı') || 
+                     lowerMsg === 'dışı' || lowerMsg === 'disi' || lowerMsg.includes('hayır') || 
+                     lowerMsg.includes('değil') || lowerMsg === 'yok') {
+            updates.osb_status = 'DIŞI';
+          }
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          await supabaseAdmin
+            .from('incentive_queries')
+            .update(updates)
+            .eq('session_id', sessionId);
+          console.log("✓ Updated slots:", updates);
+        }
+        
+        return new Response(
+          JSON.stringify({
+            text: deterministicResponse,
+            groundingChunks: [],
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Build conversation history
+    const contents = messages.map((m: any) => ({
+      role: m.role === "user" ? "user" : "model",
+      parts: [{ text: m.content }],
+    }));
 
     // Generate content with file search grounding
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
+      systemInstruction: { parts: [{ text: systemInstruction }] },
       contents,
       config: {
-        temperature: 1.2, // Higher temperature to avoid verbatim recitation
+        temperature: 0.3, // Lower temperature for more deterministic responses
         tools: [
           {
             fileSearch: {
@@ -288,64 +355,25 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
 
     console.log("Final response:", { textLength: textOut.length, groundingChunksCount: groundingChunks.length });
 
-    // Update incentive query state if session provided
+    // Update incentive query state if all slots filled - mark as completed
     if (sessionId && incentiveQuery) {
       try {
         const supabaseAdmin = getSupabaseAdmin();
-        const lastUserMessage = messages[messages.length - 1]?.content || '';
         
-        // Enhanced pattern matching to extract slot values from user's last message
-        const updates: any = {};
-        const normalizedMessage = lastUserMessage.trim();
-        const lowerMsg = normalizedMessage.toLowerCase();
+        // Check if all slots are now filled
+        const allSlotsFilled = 
+          incentiveQuery.sector &&
+          incentiveQuery.province &&
+          incentiveQuery.district &&
+          incentiveQuery.osb_status;
         
-        // If no sector yet, assume this message contains the sector
-        if (!incentiveQuery.sector && normalizedMessage) {
-          updates.sector = normalizedMessage;
-        }
-        // If sector exists but no province, assume this is the province
-        else if (incentiveQuery.sector && !incentiveQuery.province && normalizedMessage) {
-          // Clean up common suffixes like "'da", "'de", "ili" etc.
-          const cleanedProvince = normalizedMessage
-            .replace(/'da$/i, '')
-            .replace(/'de$/i, '')
-            .replace(/\sili$/i, '')
-            .trim();
-          updates.province = cleanedProvince;
-        }
-        // If province exists but no district, assume this is the district
-        else if (incentiveQuery.province && !incentiveQuery.district && normalizedMessage) {
-          updates.district = normalizedMessage;
-        }
-        // If district exists but no OSB status, check for İÇİ/DIŞI keywords with more patterns
-        else if (incentiveQuery.district && !incentiveQuery.osb_status && normalizedMessage) {
-          if (lowerMsg.includes('içi') || lowerMsg.includes('içinde') || lowerMsg.includes('osb içi') || 
-              lowerMsg.includes('organize sanayi') || lowerMsg === 'içi' || lowerMsg === 'ici') {
-            updates.osb_status = 'İÇİ';
-          } else if (lowerMsg.includes('dışı') || lowerMsg.includes('dışında') || lowerMsg.includes('osb dışı') || 
-                     lowerMsg === 'dışı' || lowerMsg === 'disi' || lowerMsg.includes('hayır') || lowerMsg.includes('değil')) {
-            updates.osb_status = 'DIŞI';
-          }
-        }
-        
-        // Update if we extracted any new information
-        if (Object.keys(updates).length > 0) {
-          const allSlotsFilled = 
-            (updates.sector || incentiveQuery.sector) &&
-            (updates.province || incentiveQuery.province) &&
-            (updates.district || incentiveQuery.district) &&
-            (updates.osb_status || incentiveQuery.osb_status);
-          
-          if (allSlotsFilled) {
-            updates.status = 'completed';
-          }
-          
+        if (allSlotsFilled && incentiveQuery.status === 'collecting') {
           await supabaseAdmin
             .from('incentive_queries')
-            .update(updates)
+            .update({ status: 'completed' })
             .eq('session_id', sessionId);
           
-          console.log("Updated incentive query with:", updates);
+          console.log("✓ All slots filled - marked as completed");
         }
       } catch (error) {
         console.error("Error updating incentive query:", error);
