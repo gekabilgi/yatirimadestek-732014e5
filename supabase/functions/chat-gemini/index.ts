@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI } from "npm:@google/genai@1.29.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,21 +13,148 @@ function getAiClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
+// Helper function to create Supabase admin client
+function getSupabaseAdmin() {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase environment variables");
+  }
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { storeName, messages } = await req.json();
+    const { storeName, messages, sessionId } = await req.json();
 
-    console.log("chat-gemini: Processing request with storeName:", storeName);
+    console.log("chat-gemini: Processing request with storeName:", storeName, "sessionId:", sessionId);
 
     if (!storeName || !messages || !Array.isArray(messages)) {
       throw new Error("storeName and messages array are required");
     }
 
+    // Load incentive query state if session provided
+    let incentiveQuery = null;
+    if (sessionId) {
+      try {
+        const supabaseAdmin = getSupabaseAdmin();
+        const { data } = await supabaseAdmin
+          .from('incentive_queries')
+          .select('*')
+          .eq('session_id', sessionId)
+          .eq('status', 'collecting')
+          .single();
+        incentiveQuery = data;
+        console.log("Loaded incentive query state:", incentiveQuery);
+      } catch (error) {
+        console.log("No active incentive query for session:", sessionId);
+        
+        // Auto-start incentive mode if user message contains relevant keywords
+        const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+        const incentiveKeywords = ['teşvik', 'hesapla', 'yatırım', 'destek', 'sektör'];
+        const shouldStartIncentiveMode = incentiveKeywords.some(keyword => 
+          lastUserMessage.includes(keyword)
+        );
+        
+        if (shouldStartIncentiveMode) {
+          try {
+            const supabaseAdmin = getSupabaseAdmin();
+            const { data: newQuery, error: insertError } = await supabaseAdmin
+              .from('incentive_queries')
+              .insert({
+                session_id: sessionId,
+                status: 'collecting',
+              })
+              .select()
+              .single();
+            
+            if (!insertError && newQuery) {
+              incentiveQuery = newQuery;
+              console.log("Started new incentive query:", incentiveQuery);
+            }
+          } catch (insertErr) {
+            console.error("Error starting incentive query:", insertErr);
+          }
+        }
+      }
+    }
+
     const ai = getAiClient();
+
+    // Helper functions for slot-filling
+    const getSlotFillingStatus = (query: any): string => {
+      const slots = ['sector', 'province', 'district', 'osb_status'];
+      const filled = slots.filter(slot => query[slot]).length;
+      return `${filled}/4 bilgi toplandı`;
+    };
+
+    const getNextSlotToFill = (query: any): string => {
+      if (!query.sector) return "Sektör bilgisi sor";
+      if (!query.province) return "İl bilgisi sor";
+      if (!query.district) return "İlçe bilgisi sor";
+      if (!query.osb_status) return "OSB durumu sor";
+      return "Tüm bilgiler toplandı - Hesaplama yap";
+    };
+
+    const incentiveSlotFillingInstruction = incentiveQuery ? `
+
+## TEŞVİK SORGULAMA MOD AKIŞI (ÖNCELİKLİ)
+
+**Mevcut Durum:** ${getSlotFillingStatus(incentiveQuery)}
+**Toplanan Bilgiler:**
+${incentiveQuery.sector ? `✓ Sektör: ${incentiveQuery.sector}` : '○ Sektör: Bekleniyor'}
+${incentiveQuery.province ? `✓ İl: ${incentiveQuery.province}` : '○ İl: Bekleniyor'}
+${incentiveQuery.district ? `✓ İlçe: ${incentiveQuery.district}` : '○ İlçe: Bekleniyor'}
+${incentiveQuery.osb_status ? `✓ OSB Durumu: ${incentiveQuery.osb_status}` : '○ OSB Durumu: Bekleniyor'}
+
+**SONRAKİ ADIM:** ${getNextSlotToFill(incentiveQuery)}
+
+### BİLGİ TOPLAMA SIRASI:
+
+1. **SEKTÖR SORGUSU** (Eğer sector == null):
+   "Hangi sektörde yatırım yapmayı planlıyorsunuz? (Örnek: Gömlek üretimi, tekstil, otomotiv, vb.)"
+   
+2. **İL SORGUSU** (Eğer sector != null && province == null):
+   "Yatırımı hangi ilde gerçekleştirmeyi düşünüyorsunuz?"
+   
+3. **İLÇE SORGUSU** (Eğer province != null && district == null):
+   "Hangi ilçede? (Şehir merkezi için 'Merkez' yazabilirsiniz)"
+   
+4. **OSB DURUMU SORGUSU** (Eğer district != null && osb_status == null):
+   "Yatırım Organize Sanayi Bölgesi (OSB) veya Endüstri Bölgesi içinde mi, dışında mı olacak?"
+   
+5. **FİNAL HESAPLAMA** (Eğer tüm bilgiler dolu):
+   "tesvik_sorgusu.pdf" dosyasındaki TEMEL KURALLAR, VERİ KAYNAKLARI ve SÜREÇ AKIŞI bölümlerine göre:
+   
+   **Hesaplama Sorgusu:**
+   "Kullanıcının yatırım bilgileri:
+   - Sektör: ${incentiveQuery.sector || '[Bekleniyor]'}
+   - İl: ${incentiveQuery.province || '[Bekleniyor]'} 
+   - İlçe: ${incentiveQuery.district || '[Bekleniyor]'}
+   - OSB Durumu: ${incentiveQuery.osb_status || '[Bekleniyor]'}
+   
+   GÖREV:
+   1. 6. Bölge kuralını kontrol et
+   2. İstanbul ve GES/RES istisnalarını kontrol et
+   3. Öncelikli/Hedef yatırım kategorisini belirle
+   4. Alacağı destekleri hesapla:
+      - Faiz/Kar Payı Desteği (oran ve üst limit)
+      - Vergi İndirimi (yatırıma katkı oranı)
+      - SGK İşveren Primi Desteği (süre ve alt bölge)
+      - KDV İstisnası (var/yok)
+      - Gümrük Vergisi Muafiyeti (var/yok)
+   5. Detaylı rapor sun"
+
+### ÖNEMLİ KURALLAR:
+- Her seferinde SADECE BİR soru sor
+- Kullanıcının verdiği cevabı session state'e kaydet
+- Tüm bilgiler toplanmadan hesaplama yapma
+- Kullanıcı konuyu değiştirirse, slot-filling'i duraklat ama bilgileri kaybetme
+` : '';
 
     const systemInstruction = `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
@@ -45,7 +173,9 @@ Yüklediğim "tesvik_sorgusu.pdf" dosyasında yer alan "TEMEL KURALLAR", "VERİ 
 1. Adım adım mantık yürüterek bu yatırımın hangi destek kategorisine girdiğini bul (Önce 6. Bölge Kuralını kontrol et).
 2. İstanbul ve GES/RES istisnalarını kontrol et.
 3. Alacağı destekleri (Faiz, Vergi İndirimi, SGK Süresi, Alt Bölge, KDV, Gümrük) hesapla.
-4. Sonucu bana detaylı bir rapor olarak sun."
+4. Sonucu bana detaylı bir rapor olarak sun.
+
+${incentiveSlotFillingInstruction}
 
 Temel Kurallar:
 Türkçe konuş ve profesyonel bir üslup kullan.
@@ -129,6 +259,61 @@ Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşı
     }
 
     console.log("Final response:", { textLength: textOut.length, groundingChunksCount: groundingChunks.length });
+
+    // Update incentive query state if session provided
+    if (sessionId && incentiveQuery) {
+      try {
+        const supabaseAdmin = getSupabaseAdmin();
+        const lastUserMessage = messages[messages.length - 1]?.content || '';
+        
+        // Simple pattern matching to extract slot values from user's last message
+        const updates: any = {};
+        
+        // If no sector yet, assume this message contains the sector
+        if (!incentiveQuery.sector && lastUserMessage) {
+          updates.sector = lastUserMessage;
+        }
+        // If sector exists but no province, assume this is the province
+        else if (incentiveQuery.sector && !incentiveQuery.province && lastUserMessage) {
+          updates.province = lastUserMessage;
+        }
+        // If province exists but no district, assume this is the district
+        else if (incentiveQuery.province && !incentiveQuery.district && lastUserMessage) {
+          updates.district = lastUserMessage;
+        }
+        // If district exists but no OSB status, check for İÇİ/DIŞI keywords
+        else if (incentiveQuery.district && !incentiveQuery.osb_status && lastUserMessage) {
+          const lowerMsg = lastUserMessage.toLowerCase();
+          if (lowerMsg.includes('içi') || lowerMsg.includes('içinde')) {
+            updates.osb_status = 'İÇİ';
+          } else if (lowerMsg.includes('dışı') || lowerMsg.includes('dışında')) {
+            updates.osb_status = 'DIŞI';
+          }
+        }
+        
+        // Update if we extracted any new information
+        if (Object.keys(updates).length > 0) {
+          const allSlotsFilled = 
+            (updates.sector || incentiveQuery.sector) &&
+            (updates.province || incentiveQuery.province) &&
+            (updates.district || incentiveQuery.district) &&
+            (updates.osb_status || incentiveQuery.osb_status);
+          
+          if (allSlotsFilled) {
+            updates.status = 'completed';
+          }
+          
+          await supabaseAdmin
+            .from('incentive_queries')
+            .update(updates)
+            .eq('session_id', sessionId);
+          
+          console.log("Updated incentive query with:", updates);
+        }
+      } catch (error) {
+        console.error("Error updating incentive query:", error);
+      }
+    }
 
     return new Response(
       JSON.stringify({

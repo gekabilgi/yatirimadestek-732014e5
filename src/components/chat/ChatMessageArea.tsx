@@ -5,6 +5,8 @@ import ReactMarkdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { IncentiveProgressBadge } from "./IncentiveProgressBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatMessageAreaProps {
   messages: ChatMessage[];
@@ -12,6 +14,7 @@ interface ChatMessageAreaProps {
   currentSuggestion?: string;
   onSuggestionClick?: (suggestion: string) => void;
   isGeneratingQuestions?: boolean;
+  activeSessionId?: string | null;
 }
 
 // Typing dots animation
@@ -29,8 +32,11 @@ export function ChatMessageArea({
   currentSuggestion,
   onSuggestionClick,
   isGeneratingQuestions,
+  activeSessionId,
 }: ChatMessageAreaProps) {
   const [modalContent, setModalContent] = useState<string | null>(null);
+  const [incentiveProgress, setIncentiveProgress] = useState<any>(null);
+
   const handleSourceClick = (text: string) => {
     setModalContent(text);
   };
@@ -38,9 +44,70 @@ export function ChatMessageArea({
   const closeModal = () => {
     setModalContent(null);
   };
+
+  // Load incentive query progress
+  useEffect(() => {
+    if (!activeSessionId) {
+      setIncentiveProgress(null);
+      return;
+    }
+
+    const loadProgress = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('incentive_queries')
+          .select('*')
+          .eq('session_id', activeSessionId)
+          .eq('status', 'collecting')
+          .single();
+
+        if (error) {
+          setIncentiveProgress(null);
+          return;
+        }
+
+        setIncentiveProgress(data);
+      } catch (error) {
+        console.error('Error loading incentive progress:', error);
+        setIncentiveProgress(null);
+      }
+    };
+
+    loadProgress();
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel(`incentive-progress-${activeSessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'incentive_queries',
+          filter: `session_id=eq.${activeSessionId}`,
+        },
+        (payload) => {
+          if (payload.new && (payload.new as any).status === 'collecting') {
+            setIncentiveProgress(payload.new);
+          } else if (payload.eventType === 'DELETE') {
+            setIncentiveProgress(null);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeSessionId]);
+
   return (
     <div className="p-4">
       <div className="max-w-3xl mx-auto space-y-6">
+        {/* Show incentive progress if active */}
+        {incentiveProgress && (
+          <IncentiveProgressBadge progress={incentiveProgress} />
+        )}
         {messages.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
             <div className="max-w-2xl w-full text-center space-y-6">

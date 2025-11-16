@@ -170,6 +170,7 @@ export default function Chat() {
             currentSuggestion={currentSuggestion}
             onSuggestionClick={handleSuggestionClick}
             isGeneratingQuestions={isGeneratingQuestions}
+            activeSessionId={activeSessionId}
           />
         </div>
 

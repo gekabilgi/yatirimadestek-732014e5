@@ -549,6 +549,56 @@ export type Database = {
         }
         Relationships: []
       }
+      incentive_queries: {
+        Row: {
+          created_at: string | null
+          district: string | null
+          id: string
+          osb_status: string | null
+          province: string | null
+          result: Json | null
+          sector: string | null
+          sector_nace: string | null
+          session_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          district?: string | null
+          id?: string
+          osb_status?: string | null
+          province?: string | null
+          result?: Json | null
+          sector?: string | null
+          sector_nace?: string | null
+          session_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          district?: string | null
+          id?: string
+          osb_status?: string | null
+          province?: string | null
+          result?: Json | null
+          sector?: string | null
+          sector_nace?: string | null
+          session_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_queries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incentive_supports: {
         Row: {
           created_at: string | null
