@@ -191,6 +191,7 @@ export function useChatSession() {
             role: m.role,
             content: m.content,
           })),
+          sessionId,
         },
       });
 
