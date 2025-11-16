@@ -273,8 +273,6 @@ Temel Kurallar:
 - Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek "**bağlamdan kopmadan**" mantıklı bir açıklama yap.
 - Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
 - Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
-`;
-
     // Duruma göre hangi talimatın kullanılacağını seç
     const systemInstruction =
       incentiveQuery && incentiveQuery.status === "collecting"
