@@ -78,6 +78,33 @@ const parseOsbStatus = (text: string): "İÇİ" | "DIŞI" | null => {
   return null;
 };
 
+const normalizeRegionNumbers = (text: string): string => {
+  const replacements: Record<string, string> = {
+    'birinci bölge': '1. Bölge',
+    'ikinci bölge': '2. Bölge', 
+    'üçüncü bölge': '3. Bölge',
+    'dördüncü bölge': '4. Bölge',
+    'beşinci bölge': '5. Bölge',
+    'altıncı bölge': '6. Bölge',
+    'altinci bölge': '6. Bölge',
+    'birinci bölgedeli': '1. Bölge',
+    'ikinci bölgedeli': '2. Bölge',
+    'üçüncü bölgedeli': '3. Bölge',
+    'dördüncü bölgedeli': '4. Bölge',
+    'beşinci bölgedeli': '5. Bölge',
+    'altıncı bölgedeli': '6. Bölge',
+    'altinci bölgedeli': '6. Bölge',
+  };
+
+  let normalized = text;
+  for (const [pattern, replacement] of Object.entries(replacements)) {
+    const regex = new RegExp(pattern, 'gi');
+    normalized = normalized.replace(regex, replacement);
+  }
+  
+  return normalized;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -272,7 +299,13 @@ Temel Kurallar:
 - ÖNEMLİ: Dokümanlardaki bilgileri kendi cümlelerinle "**bağlamdan kopmadan**" yeniden ifade et.
 - Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek "**bağlamdan kopmadan**" mantıklı bir açıklama yap.
 - Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
-- Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.`;
+- Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.
+
+Bölge Numaraları (ÖNEMLİ):
+- Kullanıcı "1. Bölge", "2. Bölge", "3. Bölge", "4. Bölge", "5. Bölge", "6. Bölge" ifadelerini kullanır
+- 6. Bölge, Türkiye'deki en yüksek teşvik bölgesidir (en fazla destek sağlanır)
+- Her bölgenin farklı vergi indirim oranı, SGK primi desteği ve faiz desteği vardır
+- Bölge numarasını ASLA karıştırma! Örneğin "6. Bölge" dediğinde MUTLAKA 6. Bölge bilgilerini kullan, başka bölge bilgisi verme`;
     // Duruma göre hangi talimatın kullanılacağını seç
     const systemInstruction =
       incentiveQuery && incentiveQuery.status === "collecting"
@@ -364,10 +397,13 @@ Temel Kurallar:
 
     console.log("Sending to LLM. isNewQueryTrigger:", isNewQueryTrigger, "Status:", incentiveQuery?.status);
 
-    const contents = messages.map((m: any) => ({
-      role: m.role === "user" ? "user" : "model",
-      parts: [{ text: m.content }],
-    }));
+    const contents = messages.map((m: any, index: number) => {
+      const isLastUserMessage = m.role === "user" && index === messages.length - 1;
+      return {
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: isLastUserMessage ? normalizeRegionNumbers(m.content) : m.content }],
+      };
+    });
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
