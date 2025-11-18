@@ -4,7 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -124,7 +125,12 @@ serve(async (req) => {
   try {
     const { storeName, messages, sessionId } = await req.json();
 
-    console.log("chat-gemini: Processing request with storeName:", storeName, "sessionId:", sessionId);
+    console.log(
+      "chat-gemini: Processing request with storeName:",
+      storeName,
+      "sessionId:",
+      sessionId,
+    );
 
     if (!storeName || !messages || !Array.isArray(messages)) {
       throw new Error("storeName and messages array are required");
@@ -152,7 +158,9 @@ serve(async (req) => {
       "çorap",
       "gömlek",
     ];
-    const shouldStartIncentiveMode = incentiveKeywords.some((keyword) => lastUserMessage.includes(keyword));
+    const shouldStartIncentiveMode = incentiveKeywords.some((keyword) =>
+      lastUserMessage.includes(keyword),
+    );
 
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -261,17 +269,19 @@ Tüm bilgiler toplandı. Şimdi "tesvik_sorgulama.pdf" dosyasındaki SÜREÇ AKI
     // Genel (normal RAG) talimatlar
     const baseInstructions = `
 Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
-Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda yardımcı oluyorsun.
+Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
+Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma; gerekirse "Bu soru belgelerin kapsamı dışında" de.
+
 Özel Kurallar:
 - 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara.
-- 9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, Teşvik belgesi başvuru şartları, yöntemi ve gerekli belgeler, hangi yatırım türlerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, özel sektör projeleri için stratejik hamle programı değerlendirme kriterleri ve süreci, Güneş, rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için ek şartlar, faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama esasları sorulduğunda sorunun cevaplarını mümkün mertebe "2025-1-9903_teblig.pdf" dosyasında ara.
+- 9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, teşvik belgesi başvuru şartları, yöntemi ve gerekli belgeler, hangi yatırım türlerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, özel sektör projeleri için stratejik hamle programı değerlendirme kriterleri ve süreci, güneş, rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için ek şartlar, faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama esasları sorulduğunda sorunun cevaplarını mümkün mertebe "2025-1-9903_teblig.pdf" dosyasında ara.
 - 9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara.
 - 9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara.
 - HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara.
 - Yatırım taahhütlü avans kredisi, YTAK hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara.
 - 9903 sayılı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara.
-- Yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, ya da Pektin yatırımını nerede yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara.
-- Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt.
+- Yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, ya da pektin yatırımını nerede yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara.
+- Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
 `;
 
     // İnteraktif mod (slot-filling) talimatları
@@ -284,244 +294,4 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 1.  AKILLI ANALİZ: Kullanıcı "çorap üretimi" [kaynak 90] veya "linyit tesisi" gibi bir ifade kullanırsa, sektörü bu olarak anla ve BİR SONRAKİ SORUYA geç ("Hangi ilde?" [kaynak 92]).
 2.  GENEL SORU: Eğer kullanıcı sadece "yatırım yapmak istiyorum" gibi genel bir ifade kullanırsa, "Hangi sektörde?" [kaynak 64] diye sor.
 3.  TEK SORU: Her seferinde SADECE TEK BİR soru sor.
-4.  KISA CEVAP: Maksimum 2 cümle kullan. (1. Onay, 2. Soru).
-5.  YASAK: Genel bilgi VERME, uzun açıklama YAPMA. Rastgele kaynaklar dışında cevap ÜRETME. Sadece Kaynaklara bağlı KAL.
-
-${incentiveSlotFillingInstruction}
-`;
-
-    const fundamentalRules = `
-ÖNEMLİ TELİF / GÜVENLİK KURALLARI:
-- Mevzuat metnini, PDF içeriğini veya madde/fıkra metinlerini ASLA kelimesi kelimesine kopyalama.
-- Cevaplarını her zaman KISA ÖZET halinde, kendi cümlelerinle ver.
-- Madde numaraları, fıkra metinleri ve uzun listeleri birebir aktarmak yerine, en fazla 3–5 maddelik serbest özet yap.
-- Bir soruyu cevaplarken mevzuatın sadece ilgili bölümlerini kullan, tüm maddeyi ya da tüm listeyi aynen yazma.
-
-İnteraktif Görüşme Kuralları (Hesaplama):
-Yüklediğim "tesvik_sorgulama.pdf" dosyasında yer alan "TEMEL KURALLAR" [kaynak 1], "VERİ KAYNAKLARI" [kaynak 46] ve "SÜREÇ AKIŞI" [kaynak 59] başlıkları altında verilen bilgilere dayanarak: 
-1. Adım adım mantık yürüterek bu yatırımın hangi destek kategorisine girdiğini bul (Önce 6. Bölge Kuralını kontrol et [kaynak 5, 84]).
-2. İstanbul ve GES/RES istisnalarını kontrol et [kaynak 35, 40, 43, 85].
-3. Alacağı destekleri (Faiz, Vergi İndirimi, SGK Süresi, Alt Bölge, KDV, Gümrük) hesapla [kaynak 86].
-4. Sonucu bana detaylı bir rapor olarak sun [kaynak 87].
-
-Temel Kurallar:
-- Türkçe konuş ve profesyonel bir üslup kullan.
-- Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
-- Cevaplarını kendi cümlelerinle bağlamdan kopmadan, kaynak verisi dışına çıkmadan yeniden ifade et, dokümanları aynen kopyalama.
-- Bilgileri özet ve anlaşılır şekilde aktar.
-- Örnek: "KDV istisnası makine, inşaat ve arazi harcamalarını kapsar" yerine "Yatırımınızda makine alımı, bina yapımı ve arazi satın alma giderleriniz KDV'den muaf tutulur" gibi ifade et.
-- Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek "bağlamdan kopmadan" mantıklı bir açıklama yap.
-- Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
-- Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme, sadece görevini söyle.
-
-CEVAP FORMATI:
-- Bilgileri madde madde liste halinde sun.
-- Her maddeyi kendi cümlelerinle özetle.
-- Direkt alıntı yapma, yorumla ve açıkla.
-- Teknik terimleri günlük dile çevir.
-
-Bölge Numaraları (ÖNEMLİ):
-- Kullanıcı "1. Bölge", "2. Bölge", "3. Bölge", "4. Bölge", "5. Bölge", "6. Bölge" ifadelerini kullanır.
-- 6. Bölge, Türkiye'deki en yüksek teşvik bölgesidir (en fazla destek sağlanır).
-- Her bölgenin farklı vergi indirim oranı, SGK primi desteği ve faiz desteği vardır.
-- Bölge numarasını ASLA karıştırma! Örneğin "6. Bölge" dediğinde MUTLAKA 6. Bölge bilgilerini kullan, başka bölge bilgisi verme.
-`;
-
-    const systemInstruction =
-      incentiveQuery && incentiveQuery.status === "collecting"
-        ? interactiveInstructions + fundamentalRules
-        : baseInstructions + fundamentalRules;
-
-    // 3) Slot toplama modunda deterministik guardrail (ilk tetikleyici değilse)
-    if (incentiveQuery && incentiveQuery.status === "collecting" && !isNewQueryTrigger) {
-      const hasAllSlots =
-        incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
-
-      if (!hasAllSlots) {
-        console.log("⚡ GUARDRAIL: Deterministic slot filling (NOT first message)");
-
-        const rawLastUserMessage = messages.filter((m: any) => m.role === "user").slice(-1)[0]?.content || "";
-        const normalizedMessage = rawLastUserMessage.trim();
-
-        const updates: any = {};
-
-        if (!incentiveQuery.sector && normalizedMessage) {
-          updates.sector = normalizedMessage;
-        } else if (incentiveQuery.sector && !incentiveQuery.province && normalizedMessage) {
-          updates.province = cleanProvince(normalizedMessage);
-        } else if (incentiveQuery.province && !incentiveQuery.district && normalizedMessage) {
-          updates.district = cleanDistrict(normalizedMessage);
-        } else if (incentiveQuery.district && !incentiveQuery.osb_status && normalizedMessage) {
-          const osb = parseOsbStatus(normalizedMessage);
-          if (osb) {
-            updates.osb_status = osb;
-          }
-        }
-
-        Object.assign(incentiveQuery, updates);
-
-        if (sessionId && Object.keys(updates).length > 0) {
-          await supabaseAdmin.from("incentive_queries").update(updates).eq("id", incentiveQuery.id);
-          console.log("✓ Updated slots in DB:", updates);
-        } else if (!sessionId && Object.keys(updates).length > 0) {
-          console.log("Updated slots in memory only (no sessionId):", updates);
-        }
-
-        let deterministicResponse = "";
-        const nowHasAllSlots =
-          incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
-
-        if (nowHasAllSlots) {
-          deterministicResponse = "Teşekkürler. Girdiğiniz bilgilerle teşvik hesaplamasını yapmaya hazırım.";
-          if (sessionId && incentiveQuery.status === "collecting") {
-            await supabaseAdmin.from("incentive_queries").update({ status: "completed" }).eq("id", incentiveQuery.id);
-            console.log("✓ All slots filled - marked as completed");
-          } else {
-            incentiveQuery.status = "completed";
-          }
-        } else if (!incentiveQuery.sector) {
-          deterministicResponse = "Anladım. Hangi sektörde yatırım yapacaksınız?";
-        } else if (!incentiveQuery.province) {
-          deterministicResponse = "Teşekkürler. Hangi ilde yatırım yapacaksınız?";
-        } else if (!incentiveQuery.district) {
-          deterministicResponse = "Tamam. Hangi ilçede? (Merkez için 'Merkez' yazabilirsiniz)";
-        } else if (!incentiveQuery.osb_status) {
-          deterministicResponse = "Anladım. OSB içinde mi dışında mı olacak?";
-        }
-
-        return new Response(
-          JSON.stringify({
-            text: deterministicResponse,
-            groundingChunks: [],
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-    }
-
-    // 4) LLM çağrısı: normal RAG +/– teşvik hesabı
-    console.log("Sending to LLM. isNewQueryTrigger:", isNewQueryTrigger, "Status:", incentiveQuery?.status);
-
-    const contents = messages.map((m: any, index: number) => {
-      const isLastUserMessage = m.role === "user" && index === messages.length - 1;
-      return {
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: isLastUserMessage ? normalizeRegionNumbers(m.content) : m.content }],
-      };
-    });
-
-    // --- İlk istek (BURADA File Search aracı DOĞRU KULLANILIYOR) ---
-    let response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      systemInstruction: { parts: [{ text: systemInstruction }] },
-      contents,
-      config: {
-        tools: [
-          {
-            fileSearch: {
-              fileSearchStoreNames: [storeName],
-            },
-          },
-        ],
-        temperature: 0.9,
-        maxOutputTokens: 512,
-      },
-    });
-
-    let { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
-
-    if (groundingChunks.length > 0) {
-      console.log("groundingChunks count:", groundingChunks.length);
-      console.log("First chunk structure:", JSON.stringify(groundingChunks[0], null, 2));
-    }
-
-    // --- RECITATION durumunda: ikinci, daha "özetsel" istek ---
-    if (finishReason === "RECITATION") {
-      console.log("RECITATION triggered, retrying with stronger anti-recitation instructions");
-
-      const antiRecitationInstruction = `
-ÖNEMLİ: Mevzuat metnini veya PDF içeriğini asla satır satır ya da madde madde aynen yazma.
-Cevabı en fazla 3-4 kısa madde halinde, tamamen kendi cümlelerinle özetle.
-Madde numaralarını ve fıkra metinlerini kopyalama; sadece anlamını sadeleştirerek anlat.
-`;
-
-      response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        systemInstruction: {
-          parts: [{ text: antiRecitationInstruction + "\n\n" + systemInstruction }],
-        },
-        contents,
-        config: {
-          tools: [
-            {
-              fileSearch: {
-                fileSearchStoreNames: [storeName],
-              },
-            },
-          ],
-          temperature: 0.8,
-          maxOutputTokens: 400,
-        },
-      });
-
-      ({ finishReason, groundingChunks, textOut } = extractTextAndChunks(response));
-    }
-
-    // --- SAFETY durumunda hâlâ blokla ---
-    if (finishReason === "SAFETY") {
-      return new Response(
-        JSON.stringify({
-          error:
-            "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.",
-          blocked: true,
-          reason: finishReason,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Her ihtimale karşı boş metin gelirse kullanıcıyı ortada bırakma
-    if (!textOut || !textOut.trim()) {
-      textOut =
-        "Üzgünüm, bu soruya yanıt üretirken teknik bir sorun yaşadım. Lütfen sorunuzu biraz daha farklı veya detaylı şekilde tekrar yazar mısınız?";
-    }
-
-    console.log("Final response:", {
-      textLength: textOut.length,
-      groundingChunksCount: groundingChunks.length,
-      finishReason,
-    });
-
-    // LLM'in ilk akıllı sorusundan sonra sektörü güncelle (ilk tetikleyici için)
-    if (isNewQueryTrigger && sessionId && incentiveQuery) {
-      const inferredSector =
-        messages.filter((m: any) => m.role === "user").slice(-1)[0]?.content || "Bilinmeyen Sektör";
-
-      try {
-        await supabaseAdmin.from("incentive_queries").update({ sector: inferredSector }).eq("id", incentiveQuery.id);
-        console.log(`✓ Updated sector to "${inferredSector}" after LLM's first pass.`);
-      } catch (dbError) {
-        console.error("Error updating sector after LLM pass:", dbError);
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        text: textOut,
-        groundingChunks,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  } catch (error: any) {
-    console.error("Error in chat-gemini:", error);
-    return new Response(JSON.stringify({ error: error?.message ?? "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-});
+4.  KISA CEVAP
