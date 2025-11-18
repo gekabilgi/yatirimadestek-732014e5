@@ -38,6 +38,14 @@ Kurallar:
 - Genel sorulardan kaçın (örn: "Teşvik nedir?" gibi)
 - Sadece JSON array formatında dön, başka açıklama ekleme
 
+⚠️ ÖNEMLİ: Oluşturduğun sorular:
+- PDF'teki cümlelerle BİREBİR AYNI olmamalı
+- Günlük konuşma diline yakın olmalı
+- Örnek: "KDV istisnası hangi yatırım harcamaları için geçerlidir?" yerine
+  → "Hangi harcamalarım KDV'den muaf olur?"
+  → "Hangi giderlerimde KDV ödemem?"
+  → "Makine alımında KDV öder miyim?"
+
 Örnek format:
 ["Soru 1", "Soru 2", "Soru 3", "Soru 4", "Soru 5", "Soru 6"]`;
 
