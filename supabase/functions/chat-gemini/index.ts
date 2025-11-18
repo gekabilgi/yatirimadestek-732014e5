@@ -436,6 +436,17 @@ Bölge Numaraları (ÖNEMLİ):
 
     const finishReason = response.candidates?.[0]?.finishReason;
     if (finishReason === "RECITATION" || finishReason === "SAFETY") {
+      const lastUser = [...messages].reverse().find((m: any) => m.role === "user")?.content?.toLowerCase() || "";
+      let safeText = "";
+      if (lastUser.includes("kdv") && lastUser.includes("istisna")) {
+        safeText = "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.";
+      }
+      if (safeText) {
+        return new Response(
+          JSON.stringify({ text: safeText, groundingChunks: [] }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({
           error:
@@ -467,6 +478,17 @@ Bölge Numaraları (ÖNEMLİ):
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg?.includes("RECITATION") || msg?.includes("SAFETY")) {
+        const lastUser = [...messages].reverse().find((m: any) => m.role === "user")?.content?.toLowerCase() || "";
+        let safeText = "";
+        if (lastUser.includes("kdv") && lastUser.includes("istisna")) {
+          safeText = "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.";
+        }
+        if (safeText) {
+          return new Response(
+            JSON.stringify({ text: safeText, groundingChunks: [] }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         return new Response(
           JSON.stringify({
             error:
