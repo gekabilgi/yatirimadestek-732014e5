@@ -1930,7 +1930,9 @@ export type Database = {
           department: string | null
           id: string
           is_active: boolean | null
+          last_password_change: string | null
           province: string | null
+          two_factor_enabled: boolean | null
           updated_at: string | null
           user_id: string
         }
@@ -1939,7 +1941,9 @@ export type Database = {
           department?: string | null
           id?: string
           is_active?: boolean | null
+          last_password_change?: string | null
           province?: string | null
+          two_factor_enabled?: boolean | null
           updated_at?: string | null
           user_id: string
         }
@@ -1948,7 +1952,9 @@ export type Database = {
           department?: string | null
           id?: string
           is_active?: boolean | null
+          last_password_change?: string | null
           province?: string | null
+          two_factor_enabled?: boolean | null
           updated_at?: string | null
           user_id?: string
         }
