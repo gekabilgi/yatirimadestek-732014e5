@@ -272,8 +272,6 @@ Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda y
     // İnteraktif mod (slot-filling) için talimatlar
     const interactiveInstructions = `
 Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
-"- Cevaplarını **kendi cümlelerinle bağlamdan kopmadan, kaynak verisi dışına çıkmadan** yeniden ifade et, dokümanları aynen kopyalama"
-"- Bilgileri özet ve anlaşılır şekilde aktar"
 
 "tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] harfiyen uymalısın.
 
@@ -300,10 +298,18 @@ Yüklediğim "tesvik_sorgulama.pdf" dosyasında yer alan "TEMEL KURALLAR" [kayna
 Temel Kurallar:
 - Türkçe konuş ve profesyonel bir üslup kullan.
 - Mümkün olduğunca kısa, anlaşılır ve net cevap ver.
-- ÖNEMLİ: Dokümanlardaki bilgileri kendi cümlelerinle "**bağlamdan kopmadan**" yeniden ifade et.
+- ⚠️ ÇOK ÖNEMLİ: Cevaplarını **kendi cümlelerinle bağlamdan kopmadan, kaynak verisi dışına çıkmadan** yeniden ifade et, dokümanları aynen kopyalama
+- Bilgileri özet ve anlaşılır şekilde aktar
+- Örnek: "KDV istisnası makine, inşaat ve arazi harcamalarını kapsar" yerine "Yatırımınızda makine alımı, bina yapımı ve arazi satın alma giderleriniz KDV'den muaf tutulur" gibi ifade et
 - Sorulan soruda geçen terimleri tüm dokümanın tamamında ara ve bilgileri birleştirerek "**bağlamdan kopmadan**" mantıklı bir açıklama yap.
 - Cevap sonunda konuyla ilgili daha detaylı sorunuz olursa doğrudan ilgili yatırım destek ofisi uzmanlarına soru sorabilirsiniz.
 - Son olarak konu dışında küfürlü ve hakaret içeren sorular gelirse karşılık verme sadece görevini söyle.
+
+**CEVAP FORMATI:**
+- Bilgileri madde madde liste halinde sun
+- Her maddeyi kendi cümlelerinle özetle
+- Direkt alıntı yapma, yorumla ve açıkla
+- Teknik terimleri günlük dile çevir
 
 Bölge Numaraları (ÖNEMLİ):
 - Kullanıcı "1. Bölge", "2. Bölge", "3. Bölge", "4. Bölge", "5. Bölge", "6. Bölge" ifadelerini kullanır
@@ -414,7 +420,7 @@ Bölge Numaraları (ÖNEMLİ):
       systemInstruction: { parts: [{ text: systemInstruction }] },
       contents,
       config: {
-        temperature: 0.7,
+        temperature: 0.9,
         tools: [
           {
             fileSearch: {
