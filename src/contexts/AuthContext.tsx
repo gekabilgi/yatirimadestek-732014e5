@@ -115,14 +115,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (data.user) {
-        // Check if user is admin
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
+        // Check if user is admin using RPC
+        const { data: isAdminData, error: adminError } = await supabase
+          .rpc('is_admin', { user_id: data.user.id });
         
-        if (profileData?.role !== 'admin') {
+        if (adminError || !isAdminData) {
           await supabase.auth.signOut();
           throw new Error('Access denied. Admin privileges required.');
         }
@@ -147,7 +144,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAdmin = profile?.role === 'admin';
+  // Check admin status from user_roles table via RPC
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    if (user) {
+      supabase.rpc('is_admin', { user_id: user.id }).then(({ data }) => {
+        setIsAdmin(!!data);
+      });
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   const value = {
     user,
