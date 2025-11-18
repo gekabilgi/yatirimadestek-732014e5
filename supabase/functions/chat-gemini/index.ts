@@ -108,7 +108,13 @@ function extractTextAndChunks(response: any) {
   const finishReason: string | undefined = candidate?.finishReason;
   const groundingChunks = candidate?.groundingMetadata?.groundingChunks ?? [];
   const parts = candidate?.content?.parts ?? [];
-  const textOut = parts.map((p: any) => p.text ?? "").join("");
+  
+  // Only extract text parts, filter out executableCode, codeExecutionResult, functionCall, etc.
+  const textOut = parts
+    .filter((p: any) => p.text !== undefined)
+    .map((p: any) => p.text)
+    .join("");
+  
   return { finishReason, groundingChunks, textOut };
 }
 
@@ -362,7 +368,10 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: messagesForGemini.map((m: any) => m.content).join("\n\n"),
+      contents: messagesForGemini.map((m: any) => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      })),
       config: {
         ...generationConfig,
         systemInstruction: systemPrompt,
