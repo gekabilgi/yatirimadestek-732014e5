@@ -251,8 +251,33 @@ export function AIChatbot() {
     }
   };
 
+  const createSessionIfNeeded = async (sessionId: string) => {
+    try {
+      // Check if session exists
+      const { data: existingSession } = await supabase
+        .from("cb_sessions")
+        .select("session_id")
+        .eq("session_id", sessionId)
+        .single();
+
+      // If session doesn't exist, create it
+      if (!existingSession) {
+        await supabase.from("cb_sessions").insert({
+          session_id: sessionId,
+          user_id: null, // Anonymous user
+          title: "Yeni Sohbet",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating session:", error);
+    }
+  };
+
   const saveMessage = async (message: Message, sessionId: string) => {
     try {
+      // Ensure session exists before saving message
+      await createSessionIfNeeded(sessionId);
+      
       await supabase.from("cb_messages").insert({
         id: message.id,
         session_id: sessionId,
