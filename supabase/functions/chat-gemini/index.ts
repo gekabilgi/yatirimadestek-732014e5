@@ -426,19 +426,19 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
     }
 
     let finalText = textOut;
-    try {
-      if (!finalText) {
-        finalText = response.text();
-      }
-    } catch (textError) {
-      console.error("Error calling response.text():", textError);
+
+    // If Gemini didn't return any text content, handle gracefully without calling response.text()
+    if (!finalText) {
+      console.warn("⚠️ No text content extracted from Gemini response");
+
       const userContentLower = lastUserMessage.content.toLowerCase();
       const isKdvQuestion = userContentLower.includes("kdv") && userContentLower.includes("istisna");
 
       if (isKdvQuestion) {
-        console.log("→ Using KDV fallback response (text error)");
+        console.log("→ Using KDV fallback response (no text content)");
         const kdvFallbackResponse = {
-          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
+          text:
+            "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
           groundingChunks: [],
         };
 
@@ -452,7 +452,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
           error:
             "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.",
           blocked: true,
-          reason: "TEXT_EXTRACTION_ERROR",
+          reason: "NO_TEXT_CONTENT",
         }),
         {
           status: 400,
@@ -462,7 +462,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
     }
 
     const result = {
-      text: finalText || "",
+      text: finalText,
       groundingChunks: groundingChunks || [],
     };
 

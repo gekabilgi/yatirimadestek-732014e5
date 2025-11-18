@@ -205,8 +205,11 @@ export function useChatSession() {
         },
       });
 
-      // Handle blocked/safety responses (can be in data or error)
-      const responseData = data || (error as any);
+      // Handle blocked/safety responses (may come back in data or error.context)
+      const fnError = error as any;
+      const contextData = fnError?.context;
+      const responseData = data ?? contextData;
+
       if (responseData?.blocked) {
         const errorMessage: ChatMessage = {
           role: 'assistant',
@@ -227,7 +230,7 @@ export function useChatSession() {
         return;
       }
 
-      // If there's an error and it's not a blocked response, throw it
+      // If there's an error and it's not a blocked/handled response, rethrow
       if (error) throw error;
 
       const fullResponse = data.text;
