@@ -104,7 +104,6 @@ const normalizeRegionNumbers = (text: string): string => {
   return normalized;
 };
 
-// Gemini yanıtından metin + grounding parçalarını güvenli çıkar
 function extractTextAndChunks(response: any) {
   const candidate = response?.candidates?.[0];
   const finishReason: string | undefined = candidate?.finishReason;
@@ -119,83 +118,120 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // İlk tetikleyici mesajı (yatırım modu başlangıcı) ayırt etmek için
-  let isNewQueryTrigger = false;
-
   try {
     const { storeName, messages, sessionId } = await req.json();
+    console.log("=== chat-gemini request ===");
+    console.log("storeName:", storeName);
+    console.log("sessionId:", sessionId);
+    console.log("messages count:", messages?.length);
 
-    console.log(
-      "chat-gemini: Processing request with storeName:",
-      storeName,
-      "sessionId:",
-      sessionId,
-    );
-
-    if (!storeName || !messages || !Array.isArray(messages)) {
-      throw new Error("storeName and messages array are required");
+    if (!storeName) {
+      throw new Error("storeName is required");
+    }
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new Error("messages must be a non-empty array");
     }
 
-    const lastUserMessage =
-      messages
-        .filter((m: any) => m.role === "user")
-        .slice(-1)[0]
-        ?.content?.toLowerCase() || "";
+    const lastUserMessage = messages
+      .slice()
+      .reverse()
+      .find((m: any) => m.role === "user");
+    if (!lastUserMessage) {
+      throw new Error("No user message found");
+    }
 
-    const incentiveKeywords = [
-      "teşvik",
-      "tesvik",
-      "hesapla",
-      "yatırım",
-      "yatirım",
-      "yatirim",
-      "destek",
-      "sektör",
-      "sektor",
-      "üretim",
-      "uretim",
-      "imalat",
-      "çorap",
-      "gömlek",
-    ];
-    const shouldStartIncentiveMode = incentiveKeywords.some((keyword) =>
-      lastUserMessage.includes(keyword),
-    );
+    const lowerContent = lastUserMessage.content.toLowerCase();
+    const isIncentiveRelated =
+      lowerContent.includes("teşvik") ||
+      lowerContent.includes("tesvik") ||
+      lowerContent.includes("hesapla") ||
+      lowerContent.includes("yatırım") ||
+      lowerContent.includes("yatirim") ||
+      lowerContent.includes("destek") ||
+      lowerContent.includes("sektör") ||
+      lowerContent.includes("sektor") ||
+      lowerContent.includes("üretim") ||
+      lowerContent.includes("uretim") ||
+      lowerContent.includes("imalat");
 
-    const supabaseAdmin = getSupabaseAdmin();
+    console.log("isIncentiveRelated:", isIncentiveRelated);
 
-    // 1) Var olan incentive_query'yi yükle
+    const supabase = getSupabaseAdmin();
     let incentiveQuery: any = null;
 
-    if (sessionId) {
-      const { data, error } = await supabaseAdmin
+    if (isIncentiveRelated && sessionId) {
+      const { data: existingQuery, error: queryError } = await supabase
         .from("incentive_queries")
-        .select("*")
+        .select()
         .eq("session_id", sessionId)
-        .eq("status", "collecting")
-        .order("created_at", { ascending: false })
-        .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error("Error loading incentive query:", error);
-      } else if (data) {
-        incentiveQuery = data;
-        console.log("Loaded incentive query state:", incentiveQuery);
+      if (queryError) {
+        console.error("Error checking incentive_queries:", queryError);
       }
-    }
 
-    // 2) Henüz yoksa ve yatırım niyeti varsa -> yeni başlat
-    if (!incentiveQuery && shouldStartIncentiveMode) {
-      isNewQueryTrigger = true;
+      if (existingQuery) {
+        incentiveQuery = existingQuery;
+        console.log("✓ Found existing incentive query:", incentiveQuery);
 
-      if (sessionId) {
-        const { data: newQuery, error: insertError } = await supabaseAdmin
+        const userContent = lastUserMessage.content;
+        let updated = false;
+
+        if (!incentiveQuery.sector) {
+          incentiveQuery.sector = userContent;
+          updated = true;
+        } else if (!incentiveQuery.province) {
+          const province = cleanProvince(userContent);
+          incentiveQuery.province = province;
+          updated = true;
+        } else if (!incentiveQuery.district) {
+          const district = cleanDistrict(userContent);
+          incentiveQuery.district = district;
+          updated = true;
+        } else if (!incentiveQuery.osb_status) {
+          const osbStatus = parseOsbStatus(userContent);
+          if (osbStatus) {
+            incentiveQuery.osb_status = osbStatus;
+            updated = true;
+          }
+        }
+
+        if (updated && incentiveQuery.id) {
+          const allFilled =
+            incentiveQuery.sector &&
+            incentiveQuery.province &&
+            incentiveQuery.district &&
+            incentiveQuery.osb_status;
+          const newStatus = allFilled ? "complete" : "collecting";
+
+          const { error: updateError } = await supabase
+            .from("incentive_queries")
+            .update({
+              sector: incentiveQuery.sector,
+              province: incentiveQuery.province,
+              district: incentiveQuery.district,
+              osb_status: incentiveQuery.osb_status,
+              status: newStatus,
+            })
+            .eq("id", incentiveQuery.id);
+
+          if (updateError) {
+            console.error("Error updating incentive_queries:", updateError);
+          } else {
+            incentiveQuery.status = newStatus;
+            console.log("✓ Updated incentive query:", incentiveQuery);
+          }
+        }
+      } else {
+        const { data: newQuery, error: insertError } = await supabase
           .from("incentive_queries")
           .insert({
             session_id: sessionId,
             status: "collecting",
             sector: null,
+            province: null,
+            district: null,
+            osb_status: null,
           })
           .select()
           .single();
@@ -206,26 +242,25 @@ serve(async (req) => {
         } else {
           console.error("Error starting incentive query:", insertError);
         }
-      } else {
-        incentiveQuery = {
-          id: null,
-          session_id: null,
-          status: "collecting",
-          sector: null,
-          province: null,
-          district: null,
-          osb_status: null,
-        };
-        console.log("Started in-memory incentive query (no sessionId):", incentiveQuery);
       }
+    } else if (isIncentiveRelated && !sessionId) {
+      incentiveQuery = {
+        id: null,
+        session_id: null,
+        status: "collecting",
+        sector: null,
+        province: null,
+        district: null,
+        osb_status: null,
+      };
+      console.log("Started in-memory incentive query (no sessionId):", incentiveQuery);
     }
 
     const ai = getAiClient();
 
-    // Gemini API configuration with increased token limit
     const generationConfig = {
       temperature: 0.9,
-      maxOutputTokens: 8192, // Increased from default to prevent truncation
+      maxOutputTokens: 8192,
     };
 
     const getSlotFillingStatus = (query: any): string => {
@@ -272,7 +307,6 @@ Tüm bilgiler toplandı. Şimdi "tesvik_sorgulama.pdf" dosyasındaki SÜREÇ AKI
 `
       : "";
 
-    // Genel (normal RAG) talimatlar
     const baseInstructions = `
 Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
@@ -290,7 +324,6 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma; gerekirse "
 - Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
 `;
 
-    // İnteraktif mod (slot-filling) talimatları
     const interactiveInstructions = `
 Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 
@@ -300,4 +333,143 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 1.  AKILLI ANALİZ: Kullanıcı "çorap üretimi" [kaynak 90] veya "linyit tesisi" gibi bir ifade kullanırsa, sektörü bu olarak anla ve BİR SONRAKİ SORUYA geç ("Hangi ilde?" [kaynak 92]).
 2.  GENEL SORU: Eğer kullanıcı sadece "yatırım yapmak istiyorum" gibi genel bir ifade kullanırsa, "Hangi sektörde?" [kaynak 64] diye sor.
 3.  TEK SORU: Her seferinde SADECE TEK BİR soru sor.
-4.  KISA CEVAP
+4.  KISA CEVAP: Her cevabın SADECE 2 cümle olmalı: (1) kısa onay/geçiş + (2) tek soru
+5.  TEKRAR ETME: Kullanıcı daha önce söylediyse o bilgiyi yeniden SORMA.
+6.  PDF AKIŞI: PDF'deki akışı takip et: 1) Sektör → 2) İl → 3) İlçe → 4) OSB durumu [kaynak 62-71]
+
+⚠️ YASAK DAVRANIŞLAR:
+- Uzun açıklamalar yapma
+- Birden fazla soru sorma
+- Kullanıcı söylemediği bilgi için varsayımda bulunma
+- PDF'deki akıştan sapma
+`;
+
+    const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
+    const messagesForGemini = [
+      ...messages.slice(0, -1),
+      {
+        ...lastUserMessage,
+        content: normalizedUserMessage,
+      },
+    ];
+
+    const systemPrompt =
+      incentiveQuery && incentiveQuery.status === "collecting"
+        ? baseInstructions + "\n\n" + interactiveInstructions + "\n\n" + incentiveSlotFillingInstruction
+        : baseInstructions;
+
+    console.log("=== Calling Gemini ===");
+    console.log("systemPrompt length:", systemPrompt.length);
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: messagesForGemini.map((m: any) => m.content).join("\n\n"),
+      config: {
+        ...generationConfig,
+        systemInstruction: systemPrompt,
+        tools: [
+          {
+            fileSearch: {
+              fileSearchStoreNames: [storeName],
+            },
+          },
+        ],
+      },
+    });
+
+    console.log("=== Gemini response received ===");
+
+    const { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
+
+    console.log("finishReason:", finishReason);
+    console.log("textOut length:", textOut?.length);
+    console.log("groundingChunks count:", groundingChunks?.length);
+
+    if (finishReason === "RECITATION" || finishReason === "SAFETY") {
+      console.log("⚠️ Response blocked due to:", finishReason);
+
+      const userContentLower = lastUserMessage.content.toLowerCase();
+      const isKdvQuestion = userContentLower.includes("kdv") && userContentLower.includes("istisna");
+
+      if (isKdvQuestion) {
+        console.log("→ Using KDV fallback response");
+        const kdvFallbackResponse = {
+          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
+          groundingChunks: [],
+        };
+
+        return new Response(JSON.stringify(kdvFallbackResponse), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          error: "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.",
+          blocked: true,
+          reason: finishReason,
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    let finalText = textOut;
+    try {
+      if (!finalText) {
+        finalText = response.text();
+      }
+    } catch (textError) {
+      console.error("Error calling response.text():", textError);
+      const userContentLower = lastUserMessage.content.toLowerCase();
+      const isKdvQuestion = userContentLower.includes("kdv") && userContentLower.includes("istisna");
+
+      if (isKdvQuestion) {
+        console.log("→ Using KDV fallback response (text error)");
+        const kdvFallbackResponse = {
+          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
+          groundingChunks: [],
+        };
+
+        return new Response(JSON.stringify(kdvFallbackResponse), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          error: "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.",
+          blocked: true,
+          reason: "TEXT_EXTRACTION_ERROR",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const result = {
+      text: finalText || "",
+      groundingChunks: groundingChunks || [],
+    };
+
+    console.log("✓ Returning successful response");
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("❌ Error in chat-gemini:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
