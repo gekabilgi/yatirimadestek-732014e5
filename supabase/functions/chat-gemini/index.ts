@@ -80,28 +80,28 @@ const parseOsbStatus = (text: string): "İÇİ" | "DIŞI" | null => {
 
 const normalizeRegionNumbers = (text: string): string => {
   const replacements: Record<string, string> = {
-    'birinci bölge': '1. Bölge',
-    'ikinci bölge': '2. Bölge', 
-    'üçüncü bölge': '3. Bölge',
-    'dördüncü bölge': '4. Bölge',
-    'beşinci bölge': '5. Bölge',
-    'altıncı bölge': '6. Bölge',
-    'altinci bölge': '6. Bölge',
-    'birinci bölgedeli': '1. Bölge',
-    'ikinci bölgedeli': '2. Bölge',
-    'üçüncü bölgedeli': '3. Bölge',
-    'dördüncü bölgedeli': '4. Bölge',
-    'beşinci bölgedeli': '5. Bölge',
-    'altıncı bölgedeli': '6. Bölge',
-    'altinci bölgedeli': '6. Bölge',
+    "birinci bölge": "1. Bölge",
+    "ikinci bölge": "2. Bölge",
+    "üçüncü bölge": "3. Bölge",
+    "dördüncü bölge": "4. Bölge",
+    "beşinci bölge": "5. Bölge",
+    "altıncı bölge": "6. Bölge",
+    "altinci bölge": "6. Bölge",
+    "birinci bölgedeli": "1. Bölge",
+    "ikinci bölgedeli": "2. Bölge",
+    "üçüncü bölgedeli": "3. Bölge",
+    "dördüncü bölgedeli": "4. Bölge",
+    "beşinci bölgedeli": "5. Bölge",
+    "altıncı bölgedeli": "6. Bölge",
+    "altinci bölgedeli": "6. Bölge",
   };
 
   let normalized = text;
   for (const [pattern, replacement] of Object.entries(replacements)) {
-    const regex = new RegExp(pattern, 'gi');
+    const regex = new RegExp(pattern, "gi");
     normalized = normalized.replace(regex, replacement);
   }
-  
+
   return normalized;
 };
 
@@ -272,6 +272,9 @@ Kullanıcılara yatırım destekleri, teşvik programları ve ilgili konularda y
     // İnteraktif mod (slot-filling) için talimatlar
     const interactiveInstructions = `
 Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+"- Cevaplarını **kendi cümlelerinle bağlamdan kopmadan, kaynak verisi dışına çıkmadan** yeniden ifade et, dokümanları aynen kopyalama"
+"- Bilgileri özet ve anlaşılır şekilde aktar"
+
 "tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] harfiyen uymalısın.
 
 ⚠️ KRİTİK KURALLAR (PDF'e GÖRE):
@@ -286,6 +289,7 @@ ${incentiveSlotFillingInstruction}
 
     // Ana talimatlar (her zaman geçerli)
     const fundamentalRules = `
+    
 İnteraktif Görüşme Kuralları (Hesaplama):
 Yüklediğim "tesvik_sorgulama.pdf" dosyasında yer alan "TEMEL KURALLAR" [kaynak 1], "VERİ KAYNAKLARI" [kaynak 46] ve "SÜREÇ AKIŞI" [kaynak 59] başlıkları altında verilen bilgilere dayanarak: 
 1. Adım adım mantık yürüterek bu yatırımın hangi destek kategorisine girdiğini bul (Önce 6. Bölge Kuralını kontrol et [kaynak 5, 84]).
