@@ -222,6 +222,12 @@ serve(async (req) => {
 
     const ai = getAiClient();
 
+    // Gemini API configuration with increased token limit
+    const generationConfig = {
+      temperature: 0.9,
+      maxOutputTokens: 8192, // Increased from default to prevent truncation
+    };
+
     const getSlotFillingStatus = (query: any): string => {
       const slots = ["sector", "province", "district", "osb_status"];
       const filled = slots.filter((slot) => query[slot]).length;
