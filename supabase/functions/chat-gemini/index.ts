@@ -306,6 +306,7 @@ Tüm bilgiler toplandı. Şimdi "tesvik_sorgulama.pdf" dosyasındaki SÜREÇ AKI
     const baseInstructions = `
 Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
+Soruları **Türkçe** cevapla.
 Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma; gerekirse "Bu soru belgelerin kapsamı dışında" de.
 
 Özel Kurallar:
