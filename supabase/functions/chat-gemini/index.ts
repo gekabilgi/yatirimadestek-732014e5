@@ -434,7 +434,7 @@ Bölge Numaraları (ÖNEMLİ):
           reason: finishReason,
         }),
         {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
@@ -465,7 +465,7 @@ Bölge Numaraları (ÖNEMLİ):
             reason: "RECITATION",
           }),
           {
-            status: 400,
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           },
         );
