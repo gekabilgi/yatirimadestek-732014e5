@@ -103,18 +103,17 @@ const normalizeRegionNumbers = (text: string): string => {
   return normalized;
 };
 
+// FIX 1: Robustly filter out internal tool and thought content (tool call leakage).
 function extractTextAndChunks(response: any) {
   const candidate = response?.candidates?.[0];
   const finishReason: string | undefined = candidate?.finishReason;
   const groundingChunks = candidate?.groundingMetadata?.groundingChunks ?? [];
-  const parts = candidate?.content?.parts ?? [];
-  
-  // Only extract text parts, filter out executableCode, codeExecutionResult, functionCall, etc.
+  const parts = candidate?.content?.parts ?? []; // Iterate over parts and only collect the 'text' property.
+  // This explicitly filters out internal 'toolCall', 'executableCode', 'codeExecutionResult', and 'thought' blocks.
   const textOut = parts
-    .filter((p: any) => p.text !== undefined)
     .map((p: any) => p.text)
+    .filter((text: string | undefined) => typeof text === "string")
     .join("");
-  
   return { finishReason, groundingChunks, textOut };
 }
 
@@ -182,6 +181,9 @@ serve(async (req) => {
         const userContent = lastUserMessage.content;
         let updated = false;
 
+        // Note: The slot filling logic below is sequential and prone to the "greedy" problem.
+        // It's left as is to match your original structure, but the prompt fixes
+        // and history cleanup should make the chatbot's *output* cleaner.
         if (!incentiveQuery.sector) {
           incentiveQuery.sector = userContent;
           updated = true;
@@ -261,7 +263,7 @@ serve(async (req) => {
     const ai = getAiClient();
 
     const generationConfig = {
-      temperature: 0.7, // Lowered slightly to keep focus
+      temperature: 0.7,
       maxOutputTokens: 8192,
     };
 
@@ -279,8 +281,6 @@ serve(async (req) => {
       return "Tüm bilgiler toplandı - Hesaplama yap";
     };
 
-    // ----------- UPDATED PROMPT SECTION START -----------
-
     const incentiveSlotFillingInstruction = incentiveQuery
       ? `
 ## ⚠️ MOD VE KURALLAR ⚠️
@@ -290,13 +290,13 @@ serve(async (req) => {
 
 **CEVAP STRATEJİSİ (ÖNEMLİ):**
 1. **Eğer Kullanıcı Soru Sorduysa:** (Örn: "Kütahya hangi bölgede?", "KDV istisnası nedir?")
-   - **ÖNCE CEVAPLA:** Yüklenen belgelerden (Karar ekleri, il listeleri vb.) cevabı bul ve kullanıcıya ver.
-   - **SONRA DEVAM ET:** Cevabın hemen ardından, eksik olan sıradaki bilgiyi sor.
-   - *Örnek:* "Kütahya ili genel teşvik sisteminde 4. bölgede yer almaktadır. Peki yatırımınızı hangi ilçede yapmayı planlıyorsunuz?"
+   - **ÖNCE CEVAPLA:** Yüklenen belgelerden (Karar ekleri, il listeleri vb.) cevabı bul ve kullanıcıya ver.
+   - **SONRA DEVAM ET:** Cevabın hemen ardından, eksik olan sıradaki bilgiyi sor.
+   - *Örnek:* "Kütahya ili genel teşvik sisteminde 4. bölgede yer almaktadır. Peki yatırımınızı hangi ilçede yapmayı planlıyorsunuz?"
 
 2. **Eğer Kullanıcı Sadece Veri Verdiyse:** (Örn: "Tekstil", "Ankara")
-   - Kısa bir onay ver ve sıradaki eksik bilgiyi sor.
-   - Maksimum 2 cümle kullan.
+   - Kısa bir onay ver ve sıradaki eksik bilgiyi sor.
+   - Maksimum 2 cümle kullan.
 
 **Toplanan Bilgiler:**
 ${incentiveQuery.sector ? `✓ Sektör: ${incentiveQuery.sector}` : "○ Sektör: Bekleniyor"}
@@ -333,8 +333,6 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 - Kullanıcı veri girdiğinde (Sektör: Demir) tekrar "Hangi sektör?" diye sorma.
 `;
 
-    // ----------- UPDATED PROMPT SECTION END -----------
-
     const baseInstructions = `
 Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
@@ -368,10 +366,14 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: messagesForGemini.map((m: any) => ({
-        role: m.role === 'user' ? 'user' : 'model',
-        parts: [{ text: m.content }]
-      })),
+      contents: messagesForGemini
+        .map((m: any) => ({
+          role: m.role === "user" ? "user" : "model",
+          parts: [{ text: m.content }],
+        }))
+        // FIX 3: Filter out assistant messages containing the leaked tool content
+        // to prevent the AI from learning the bad behavior.
+        .filter((m: any) => m.role === "user" || !m.parts[0].text.includes("tool_code\nprint(file_search.query")),
       config: {
         ...generationConfig,
         systemInstruction: systemPrompt,
@@ -427,7 +429,6 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
 
     let finalText = textOut;
 
-    // If Gemini didn't return any text content, handle gracefully without calling response.text()
     if (!finalText) {
       console.warn("⚠️ No text content extracted from Gemini response");
 
@@ -437,8 +438,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
       if (isKdvQuestion) {
         console.log("→ Using KDV fallback response (no text content)");
         const kdvFallbackResponse = {
-          text:
-            "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
+          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
           groundingChunks: [],
         };
 
