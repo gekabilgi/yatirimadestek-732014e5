@@ -105,6 +105,12 @@ const MainNavbar = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center">
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/admin" className="flex items-center">
                         <Settings className="h-4 w-4 mr-2" />
                         Admin Panel

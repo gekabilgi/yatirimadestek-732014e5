@@ -382,8 +382,8 @@ export const fetchUserProfileWithActivity = async (userId: string): Promise<User
     
     return {
       id: profile.id,
-      email: profile.email,
-      full_name: profile.full_name || profile.email?.split('@')[0] || 'User',
+      email: profile.email || '',
+      full_name: (profile as any).full_name || profile.email?.split('@')[0] || 'User',
       roles: roles?.map(r => r.role) || [],
       province: metadata?.province,
       department: metadata?.department,
@@ -409,7 +409,7 @@ export const updateUserProfile = async (userId: string, updates: ProfileUpdates)
     if (updates.full_name) {
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ full_name: updates.full_name })
+        .update({ full_name: updates.full_name } as any)
         .eq('id', userId);
 
       if (profileError) throw profileError;
@@ -454,20 +454,27 @@ export const fetchUserLoginHistory = async (userId: string, limit: number = 10):
 };
 
 /**
- * Fetch user activity history from user_sessions
+ * Fetch user activity history from user_sessions  
  */
 export const fetchUserActivityHistory = async (userId: string, limit: number = 20): Promise<ActivityHistory[]> => {
   try {
-    const { data, error } = await supabase
+    // Explicitly type to avoid deep instantiation
+    const result = await (supabase as any)
       .from('user_sessions')
-      .select('id, activity_type, page_path, created_at, metadata')
+      .select('id, activity_type, page_path, created_at, activity_data')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
+    
+    if (result.error) throw result.error;
 
-    if (error) throw error;
-
-    return data || [];
+    return (result.data || []).map((item: any) => ({
+      id: item.id,
+      activity_type: item.activity_type,
+      page_path: item.page_path || 'Unknown',
+      created_at: item.created_at,
+      metadata: item.activity_data,
+    }));
   } catch (error) {
     console.error('Error fetching activity history:', error);
     return [];
