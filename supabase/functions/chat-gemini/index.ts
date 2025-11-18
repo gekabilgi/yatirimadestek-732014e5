@@ -255,7 +255,7 @@ serve(async (req) => {
     const ai = getAiClient();
 
     const generationConfig = {
-      temperature: 0.9,
+      temperature: 0.7, // Lowered slightly to keep focus
       maxOutputTokens: 8192,
     };
 
@@ -273,24 +273,32 @@ serve(async (req) => {
       return "Tüm bilgiler toplandı - Hesaplama yap";
     };
 
+    // ----------- UPDATED PROMPT SECTION START -----------
+
     const incentiveSlotFillingInstruction = incentiveQuery
       ? `
-## ⚠️ SERT KURALLAR - UZUN AÇIKLAMA YAPMA - YASAK! ⚠️
+## ⚠️ MOD VE KURALLAR ⚠️
 
-**CEVAP FORMATI (ZORUNLU):**
-- Maksimum 2 cümle kullan
-- İlk cümle: Kısa onay/geçiş (1 cümle)
-- İkinci cümle: Tek bir soru (1 cümle)
-- Genel bilgi VERME, sadece eksik bilgiyi SOR
+**DURUM:** Şu an yatırımcıdan eksik bilgileri topluyorsun.
+**MEVCUT İLERLEME:** ${getSlotFillingStatus(incentiveQuery)}
 
-**Mevcut Durum:** ${getSlotFillingStatus(incentiveQuery)}
+**CEVAP STRATEJİSİ (ÖNEMLİ):**
+1. **Eğer Kullanıcı Soru Sorduysa:** (Örn: "Kütahya hangi bölgede?", "KDV istisnası nedir?")
+   - **ÖNCE CEVAPLA:** Yüklenen belgelerden (Karar ekleri, il listeleri vb.) cevabı bul ve kullanıcıya ver.
+   - **SONRA DEVAM ET:** Cevabın hemen ardından, eksik olan sıradaki bilgiyi sor.
+   - *Örnek:* "Kütahya ili genel teşvik sisteminde 4. bölgede yer almaktadır. Peki yatırımınızı hangi ilçede yapmayı planlıyorsunuz?"
+
+2. **Eğer Kullanıcı Sadece Veri Verdiyse:** (Örn: "Tekstil", "Ankara")
+   - Kısa bir onay ver ve sıradaki eksik bilgiyi sor.
+   - Maksimum 2 cümle kullan.
+
 **Toplanan Bilgiler:**
 ${incentiveQuery.sector ? `✓ Sektör: ${incentiveQuery.sector}` : "○ Sektör: Bekleniyor"}
 ${incentiveQuery.province ? `✓ İl: ${incentiveQuery.province}` : "○ İl: Bekleniyor"}
 ${incentiveQuery.district ? `✓ İlçe: ${incentiveQuery.district}` : "○ İlçe: Bekleniyor"}
 ${incentiveQuery.osb_status ? `✓ OSB Durumu: ${incentiveQuery.osb_status}` : "○ OSB Durumu: Bekleniyor"}
 
-**SONRAKİ ADIM:** ${getNextSlotToFill(incentiveQuery)}
+**SONRAKİ HEDEF:** ${getNextSlotToFill(incentiveQuery)}
 
 ${
   incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status
@@ -303,43 +311,36 @@ Tüm bilgiler toplandı. Şimdi "tesvik_sorgulama.pdf" dosyasındaki SÜREÇ AKI
 `
       : "";
 
+    const interactiveInstructions = `
+Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+
+"tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] uymalısın.
+
+⚠️ KRİTİK KURALLAR:
+1. AKILLI ANALİZ: Kullanıcı "çorap üretimi" veya "Kütahya'da yatırım" derse, bu verileri kaydet ve bir sonraki eksik veriye geç.
+2. TEK SORU: Her seferinde SADECE TEK BİR soru sor.
+3. PDF AKIŞI: 1) Sektör → 2) İl → 3) İlçe → 4) OSB durumu
+4. ESNEKLİK (SORU CEVAPLAMA): Kullanıcı akış sırasında bilgi talep ederse (Örn: "Kütahya kaçıncı bölge?"), "Bilgi veremem" DEME. Belgeden (özellikle 9903 Karar Ekleri) bilgiyi bul, soruyu cevapla ve akışa kaldığın yerden devam et.
+
+⚠️ YASAK DAVRANIŞLAR:
+- Kullanıcıya ders verir gibi uzun, gereksiz paragraflar yazma.
+- Kullanıcı veri girdiğinde (Sektör: Demir) tekrar "Hangi sektör?" diye sorma.
+`;
+
+    // ----------- UPDATED PROMPT SECTION END -----------
+
     const baseInstructions = `
 Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
 Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
 Soruları **Türkçe** cevapla.
-Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma; gerekirse "Bu soru belgelerin kapsamı dışında" de.
+Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
 
 Özel Kurallar:
 - 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara.
-- 9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, teşvik belgesi başvuru şartları, yöntemi ve gerekli belgeler, hangi yatırım türlerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, özel sektör projeleri için stratejik hamle programı değerlendirme kriterleri ve süreci, güneş, rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için ek şartlar, faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama esasları sorulduğunda sorunun cevaplarını mümkün mertebe "2025-1-9903_teblig.pdf" dosyasında ara.
-- 9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara.
-- 9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara.
-- HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara.
-- Yatırım taahhütlü avans kredisi, YTAK hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara.
-- 9903 sayılı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara.
-- Yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, ya da pektin yatırımını nerede yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara.
+- İllerin Bölge Sınıflandırması sorulduğunda (Örn: Kütahya kaçıncı bölge?), cevabı 9903 sayılı kararın eklerinde veya ilgili tebliğ dosyalarında (EK-1 İllerin Bölgesel Sınıflandırması) ara.
+- 9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, teşvik belgesi başvuru şartları... "2025-1-9903_teblig.pdf" dosyasında ara.
 - Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
 - En son satıra detaylı bilgi almak için ilgili ilin yatırım destek ofisi ile iletişime geçebilirsiniz.
-`;
-
-    const interactiveInstructions = `
-Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
-
-"tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] harfiyen uymalısın.
-
-⚠️ KRİTİK KURALLAR (PDF'e GÖRE):
-1.  AKILLI ANALİZ: Kullanıcı "çorap üretimi" [kaynak 90] veya "linyit tesisi" gibi bir ifade kullanırsa, sektörü bu olarak anla ve BİR SONRAKİ SORUYA geç ("Hangi ilde?" [kaynak 92]).
-2.  GENEL SORU: Eğer kullanıcı sadece "yatırım yapmak istiyorum" gibi genel bir ifade kullanırsa, "Hangi sektörde?" [kaynak 64] diye sor.
-3.  TEK SORU: Her seferinde SADECE TEK BİR soru sor.
-4.  KISA CEVAP: Her cevabın SADECE 2 cümle olmalı: (1) kısa onay/geçiş + (2) tek soru
-5.  TEKRAR ETME: Kullanıcı daha önce söylediyse o bilgiyi yeniden SORMA.
-6.  PDF AKIŞI: PDF'deki akışı takip et: 1) Sektör → 2) İl → 3) İlçe → 4) OSB durumu [kaynak 62-71]
-
-⚠️ YASAK DAVRANIŞLAR:
-- Uzun açıklamalar yapma
-- Birden fazla soru sorma
-- Kullanıcı söylemediği bilgi için varsayımda bulunma
-- PDF'deki akıştan sapma
 `;
 
     const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
