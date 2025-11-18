@@ -414,7 +414,7 @@ Bölge Numaraları (ÖNEMLİ):
       systemInstruction: { parts: [{ text: systemInstruction }] },
       contents,
       config: {
-        temperature: 0.3,
+        temperature: 0.5,
         tools: [
           {
             fileSearch: {
