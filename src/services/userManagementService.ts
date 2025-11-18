@@ -307,3 +307,218 @@ export const updateYdoUserProvince = async (ydoUserId: string, province: string)
 
   if (error) throw error;
 };
+
+// ============= USER PROFILE FUNCTIONS =============
+
+export interface UserProfileData {
+  id: string;
+  email: string;
+  full_name: string;
+  roles: string[];
+  province?: string;
+  department?: string;
+  is_active: boolean;
+  created_at: string;
+  last_sign_in_at?: string;
+  email_confirmed_at?: string;
+  last_password_change?: string;
+  two_factor_enabled: boolean;
+}
+
+export interface ProfileUpdates {
+  full_name?: string;
+  province?: string;
+  department?: string;
+}
+
+export interface LoginHistory {
+  timestamp: string;
+  ip_address: string;
+  user_agent: string;
+  status: string;
+}
+
+export interface ActivityHistory {
+  id: string;
+  activity_type: string;
+  page_path: string;
+  created_at: string;
+  metadata?: any;
+}
+
+/**
+ * Fetch complete user profile with all related data
+ */
+export const fetchUserProfileWithActivity = async (userId: string): Promise<UserProfileData> => {
+  try {
+    // Fetch profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Fetch roles
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (rolesError) throw rolesError;
+
+    // Fetch metadata
+    const { data: metadata, error: metadataError } = await supabase
+      .from('user_metadata')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (metadataError) throw metadataError;
+
+    // Fetch auth user data for last sign in
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    return {
+      id: profile.id,
+      email: profile.email,
+      full_name: profile.full_name || profile.email?.split('@')[0] || 'User',
+      roles: roles?.map(r => r.role) || [],
+      province: metadata?.province,
+      department: metadata?.department,
+      is_active: metadata?.is_active ?? true,
+      created_at: profile.created_at,
+      last_sign_in_at: user?.last_sign_in_at,
+      email_confirmed_at: user?.email_confirmed_at,
+      last_password_change: metadata?.last_password_change,
+      two_factor_enabled: metadata?.two_factor_enabled ?? false,
+    };
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update user profile information
+ */
+export const updateUserProfile = async (userId: string, updates: ProfileUpdates): Promise<void> => {
+  try {
+    // Update profile table
+    if (updates.full_name) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ full_name: updates.full_name })
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+    }
+
+    // Update metadata table
+    if (updates.province || updates.department) {
+      const { error: metadataError } = await supabase
+        .from('user_metadata')
+        .upsert({
+          user_id: userId,
+          province: updates.province,
+          department: updates.department,
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (metadataError) throw metadataError;
+    }
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch user login history
+ */
+export const fetchUserLoginHistory = async (userId: string, limit: number = 10): Promise<LoginHistory[]> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('fetch-auth-logs', {
+      body: { limit },
+    });
+
+    if (error) throw error;
+
+    return data?.data || [];
+  } catch (error) {
+    console.error('Error fetching login history:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch user activity history from user_sessions
+ */
+export const fetchUserActivityHistory = async (userId: string, limit: number = 20): Promise<ActivityHistory[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('id, activity_type, page_path, created_at, metadata')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching activity history:', error);
+    return [];
+  }
+};
+
+/**
+ * Change user password
+ */
+export const changeUserPassword = async (
+  currentPassword: string,
+  newPassword: string
+): Promise<{ error?: string }> => {
+  try {
+    // First, verify current password by attempting sign in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      return { error: 'User not found' };
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      return { error: 'Current password is incorrect' };
+    }
+
+    // Update password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (updateError) {
+      return { error: updateError.message };
+    }
+
+    // Update last_password_change in metadata
+    await supabase
+      .from('user_metadata')
+      .upsert({
+        user_id: user.id,
+        last_password_change: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      });
+
+    return {};
+  } catch (error: any) {
+    console.error('Error changing password:', error);
+    return { error: error.message };
+  }
+};
