@@ -6,6 +6,14 @@ import { LogOut, Bell, Settings, Search, Menu, X, Home, User } from 'lucide-reac
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface AdminTopbarProps {
   isMobileMenuOpen: boolean;
@@ -82,42 +90,53 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
         {/* Notifications */}
         <NotificationDropdown />
 
-        {/* Settings - hidden on small screens */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/admin/settings/menu-visibility')}
-          className="hidden md:flex p-2 hover:bg-primary/5"
-          title="Ayarlar"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
-
-        {/* User avatar and info */}
-        <div className="flex items-center space-x-3">
-          <Avatar className="h-9 w-9 ring-2 ring-primary/10">
-            <AvatarImage src="" alt="Admin" />
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-              {getUserInitials()}
-            </AvatarFallback>
-          </Avatar>
+        {/* User avatar dropdown menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <Avatar className="h-9 w-9 ring-2 ring-primary/10">
+                <AvatarImage src="" alt="Admin" />
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* User info - hidden on mobile and small tablets */}
+              <div className="hidden lg:flex flex-col">
+                <span className="text-sm font-semibold text-gray-900">Admin</span>
+                <span className="text-xs text-gray-500 truncate max-w-32">{user?.email}</span>
+              </div>
+            </div>
+          </DropdownMenuTrigger>
           
-          {/* User info - hidden on mobile and small tablets */}
-          <div className="hidden lg:flex flex-col">
-            <span className="text-sm font-semibold text-gray-900">Admin</span>
-            <span className="text-xs text-gray-500 truncate max-w-32">{user?.email}</span>
-          </div>
-        </div>
-
-        {/* Logout button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onLogout}
-          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
+          <DropdownMenuContent align="end" className="w-56 bg-white z-50">
+            <DropdownMenuLabel>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium">Admin</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+            </DropdownMenuLabel>
+            
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              <span>Profilim</span>
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem onClick={() => navigate('/admin/settings/menu-visibility')} className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Ayarlar</span>
+            </DropdownMenuItem>
+            
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-red-600 focus:text-red-600">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Çıkış Yap</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
