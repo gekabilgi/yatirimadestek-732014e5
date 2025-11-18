@@ -43,25 +43,18 @@ Deno.serve(async (req) => {
 
     const { limit = 10 } = await req.json();
 
-    // Create admin client to query auth logs
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Query user sessions for login history
+    const { data: sessions, error: sessionsError } = await supabaseClient
+      .from('user_sessions')
+      .select('*')
+      .eq('session_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    // Query auth logs from analytics database
-    const { data: authLogs, error: logsError } = await supabaseAdmin.rpc(
-      'query_auth_logs',
-      {
-        user_id_filter: user.id,
-        limit_count: limit,
-      }
-    );
-
-    if (logsError) {
-      console.error('Error fetching auth logs:', logsError);
+    if (sessionsError) {
+      console.error('Error fetching sessions:', sessionsError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch login history', details: logsError.message }),
+        JSON.stringify({ error: 'Failed to fetch login history', details: sessionsError.message }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -69,23 +62,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse and format login history
-    const loginHistory: LoginHistory[] = (authLogs || [])
-      .map((log: any) => {
-        try {
-          const eventMsg = JSON.parse(log.event_message);
-          return {
-            timestamp: log.timestamp,
-            ip_address: eventMsg.remote_addr || 'Unknown',
-            user_agent: eventMsg.referer || 'Unknown',
-            status: eventMsg.status === 200 ? 'Success' : 'Failed',
-          };
-        } catch (e) {
-          console.error('Error parsing log:', e);
-          return null;
-        }
-      })
-      .filter((item: any) => item !== null);
+    // Format login history from user sessions
+    const loginHistory: LoginHistory[] = (sessions || []).map((session) => ({
+      timestamp: session.created_at,
+      ip_address: session.ip_address || 'Unknown',
+      user_agent: session.user_agent || 'Unknown',
+      status: 'Success',
+    }));
 
     return new Response(JSON.stringify({ data: loginHistory }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
