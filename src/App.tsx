@@ -53,6 +53,7 @@ import Legislation from "./pages/Legislation";
 import AdminLegislation from "./pages/AdminLegislation";
 import AdminKnowledgeBase from "./pages/AdminKnowledgeBase";
 import Chat from "./pages/Chat";
+import UserProfile from "./pages/UserProfile";
 import { AIChatbot } from "./components/AIChatbot";
 
 const queryClient = new QueryClient({
@@ -172,6 +173,11 @@ const App = () => {
               <Route path="/admin/email-management" element={
                 <ProtectedAdminRoute>
                   <AdminEmailManagement />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedAdminRoute>
+                  <UserProfile />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/glossary-management" element={
