@@ -205,13 +205,12 @@ export function useChatSession() {
         },
       });
 
-      if (error) throw error;
-
-      // Handle blocked/safety responses
-      if (data.blocked) {
+      // Handle blocked/safety responses (can be in data or error)
+      const responseData = data || (error as any);
+      if (responseData?.blocked) {
         const errorMessage: ChatMessage = {
           role: 'assistant',
-          content: data.error || 'Üzgünüm, bu soruya cevap veremiyorum.',
+          content: responseData.error || 'Üzgünüm, bu soruya cevap veremiyorum.',
           timestamp: Date.now(),
         };
 
@@ -227,6 +226,9 @@ export function useChatSession() {
         updateSession(sessionId, { messages: [...updatedMessages, errorMessage] });
         return;
       }
+
+      // If there's an error and it's not a blocked response, throw it
+      if (error) throw error;
 
       const fullResponse = data.text;
       const words = fullResponse.split(' ');
