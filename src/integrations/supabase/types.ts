@@ -1924,6 +1924,36 @@ export type Database = {
           },
         ]
       }
+      user_metadata: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          id: string
+          is_active: boolean | null
+          province: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          id?: string
+          is_active?: boolean | null
+          province?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          id?: string
+          is_active?: boolean | null
+          province?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2148,7 +2178,12 @@ export type Database = {
         }[]
       }
       get_public_qna_count: { Args: never; Returns: number }
+      get_user_roles: { Args: { p_user_id: string }; Returns: string[] }
       get_ydo_user_count: { Args: never; Returns: number }
+      has_any_role: {
+        Args: { p_roles: string[]; p_user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
