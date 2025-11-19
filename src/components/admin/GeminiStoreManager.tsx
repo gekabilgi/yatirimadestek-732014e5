@@ -5,7 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Upload, FileText, CheckCircle2, X } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   listRagStores,
   createRagStore,
@@ -46,7 +53,7 @@ export const GeminiStoreManager = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customFileName, setCustomFileName] = useState("");
-  const [metadata, setMetadata] = useState<Array<{ key: string; value: string }>>([{ key: '', value: '' }]);
+  const [metadata, setMetadata] = useState<Array<{ key: string; value: string }>>([{ key: "", value: "" }]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -165,7 +172,7 @@ export const GeminiStoreManager = () => {
     setIsUploadModalOpen(false);
     setSelectedFile(null);
     setCustomFileName("");
-    setMetadata([{ key: '', value: '' }]);
+    setMetadata([{ key: "", value: "" }]);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -202,14 +209,14 @@ export const GeminiStoreManager = () => {
     setCustomFileName(file.name);
   };
 
-  const handleMetadataChange = (index: number, field: 'key' | 'value', value: string) => {
+  const handleMetadataChange = (index: number, field: "key" | "value", value: string) => {
     const newMetadata = [...metadata];
     newMetadata[index][field] = value;
     setMetadata(newMetadata);
   };
 
   const addMetadataRow = () => {
-    setMetadata([...metadata, { key: '', value: '' }]);
+    setMetadata([...metadata, { key: "", value: "" }]);
   };
 
   const removeMetadataRow = (index: number) => {
@@ -232,21 +239,21 @@ export const GeminiStoreManager = () => {
     try {
       // Filter out empty metadata rows
       const validMetadata = metadata
-        .filter(m => m.key.trim() !== '')
-        .map(m => ({ key: m.key.trim(), stringValue: m.value.trim() }));
+        .filter((m) => m.key.trim() !== "")
+        .map((m) => ({ key: m.key.trim(), stringValue: m.value.trim() }));
 
       await uploadDocument(
-        selectedStore, 
-        selectedFile, 
+        selectedStore,
+        selectedFile,
         customFileName || selectedFile.name,
-        validMetadata.length > 0 ? validMetadata : undefined
+        validMetadata.length > 0 ? validMetadata : undefined,
       );
-      
+
       toast({
         title: "Success",
         description: "Document uploaded successfully",
       });
-      
+
       await loadDocuments(selectedStore);
       handleModalClose();
     } catch (error) {
@@ -620,9 +627,7 @@ export const GeminiStoreManager = () => {
                   {selectedFile ? selectedFile.name : "Choose File"}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Supported: DOCX, XLSX, PDF, TXT, CSV
-              </p>
+              <p className="text-xs text-muted-foreground">Supported: DOCX, XLSX, PDF, TXT, CSV</p>
             </div>
 
             {/* Custom File Name */}
@@ -645,14 +650,14 @@ export const GeminiStoreManager = () => {
                   <div key={index} className="flex items-center gap-2">
                     <Input
                       placeholder="Key"
-                      value={item.key}
-                      onChange={(e) => handleMetadataChange(index, 'key', e.target.value)}
+                      value={(item.key = "Dosya")}
+                      onChange={(e) => handleMetadataChange(index, "key", e.target.value)}
                       className="flex-1"
                     />
                     <Input
                       placeholder="Value"
                       value={item.value}
-                      onChange={(e) => handleMetadataChange(index, 'value', e.target.value)}
+                      onChange={(e) => handleMetadataChange(index, "value", e.target.value)}
                       className="flex-1"
                     />
                     <Button
@@ -668,13 +673,7 @@ export const GeminiStoreManager = () => {
                   </div>
                 ))}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addMetadataRow}
-                className="w-full"
-              >
+              <Button type="button" variant="outline" size="sm" onClick={addMetadataRow} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Metadata
               </Button>
