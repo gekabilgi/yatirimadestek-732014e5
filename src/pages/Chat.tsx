@@ -21,6 +21,7 @@ export default function Chat() {
     deleteSession,
     sendMessage,
     setActiveSessionId,
+    updateSession,
   } = useChatSession();
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
@@ -127,6 +128,52 @@ export default function Chat() {
     setInputValue(suggestion);
   };
 
+  const handleClearChat = () => {
+    if (confirm("Sohbeti temizlemek istediğinizden emin misiniz?")) {
+      createSession();
+    }
+  };
+
+  const handleExportChat = () => {
+    if (!activeSession) return;
+    
+    const exportData = {
+      title: activeSession.title,
+      messages: activeSession.messages,
+      exportedAt: new Date().toISOString(),
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chat-${activeSession.title.replace(/\s+/g, "-")}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleRenameSession = async (newTitle: string) => {
+    if (activeSessionId) {
+      await updateSession(activeSessionId, { title: newTitle });
+    }
+  };
+
+  const handleRegenerateMessage = async (messageIndex: number) => {
+    if (!activeSessionId || !activeStore) return;
+    
+    // Find the last user message before this assistant message
+    const userMessage = activeSession?.messages
+      .slice(0, messageIndex)
+      .reverse()
+      .find((m) => m.role === "user");
+    
+    if (userMessage) {
+      await sendMessage(activeSessionId, userMessage.content, activeStore);
+    }
+  };
+
   const SidebarContent = (
     <ChatSidebar
       sessions={sessions}
@@ -161,7 +208,12 @@ export default function Chat() {
           </SheetContent>
         </Sheet>
 
-        <ChatHeader sessionTitle={activeSession?.title || 'Yeni Sohbet'} />
+        <ChatHeader 
+          sessionTitle={activeSession?.title || 'Yeni Sohbet'}
+          onClearChat={handleClearChat}
+          onExportChat={handleExportChat}
+          onRenameSession={handleRenameSession}
+        />
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <ChatMessageArea
@@ -171,6 +223,7 @@ export default function Chat() {
             onSuggestionClick={handleSuggestionClick}
             isGeneratingQuestions={isGeneratingQuestions}
             activeSessionId={activeSessionId}
+            onRegenerateMessage={handleRegenerateMessage}
           />
         </div>
 

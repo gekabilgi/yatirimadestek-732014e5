@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ArrowDown, Bot } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChatSession";
-import ReactMarkdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { IncentiveProgressBadge } from "./IncentiveProgressBadge";
+import { MessageBubble } from "./MessageBubble";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ChatMessageAreaProps {
@@ -15,6 +15,7 @@ interface ChatMessageAreaProps {
   onSuggestionClick?: (suggestion: string) => void;
   isGeneratingQuestions?: boolean;
   activeSessionId?: string | null;
+  onRegenerateMessage?: (index: number) => void;
 }
 
 // Typing dots animation
@@ -33,9 +34,13 @@ export function ChatMessageArea({
   onSuggestionClick,
   isGeneratingQuestions,
   activeSessionId,
+  onRegenerateMessage,
 }: ChatMessageAreaProps) {
   const [modalContent, setModalContent] = useState<string | null>(null);
   const [incentiveProgress, setIncentiveProgress] = useState<any>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const handleSourceClick = (text: string) => {
     setModalContent(text);
@@ -44,6 +49,27 @@ export function ChatMessageArea({
   const closeModal = () => {
     setModalContent(null);
   };
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Handle scroll detection
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollButton(!isNearBottom && scrollHeight > clientHeight);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    handleScroll(); // Initial check
+
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [messages]);
 
   // Load incentive query progress
   useEffect(() => {
@@ -102,21 +128,27 @@ export function ChatMessageArea({
   }, [activeSessionId]);
 
   return (
-    <div className="p-4">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div ref={containerRef} className="relative">
+      <div className="p-4 pb-8">
+        <div className="max-w-3xl mx-auto space-y-6">
         {/* Show incentive progress if active */}
         {incentiveProgress && (
           <IncentiveProgressBadge progress={incentiveProgress} />
         )}
-        {messages.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-            <div className="max-w-2xl w-full text-center space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold mb-2">Nasıl yardımcı olabilirim?</h2>
-                <p className="text-muted-foreground">
-                  Yatırım teşvikleri, destek programları ve mevzuat hakkında sorularınızı cevaplayabilirim.
-                </p>
-              </div>
+          {messages.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
+              <div className="max-w-2xl w-full text-center space-y-8">
+                <div className="space-y-3">
+                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-3xl font-bold">Nasıl yardımcı olabilirim?</h2>
+                  <p className="text-muted-foreground text-lg">
+                    Yatırım teşvikleri, destek programları ve mevzuat hakkında sorularınızı cevaplayabilirim.
+                  </p>
+                </div>
 
               {/* Rotating Suggestion */}
               <div className="min-h-[4rem] flex items-center justify-center">
@@ -145,69 +177,23 @@ export function ChatMessageArea({
         )}
 
         {messages.map((message, index) => (
-          <div key={index} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className="max-w-[80%] space-y-2">
-              <div
-                className={`rounded-lg p-4 ${
-                  message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}
-              >
-                <div
-                  className={`prose prose-sm max-w-none ${
-                    message.role === "user" ? "prose-invert" : "dark:prose-invert"
-                  }`}
-                >
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                      li: ({ children }) => <li className="mb-1">{children}</li>,
-                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                      code: ({ children }) => (
-                        <code className="bg-background/50 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
-                      ),
-                      a: ({ href, children }) => {
-                        // Check if it's a badge format [badge: label|url]
-                        const text = String(children);
-                        if (href && text.startsWith("badge:")) {
-                          const label = text.replace("badge:", "").trim();
-                          return (
-                            <Badge
-                              variant="secondary"
-                              className="mx-1 cursor-pointer hover:bg-primary/20 transition-colors"
-                              onClick={() => window.open(href, "_blank")}
-                            >
-                              {label}
-                            </Badge>
-                          );
-                        }
-                        // Regular link
-                        return (
-                          <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline inline-flex items-center gap-1"
-                          >
-                            {children}
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        );
-                      },
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
-                </div>
-              </div>
-
-              {/* Display sources for assistant messages */}
-              {message.role === "assistant" && message.sources && message.sources.length > 0 && (
-                <div className="text-xs space-y-1 pl-2">
-                  <div className="font-semibold text-muted-foreground">Kaynaklar:</div>
+          <MessageBubble
+            key={`msg-${index}-${message.timestamp || ''}`}
+            role={message.role}
+            content={message.content}
+            timestamp={message.timestamp}
+            onRegenerate={
+              message.role === "assistant" && index === messages.length - 1
+                ? () => onRegenerateMessage?.(index)
+                : undefined
+            }
+          >
+            {/* Display sources for assistant messages */}
+            {message.role === "assistant" && message.sources && message.sources.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">Kaynaklar:</div>
+                <div className="flex flex-wrap gap-2">
                   {message.sources.map((source: any, idx) => {
-                    // Handle both string sources and object sources like { title, uri }
                     const isObject = typeof source === "object" && source !== null;
                     const href = isObject ? source.uri || source.url : undefined;
                     const label = isObject ? source.title || source.uri || source.url : String(source);
@@ -218,78 +204,98 @@ export function ChatMessageArea({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline flex items-center gap-1"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 
+                                 hover:bg-primary/20 text-xs text-primary border border-primary/20
+                                 hover:border-primary/40 transition-all"
                       >
                         <ExternalLink className="h-3 w-3" />
-                        <span>{label}</span>
+                        <span className="max-w-[150px] truncate">{label}</span>
                       </a>
                     ) : (
-                      <div key={idx} className="text-muted-foreground flex items-center gap-1">
+                      <div key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full 
+                                               bg-muted text-xs text-muted-foreground border border-border">
                         <ExternalLink className="h-3 w-3" />
-                        <span>{label}</span>
+                        <span className="max-w-[150px] truncate">{label}</span>
                       </div>
                     );
                   })}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Display grounding chunks */}
-              {message.role === "assistant" && message.groundingChunks && message.groundingChunks.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-gem-mist/50">
-                  <h4 className="text-xs font-semibold text-gem-offwhite/70 mb-2 text-right">Kaynaklar:</h4>
-                  <div className="flex flex-wrap gap-2 justify-end max-h-32 overflow-y-auto">
-                    {message.groundingChunks.map((chunk, chunkIndex) => {
-                      // For File Search, use retrievedContext
-                      let title = `Kaynak ${chunkIndex + 1}`;
-                      let sourceData = "";
+            {/* Display grounding chunks */}
+            {message.role === "assistant" && message.groundingChunks && message.groundingChunks.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">Belge Kaynakları:</div>
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                  {message.groundingChunks.map((chunk, chunkIndex) => {
+                    let title = `Kaynak ${chunkIndex + 1}`;
+                    let sourceData = "";
 
-                      // Try to get title from retrievedContext.title or customMetadata
-                      if (chunk.retrievedContext?.title) {
-                        title = chunk.retrievedContext.title;
-                      } else if (chunk.retrievedContext?.customMetadata) {
-                        const metadata = chunk.retrievedContext.customMetadata;
-                        if (Array.isArray(metadata)) {
-                          const filenameMeta = metadata.find((m: any) => m.key === "Dosya");
-                          if (filenameMeta) {
-                            title = filenameMeta.stringValue || filenameMeta.value || title;
-                          }
+                    if (chunk.retrievedContext?.title) {
+                      title = chunk.retrievedContext.title;
+                    } else if (chunk.retrievedContext?.customMetadata) {
+                      const metadata = chunk.retrievedContext.customMetadata;
+                      if (Array.isArray(metadata)) {
+                        const filenameMeta = metadata.find((m: any) => m.key === "Dosya");
+                        if (filenameMeta) {
+                          title = filenameMeta.stringValue || filenameMeta.value || title;
                         }
                       }
+                    }
 
-                      // Store the text content to display in modal
-                      sourceData = JSON.stringify({
-                        title,
-                        text: chunk.retrievedContext?.text || "İçerik bulunamadı",
-                      });
+                    sourceData = JSON.stringify({
+                      title,
+                      text: chunk.retrievedContext?.text || "İçerik bulunamadı",
+                    });
 
-                      return (
-                        <button
-                          key={chunkIndex}
-                          onClick={() => handleSourceClick(sourceData)}
-                          className="group flex items-center gap-2 bg-gem-mist/50 hover:bg-gem-mist 
-                               text-xs px-3 py-1.5 rounded-md transition-all border border-gem-mist/30
-                               hover:border-primary/50"
-                          title={title}
-                        >
-                          <ExternalLink className="h-3 w-3 text-gem-offwhite/70 group-hover:text-primary" />
-                          <span className="max-w-[200px] truncate">{title}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                    return (
+                      <button
+                        key={chunkIndex}
+                        onClick={() => handleSourceClick(sourceData)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 
+                                 hover:bg-primary/20 text-xs text-primary border border-primary/20
+                                 hover:border-primary/40 transition-all"
+                        title={title}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span className="max-w-[150px] truncate">{title}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
+          </MessageBubble>
         ))}
 
         {isLoading && (
           <div className="flex gap-3">
-            <div className="bg-muted rounded-lg">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bot className="h-5 w-5 text-primary" />
+            </div>
+            <div className="bg-muted/50 border border-border/50 rounded-2xl">
               <TypingDots />
             </div>
           </div>
         )}
+        
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Scroll to bottom button */}
+      {showScrollButton && (
+        <div className="fixed bottom-24 right-8">
+          <Button
+            onClick={scrollToBottom}
+            size="icon"
+            className="rounded-full shadow-lg h-10 w-10"
+            title="Aşağı kaydır"
+          >
+            <ArrowDown className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
       </div>
 
       {/* Citation Modal */}
