@@ -37,7 +37,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
+    <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 md:p-4">
       <div className="max-w-3xl mx-auto">
         <div className="flex gap-2 items-end">
           <div className="flex-1 relative">
@@ -47,10 +47,10 @@ export function ChatInput({
               onKeyDown={handleKeyDown}
               placeholder="Mesajınızı yazın..."
               disabled={disabled}
-              className="min-h-[56px] max-h-[200px] resize-none pr-3 text-sm shadow-sm"
+              className="min-h-[52px] md:min-h-[56px] max-h-[200px] resize-none pr-3 text-sm shadow-sm"
               rows={2}
             />
-            <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
+            <div className="hidden md:block absolute bottom-2 right-3 text-xs text-muted-foreground">
               <span className="text-[10px]">Shift+Enter ile yeni satır</span>
             </div>
           </div>
@@ -59,9 +59,9 @@ export function ChatInput({
             onClick={handleSend} 
             disabled={disabled || !currentValue.trim()} 
             size="icon"
-            className="h-[56px] w-[56px] flex-shrink-0 shadow-sm"
+            className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 shadow-sm"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </div>

@@ -23,26 +23,26 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
   };
 
   return (
-    <div className={cn("flex gap-3 group", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn("flex gap-2 md:gap-3 group px-2 md:px-0", isUser ? "justify-end" : "justify-start")}>
       {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-          <Bot className="h-5 w-5 text-primary" />
+        <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          <Bot className="h-4 w-4 md:h-5 md:w-5 text-primary" />
         </div>
       )}
       
-      <div className={cn("flex flex-col gap-2 max-w-[80%]", isUser && "items-end")}>
+      <div className={cn("flex flex-col gap-1.5 md:gap-2 max-w-[85%] md:max-w-[80%]", isUser && "items-end")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-3 shadow-sm",
+            "rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-sm break-words",
             isUser
               ? "bg-primary text-primary-foreground"
               : "bg-muted/50 border border-border/50"
           )}
         >
           {isUser ? (
-            <p className="whitespace-pre-wrap text-sm">{content}</p>
+            <p className="whitespace-pre-wrap text-sm break-words">{content}</p>
           ) : (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm max-w-none dark:prose-invert break-words">
               <ReactMarkdown
                 components={{
                   a: ({ node, ...props }) => (
@@ -93,8 +93,8 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
       </div>
 
       {isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-          <User className="h-5 w-5 text-primary-foreground" />
+        <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary flex items-center justify-center">
+          <User className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
         </div>
       )}
     </div>

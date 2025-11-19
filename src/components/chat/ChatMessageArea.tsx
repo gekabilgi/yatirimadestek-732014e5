@@ -192,42 +192,42 @@ export function ChatMessageArea({
             {message.role === "assistant" && message.sources && message.sources.length > 0 && (
               <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
                 <div className="text-xs font-medium text-muted-foreground">Kaynaklar:</div>
-                <div className="flex flex-wrap gap-2">
-                  {message.sources.map((source: any, idx) => {
-                    const isObject = typeof source === "object" && source !== null;
-                    const href = isObject ? source.uri || source.url : undefined;
-                    const label = isObject ? source.title || source.uri || source.url : String(source);
+                 <div className="flex flex-wrap gap-1.5 md:gap-2">
+                   {message.sources.map((source: any, idx) => {
+                     const isObject = typeof source === "object" && source !== null;
+                     const href = isObject ? source.uri || source.url : undefined;
+                     const label = isObject ? source.title || source.uri || source.url : String(source);
 
-                    return href ? (
-                      <a
-                        key={idx}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 
-                                 hover:bg-primary/20 text-xs text-primary border border-primary/20
-                                 hover:border-primary/40 transition-all"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        <span className="max-w-[150px] truncate">{label}</span>
-                      </a>
-                    ) : (
-                      <div key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full 
-                                               bg-muted text-xs text-muted-foreground border border-border">
-                        <ExternalLink className="h-3 w-3" />
-                        <span className="max-w-[150px] truncate">{label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                     return href ? (
+                       <a
+                         key={idx}
+                         href={href}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-primary/10 
+                                  hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
+                                  hover:border-primary/40 transition-all"
+                       >
+                         <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
+                         <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
+                       </a>
+                     ) : (
+                       <div key={idx} className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full 
+                                                bg-muted text-[10px] md:text-xs text-muted-foreground border border-border">
+                         <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
+                         <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
+                       </div>
+                     );
+                   })}
+                 </div>
               </div>
             )}
 
             {/* Display grounding chunks */}
             {message.role === "assistant" && message.groundingChunks && message.groundingChunks.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-                <div className="text-xs font-medium text-muted-foreground">Belge Kaynakları:</div>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+              <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-border/50 space-y-1.5 md:space-y-2">
+                <div className="text-[10px] md:text-xs font-medium text-muted-foreground">Belge Kaynakları:</div>
+                <div className="flex flex-wrap gap-1.5 md:gap-2 max-h-32 overflow-y-auto">
                   {message.groundingChunks.map((chunk, chunkIndex) => {
                     let title = `Kaynak ${chunkIndex + 1}`;
                     let sourceData = "";
@@ -253,13 +253,13 @@ export function ChatMessageArea({
                       <button
                         key={chunkIndex}
                         onClick={() => handleSourceClick(sourceData)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 
-                                 hover:bg-primary/20 text-xs text-primary border border-primary/20
+                        className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-primary/10 
+                                 hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
                                  hover:border-primary/40 transition-all"
                         title={title}
                       >
-                        <ExternalLink className="h-3 w-3" />
-                        <span className="max-w-[150px] truncate">{title}</span>
+                        <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
+                        <span className="max-w-[100px] md:max-w-[150px] truncate">{title}</span>
                       </button>
                     );
                   })}
