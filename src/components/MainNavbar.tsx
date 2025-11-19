@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { shouldShowMenuItem } from '@/utils/menuVisibility';
+import { ThemeSelector } from '@/components/ThemeSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +92,7 @@ const MainNavbar = () => {
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden lg:flex items-center space-x-2">
+            <ThemeSelector />
             {user && isAdmin ? (
               <div className="flex items-center space-x-3">
                 <DropdownMenu>
