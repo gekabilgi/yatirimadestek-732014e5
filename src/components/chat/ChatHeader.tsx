@@ -47,7 +47,7 @@ export function ChatHeader({
         </Button>
 
         {/* Center: Session title (editable) */}
-        <div className="flex items-center gap-2 flex-1 justify-center max-w-md px-2">
+        <div className="flex items-center gap-2 flex-1 md:justify-center md:max-w-md px-2">
           {isEditing ? (
             <>
               <input
@@ -70,11 +70,11 @@ export function ChatHeader({
             </>
           ) : (
             <>
-              <h1 className="text-sm md:text-lg font-semibold truncate">{sessionTitle}</h1>
+              <h1 className="text-sm md:text-lg font-semibold break-words line-clamp-2 flex-1">{sessionTitle}</h1>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 md:h-8 md:w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-7 w-7 md:h-8 md:w-8 hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                 onClick={() => setIsEditing(true)}
                 title="Yeniden adlandır"
               >
