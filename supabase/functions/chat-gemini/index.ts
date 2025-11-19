@@ -349,6 +349,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
 - HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara
 - Yatırım taahhütlü avans kredisi, ytak hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara
 - 9903 saylı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara 
+- bir yatırım konusu sorulursa veya bir yatırım konusu hakkında veya nace kodu sorulursa "sectorsearching.xlsx" dosyasında ara.
 - Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
 - En son satıra detaylı bilgi almak için ilgili ilin yatırım destek ofisi ile iletişime geçebilirsiniz.
 `;
@@ -445,8 +446,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
       if (isKdvQuestion) {
         console.log("→ Using KDV fallback response (no text content)");
         const kdvFallbackResponse = {
-          text:
-            "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
+          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
           groundingChunks: [],
         };
 
@@ -458,8 +458,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
 
       // Diğer durumlarda 400 yerine nazik bir fallback cevabı dön, böylece arayüz hata vermesin
       const safeFallbackResponse = {
-        text:
-          "Yüklenen belgelerden bu soruya şu anda net bir yanıt üretemedim. Lütfen sorunuzu biraz daha detaylandırarak veya farklı bir şekilde ifade ederek tekrar deneyin.",
+        text: "Yüklenen belgelerden bu soruya şu anda net bir yanıt üretemedim. Lütfen sorunuzu biraz daha detaylandırarak veya farklı bir şekilde ifade ederek tekrar deneyin.",
         groundingChunks: [],
       };
 
