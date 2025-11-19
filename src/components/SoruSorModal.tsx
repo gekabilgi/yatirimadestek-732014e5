@@ -112,11 +112,14 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
       // Send notifications via edge function
       const { error: emailError } = await supabase.functions.invoke('send-qna-notifications', {
         body: {
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone || '',
-          province: formData.province,
-          question: formData.question
+          type: 'submit_question',
+          questionData: {
+            full_name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone || '',
+            province: formData.province,
+            question: formData.question
+          }
         }
       });
 
