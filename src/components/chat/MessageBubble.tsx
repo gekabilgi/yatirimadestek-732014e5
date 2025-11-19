@@ -84,13 +84,11 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
               {formatTime(timestamp)}
             </span>
           )}
-          {!isUser && (
-            <MessageActions
-              content={content}
-              isAssistant={!isUser}
-              onRegenerate={onRegenerate}
-            />
-          )}
+          <MessageActions
+            content={content}
+            isAssistant={!isUser}
+            onRegenerate={onRegenerate}
+          />
         </div>
       </div>
 
