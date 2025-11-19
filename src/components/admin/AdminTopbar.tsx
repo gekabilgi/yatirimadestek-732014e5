@@ -51,7 +51,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
   };
 
   return (
-    <div className="dashboard-header h-16 flex items-center justify-between px-4 lg:px-6 fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
+    <div className="dashboard-header h-16 flex items-center justify-between px-4 lg:px-6 fixed top-0 w-full z-50 bg-background/95 backdrop-blur-sm border-b shadow-sm">
       {/* Left section - Menu toggle and page title */}
       <div className="flex items-center space-x-4">
         {/* Mobile menu toggle */}
@@ -66,7 +66,7 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
         
         {/* Page title */}
         <div className="flex items-center space-x-2">
-          <h1 className="text-lg lg:text-xl font-bold text-gray-900">{getPageTitle()}</h1>
+          <h1 className="text-lg lg:text-xl font-bold text-foreground">{getPageTitle()}</h1>
         </div>
       </div>
 
@@ -107,13 +107,13 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
               
               {/* User info - hidden on mobile and small tablets */}
               <div className="hidden lg:flex flex-col">
-                <span className="text-sm font-semibold text-gray-900">Admin</span>
-                <span className="text-xs text-gray-500 truncate max-w-32">{user?.email}</span>
+                <span className="text-sm font-semibold text-foreground">Admin</span>
+                <span className="text-xs text-muted-foreground truncate max-w-32">{user?.email}</span>
               </div>
             </div>
           </DropdownMenuTrigger>
           
-          <DropdownMenuContent align="end" className="w-56 bg-white z-50">
+          <DropdownMenuContent align="end" className="w-56 bg-background z-50">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">Admin</p>
