@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RecentActivities } from './RecentActivities';
-import { LiveActivityFeed } from './LiveActivityFeed';
 import { AdminPageHeader } from './AdminPageHeader';
 
 const AdminDashboard = () => {
@@ -227,7 +226,7 @@ const AdminDashboard = () => {
                   Fizibilite Raporları
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 pb-3">
                 <p className="text-sm text-gray-600 line-clamp-2">Yatırım fizibilite raporlarını yönetin</p>
                 <div className="flex flex-col gap-2 w-full">
                   <Link to="/admin/feasibility-reports" className="w-full">
@@ -252,7 +251,7 @@ const AdminDashboard = () => {
                   Soru & Cevap
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 pb-3">
                 <p className="text-sm text-gray-600 line-clamp-2">Kullanıcı sorularını yönetin</p>
                 <Link to="/admin/qa-management" className="block">
                   <Button size="sm" className="btn-primary w-full">Soruları Yönet</Button>
@@ -269,7 +268,7 @@ const AdminDashboard = () => {
                   Destek Programları
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 pb-3">
                 <p className="text-sm text-gray-600 line-clamp-2">Destek programlarını düzenleyin</p>
                 <Link to="/admin/support-programs" className="block">
                   <Button size="sm" className="btn-primary w-full">Programları Yönet</Button>
@@ -286,7 +285,7 @@ const AdminDashboard = () => {
                   Yatırımcı Sözlüğü
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 pb-3">
                 <p className="text-sm text-gray-600 line-clamp-2">Terim tanımlarını yönetin</p>
                 <Link to="/admin/glossary-management" className="block">
                   <Button size="sm" className="btn-primary w-full">Sözlüğü Yönet</Button>
@@ -303,7 +302,7 @@ const AdminDashboard = () => {
                   E-posta Yönetimi
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 pb-3">
                 <p className="text-sm text-gray-600 line-clamp-2">E-posta ayarlarını düzenleyin</p>
                 <Link to="/admin/email-management" className="block">
                   <Button size="sm" className="btn-primary w-full">E-postaları Yönet</Button>
@@ -320,7 +319,7 @@ const AdminDashboard = () => {
                   Analytics
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 pb-3">
                 <p className="text-sm text-gray-600 line-clamp-2">Sistem analitiklerini görüntüleyin</p>
                 <Link to="/admin/analytics" className="block">
                   <Button size="sm" className="btn-primary w-full">Analytics</Button>
@@ -330,9 +329,9 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Right Column - Live Activity Feed */}
+        {/* Right Column - Recent Activities */}
         <div className="lg:col-span-1">
-          <LiveActivityFeed />
+          <RecentActivities />
         </div>
       </div>
       </div>
