@@ -205,15 +205,23 @@ export function useChatSession() {
         },
       });
 
-      // Handle blocked/safety responses (may come back in data or error.context)
-      const fnError = error as any;
-      const contextData = fnError?.context;
-      const responseData = data ?? contextData;
+      // Handle blocked/safety responses which may come back in data or in the error context
+      let responseData: any = data;
+
+      if (!responseData && error && (error as any).context?.json) {
+        try {
+          // FunctionsHttpError: context is a Response-like object
+          const errorJson = await (error as any).context.json();
+          responseData = errorJson;
+        } catch (parseErr) {
+          console.error('Failed to parse chat-gemini error JSON:', parseErr);
+        }
+      }
 
       if (responseData?.blocked) {
         const errorMessage: ChatMessage = {
           role: 'assistant',
-          content: responseData.error || 'Üzgünüm, bu soruya cevap veremiyorum.',
+          content: responseData.error || 'Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.',
           timestamp: Date.now(),
         };
 
