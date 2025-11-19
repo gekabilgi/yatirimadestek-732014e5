@@ -25,8 +25,8 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
   return (
     <div className={cn("flex gap-2 md:gap-3 group px-2 md:px-0", isUser ? "justify-end" : "justify-start")}>
       {!isUser && (
-        <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary/10 flex items-center justify-center">
-          <Bot className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+        <div className="hidden md:flex flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+          <Bot className="h-5 w-5 text-primary" />
         </div>
       )}
       
