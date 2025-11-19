@@ -6,6 +6,7 @@ import { LogOut, Bell, Settings, Search, Menu, X, Home, User } from 'lucide-reac
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
+import { AdminThemeSelector } from './AdminThemeSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,6 +90,9 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
 
         {/* Notifications */}
         <NotificationDropdown />
+
+        {/* Theme Selector */}
+        <AdminThemeSelector />
 
         {/* User avatar dropdown menu */}
         <DropdownMenu>
