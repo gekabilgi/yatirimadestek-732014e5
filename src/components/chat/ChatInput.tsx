@@ -37,27 +37,33 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t bg-background p-3 sm:p-4">
-      <div className="max-w-3xl mx-auto px-2 sm:px-0">
-        <div className="flex gap-3 sm:gap-2 items-end">
-          <Button variant="ghost" size="icon" disabled={disabled} className="flex-shrink-0 hidden sm:flex"></Button>
+    <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex gap-2 items-end">
+          <div className="flex-1 relative">
+            <Textarea
+              value={currentValue}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Mesajınızı yazın..."
+              disabled={disabled}
+              className="min-h-[56px] max-h-[200px] resize-none pr-3 text-sm shadow-sm"
+              rows={2}
+            />
+            <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
+              <span className="text-[10px]">Shift+Enter ile yeni satır</span>
+            </div>
+          </div>
 
-          <Textarea
-            value={currentValue}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Mesajınızı yazın..."
-            disabled={disabled}
-            className="min-h-[60px] max-h-[200px] resize-none text-base"
-            rows={2}
-          />
-
-          <Button onClick={handleSend} disabled={disabled || !currentValue.trim()} size="icon" className="flex-shrink-0">
+          <Button 
+            onClick={handleSend} 
+            disabled={disabled || !currentValue.trim()} 
+            size="icon"
+            className="h-[56px] w-[56px] flex-shrink-0 shadow-sm"
+          >
             <Send className="h-5 w-5" />
           </Button>
         </div>
-
-        <div className="text-xs text-muted-foreground mt-2 text-center px-2">{currentValue.length} karakter</div>
       </div>
     </div>
   );
