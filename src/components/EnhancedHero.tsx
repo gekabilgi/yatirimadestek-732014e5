@@ -129,7 +129,7 @@ const EnhancedHero = () => {
               </Link>
 
               {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-8">
+              <nav className="hidden lg:flex items-center gap-4">
                 {visibleNavItems.map((item) => (
                   <Link
                     key={item.name}
