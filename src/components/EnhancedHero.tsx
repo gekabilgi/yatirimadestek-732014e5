@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ArrowRight, FileDown, TrendingUp, Home, Menu, X, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,6 +28,10 @@ const EnhancedHero = () => {
   const [visibleNavItems, setVisibleNavItems] = useState([
     { name: 'Destek Arama', href: '/searchsupport' },
   ]);
+  
+  // Parallax mouse tracking
+  const heroRef = useRef<HTMLElement>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
   // Stats hooks
   const { stats, isLoading: isLoadingStats } = useTodayActivity();
@@ -82,25 +86,70 @@ const EnhancedHero = () => {
     { label: "Desteklenen Sektör", value: "1.000+" }
   ];
 
+  // Parallax mouse move handler
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero || window.innerWidth < 768) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = hero.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      // Normalize to -1 to 1 range
+      const x = (e.clientX - rect.left - centerX) / centerX;
+      const y = (e.clientY - rect.top - centerY) / centerY;
+      
+      requestAnimationFrame(() => {
+        setMousePosition({ x, y });
+      });
+    };
+
+    hero.addEventListener('mousemove', handleMouseMove);
+    return () => hero.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Parallax transform helper
+  const getParallaxStyle = (depth: number): React.CSSProperties => ({
+    transform: `translate(${mousePosition.x * -depth}px, ${mousePosition.y * -depth}px)`,
+    transition: 'transform 0.1s ease-out',
+    willChange: 'transform',
+  });
+
   return (
     <>
       {/* Full-Screen Hero Section with Blue Gradient */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[65vh] flex flex-col">
+      <section ref={heroRef} className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[65vh] flex flex-col">
         {/* Background Elements */}
         <div className="absolute inset-0">
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
+          {/* Grid Pattern with Parallax */}
+          <div 
+            className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:14px_24px]"
+            style={getParallaxStyle(10)}
+          ></div>
         </div>
 
-        {/* Diagonal Geometric Shapes */}
+        {/* Diagonal Geometric Shapes with Parallax */}
         <div className="absolute inset-0 overflow-hidden opacity-30">
-          <div className="absolute -left-20 top-0 h-96 w-96 rotate-45 border-2 border-white/40" />
-          <div className="absolute left-32 top-32 h-64 w-64 rotate-45 border-2 border-white/30" />
-          <div className="absolute bottom-20 right-40 h-80 w-80 rotate-12 border-2 border-white/30" />
+          <div 
+            className="absolute -left-20 top-0 h-96 w-96 rotate-45 border-2 border-white/40" 
+            style={getParallaxStyle(15)}
+          />
+          <div 
+            className="absolute left-32 top-32 h-64 w-64 rotate-45 border-2 border-white/30" 
+            style={getParallaxStyle(20)}
+          />
+          <div 
+            className="absolute bottom-20 right-40 h-80 w-80 rotate-12 border-2 border-white/30" 
+            style={getParallaxStyle(25)}
+          />
         </div>
 
-        {/* Decorative Dots Scatter */}
-        <div className="absolute bottom-20 right-20 opacity-60 hidden md:block">
+        {/* Decorative Dots Scatter with Parallax */}
+        <div 
+          className="absolute bottom-20 right-20 opacity-60 hidden md:block"
+          style={getParallaxStyle(30)}
+        >
           {[...Array(15)].map((_, i) => (
             <div
               key={i}
