@@ -30,9 +30,10 @@ const EnhancedHero = () => {
     { name: 'Destek Arama', href: '/searchsupport' },
   ]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
   
   // Initialize canvas animation
-  useCanvasAnimation(canvasRef);
+  useCanvasAnimation(canvasRef, heroSectionRef);
   
   // Stats hooks
   const { stats, isLoading: isLoadingStats } = useTodayActivity();
@@ -90,7 +91,7 @@ const EnhancedHero = () => {
   return (
     <>
       {/* Full-Screen Hero Section with Blue Gradient */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[65vh] flex flex-col">
+      <section ref={heroSectionRef} className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[65vh] flex flex-col">
         {/* Canvas Particle Animation */}
         <canvas
           ref={canvasRef}
