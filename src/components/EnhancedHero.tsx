@@ -85,7 +85,7 @@ const EnhancedHero = () => {
   return (
     <>
       {/* Full-Screen Hero Section with Blue Gradient */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[80vh] flex flex-col">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[65vh] flex flex-col">
         {/* Background Elements */}
         <div className="absolute inset-0">
           {/* Grid Pattern */}
@@ -293,7 +293,7 @@ const EnhancedHero = () => {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 flex-1 px-4 sm:px-8 py-12 sm:py-16 flex items-center">
+        <div className="relative z-10 flex-1 px-4 sm:px-8 py-8 sm:py-12 flex items-center">
           <div className="mx-auto max-w-5xl w-full text-center space-y-8">
             {/* Platform Badge */}
             <div className="animate-fade-in">
