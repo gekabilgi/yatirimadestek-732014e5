@@ -230,8 +230,13 @@ export default function Chat() {
         <ChatInput
           onSendMessage={handleSendMessage}
           disabled={isLoading || !activeStore}
+          isGenerating={isLoading}
           value={inputValue}
           onValueChange={setInputValue}
+          onStop={() => {
+            // TODO: Implement abort functionality in useChatSession
+            console.log('Stop generation requested');
+          }}
         />
       </div>
     </div>
