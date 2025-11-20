@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ExternalLink, ArrowDown, Bot } from "lucide-react";
+import { ExternalLink, ArrowDown, Bot, FileText, Quote } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChatSession";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -229,25 +229,34 @@ export function ChatMessageArea({
                 <div className="text-[10px] md:text-xs font-medium text-muted-foreground">Belge Kaynakları:</div>
                 <div className="flex flex-wrap gap-1.5 md:gap-2 max-h-32 overflow-y-auto">
                   {message.groundingChunks.map((chunk, chunkIndex) => {
-                    let title = `Kaynak ${chunkIndex + 1}`;
-                    let sourceData = "";
-
-                    if (chunk.retrievedContext?.title) {
-                      title = chunk.retrievedContext.title;
-                    } else if (chunk.retrievedContext?.customMetadata) {
+                    let fileName = `Kaynak ${chunkIndex + 1}`;
+                    
+                    // Priority: customMetadata > title > uri > fallback
+                    if (chunk.retrievedContext?.customMetadata) {
                       const metadata = chunk.retrievedContext.customMetadata;
                       if (Array.isArray(metadata)) {
-                        const filenameMeta = metadata.find((m: any) => m.key === "Dosya");
+                        const filenameMeta = metadata.find((m: any) => m.key === "Dosya" || m.key === "fileName");
                         if (filenameMeta) {
-                          title = filenameMeta.stringValue || filenameMeta.value || title;
+                          fileName = filenameMeta.stringValue || filenameMeta.value || fileName;
                         }
                       }
+                    } else if (chunk.retrievedContext?.title) {
+                      fileName = chunk.retrievedContext.title;
+                    } else if (chunk.retrievedContext?.uri) {
+                      const uriParts = chunk.retrievedContext.uri.split('/');
+                      fileName = uriParts[uriParts.length - 1] || fileName;
                     }
 
-                    sourceData = JSON.stringify({
-                      title,
-                      text: chunk.retrievedContext?.text || "İçerik bulunamadı",
+                    const sourceData = JSON.stringify({
+                      fileName,
+                      cite: chunk.retrievedContext?.text || "İçerik bulunamadı",
+                      uri: chunk.retrievedContext?.uri || null,
                     });
+
+                    // Display shortened filename in badge
+                    const displayName = fileName.length > 30 
+                      ? fileName.replace(/\.[^/.]+$/, '').substring(0, 27) + '...'
+                      : fileName.replace(/\.[^/.]+$/, '');
 
                     return (
                       <button
@@ -256,10 +265,10 @@ export function ChatMessageArea({
                         className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-primary/10 
                                  hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
                                  hover:border-primary/40 transition-all"
-                        title={title}
+                        title={fileName}
                       >
                         <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
-                        <span className="max-w-[100px] md:max-w-[150px] truncate">{title}</span>
+                        <span className="max-w-[100px] md:max-w-[150px] truncate">{displayName}</span>
                       </button>
                     );
                   })}
@@ -307,12 +316,50 @@ export function ChatMessageArea({
               <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
                 <DialogContent className="max-w-2xl max-h-[80vh]">
                   <DialogHeader>
-                    <DialogTitle>Kaynak: {sourceData.title}</DialogTitle>
-                    <DialogDescription>Bu cevap için kullanılan kaynak içeriği</DialogDescription>
+                    <DialogTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      {sourceData.fileName}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Belge kaynağından alıntı
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="overflow-y-auto max-h-[60vh] space-y-4">
-                    <div className="bg-muted p-4 rounded-lg">
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{sourceData.text}</p>
+                    {/* Belge Bilgisi */}
+                    <div className="flex items-start gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                      <FileText className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">
+                          Kaynak Belge:
+                        </div>
+                        <div className="text-sm font-medium text-foreground break-words">
+                          {sourceData.fileName}
+                        </div>
+                        {sourceData.uri && (
+                          <a 
+                            href={sourceData.uri} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Belgeyi Görüntüle
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Alıntı Metni */}
+                    <div>
+                      <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                        <Quote className="h-4 w-4" />
+                        Alıntı Metni:
+                      </div>
+                      <div className="bg-muted p-4 rounded-lg border border-border">
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                          {sourceData.cite}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </DialogContent>
