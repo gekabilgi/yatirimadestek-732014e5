@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import ProtectedMenuRoute from "@/components/ProtectedMenuRoute";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Start from "./pages/Start";
 import IncentiveTools from "./pages/IncentiveTools";
@@ -76,6 +77,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <AIChatbot />
         <Routes>
           <Route path="/" element={<Index />} />
