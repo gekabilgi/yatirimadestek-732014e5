@@ -131,13 +131,13 @@ const EnhancedHero = () => {
               {/* Desktop Navigation */}
               <nav className="hidden lg:flex items-center gap-8">
                 {visibleNavItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="text-sm font-medium text-gray-700 transition-colors hover:text-primary"
-                  >
-                    {item.name}
-                  </Link>
+              <Link
+                key={item.name}
+                to={item.href}
+                className="text-sm font-medium text-gray-700 relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left hover:text-primary"
+              >
+                {item.name}
+              </Link>
                 ))}
               </nav>
 
@@ -290,17 +290,17 @@ const EnhancedHero = () => {
           </div>
         </header>
 
-        {/* Breadcrumb */}
-        <div className="relative z-10 bg-white/90 px-4 sm:px-8 py-3 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl flex items-center gap-2 text-sm text-primary">
-            <Home className="h-4 w-4" />
-            <span className="font-medium">Türkiye'nin En Kapsamlı Teşvik Platformu</span>
-          </div>
-        </div>
-
         {/* Hero Content */}
         <div className="relative z-10 flex-1 px-4 sm:px-8 py-12 sm:py-16 flex items-center">
           <div className="mx-auto max-w-5xl w-full text-center space-y-8">
+            {/* Platform Badge */}
+            <div className="animate-fade-in">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                <Home className="h-4 w-4" />
+                <span>Türkiye'nin En Kapsamlı Teşvik Platformu</span>
+              </div>
+            </div>
+
             {/* Main Heading */}
             <div className="animate-fade-in">
               <h1 className="text-balance text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white">
