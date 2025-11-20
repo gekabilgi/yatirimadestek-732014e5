@@ -36,7 +36,6 @@ const QNA = () => {
           text: "Uzman Destek Sistemi",
           icon: Users
         }}
-        gradient="green"
         compact
       />
       

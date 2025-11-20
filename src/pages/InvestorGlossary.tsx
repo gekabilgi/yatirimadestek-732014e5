@@ -137,7 +137,6 @@ const InvestorGlossary = () => {
           text: "Terim Sözlüğü",
           icon: BookOpen
         }}
-        gradient="orange"
         compact
       />
 

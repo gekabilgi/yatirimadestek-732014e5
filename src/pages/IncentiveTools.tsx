@@ -37,7 +37,6 @@ const IncentiveTools = () => {
           text: "Türkiye Yüzyılı Kalkınma Hamlesi",
           icon: TrendingUp
         }}
-        gradient="blue"
         compact
       />
       
