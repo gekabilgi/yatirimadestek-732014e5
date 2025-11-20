@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Palette, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,9 +11,31 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/hooks/useTheme';
 import { themeList } from '@/config/themes';
+import { useToast } from '@/hooks/use-toast';
 
 export const AdminThemeSelector: React.FC = () => {
-  const { currentTheme, setTheme } = useTheme();
+  const { currentTheme, setTheme, isLoading } = useTheme();
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleThemeChange = async (themeId: string) => {
+    setIsSaving(true);
+    try {
+      await setTheme(themeId);
+      toast({
+        title: "Tema güncellendi",
+        description: "Tüm kullanıcılar için tema başarıyla değiştirildi.",
+      });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Tema güncellenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -23,6 +45,7 @@ export const AdminThemeSelector: React.FC = () => {
           size="sm"
           className="p-2 hover:bg-primary/5"
           title="Tema Seç"
+          disabled={isLoading || isSaving}
         >
           <Palette className="h-4 w-4" />
         </Button>
@@ -36,7 +59,8 @@ export const AdminThemeSelector: React.FC = () => {
           {themeList.map((theme) => (
             <DropdownMenuItem
               key={theme.id}
-              onClick={() => setTheme(theme.id)}
+              onClick={() => handleThemeChange(theme.id)}
+              disabled={isSaving}
               className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50"
             >
               <div

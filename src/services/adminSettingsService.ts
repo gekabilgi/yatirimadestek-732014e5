@@ -209,4 +209,36 @@ export const adminSettingsService = {
       throw new Error(`Failed to set active Gemini store: ${error.message}`);
     }
   },
+
+  async getActiveTheme(): Promise<string> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'active_app_theme')
+      .single();
+
+    if (error || !data || !data.setting_value_text) {
+      return 'corporate-blue'; // fallback default
+    }
+
+    return data.setting_value_text;
+  },
+
+  async setActiveTheme(themeId: string): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'active_app_theme',
+        category: 'appearance',
+        setting_value_text: themeId,
+        description: 'Active theme ID for the application',
+        setting_value: 0,
+      }, {
+        onConflict: 'setting_key'
+      });
+
+    if (error) {
+      throw new Error(`Failed to set active theme: ${error.message}`);
+    }
+  },
 };
