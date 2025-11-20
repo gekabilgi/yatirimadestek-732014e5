@@ -130,7 +130,6 @@ const SearchSupport = () => {
           text: "Aktif Destek Çağrıları",
           icon: Target
         }}
-        gradient="purple"
         compact
       />
       
