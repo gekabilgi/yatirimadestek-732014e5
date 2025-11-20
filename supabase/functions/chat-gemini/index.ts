@@ -469,6 +469,37 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
       });
     }
 
+    // === DEBUG: Log groundingChunks structure ===
+    if (groundingChunks && groundingChunks.length > 0) {
+      console.log("=== GROUNDING CHUNKS DEBUG (Backend) ===");
+      console.log("Total chunks:", groundingChunks.length);
+      
+      groundingChunks.forEach((chunk: any, idx: number) => {
+        console.log(`\n--- Chunk ${idx + 1} ---`);
+        console.log("retrievedContext.title:", chunk.retrievedContext?.title);
+        console.log("retrievedContext.uri:", chunk.retrievedContext?.uri);
+        console.log("customMetadata type:", typeof chunk.retrievedContext?.customMetadata);
+        console.log("customMetadata isArray:", Array.isArray(chunk.retrievedContext?.customMetadata));
+        console.log("customMetadata full:", JSON.stringify(chunk.retrievedContext?.customMetadata, null, 2));
+        
+        if (chunk.retrievedContext?.customMetadata) {
+          const metadata = chunk.retrievedContext.customMetadata;
+          if (Array.isArray(metadata)) {
+            console.log(`  customMetadata array length: ${metadata.length}`);
+            metadata.forEach((meta: any, metaIdx: number) => {
+              console.log(`  Meta ${metaIdx}:`, JSON.stringify(meta, null, 2));
+              if (meta.key) {
+                console.log(`    - key: "${meta.key}"`);
+                console.log(`    - stringValue: "${meta.stringValue}"`);
+                console.log(`    - value: "${meta.value}"`);
+              }
+            });
+          }
+        }
+      });
+      console.log("=== END GROUNDING CHUNKS DEBUG ===\n");
+    }
+
     const result = {
       text: finalText,
       groundingChunks: groundingChunks || [],

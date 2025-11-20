@@ -229,23 +229,49 @@ export function ChatMessageArea({
                 <div className="text-[10px] md:text-xs font-medium text-muted-foreground">Belge Kaynakları:</div>
                 <div className="flex flex-wrap gap-1.5 md:gap-2 max-h-32 overflow-y-auto">
                   {message.groundingChunks.map((chunk, chunkIndex) => {
+                    // === DEBUG: Log chunk structure ===
+                    console.log(`=== CHUNK ${chunkIndex + 1} DEBUG (Frontend) ===`);
+                    console.log("Full chunk:", chunk);
+                    console.log("retrievedContext:", chunk.retrievedContext);
+                    console.log("customMetadata:", chunk.retrievedContext?.customMetadata);
+                    console.log("customMetadata type:", typeof chunk.retrievedContext?.customMetadata);
+                    console.log("customMetadata isArray:", Array.isArray(chunk.retrievedContext?.customMetadata));
+                    
                     let fileName = `Kaynak ${chunkIndex + 1}`;
                     
                     // Priority: customMetadata > title > uri > fallback
                     if (chunk.retrievedContext?.customMetadata) {
                       const metadata = chunk.retrievedContext.customMetadata;
+                      console.log("Checking customMetadata...", metadata);
+                      
                       if (Array.isArray(metadata)) {
+                        console.log("customMetadata is array, length:", metadata.length);
+                        metadata.forEach((m: any, idx: number) => {
+                          console.log(`  Meta ${idx}:`, m);
+                          console.log(`    key: "${m.key}"`);
+                          console.log(`    stringValue: "${m.stringValue}"`);
+                          console.log(`    value: "${m.value}"`);
+                        });
+                        
                         const filenameMeta = metadata.find((m: any) => m.key === "Dosya" || m.key === "fileName");
+                        console.log("Found filenameMeta:", filenameMeta);
+                        
                         if (filenameMeta) {
                           fileName = filenameMeta.stringValue || filenameMeta.value || fileName;
+                          console.log("Extracted fileName from customMetadata:", fileName);
                         }
                       }
                     } else if (chunk.retrievedContext?.title) {
                       fileName = chunk.retrievedContext.title;
+                      console.log("Using title as fileName:", fileName);
                     } else if (chunk.retrievedContext?.uri) {
                       const uriParts = chunk.retrievedContext.uri.split('/');
                       fileName = uriParts[uriParts.length - 1] || fileName;
+                      console.log("Extracted fileName from uri:", fileName);
                     }
+                    
+                    console.log("Final fileName:", fileName);
+                    console.log("=== END CHUNK DEBUG ===\n");
 
                     const sourceData = JSON.stringify({
                       fileName,
