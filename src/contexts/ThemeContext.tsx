@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { themes } from '@/config/themes';
+import { adminSettingsService } from '@/services/adminSettingsService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ThemeContextType {
   currentTheme: string;
-  setTheme: (themeId: string) => void;
+  setTheme: (themeId: string) => Promise<void>;
   availableThemes: typeof themes;
+  isLoading: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -22,13 +25,54 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [currentTheme, setCurrentTheme] = useState<string>(() => {
-    // Load theme from localStorage or default to corporate-blue
-    return localStorage.getItem('app-theme') || 'corporate-blue';
-  });
+  const [currentTheme, setCurrentTheme] = useState<string>('corporate-blue');
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch theme from database on mount
   useEffect(() => {
-    // Apply theme class to document root
+    const fetchTheme = async () => {
+      try {
+        const themeId = await adminSettingsService.getActiveTheme();
+        setCurrentTheme(themeId);
+      } catch (error) {
+        console.error('Error fetching theme:', error);
+        setCurrentTheme('corporate-blue');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTheme();
+  }, []);
+
+  // Subscribe to realtime theme changes
+  useEffect(() => {
+    const subscription = supabase
+      .channel('theme-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'admin_settings',
+          filter: 'setting_key=eq.active_app_theme'
+        },
+        (payload: any) => {
+          const newTheme = payload.new.setting_value_text;
+          if (newTheme && themes[newTheme]) {
+            setCurrentTheme(newTheme);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
+  // Apply theme to document root
+  useEffect(() => {
     const applyTheme = (themeId: string) => {
       const root = document.documentElement;
       
@@ -52,15 +96,20 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     applyTheme(currentTheme);
   }, [currentTheme]);
 
-  const setTheme = (themeId: string) => {
+  const setTheme = async (themeId: string) => {
     if (themes[themeId]) {
       setCurrentTheme(themeId);
-      localStorage.setItem('app-theme', themeId);
+      try {
+        await adminSettingsService.setActiveTheme(themeId);
+      } catch (error) {
+        console.error('Error saving theme:', error);
+        throw error;
+      }
     }
   };
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, setTheme, availableThemes: themes }}>
+    <ThemeContext.Provider value={{ currentTheme, setTheme, availableThemes: themes, isLoading }}>
       {children}
     </ThemeContext.Provider>
   );
