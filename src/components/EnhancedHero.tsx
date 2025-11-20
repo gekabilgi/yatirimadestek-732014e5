@@ -85,7 +85,7 @@ const EnhancedHero = () => {
   return (
     <>
       {/* Full-Screen Hero Section with Blue Gradient */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-screen flex flex-col">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[80vh] flex flex-col">
         {/* Background Elements */}
         <div className="absolute inset-0">
           {/* Grid Pattern */}
@@ -403,11 +403,8 @@ const EnhancedHero = () => {
       </section>
 
       {/* Announcements Section - Separate White Section */}
-      <section className="bg-white px-4 sm:px-8 py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl space-y-8">
-          <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900">Güncel Destek Duyuruları</h2>
-          <AnnouncementCarousel />
-        </div>
+      <section className="bg-white">
+        <AnnouncementCarousel />
       </section>
 
       {/* Agency Logos Section - Keep As Is */}
