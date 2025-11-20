@@ -13,7 +13,7 @@ interface MousePosition {
   y: number;
 }
 
-export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
+export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>, containerRef: RefObject<HTMLElement>) => {
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef<MousePosition>({ x: 0, y: 0 });
   const animationFrameRef = useRef<number>();
@@ -30,8 +30,8 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
     const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
     
     // Adjust particle count based on device
-    const particleCount = isMobile ? 30 : isTablet ? 60 : 100;
-    const connectionDistance = isMobile ? 80 : 120;
+    const particleCount = isMobile ? 40 : isTablet ? 80 : 150;
+    const connectionDistance = isMobile ? 100 : isTablet ? 140 : 180;
     const mouseRadius = 150;
 
     // Initialize canvas size
@@ -77,7 +77,7 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
     const drawParticle = (particle: Particle) => {
       ctx.beginPath();
       ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.fill();
     };
 
@@ -92,7 +92,7 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < connectionDistance) {
-            const opacity = (1 - distance / connectionDistance) * 0.15;
+            const opacity = (1 - distance / connectionDistance) * 0.12;
             ctx.beginPath();
             ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
             ctx.lineWidth = 1;
@@ -166,10 +166,10 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isMobile) return;
       
-      const rect = canvas.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
       mouseRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top,
       };
     };
 
@@ -183,8 +183,11 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
       }, 250);
     };
 
-    // Event listeners
-    canvas.addEventListener('mousemove', handleMouseMove);
+    // Event listeners - attach to container instead of canvas
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove);
+    }
     window.addEventListener('resize', handleResize);
 
     // Cleanup
@@ -192,9 +195,11 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      canvas.removeEventListener('mousemove', handleMouseMove);
+      if (container) {
+        container.removeEventListener('mousemove', handleMouseMove);
+      }
       window.removeEventListener('resize', handleResize);
       clearTimeout(resizeTimeout);
     };
-  }, [canvasRef]);
+  }, [canvasRef, containerRef]);
 };
