@@ -131,13 +131,14 @@ const EnhancedHero = () => {
               {/* Desktop Navigation */}
               <nav className="hidden lg:flex items-center gap-8">
                 {visibleNavItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="text-sm font-medium text-gray-700 relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left hover:text-primary"
-              >
-                {item.name}
-              </Link>
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="relative px-2 py-2 text-xs xl:text-sm font-medium text-gray-700 hover:text-primary transition-all duration-200 rounded-lg hover:bg-primary/5 whitespace-nowrap group"
+                  >
+                    {item.name}
+                    <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200 rounded-full"></span>
+                  </Link>
                 ))}
               </nav>
 
@@ -217,10 +218,11 @@ const EnhancedHero = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                    className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg relative group"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
+                    <span className="absolute inset-x-3 bottom-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200 rounded-full"></span>
                   </Link>
                 ))}
                 <div className="pt-2 border-t mt-2">
