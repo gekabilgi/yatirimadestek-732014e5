@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ArrowRight, FileDown, TrendingUp, Home, Menu, X, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import AnnouncementCarousel from '@/components/AnnouncementCarousel';
 import AgencyLogosSection from '@/components/AgencyLogosSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { shouldShowMenuItem } from '@/utils/menuVisibility';
+import { useCanvasAnimation } from '@/hooks/useCanvasAnimation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,10 @@ const EnhancedHero = () => {
   const [visibleNavItems, setVisibleNavItems] = useState([
     { name: 'Destek Arama', href: '/searchsupport' },
   ]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Initialize canvas animation
+  useCanvasAnimation(canvasRef);
   
   // Stats hooks
   const { stats, isLoading: isLoadingStats } = useTodayActivity();
@@ -86,31 +91,17 @@ const EnhancedHero = () => {
     <>
       {/* Full-Screen Hero Section with Blue Gradient */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[65vh] flex flex-col">
-        {/* Background Elements */}
-        <div className="absolute inset-0">
+        {/* Canvas Particle Animation */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full"
+          style={{ willChange: 'transform' }}
+        />
+
+        {/* Background Elements - Reduced Opacity */}
+        <div className="absolute inset-0 opacity-20">
           {/* Grid Pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-        </div>
-
-        {/* Diagonal Geometric Shapes */}
-        <div className="absolute inset-0 overflow-hidden opacity-30">
-          <div className="absolute -left-20 top-0 h-96 w-96 rotate-45 border-2 border-white/40" />
-          <div className="absolute left-32 top-32 h-64 w-64 rotate-45 border-2 border-white/30" />
-          <div className="absolute bottom-20 right-40 h-80 w-80 rotate-12 border-2 border-white/30" />
-        </div>
-
-        {/* Decorative Dots Scatter */}
-        <div className="absolute bottom-20 right-20 opacity-60 hidden md:block">
-          {[...Array(15)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute h-1 w-1 rounded-full bg-white"
-              style={{
-                left: `${Math.random() * 100}px`,
-                top: `${Math.random() * 100}px`,
-              }}
-            />
-          ))}
         </div>
 
         {/* Integrated Header */}

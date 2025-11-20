@@ -1,0 +1,200 @@
+import { RefObject, useEffect, useRef } from 'react';
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+}
+
+interface MousePosition {
+  x: number;
+  y: number;
+}
+
+export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>) => {
+  const particlesRef = useRef<Particle[]>([]);
+  const mouseRef = useRef<MousePosition>({ x: 0, y: 0 });
+  const animationFrameRef = useRef<number>();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Check if mobile/tablet
+    const isMobile = window.innerWidth < 768;
+    const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+    
+    // Adjust particle count based on device
+    const particleCount = isMobile ? 30 : isTablet ? 60 : 100;
+    const connectionDistance = isMobile ? 80 : 120;
+    const mouseRadius = 150;
+
+    // Initialize canvas size
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    resizeCanvas();
+
+    // Initialize particles
+    const initParticles = () => {
+      particlesRef.current = [];
+      for (let i = 0; i < particleCount; i++) {
+        particlesRef.current.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          radius: Math.random() * 1.5 + 1.5,
+        });
+      }
+    };
+
+    initParticles();
+
+    // Update particle position
+    const updateParticle = (particle: Particle) => {
+      particle.x += particle.vx;
+      particle.y += particle.vy;
+
+      // Bounce off edges
+      if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+      if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+
+      // Keep within bounds
+      particle.x = Math.max(0, Math.min(canvas.width, particle.x));
+      particle.y = Math.max(0, Math.min(canvas.height, particle.y));
+    };
+
+    // Draw particle
+    const drawParticle = (particle: Particle) => {
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fill();
+    };
+
+    // Draw connections between nearby particles
+    const drawConnections = () => {
+      const particles = particlesRef.current;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < connectionDistance) {
+            const opacity = (1 - distance / connectionDistance) * 0.15;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.lineWidth = 1;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+    };
+
+    // Apply mouse interaction (only on desktop)
+    const applyMouseForce = () => {
+      if (isMobile) return;
+
+      const particles = particlesRef.current;
+      const mouse = mouseRef.current;
+
+      particles.forEach((particle) => {
+        const dx = particle.x - mouse.x;
+        const dy = particle.y - mouse.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < mouseRadius) {
+          // Draw connection to mouse
+          const opacity = (1 - distance / mouseRadius) * 0.3;
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+          ctx.lineWidth = 1;
+          ctx.moveTo(particle.x, particle.y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.stroke();
+
+          // Gentle repulsion from mouse
+          const force = (mouseRadius - distance) / mouseRadius;
+          const angle = Math.atan2(dy, dx);
+          particle.vx += Math.cos(angle) * force * 0.02;
+          particle.vy += Math.sin(angle) * force * 0.02;
+
+          // Limit velocity
+          const maxVelocity = 2;
+          particle.vx = Math.max(-maxVelocity, Math.min(maxVelocity, particle.vx));
+          particle.vy = Math.max(-maxVelocity, Math.min(maxVelocity, particle.vy));
+        }
+      });
+    };
+
+    // Animation loop
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Update particles
+      particlesRef.current.forEach(updateParticle);
+
+      // Draw connections
+      drawConnections();
+
+      // Draw particles
+      particlesRef.current.forEach(drawParticle);
+
+      // Mouse interaction
+      applyMouseForce();
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start animation
+    animate();
+
+    // Mouse move handler
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isMobile) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+    };
+
+    // Resize handler
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        resizeCanvas();
+        initParticles();
+      }, 250);
+    };
+
+    // Event listeners
+    canvas.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
+    };
+  }, [canvasRef]);
+};
