@@ -50,8 +50,8 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>, cont
         particlesRef.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
           radius: Math.random() * 1.5 + 1.5,
         });
       }
@@ -61,6 +61,10 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>, cont
 
     // Update particle position
     const updateParticle = (particle: Particle) => {
+      // Apply velocity decay (friction for slow motion effect)
+      particle.vx *= 0.98;
+      particle.vy *= 0.98;
+      
       particle.x += particle.vx;
       particle.y += particle.vy;
 
@@ -71,6 +75,11 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>, cont
       // Keep within bounds
       particle.x = Math.max(0, Math.min(canvas.width, particle.x));
       particle.y = Math.max(0, Math.min(canvas.height, particle.y));
+      
+      // Limit base velocity to slow motion range (when mouse not hovering)
+      const baseMaxVelocity = 0.3;
+      if (Math.abs(particle.vx) > baseMaxVelocity) particle.vx *= 0.95;
+      if (Math.abs(particle.vy) > baseMaxVelocity) particle.vy *= 0.95;
     };
 
     // Draw particle
@@ -126,14 +135,22 @@ export const useCanvasAnimation = (canvasRef: RefObject<HTMLCanvasElement>, cont
           ctx.lineTo(mouse.x, mouse.y);
           ctx.stroke();
 
-          // Gentle repulsion from mouse
+          // Acceleration: repulsion + speed boost when mouse hovers
           const force = (mouseRadius - distance) / mouseRadius;
           const angle = Math.atan2(dy, dx);
-          particle.vx += Math.cos(angle) * force * 0.02;
-          particle.vy += Math.sin(angle) * force * 0.02;
+          
+          // Enhanced acceleration multiplier
+          const accelerationMultiplier = 0.05;
+          particle.vx += Math.cos(angle) * force * accelerationMultiplier;
+          particle.vy += Math.sin(angle) * force * accelerationMultiplier;
+          
+          // Add tangential acceleration for swirling effect
+          const tangentAngle = angle + Math.PI / 2;
+          particle.vx += Math.cos(tangentAngle) * force * 0.02;
+          particle.vy += Math.sin(tangentAngle) * force * 0.02;
 
-          // Limit velocity
-          const maxVelocity = 2;
+          // Increased max velocity during mouse interaction (controlled acceleration)
+          const maxVelocity = 1.5;
           particle.vx = Math.max(-maxVelocity, Math.min(maxVelocity, particle.vx));
           particle.vy = Math.max(-maxVelocity, Math.min(maxVelocity, particle.vy));
         }
