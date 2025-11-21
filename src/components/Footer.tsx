@@ -14,7 +14,7 @@ const Footer = () => {
             <img
               src="/logo/logo.png"
               alt="Teşviksor Logo"
-              className="h-16 w-auto object-contain brightness-0 invert"
+              className="h-16 w-auto object-contain"
             />
             <p className="text-sm text-primary-foreground/80 max-w-xs">
               Türkiye'nin en kapsamlı teşvik ve yatırım destek platformu. Yatırımlarınız için en uygun teşvikleri kolayca bulun.
