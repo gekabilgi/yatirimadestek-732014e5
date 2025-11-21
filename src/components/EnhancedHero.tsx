@@ -111,9 +111,11 @@ const EnhancedHero = () => {
             <div className="flex items-center justify-between">
               {/* Logo */}
               <Link to="/" className="flex items-center gap-3">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-primary">
-                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
-                </div>
+                <img 
+                  src="/logo/logo.png" 
+                  alt="Logo" 
+                  className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg"
+                />
                 <div className="hidden sm:block text-gray-900">
                   <div className="text-base font-bold leading-tight">Yatırıma Destek</div>
                   <div className="text-xs text-gray-600">Teşvik Sistemi</div>
