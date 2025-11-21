@@ -198,6 +198,9 @@ export function useChatSession() {
       const updatedMessages = [...session.messages, userMessage];
       updateSession(sessionId, { messages: updatedMessages });
 
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
+
       const { data, error } = await supabase.functions.invoke('chat-gemini', {
         body: {
           storeName,
@@ -263,24 +266,14 @@ export function useChatSession() {
 
       // Stream words with typewriter effect
       let currentText = '';
+      let wasAborted = false;
+      
       for (let i = 0; i < words.length; i++) {
-        // Check if aborted
+        // Check if aborted before processing each word
         if (abortControllerRef.current?.signal.aborted) {
-          // Save partial response
-          await supabase
-            .from('chat_messages')
-            .insert({
-              session_id: sessionId,
-              role: 'assistant',
-              content: currentText + ' [yanıt kesildi]',
-            });
-          
-          const interruptedMessage: ChatMessage = {
-            ...emptyAssistantMessage,
-            content: currentText + ' [yanıt kesildi]',
-          };
-          updateSession(sessionId, { messages: [...updatedMessages, interruptedMessage] });
-          return { success: false, interrupted: true };
+          wasAborted = true;
+          currentText += ' [yanıt durduruldu]';
+          break;
         }
         
         currentText += (i > 0 ? ' ' : '') + words[i];
@@ -297,28 +290,39 @@ export function useChatSession() {
         await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 20));
       }
 
-      // Final assistant message with full content
+      // Final assistant message
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: fullResponse,
+        content: wasAborted ? currentText : fullResponse,
         timestamp: Date.now(),
-        sources: data.sources,
-        groundingChunks: data.groundingChunks,
+        sources: wasAborted ? null : data.sources,
+        groundingChunks: wasAborted ? null : data.groundingChunks,
       };
 
       // Save assistant message to database
+      const insertData: any = {
+        session_id: sessionId,
+        role: 'assistant',
+        content: assistantMessage.content,
+      };
+      
+      if (!wasAborted && data.sources) {
+        insertData.sources = data.sources;
+      }
+      
+      if (!wasAborted && data.groundingChunks) {
+        insertData.grounding_chunks = data.groundingChunks;
+      }
+      
       await supabase
         .from('chat_messages')
-        .insert({
-          session_id: sessionId,
-          role: 'assistant',
-          content: fullResponse,
-          sources: data.sources,
-          grounding_chunks: data.groundingChunks,
-        });
+        .insert(insertData);
 
-      const finalMessages = [...updatedMessages, assistantMessage];
-      updateSession(sessionId, { messages: finalMessages });
+      updateSession(sessionId, { messages: [...updatedMessages, assistantMessage] });
+
+      if (wasAborted) {
+        return { success: false, interrupted: true };
+      }
 
       // Auto-generate title from first user message
       if (session.messages.length === 0 && message.length > 0) {
@@ -342,11 +346,15 @@ export function useChatSession() {
   }, [sessions, updateSession]);
 
   const stopGeneration = useCallback(() => {
+    console.log('stopGeneration called');
+    
+    // Abort the controller
     if (abortControllerRef.current) {
+      console.log('Aborting controller');
       abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   }, []);
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || null;
