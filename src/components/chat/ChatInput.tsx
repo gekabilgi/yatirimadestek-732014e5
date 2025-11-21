@@ -2,6 +2,7 @@ import { useState, KeyboardEvent, useEffect, useRef } from "react";
 import { Send, Square, Mic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -21,8 +22,11 @@ export function ChatInput({
   isGenerating = false
 }: ChatInputProps) {
   const [internalValue, setInternalValue] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
   const maxLength = 2000;
+  const { toast } = useToast();
   
   // Use external value if provided, otherwise internal
   const currentValue = value !== undefined ? value : internalValue;
@@ -57,6 +61,97 @@ export function ChatInput({
     }
   };
 
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'tr-TR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      const newValue = currentValue + (currentValue ? ' ' : '') + transcript;
+      setValue(newValue);
+    };
+
+    recognition.onerror = (event: any) => {
+      setIsRecording(false);
+      let errorMessage = 'Ses tanıma hatası oluştu.';
+      
+      switch (event.error) {
+        case 'no-speech':
+          errorMessage = 'Ses algılanamadı. Lütfen tekrar deneyin.';
+          break;
+        case 'audio-capture':
+          errorMessage = 'Mikrofon erişimi engellendi. Lütfen izin verin.';
+          break;
+        case 'not-allowed':
+          errorMessage = 'Mikrofon izni reddedildi.';
+          break;
+        case 'network':
+          errorMessage = 'Ağ hatası. İnternet bağlantınızı kontrol edin.';
+          break;
+      }
+      
+      toast({
+        title: 'Hata',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [currentValue, setValue, toast]);
+
+  const handleVoiceInput = () => {
+    if (disabled || isGenerating) return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      toast({
+        title: 'Desteklenmiyor',
+        description: 'Sesli giriş bu tarayıcıda desteklenmiyor. Lütfen Chrome, Edge veya Safari kullanın.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error('Speech recognition error:', error);
+        toast({
+          title: 'Hata',
+          description: 'Sesli giriş başlatılamadı.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
   const charCount = currentValue.length;
   const isNearLimit = charCount > maxLength * 0.8;
   const isOverLimit = charCount > maxLength;
@@ -69,9 +164,14 @@ export function ChatInput({
           <Button
             variant="ghost"
             size="icon"
-            className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 text-muted-foreground hover:text-primary transition-colors"
+            onClick={handleVoiceInput}
+            className={`h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 transition-colors ${
+              isRecording 
+                ? 'text-red-500 animate-pulse' 
+                : 'text-muted-foreground hover:text-primary'
+            }`}
             disabled={disabled || isGenerating}
-            title="Sesli giriş (yakında)"
+            title={isRecording ? "Dinleniyor... (durdurmak için tekrar tıklayın)" : "Sesli giriş başlat"}
           >
             <Mic className="h-5 w-5" />
           </Button>

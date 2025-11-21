@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ChatMessage {
@@ -33,6 +33,7 @@ export function useChatSession() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Load sessions from database
   const loadSessions = useCallback(async () => {
@@ -161,6 +162,9 @@ export function useChatSession() {
     storeName: string
   ) => {
     setIsLoading(true);
+    
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       // Find session or create a temporary one if not found (race condition fix)
@@ -260,6 +264,25 @@ export function useChatSession() {
       // Stream words with typewriter effect
       let currentText = '';
       for (let i = 0; i < words.length; i++) {
+        // Check if aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          // Save partial response
+          await supabase
+            .from('chat_messages')
+            .insert({
+              session_id: sessionId,
+              role: 'assistant',
+              content: currentText + ' [yanıt kesildi]',
+            });
+          
+          const interruptedMessage: ChatMessage = {
+            ...emptyAssistantMessage,
+            content: currentText + ' [yanıt kesildi]',
+          };
+          updateSession(sessionId, { messages: [...updatedMessages, interruptedMessage] });
+          return { success: false, interrupted: true };
+        }
+        
         currentText += (i > 0 ? ' ' : '') + words[i];
         
         const updatedAssistantMessage: ChatMessage = {
@@ -304,13 +327,27 @@ export function useChatSession() {
       }
 
       return { success: true, data };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle abort error gracefully
+      if (error.name === 'AbortError') {
+        console.log('Request was aborted');
+        return { success: false, aborted: true };
+      }
       console.error('Error sending message:', error);
       return { success: false, error };
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   }, [sessions, updateSession]);
+
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  }, []);
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || null;
 
@@ -325,5 +362,6 @@ export function useChatSession() {
     deleteSession,
     sendMessage,
     setActiveSessionId,
+    stopGeneration,
   };
 }

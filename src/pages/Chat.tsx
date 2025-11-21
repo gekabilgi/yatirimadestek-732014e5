@@ -22,6 +22,7 @@ export default function Chat() {
     sendMessage,
     setActiveSessionId,
     updateSession,
+    stopGeneration,
   } = useChatSession();
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
@@ -234,8 +235,11 @@ export default function Chat() {
           value={inputValue}
           onValueChange={setInputValue}
           onStop={() => {
-            // TODO: Implement abort functionality in useChatSession
-            console.log('Stop generation requested');
+            stopGeneration();
+            toast({
+              title: 'Durduruldu',
+              description: 'Yanıt oluşturma işlemi durduruldu.',
+            });
           }}
         />
       </div>
