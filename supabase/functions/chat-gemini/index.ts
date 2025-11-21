@@ -405,23 +405,8 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
     console.log("textOut length:", textOut?.length);
     console.log("groundingChunks count:", groundingChunks?.length);
 
-    if (finishReason === "RECITATION" || finishReason === "SAFETY") {
+    if (finishReason === "SAFETY") {
       console.log("⚠️ Response blocked due to:", finishReason);
-
-      const userContentLower = lastUserMessage.content.toLowerCase();
-      const isKdvQuestion = userContentLower.includes("kdv") && userContentLower.includes("istisna");
-
-      if (isKdvQuestion) {
-        console.log("→ Using KDV fallback response");
-        const kdvFallbackResponse = {
-          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
-          groundingChunks: [],
-        };
-
-        return new Response(JSON.stringify(kdvFallbackResponse), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
 
       return new Response(
         JSON.stringify({
@@ -475,7 +460,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
     if (groundingChunks && groundingChunks.length > 0) {
       console.log("=== GROUNDING CHUNKS DEBUG (Backend) ===");
       console.log("Total chunks:", groundingChunks.length);
-      
+
       groundingChunks.forEach((chunk: any, idx: number) => {
         console.log(`\n--- Chunk ${idx + 1} ---`);
         console.log("retrievedContext.title:", chunk.retrievedContext?.title);
@@ -483,7 +468,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
         console.log("customMetadata type:", typeof chunk.retrievedContext?.customMetadata);
         console.log("customMetadata isArray:", Array.isArray(chunk.retrievedContext?.customMetadata));
         console.log("customMetadata full:", JSON.stringify(chunk.retrievedContext?.customMetadata, null, 2));
-        
+
         if (chunk.retrievedContext?.customMetadata) {
           const metadata = chunk.retrievedContext.customMetadata;
           if (Array.isArray(metadata)) {
