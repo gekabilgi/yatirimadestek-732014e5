@@ -32,6 +32,16 @@ export function ChatInput({
   const currentValue = value !== undefined ? value : internalValue;
   const setValue = onValueChange || setInternalValue;
 
+  // Refs to keep current values accessible in speech recognition handlers
+  const currentValueRef = useRef(currentValue);
+  const setValueRef = useRef(setValue);
+
+  // Update refs on each render
+  useEffect(() => {
+    currentValueRef.current = currentValue;
+    setValueRef.current = setValue;
+  }, [currentValue, setValue]);
+
   // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -61,7 +71,7 @@ export function ChatInput({
     }
   };
 
-  // Initialize speech recognition
+  // Initialize speech recognition (only once)
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
@@ -77,12 +87,18 @@ export function ChatInput({
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      const newValue = currentValue + (currentValue ? ' ' : '') + transcript;
-      setValue(newValue);
+      const newValue = currentValueRef.current + (currentValueRef.current ? ' ' : '') + transcript;
+      setValueRef.current(newValue);
     };
 
     recognition.onerror = (event: any) => {
       setIsRecording(false);
+      
+      // Only show error for actual failures, not for normal abort
+      if (event.error === 'aborted') {
+        return;
+      }
+      
       let errorMessage = 'Ses tanıma hatası oluştu.';
       
       switch (event.error) {
@@ -118,7 +134,7 @@ export function ChatInput({
         recognitionRef.current.abort();
       }
     };
-  }, [currentValue, setValue, toast]);
+  }, [toast]);
 
   const handleVoiceInput = () => {
     if (disabled || isGenerating) return;
