@@ -146,35 +146,31 @@ serve(async (req) => {
         const mimeType = (file as File).type || "application/octet-stream";
         const finalDisplayName = displayName || fileName;
 
-        // Parse custom metadata first to check for existing "Dosya" key
+        // Parse custom metadata and filter out "Dosya" key (we'll add our own)
         let customMeta: { key: string; stringValue: string }[] = [];
         if (customMetadataStr) {
           try {
             const parsed = JSON.parse(customMetadataStr);
             if (Array.isArray(parsed)) {
-              customMeta = parsed.filter(m => m.key && m.key.trim());
+              // Filter out any "Dosya" key from user's metadata to prevent duplicates
+              customMeta = parsed.filter(m => 
+                m.key && 
+                m.key.trim() && 
+                m.key !== "Dosya" // ✨ Skip "Dosya" from user input
+              );
             }
           } catch (e) {
             console.warn("Failed to parse customMetadata:", e);
           }
         }
 
-        // Check if "Dosya" already exists in custom metadata
-        const hasDosyaKey = customMeta.some(m => m.key === "Dosya");
-
-        // Prepare metadata including fileName and custom metadata
+        // Prepare metadata with automatic "Dosya" key
         const metadata: { key: string; stringValue: string }[] = [
           { key: "fileName", stringValue: finalDisplayName },
           { key: "uploadDate", stringValue: new Date().toISOString() },
+          { key: "Dosya", stringValue: finalDisplayName }, // ✨ Always add our "Dosya"
+          ...customMeta // Add other user metadata (excluding "Dosya")
         ];
-
-        // Only add automatic "Dosya" if user didn't already provide it
-        if (!hasDosyaKey) {
-          metadata.push({ key: "Dosya", stringValue: finalDisplayName });
-        }
-
-        // Add user's custom metadata
-        metadata.push(...customMeta);
 
         console.log("🔵 STEP 1: Prepared metadata:", JSON.stringify(metadata, null, 2));
         console.log("🔵 File name:", fileName);
