@@ -263,7 +263,7 @@ serve(async (req) => {
     const ai = getAiClient();
 
     const generationConfig = {
-      temperature: 1.0,
+      temperature: 0.4,
       maxOutputTokens: 8192,
     };
 
@@ -421,40 +421,6 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
-    }
-
-    let finalText = textOut;
-
-    if (!finalText) {
-      console.warn("⚠️ No text content extracted from Gemini response");
-
-      const userContentLower = lastUserMessage.content.toLowerCase();
-      const isKdvQuestion = userContentLower.includes("kdv") && userContentLower.includes("istisna");
-
-      // Eğer KDV istisnası ile ilgili bir soruysa, her durumda kullanıcıya sabit bir açıklama ver
-      if (isKdvQuestion) {
-        console.log("→ Using KDV fallback response (no text content)");
-        const kdvFallbackResponse = {
-          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
-          groundingChunks: [],
-        };
-
-        return new Response(JSON.stringify(kdvFallbackResponse), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Diğer durumlarda 400 yerine nazik bir fallback cevabı dön, böylece arayüz hata vermesin
-      const safeFallbackResponse = {
-        text: "Yüklenen belgelerden bu soruya şu anda net bir yanıt üretemedim. Lütfen sorunuzu biraz daha detaylandırarak veya farklı bir şekilde ifade ederek tekrar deneyin.",
-        groundingChunks: [],
-      };
-
-      return new Response(JSON.stringify(safeFallbackResponse), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     // === DEBUG: Log groundingChunks structure ===
