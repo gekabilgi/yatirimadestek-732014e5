@@ -263,7 +263,7 @@ serve(async (req) => {
     const ai = getAiClient();
 
     const generationConfig = {
-      temperature: 0.5,
+      temperature: 0.7,
       maxOutputTokens: 8192,
     };
 
@@ -343,7 +343,7 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 ⚠️ ÖNEMLİ: Belge içeriklerini AYNEN KOPYALAMA. Bilgileri kendi cümlelerinle yeniden ifade et, özetle ve açıkla. Hiçbir zaman doğrudan alıntı yapma.
 
 Özel Kurallar:
-- 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara.
+- 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_karar.pdf" dosyasında ara.
 - İllerin Bölge Sınıflandırması sorulduğunda (Örn: Kütahya kaçıncı bölge?), cevabı 9903 sayılı kararın eklerinde veya ilgili tebliğ dosyalarında (EK-1 İllerin Bölgesel Sınıflandırması) ara.
 - 9903 sayılı kararın uygulanmasına ilişkin usul ve esaslar, yatırım teşvik belgesi başvuru şartları (yöntem, gerekli belgeler), hangi yatırım cinslerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, özel sektör projeleri için Stratejik Hamle Programı değerlendirme kriterleri ve süreci, güneş/rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için aranan ek şartlar ile faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama usullerine ilişkin bir soru geldiğinde, cevabı öncelikle ve ağırlıklı olarak "2025-1-9903_teblig.pdf" dosyası içinde ara ve yanıtını mümkün olduğunca bu dosyadaki hükümlere dayandır.
 - yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, yada Pektin yatırımını nerde yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara
@@ -464,48 +464,44 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
         if (rc.documentName) return rc.documentName;
         if (rc.title) {
           // title sadece ID ise, store ile birleştir
-          return rc.title.startsWith('fileSearchStores/') 
-            ? rc.title 
-            : `${storeName}/documents/${rc.title}`;
+          return rc.title.startsWith("fileSearchStores/") ? rc.title : `${storeName}/documents/${rc.title}`;
         }
         return null;
       })
       .filter((id: string | null): id is string => !!id);
 
     const uniqueDocIds = [...new Set(docIds)];
-    
+
     console.log("=== Fetching Document Metadata ===");
     console.log("Unique document IDs:", uniqueDocIds);
-    
+
     const documentMetadataMap: Record<string, string> = {};
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    
+
     const normalizeDocumentName = (rawId: string): string => {
-      if (rawId.startsWith('fileSearchStores/')) {
+      if (rawId.startsWith("fileSearchStores/")) {
         return rawId;
       }
       // rawId sadece belge ID'si ise
       return `${storeName}/documents/${rawId}`;
     };
-    
+
     for (const rawId of uniqueDocIds) {
       try {
         const documentName = normalizeDocumentName(rawId);
         const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
         console.log(`Fetching metadata for: ${documentName}`);
-        
+
         const docResp = await fetch(url);
         if (docResp.ok) {
           const docData = await docResp.json();
           const customMeta = docData.customMetadata || [];
-          
+
           console.log(`Document ${rawId} customMetadata:`, customMeta);
-          
+
           // Find "Dosya" or "fileName" key
-          const filenameMeta = customMeta.find((m: any) => 
-            m.key === "Dosya" || m.key === "fileName"
-          );
-          
+          const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
+
           if (filenameMeta) {
             const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
             documentMetadataMap[rawId] = enrichedName;
@@ -520,18 +516,18 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
         console.error(`Error fetching metadata for ${rawId}:`, e);
       }
     }
-    
+
     // Enrich groundingChunks with filenames
     const enrichedChunks = groundingChunks.map((chunk: any) => {
       const rc = chunk.retrievedContext ?? {};
       const rawId = rc.documentName || rc.title || null;
-      
+
       return {
         ...chunk,
-        enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null
+        enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
       };
     });
-    
+
     console.log("=== Enrichment Complete ===");
     console.log("Metadata map:", documentMetadataMap);
 
