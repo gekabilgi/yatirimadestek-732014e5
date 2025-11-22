@@ -144,7 +144,8 @@ serve(async (req) => {
         const fileBuffer = await (file as File).arrayBuffer();
         const fileName = (file as File).name;
         const mimeType = (file as File).type || "application/octet-stream";
-        const finalDisplayName = displayName || fileName;
+        // Boş string'i de falsy olarak ele al
+        const finalDisplayName = (displayName && displayName.trim()) || fileName;
 
         // Parse custom metadata and filter out "Dosya" key (we'll add our own)
         let customMeta: { key: string; stringValue: string }[] = [];
@@ -153,10 +154,12 @@ serve(async (req) => {
             const parsed = JSON.parse(customMetadataStr);
             if (Array.isArray(parsed)) {
               // Filter out any "Dosya" key from user's metadata to prevent duplicates
+              // Also filter out empty stringValues
               customMeta = parsed.filter(m => 
                 m.key && 
                 m.key.trim() && 
-                m.key !== "Dosya" // ✨ Skip "Dosya" from user input
+                m.key !== "Dosya" && // ✨ Skip "Dosya" from user input
+                m.stringValue && m.stringValue.trim() !== "" // ✨ Skip empty values
               );
             }
           } catch (e) {
@@ -164,11 +167,11 @@ serve(async (req) => {
           }
         }
 
-        // Prepare metadata with automatic "Dosya" key
+        // Prepare metadata with automatic "Dosya" key (double fallback for safety)
         const metadata: { key: string; stringValue: string }[] = [
           { key: "fileName", stringValue: finalDisplayName },
           { key: "uploadDate", stringValue: new Date().toISOString() },
-          { key: "Dosya", stringValue: finalDisplayName }, // ✨ Always add our "Dosya"
+          { key: "Dosya", stringValue: finalDisplayName || fileName }, // ✨ Double fallback
           ...customMeta // Add other user metadata (excluding "Dosya")
         ];
 
