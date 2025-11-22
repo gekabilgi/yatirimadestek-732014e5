@@ -431,8 +431,20 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 
       groundingChunks.forEach((chunk: any, idx: number) => {
         console.log(`\n--- Chunk ${idx + 1} ---`);
-        console.log("retrievedContext.title:", chunk.retrievedContext?.title);
-        console.log("retrievedContext.uri:", chunk.retrievedContext?.uri);
+        console.log("Full chunk structure:", JSON.stringify(chunk, null, 2));
+        
+        // Log retrievedContext properties
+        if (chunk.retrievedContext) {
+          console.log("retrievedContext keys:", Object.keys(chunk.retrievedContext));
+          console.log("retrievedContext.title:", chunk.retrievedContext?.title);
+          console.log("retrievedContext.uri:", chunk.retrievedContext?.uri);
+          console.log("retrievedContext.documentName:", chunk.retrievedContext?.documentName);
+          console.log("retrievedContext.source:", chunk.retrievedContext?.source);
+          console.log("retrievedContext.document:", chunk.retrievedContext?.document);
+        } else {
+          console.log("⚠️ No retrievedContext found in chunk");
+        }
+        
         console.log("customMetadata type:", typeof chunk.retrievedContext?.customMetadata);
         console.log("customMetadata isArray:", Array.isArray(chunk.retrievedContext?.customMetadata));
         console.log("customMetadata full:", JSON.stringify(chunk.retrievedContext?.customMetadata, null, 2));
