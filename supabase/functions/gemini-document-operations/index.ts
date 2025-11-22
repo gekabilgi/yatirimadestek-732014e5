@@ -150,6 +150,7 @@ serve(async (req) => {
         const metadata: { key: string; stringValue: string }[] = [
           { key: "fileName", stringValue: finalDisplayName },
           { key: "uploadDate", stringValue: new Date().toISOString() },
+          { key: "Dosya", stringValue: finalDisplayName }, // ✨ Otomatik dosya adı metadata'sı
         ];
 
         // Add custom metadata if provided
@@ -169,7 +170,8 @@ serve(async (req) => {
         console.log("🔵 File name:", fileName);
         console.log("🔵 Display name:", finalDisplayName);
 
-        // Filter custom metadata (exclude internal metadata like fileName, uploadDate)
+        // Filter out internal-only metadata (fileName, uploadDate)
+        // Keep "Dosya" and other custom metadata for Gemini
         const customOnlyMetadata = metadata.filter(m => 
           m.key !== 'fileName' && m.key !== 'uploadDate'
         );

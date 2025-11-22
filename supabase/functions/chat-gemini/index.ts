@@ -456,9 +456,23 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
     }
 
     // === Real-time Document Metadata Enrichment ===
-    const uniqueDocIds = [...new Set(
-      groundingChunks.map((c: any) => c.retrievedContext?.title).filter(Boolean)
-    )];
+    // Extract document IDs (prioritize documentName, fallback to title)
+    const docIds = groundingChunks
+      .map((c: any) => {
+        const rc = c.retrievedContext ?? {};
+        // Öncelik: documentName (tam resource adı) → title (ID only)
+        if (rc.documentName) return rc.documentName;
+        if (rc.title) {
+          // title sadece ID ise, store ile birleştir
+          return rc.title.startsWith('fileSearchStores/') 
+            ? rc.title 
+            : `${storeName}/documents/${rc.title}`;
+        }
+        return null;
+      })
+      .filter((id: string | null): id is string => !!id);
+
+    const uniqueDocIds = [...new Set(docIds)];
     
     console.log("=== Fetching Document Metadata ===");
     console.log("Unique document IDs:", uniqueDocIds);
@@ -466,17 +480,26 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
     const documentMetadataMap: Record<string, string> = {};
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
-    for (const docId of uniqueDocIds) {
+    const normalizeDocumentName = (rawId: string): string => {
+      if (rawId.startsWith('fileSearchStores/')) {
+        return rawId;
+      }
+      // rawId sadece belge ID'si ise
+      return `${storeName}/documents/${rawId}`;
+    };
+    
+    for (const rawId of uniqueDocIds) {
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/${docId}?key=${GEMINI_API_KEY}`;
-        console.log(`Fetching metadata for: ${docId}`);
+        const documentName = normalizeDocumentName(rawId);
+        const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
+        console.log(`Fetching metadata for: ${documentName}`);
         
         const docResp = await fetch(url);
         if (docResp.ok) {
           const docData = await docResp.json();
           const customMeta = docData.customMetadata || [];
           
-          console.log(`Document ${docId} customMetadata:`, customMeta);
+          console.log(`Document ${rawId} customMetadata:`, customMeta);
           
           // Find "Dosya" or "fileName" key
           const filenameMeta = customMeta.find((m: any) => 
@@ -484,25 +507,30 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
           );
           
           if (filenameMeta) {
-            const enrichedName = filenameMeta.stringValue || filenameMeta.value || docId;
-            documentMetadataMap[docId] = enrichedName;
-            console.log(`✓ Enriched ${docId} -> ${enrichedName}`);
+            const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
+            documentMetadataMap[rawId] = enrichedName;
+            console.log(`✓ Enriched ${rawId} -> ${enrichedName}`);
           } else {
-            console.log(`⚠ No filename metadata found for ${docId}`);
+            console.log(`⚠ No filename metadata found for ${rawId}`);
           }
         } else {
-          console.error(`Failed to fetch ${docId}: ${docResp.status}`);
+          console.error(`Failed to fetch ${documentName}: ${docResp.status} - ${await docResp.text()}`);
         }
       } catch (e) {
-        console.error(`Error fetching metadata for ${docId}:`, e);
+        console.error(`Error fetching metadata for ${rawId}:`, e);
       }
     }
     
     // Enrich groundingChunks with filenames
-    const enrichedChunks = groundingChunks.map((chunk: any) => ({
-      ...chunk,
-      enrichedFileName: documentMetadataMap[chunk.retrievedContext?.title] || null
-    }));
+    const enrichedChunks = groundingChunks.map((chunk: any) => {
+      const rc = chunk.retrievedContext ?? {};
+      const rawId = rc.documentName || rc.title || null;
+      
+      return {
+        ...chunk,
+        enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null
+      };
+    });
     
     console.log("=== Enrichment Complete ===");
     console.log("Metadata map:", documentMetadataMap);
