@@ -455,9 +455,61 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
       console.log("=== END GROUNDING CHUNKS DEBUG ===\n");
     }
 
+    // === Real-time Document Metadata Enrichment ===
+    const uniqueDocIds = [...new Set(
+      groundingChunks.map((c: any) => c.retrievedContext?.title).filter(Boolean)
+    )];
+    
+    console.log("=== Fetching Document Metadata ===");
+    console.log("Unique document IDs:", uniqueDocIds);
+    
+    const documentMetadataMap: Record<string, string> = {};
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    
+    for (const docId of uniqueDocIds) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/${docId}?key=${GEMINI_API_KEY}`;
+        console.log(`Fetching metadata for: ${docId}`);
+        
+        const docResp = await fetch(url);
+        if (docResp.ok) {
+          const docData = await docResp.json();
+          const customMeta = docData.customMetadata || [];
+          
+          console.log(`Document ${docId} customMetadata:`, customMeta);
+          
+          // Find "Dosya" or "fileName" key
+          const filenameMeta = customMeta.find((m: any) => 
+            m.key === "Dosya" || m.key === "fileName"
+          );
+          
+          if (filenameMeta) {
+            const enrichedName = filenameMeta.stringValue || filenameMeta.value || docId;
+            documentMetadataMap[docId] = enrichedName;
+            console.log(`✓ Enriched ${docId} -> ${enrichedName}`);
+          } else {
+            console.log(`⚠ No filename metadata found for ${docId}`);
+          }
+        } else {
+          console.error(`Failed to fetch ${docId}: ${docResp.status}`);
+        }
+      } catch (e) {
+        console.error(`Error fetching metadata for ${docId}:`, e);
+      }
+    }
+    
+    // Enrich groundingChunks with filenames
+    const enrichedChunks = groundingChunks.map((chunk: any) => ({
+      ...chunk,
+      enrichedFileName: documentMetadataMap[chunk.retrievedContext?.title] || null
+    }));
+    
+    console.log("=== Enrichment Complete ===");
+    console.log("Metadata map:", documentMetadataMap);
+
     const result = {
       text: finalText,
-      groundingChunks: groundingChunks || [],
+      groundingChunks: enrichedChunks || [],
     };
 
     console.log("✓ Returning successful response");
