@@ -423,7 +423,7 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
         },
       );
     }
-
+    let finalText = textOut;
     // === DEBUG: Log groundingChunks structure ===
     if (groundingChunks && groundingChunks.length > 0) {
       console.log("=== GROUNDING CHUNKS DEBUG (Backend) ===");
