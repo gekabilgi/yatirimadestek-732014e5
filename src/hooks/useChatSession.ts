@@ -18,6 +18,7 @@ export interface ChatMessage {
       customMetadata?: Array<{ key: string; stringValue?: string; value?: string }>;
     };
     web?: { uri: string; title: string }; // Keep for backward compatibility
+    enrichedFileName?: string | null;
   }>;
 }
 

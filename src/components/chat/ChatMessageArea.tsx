@@ -239,8 +239,11 @@ export function ChatMessageArea({
                     
                     let fileName = `Kaynak ${chunkIndex + 1}`;
                     
-                    // Priority: customMetadata > title > uri > fallback
-                    if (chunk.retrievedContext?.customMetadata) {
+                    // Priority: enrichedFileName > customMetadata > title > uri > fallback
+                    if (chunk.enrichedFileName) {
+                      fileName = chunk.enrichedFileName;
+                      console.log("✓ Using enrichedFileName:", fileName);
+                    } else if (chunk.retrievedContext?.customMetadata) {
                       const metadata = chunk.retrievedContext.customMetadata;
                       console.log("Checking customMetadata...", metadata);
                       
