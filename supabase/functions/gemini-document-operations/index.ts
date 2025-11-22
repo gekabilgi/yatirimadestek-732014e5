@@ -146,25 +146,35 @@ serve(async (req) => {
         const mimeType = (file as File).type || "application/octet-stream";
         const finalDisplayName = displayName || fileName;
 
-        // Prepare metadata including fileName and custom metadata
-        const metadata: { key: string; stringValue: string }[] = [
-          { key: "fileName", stringValue: finalDisplayName },
-          { key: "uploadDate", stringValue: new Date().toISOString() },
-          { key: "Dosya", stringValue: finalDisplayName }, // ✨ Otomatik dosya adı metadata'sı
-        ];
-
-        // Add custom metadata if provided
+        // Parse custom metadata first to check for existing "Dosya" key
+        let customMeta: { key: string; stringValue: string }[] = [];
         if (customMetadataStr) {
           try {
-            const customMeta = JSON.parse(customMetadataStr);
-            if (Array.isArray(customMeta)) {
-              const filteredMeta = customMeta.filter(m => m.key && m.key.trim());
-              metadata.push(...filteredMeta);
+            const parsed = JSON.parse(customMetadataStr);
+            if (Array.isArray(parsed)) {
+              customMeta = parsed.filter(m => m.key && m.key.trim());
             }
           } catch (e) {
             console.warn("Failed to parse customMetadata:", e);
           }
         }
+
+        // Check if "Dosya" already exists in custom metadata
+        const hasDosyaKey = customMeta.some(m => m.key === "Dosya");
+
+        // Prepare metadata including fileName and custom metadata
+        const metadata: { key: string; stringValue: string }[] = [
+          { key: "fileName", stringValue: finalDisplayName },
+          { key: "uploadDate", stringValue: new Date().toISOString() },
+        ];
+
+        // Only add automatic "Dosya" if user didn't already provide it
+        if (!hasDosyaKey) {
+          metadata.push({ key: "Dosya", stringValue: finalDisplayName });
+        }
+
+        // Add user's custom metadata
+        metadata.push(...customMeta);
 
         console.log("🔵 STEP 1: Prepared metadata:", JSON.stringify(metadata, null, 2));
         console.log("🔵 File name:", fileName);
