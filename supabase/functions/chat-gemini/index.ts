@@ -117,23 +117,66 @@ function extractTextAndChunks(response: any) {
   const groundingChunks = candidate?.groundingMetadata?.groundingChunks ?? [];
   const parts = candidate?.content?.parts ?? [];
 
+  console.log("🔍 extractTextAndChunks - Input Analysis:", {
+    hasCandidates: !!response?.candidates,
+    candidateCount: response?.candidates?.length || 0,
+    finishReason,
+    partsCount: parts.length,
+    groundingChunksCount: groundingChunks.length,
+  });
+
   const textPieces: string[] = [];
 
   for (const p of parts) {
     if (!p) continue;
-    if (p.thought === true) continue;
-    if (p.executableCode || p.codeExecutionResult) continue;
-    if (p.functionCall || p.toolCall) continue;
-    if (typeof p.text !== "string") continue;
+
+    console.log("📝 Processing part:", {
+      hasText: !!p.text,
+      textLength: p.text?.length || 0,
+      isThought: p.thought === true,
+      hasCode: !!(p.executableCode || p.codeExecutionResult),
+      hasFunctionCall: !!(p.functionCall || p.toolCall),
+    });
+
+    if (p.thought === true) {
+      console.log("⏭️ Skipping thought part");
+      continue;
+    }
+    if (p.executableCode || p.codeExecutionResult) {
+      console.log("⏭️ Skipping code execution part");
+      continue;
+    }
+    if (p.functionCall || p.toolCall) {
+      console.log("⏭️ Skipping tool call part");
+      continue;
+    }
+    if (typeof p.text !== "string") {
+      console.log("⏭️ Skipping non-string part");
+      continue;
+    }
 
     const t = p.text.trim();
-    if (t.startsWith("tool_code") || t.startsWith("code_execution_result")) continue;
-    if (t.includes("file_search.query(")) continue;
+    if (t.startsWith("tool_code") || t.startsWith("code_execution_result")) {
+      console.log("⏭️ Skipping tool_code block");
+      continue;
+    }
+    if (t.includes("file_search.query(")) {
+      console.log("⏭️ Skipping file_search query");
+      continue;
+    }
 
     textPieces.push(p.text);
+    console.log("✅ Added text piece (length:", p.text.length, ")");
   }
 
   const textOut = textPieces.join("");
+
+  console.log("📊 extractTextAndChunks - Final Result:", {
+    totalTextLength: textOut.length,
+    textPreview: textOut.substring(0, 150) + (textOut.length > 150 ? "..." : ""),
+    groundingChunksCount: groundingChunks.length,
+  });
+
   return { finishReason, groundingChunks, textOut };
 }
 
@@ -370,6 +413,257 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
     console.log("=== Gemini response received ===");
 
     const { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
+
+    // ============= BOŞ YANIT VE YETERSİZ SONUÇ KONTROLÜ =============
+    console.log("📊 Initial Response Analysis:", {
+      textLength: textOut.length,
+      textPreview: textOut.substring(0, 150),
+      chunksCount: groundingChunks.length,
+      finishReason,
+    });
+
+    // 1️⃣ BOŞ YANIT KONTROLÜ
+    if (!textOut || textOut.trim().length === 0) {
+      console.warn("⚠️ Empty response detected! Triggering Gemini-powered retry...");
+
+      const retryPrompt = `
+🔍 ÖNCEKİ ARAMADA SONUÇ BULUNAMADI - DERİN ARAMA MODUNA GEÇİLİYOR
+
+Kullanıcının Orijinal Sorusu: "${normalizedUserMessage}"
+
+GÖREV:
+1. Bu soruyu yanıtlamak için ÖNCE şu soruyu kendin yanıtla:
+   - Ana anahtar kelime nedir? (Örn: "krom cevheri" → "krom")
+   - Hangi eş anlamlıları aramam gerek? (Örn: "krom madenciliği", "krom üretimi", "krom rezervi")
+   - Hangi üst kategoriye ait? (Örn: "maden", "metal", "hammadde")
+   - İlgili NACE kodları var mı?
+
+2. ŞİMDİ bu alternatif terimlerle File Search yap:
+   - Dosyalar: ykh_teblig_yatirim_konulari_listesi_yeni.pdf, 9903_karar.pdf, sectorsearching.xlsx
+   - SATIR SATIR TAR, her sayfayı kontrol et
+   - Her aramayı farklı terimlerle TEKRARLA (en az 3 varyasyon)
+
+3. BULDUĞUN TÜM SONUÇLARI LİSTELE:
+   - İl adlarını eksik bırakma
+   - "ve diğerleri" deme
+   - Eğer belgede geçen 8 il varsa, 8'ini de yaz
+
+4. Eğer gerçekten hiçbir sonuç yoksa:
+   "Bu konuda doğrudan destek sağlayan bir yatırım konusu bulunamamıştır. Ancak [ÜST KATEGORİ] kapsamında değerlendirilebilir" de.
+
+BAŞLA! 🚀
+`;
+
+      const retryResponse = await ai.models.generateContent({
+        model: GEMINI_MODEL_NAME,
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: retryPrompt }],
+          },
+        ],
+        config: {
+          temperature: 0.1,
+          maxOutputTokens: 8192,
+          systemInstruction: baseInstructions,
+          tools: [{ fileSearch: { fileSearchStoreNames: [storeName] } }],
+        },
+      });
+
+      const retryResult = extractTextAndChunks(retryResponse);
+      console.log("🔄 Retry Result:", {
+        textLength: retryResult.textOut.length,
+        chunksCount: retryResult.groundingChunks.length,
+      });
+
+      if (!retryResult.textOut || retryResult.textOut.trim().length === 0) {
+        console.error("❌ Retry failed - returning fallback message");
+        return new Response(
+          JSON.stringify({
+            text: "Üzgünüm, belgelerimde bu konuyla ilgili doğrudan bilgi bulamadım. Lütfen sorunuzu farklı kelimelerle ifade ederek tekrar deneyin veya ilgili Yatırım Destek Ofisi ile iletişime geçin.",
+            groundingChunks: [],
+            emptyResponse: true,
+            retriedWithDynamicSearch: true,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("✅ Retry successful - using new results");
+      
+      let enrichedRetryChunks = [];
+      if (retryResult.groundingChunks && retryResult.groundingChunks.length > 0) {
+        const docIds = retryResult.groundingChunks
+          .map((c: any) => {
+            const rc = c.retrievedContext ?? {};
+            if (rc.documentName) return rc.documentName;
+            if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
+            return rc.title ? `${storeName}/documents/${rc.title}` : null;
+          })
+          .filter((id: string | null): id is string => !!id);
+
+        const uniqueDocIds = [...new Set(docIds)];
+        const documentMetadataMap: Record<string, string> = {};
+        const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+
+        for (const rawId of uniqueDocIds) {
+          try {
+            const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
+
+            const docResp = await fetch(url);
+            if (docResp.ok) {
+              const docData = await docResp.json();
+              const customMeta = docData.customMetadata || [];
+              const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
+
+              if (filenameMeta) {
+                const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
+                documentMetadataMap[rawId] = enrichedName;
+              }
+            }
+          } catch (e) {
+            console.error(`Error fetching metadata for ${rawId}:`, e);
+          }
+        }
+
+        enrichedRetryChunks = retryResult.groundingChunks.map((chunk: any) => {
+          const rc = chunk.retrievedContext ?? {};
+          const rawId = rc.documentName || rc.title || null;
+          return {
+            ...chunk,
+            enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
+          };
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          text: retryResult.textOut,
+          groundingChunks: enrichedRetryChunks,
+          retriedWithDynamicSearch: true,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 2️⃣ YETERSİZ SONUÇ KONTROLÜ (Feedback Loop)
+    const isProvinceQuery = /hangi (il|şehir|yer)|(nerede|nerelerde)/i.test(normalizedUserMessage);
+    const provinceMatches = textOut.match(/\b[A-ZÇĞİÖŞÜ][a-zçğıöşü]+\b/g) || [];
+    const uniqueProvinces = [...new Set(provinceMatches)];
+
+    if (isProvinceQuery && uniqueProvinces.length > 0 && uniqueProvinces.length < 3) {
+      console.warn(`⚠️ Insufficient province results (${uniqueProvinces.length}/expected ≥3). Triggering feedback loop...`);
+
+      const feedbackPrompt = `
+⚠️ ÖNCEKİ CEVABINIZ YETERSİZ BULUNDU - GENİŞLETİLMİŞ ARAMA GEREKLİ
+
+Kullanıcı Sorusu: "${normalizedUserMessage}"
+
+Senin Önceki Cevabın: "${textOut.substring(0, 300)}..."
+
+SORUN: Sadece ${uniqueProvinces.length} il buldun (${uniqueProvinces.join(", ")}). 
+Bu sayı şüpheli derecede az!
+
+YENİ GÖREV:
+1. ykh_teblig_yatirim_konulari_listesi_yeni.pdf dosyasını BAŞTAN SONA yeniden tara
+2. Ana anahtar kelimenin (${normalizedUserMessage}) tüm varyasyonlarını ara:
+   - Tam eşleşme
+   - Kök kelime
+   - Üst kategori
+   - Alt ürün grupları
+3. Her sayfayı kontrol et - ATLAMA
+4. Bulduğun TÜM illeri madde madde listele
+5. Eğer gerçekten bu kadar azsa, yanıtına şunu ekle:
+   "ℹ️ Not: Sistemimizde sadece bu [SAYI] ilde bu konuyla ilgili doğrudan kayıt bulunmaktadır."
+
+BAŞLA! 🔍
+`;
+
+      const feedbackResponse = await ai.models.generateContent({
+        model: GEMINI_MODEL_NAME,
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: feedbackPrompt }],
+          },
+        ],
+        config: {
+          temperature: 0.05,
+          maxOutputTokens: 8192,
+          systemInstruction: baseInstructions,
+          tools: [{ fileSearch: { fileSearchStoreNames: [storeName] } }],
+        },
+      });
+
+      const feedbackResult = extractTextAndChunks(feedbackResponse);
+      console.log("🔁 Feedback Loop Result:", {
+        textLength: feedbackResult.textOut.length,
+        originalProvinces: uniqueProvinces.length,
+        newText: feedbackResult.textOut.substring(0, 200),
+      });
+
+      if (feedbackResult.textOut && feedbackResult.textOut.length > textOut.length) {
+        console.log("✅ Feedback loop improved results - using enhanced response");
+        
+        let enrichedFeedbackChunks = [];
+        if (feedbackResult.groundingChunks && feedbackResult.groundingChunks.length > 0) {
+          const docIds = feedbackResult.groundingChunks
+            .map((c: any) => {
+              const rc = c.retrievedContext ?? {};
+              if (rc.documentName) return rc.documentName;
+              if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
+              return rc.title ? `${storeName}/documents/${rc.title}` : null;
+            })
+            .filter((id: string | null): id is string => !!id);
+
+          const uniqueDocIds = [...new Set(docIds)];
+          const documentMetadataMap: Record<string, string> = {};
+          const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+
+          for (const rawId of uniqueDocIds) {
+            try {
+              const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
+              const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
+
+              const docResp = await fetch(url);
+              if (docResp.ok) {
+                const docData = await docResp.json();
+                const customMeta = docData.customMetadata || [];
+                const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
+
+                if (filenameMeta) {
+                  const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
+                  documentMetadataMap[rawId] = enrichedName;
+                }
+              }
+            } catch (e) {
+              console.error(`Error fetching metadata for ${rawId}:`, e);
+            }
+          }
+
+          enrichedFeedbackChunks = feedbackResult.groundingChunks.map((chunk: any) => {
+            const rc = chunk.retrievedContext ?? {};
+            const rawId = rc.documentName || rc.title || null;
+            return {
+              ...chunk,
+              enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
+            };
+          });
+        }
+
+        return new Response(
+          JSON.stringify({
+            text: feedbackResult.textOut,
+            groundingChunks: enrichedFeedbackChunks,
+            enhancedViaFeedbackLoop: true,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    console.log("✅ Response passed validation - proceeding with normal flow");
 
     if (finishReason === "SAFETY") {
       return new Response(
