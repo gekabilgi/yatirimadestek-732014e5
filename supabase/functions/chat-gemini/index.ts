@@ -76,6 +76,20 @@ const parseOsbStatus = (text: string): "İÇİ" | "DIŞI" | null => {
   return null;
 };
 
+// Türkiye'deki tüm il isimleri
+const TURKISH_PROVINCES = [
+  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya',
+  'Ardahan', 'Artvin', 'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik',
+  'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
+  'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir',
+  'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul',
+  'İzmir', 'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kilis',
+  'Kırıkkale', 'Kırklareli', 'Kırşehir', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa',
+  'Mardin', 'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize',
+  'Sakarya', 'Samsun', 'Şanlıurfa', 'Siirt', 'Sinop', 'Sivas', 'Şırnak', 'Tekirdağ',
+  'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
+];
+
 const normalizeRegionNumbers = (text: string): string => {
   const replacements: Record<string, string> = {
     "birinci bölge": "1. Bölge",
@@ -399,6 +413,19 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 
 ⚠️ ÖNEMLİ: Belge içeriklerini AYNEN KOPYALAMA. Bilgileri kendi cümlelerinle yeniden ifade et, özetle ve açıkla. Hiçbir zaman doğrudan alıntı yapma.
 
+## İL LİSTELEME KURALLARI (ÇOK ÖNEMLİ):
+Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
+1. Belgede geçen **TÜM illeri madde madde listele** - eksik bırakma!
+2. "Mersin ve Giresun illerinde..." gibi özet YAPMA
+3. Her ili **ayrı satırda, numaralandırarak** yaz:
+   1. Mersin - [yatırım konusu açıklaması]
+   2. Tokat - [yatırım konusu açıklaması]
+   3. Isparta - [yatırım konusu açıklaması]
+   ...
+4. **"ve diğerleri", "gibi" deme** - hepsini yaz
+5. Eğer belgede 8 il varsa, 8'ini de listele
+6. İl sayısını **yanıltıcı şekilde azaltma**
+
 Özel Kurallar:
 - 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_karar.pdf" dosyasında ara.
 - İllerin Bölge Sınıflandırması sorulduğunda (Örn: Kütahya kaçıncı bölge?), cevabı 9903 sayılı kararın eklerinde veya ilgili tebliğ dosyalarında (EK-1 İllerin Bölgesel Sınıflandırması) ara.
@@ -545,14 +572,17 @@ BAŞLA! 🚀
     }
 
     // ============= ADIM 2: YETERSİZ SONUÇ KONTROLÜ (FEEDBACK LOOP) =============
-    const isProvinceQuery = /hangi (il|şehir|yer)|(nerede|nerelerde)/i.test(normalizedUserMessage);
-    const provinceMatches = textOut.match(/\b[A-ZÇĞİÖŞÜ][a-zçğıöşü]+\b/g) || [];
-    const uniqueProvinces = [...new Set(provinceMatches)];
+    // Genişletilmiş il sorgusu pattern'i
+    const isProvinceQuery = /hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|nereye|kaç il|tek il|birkaç il|hangi bölge|desteklenen iller|desteklenen şehirler/i.test(normalizedUserMessage);
+    
+    // Gerçek Türkiye il listesiyle filtreleme
+    const foundProvinces = TURKISH_PROVINCES.filter(province => textOut.includes(province));
+    const uniqueProvinces = [...new Set(foundProvinces)];
 
     console.log("🔍 Province Query Analysis:", {
       isProvinceQuery,
       foundProvinces: uniqueProvinces.length,
-      provinces: uniqueProvinces.join(", "),
+      provinces: uniqueProvinces.slice(0, 10).join(", ") + (uniqueProvinces.length > 10 ? "..." : ""),
     });
 
     if (isProvinceQuery && uniqueProvinces.length > 0 && uniqueProvinces.length < 3) {
