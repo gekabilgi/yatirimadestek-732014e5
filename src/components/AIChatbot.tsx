@@ -365,9 +365,46 @@ export function AIChatbot() {
         return;
       }
 
-      if (!data || !data.text) {
-        console.error("Invalid response data:", data);
-        throw new Error("Geçersiz yanıt formatı");
+      if (!data || !data.text || data.text.trim().length === 0) {
+        console.error("Invalid or empty response data:", data);
+
+        let fallbackMessage = "Yanıt alınamadı. Lütfen tekrar deneyin.";
+
+        if (data?.emptyResponse) {
+          fallbackMessage = "Üzgünüm, belgelerimde bu konuyla ilgili bilgi bulamadım. Sorunuzu farklı kelimelerle ifade ederek tekrar deneyin.";
+        } else if (data?.retriedWithDynamicSearch) {
+          fallbackMessage = "Kapsamlı arama yapıldı ancak sonuç bulunamadı. İlgili Yatırım Destek Ofisi ile iletişime geçmenizi öneririz.";
+        }
+
+        const errorMsg: Message = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: fallbackMessage,
+        };
+
+        setMessages((prev) => [...prev, errorMsg]);
+        await saveMessage(errorMsg, currentSessionId);
+        loadChatSessions();
+
+        toast({
+          title: "Arama Tamamlandı",
+          description: data?.retriedWithDynamicSearch 
+            ? "Detaylı arama yapıldı, ancak sonuç bulunamadı." 
+            : "Sonuç bulunamadı.",
+          variant: "default",
+        });
+
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.enhancedViaFeedbackLoop) {
+        console.log("✅ Response enhanced via feedback loop");
+        toast({
+          title: "Genişletilmiş Arama",
+          description: "Daha kapsamlı sonuçlar için ek arama yapıldı.",
+          variant: "default",
+        });
       }
 
       // Add assistant response
