@@ -2,11 +2,18 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI } from "npm:@google/genai@1.29.1";
 import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 
+// --- AYARLAR ---
+// Hız ve maliyet için 2.5 Flash seçildi.
+// Eğer bu model henüz API anahtarınızda aktif değilse 'gemini-1.5-flash' yapabilirsiniz.
+const GEMINI_MODEL_NAME = "gemini-2.5-flash";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// --- YARDIMCI FONKSİYONLAR ---
 
 function getAiClient(): GoogleGenAI {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -23,6 +30,7 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// Metin Temizleme ve Normalize Etme Fonksiyonları
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -99,11 +107,10 @@ const normalizeRegionNumbers = (text: string): string => {
     const regex = new RegExp(pattern, "gi");
     normalized = normalized.replace(regex, replacement);
   }
-
   return normalized;
 };
 
-// FIX 1: Robustly filter out internal tool and thought content (tool call leakage).
+// Response Temizleme (Tool Leakage Önleme)
 function extractTextAndChunks(response: any) {
   const candidate = response?.candidates?.[0];
   const finishReason: string | undefined = candidate?.finishReason;
@@ -113,20 +120,12 @@ function extractTextAndChunks(response: any) {
   const textPieces: string[] = [];
 
   for (const p of parts) {
-    // Skip any non-user-visible content
     if (!p) continue;
-
-    // Gemini "thought" / internal reasoning
     if (p.thought === true) continue;
-
-    // Tool / code execution structures
     if (p.executableCode || p.codeExecutionResult) continue;
     if (p.functionCall || p.toolCall) continue;
-
-    // Only keep real text
     if (typeof p.text !== "string") continue;
 
-    // Defensive: skip any text that clearly looks like debug/tool traces
     const t = p.text.trim();
     if (t.startsWith("tool_code") || t.startsWith("code_execution_result")) continue;
     if (t.includes("file_search.query(")) continue;
@@ -138,6 +137,8 @@ function extractTextAndChunks(response: any) {
   return { finishReason, groundingChunks, textOut };
 }
 
+// --- ANA EDGE FUNCTION ---
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -145,47 +146,20 @@ serve(async (req) => {
 
   try {
     const { storeName, messages, sessionId } = await req.json();
-    console.log("=== chat-gemini request ===");
-    console.log("storeName:", storeName);
+    console.log(`=== chat-gemini (${GEMINI_MODEL_NAME}) request ===`);
     console.log("sessionId:", sessionId);
-    console.log("messages count:", messages?.length);
 
-    if (!storeName) {
-      throw new Error("storeName is required");
-    }
-    if (!Array.isArray(messages) || messages.length === 0) {
-      throw new Error("messages must be a non-empty array");
-    }
+    if (!storeName) throw new Error("storeName is required");
+    if (!Array.isArray(messages) || messages.length === 0) throw new Error("messages must be a non-empty array");
 
     const lastUserMessage = messages
       .slice()
       .reverse()
       .find((m: any) => m.role === "user");
-    if (!lastUserMessage) {
-      throw new Error("No user message found");
-    }
+    if (!lastUserMessage) throw new Error("No user message found");
 
+    // --- TEŞVİK SORGULAMA MANTIĞI (Aynen Korundu) ---
     const lowerContent = lastUserMessage.content.toLowerCase();
-    
-    // STEP 3: Kapsamlı arama algılama fonksiyonu
-    const isComprehensiveSearchQuery = (content: string): boolean => {
-      const lower = content.toLowerCase();
-      const hasLocationQuestion = 
-        lower.includes("hangi il") || 
-        lower.includes("nerede") || 
-        lower.includes("nerelerde") ||
-        lower.includes("hangi şehir") ||
-        lower.includes("hangi yer");
-        
-      const hasInvestmentContext = 
-        lower.includes("desteklen") || 
-        lower.includes("yatırım") ||
-        lower.includes("yapabilirim") ||
-        lower.includes("teşvik");
-        
-      return hasLocationQuestion && hasInvestmentContext;
-    };
-    
     const isIncentiveRelated =
       lowerContent.includes("teşvik") ||
       lowerContent.includes("tesvik") ||
@@ -199,28 +173,18 @@ serve(async (req) => {
       lowerContent.includes("uretim") ||
       lowerContent.includes("imalat");
 
-    const needsComprehensiveSearch = isComprehensiveSearchQuery(lowerContent);
-    console.log("isIncentiveRelated:", isIncentiveRelated);
-    console.log("needsComprehensiveSearch:", needsComprehensiveSearch);
-
     const supabase = getSupabaseAdmin();
     let incentiveQuery: any = null;
 
     if (isIncentiveRelated && sessionId) {
-      const { data: existingQuery, error: queryError } = await supabase
+      const { data: existingQuery } = await supabase
         .from("incentive_queries")
         .select()
         .eq("session_id", sessionId)
         .maybeSingle();
 
-      if (queryError) {
-        console.error("Error checking incentive_queries:", queryError);
-      }
-
       if (existingQuery) {
         incentiveQuery = existingQuery;
-        console.log("✓ Found existing incentive query:", incentiveQuery);
-
         const userContent = lastUserMessage.content;
         let updated = false;
 
@@ -228,17 +192,15 @@ serve(async (req) => {
           incentiveQuery.sector = userContent;
           updated = true;
         } else if (!incentiveQuery.province) {
-          const province = cleanProvince(userContent);
-          incentiveQuery.province = province;
+          incentiveQuery.province = cleanProvince(userContent);
           updated = true;
         } else if (!incentiveQuery.district) {
-          const district = cleanDistrict(userContent);
-          incentiveQuery.district = district;
+          incentiveQuery.district = cleanDistrict(userContent);
           updated = true;
         } else if (!incentiveQuery.osb_status) {
-          const osbStatus = parseOsbStatus(userContent);
-          if (osbStatus) {
-            incentiveQuery.osb_status = osbStatus;
+          const osb = parseOsbStatus(userContent);
+          if (osb) {
+            incentiveQuery.osb_status = osb;
             updated = true;
           }
         }
@@ -247,8 +209,7 @@ serve(async (req) => {
           const allFilled =
             incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
           const newStatus = allFilled ? "complete" : "collecting";
-
-          const { error: updateError } = await supabase
+          await supabase
             .from("incentive_queries")
             .update({
               sector: incentiveQuery.sector,
@@ -258,217 +219,124 @@ serve(async (req) => {
               status: newStatus,
             })
             .eq("id", incentiveQuery.id);
-
-          if (updateError) {
-            console.error("Error updating incentive_queries:", updateError);
-          } else {
-            incentiveQuery.status = newStatus;
-            console.log("✓ Updated incentive query:", incentiveQuery);
-          }
+          incentiveQuery.status = newStatus;
         }
       } else {
-        const { data: newQuery, error: insertError } = await supabase
+        const { data: newQuery } = await supabase
           .from("incentive_queries")
           .insert({
             session_id: sessionId,
             status: "collecting",
-            sector: null,
-            province: null,
-            district: null,
-            osb_status: null,
           })
           .select()
           .single();
-
-        if (!insertError && newQuery) {
-          incentiveQuery = newQuery;
-          console.log("✓ Started new incentive query:", incentiveQuery);
-        } else {
-          console.error("Error starting incentive query:", insertError);
-        }
+        if (newQuery) incentiveQuery = newQuery;
       }
     } else if (isIncentiveRelated && !sessionId) {
-      incentiveQuery = {
-        id: null,
-        session_id: null,
-        status: "collecting",
-        sector: null,
-        province: null,
-        district: null,
-        osb_status: null,
-      };
-      console.log("Started in-memory incentive query (no sessionId):", incentiveQuery);
+      incentiveQuery = { status: "collecting", sector: null, province: null, district: null, osb_status: null };
     }
 
     const ai = getAiClient();
 
-    // STEP 2: Temperature 0.1'e düşür
-    const generationConfig = {
-      temperature: 0.1,
-      maxOutputTokens: 8192,
-    };
-
-    const getSlotFillingStatus = (query: any): string => {
-      const slots = ["sector", "province", "district", "osb_status"];
-      const filled = slots.filter((slot) => query[slot]).length;
-      return `${filled}/4 bilgi toplandı`;
-    };
-
-    const getNextSlotToFill = (query: any): string => {
-      if (!query.sector) return "Sektör bilgisi sor";
-      if (!query.province) return "İl bilgisi sor";
-      if (!query.district) return "İlçe bilgisi sor";
-      if (!query.osb_status) return "OSB durumu sor";
-      return "Tüm bilgiler toplandı - Hesaplama yap";
-    };
-
-    const incentiveSlotFillingInstruction = incentiveQuery
-      ? `
-## ⚠️ MOD VE KURALLAR ⚠️
-
-**DURUM:** Şu an yatırımcıdan eksik bilgileri topluyorsun.
-**MEVCUT İLERLEME:** ${getSlotFillingStatus(incentiveQuery)}
-
-**CEVAP STRATEJİSİ (ÖNEMLİ):**
-1. **Eğer Kullanıcı Soru Sorduysa:** (Örn: "Kütahya hangi bölgede?", "KDV istisnası nedir?")
-   - **ÖNCE CEVAPLA:** Yüklenen belgelerden (Karar ekleri, il listeleri vb.) cevabı bul ve kullanıcıya ver.
-   - **SONRA DEVAM ET:** Cevabın hemen ardından, eksik olan sıradaki bilgiyi sor.
-   - *Örnek:* "Kütahya ili genel teşvik sisteminde 4. bölgede yer almaktadır. Peki yatırımınızı hangi ilçede yapmayı planlıyorsunuz?"
-
-2. **Eğer Kullanıcı Sadece Veri Verdiyse:** (Örn: "Tekstil", "Ankara")
-   - Kısa bir onay ver ve sıradaki eksik bilgiyi sor.
-   - Maksimum 2 cümle kullan.
-
-**Toplanan Bilgiler:**
-${incentiveQuery.sector ? `✓ Sektör: ${incentiveQuery.sector}` : "○ Sektör: Bekleniyor"}
-${incentiveQuery.province ? `✓ İl: ${incentiveQuery.province}` : "○ İl: Bekleniyor"}
-${incentiveQuery.district ? `✓ İlçe: ${incentiveQuery.district}` : "○ İlçe: Bekleniyor"}
-${incentiveQuery.osb_status ? `✓ OSB Durumu: ${incentiveQuery.osb_status}` : "○ OSB Durumu: Bekleniyor"}
-
-**SONRAKİ HEDEF:** ${getNextSlotToFill(incentiveQuery)}
-
-${
-  incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status
-    ? `
-**HESAPLAMA ZAMANI:**
-Tüm bilgiler toplandı. Şimdi "tesvik_sorgulama.pdf" dosyasındaki SÜREÇ AKIŞI'na [kaynak 72-73] göre teşvik hesabı yap.
-`
-    : ""
-}
-`
-      : "";
-
-    const interactiveInstructions = `
-Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
-
-"tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] uymalısın.
-
-⚠️ KRİTİK KURALLAR:
-1. AKILLI ANALİZ: Kullanıcı "çorap üretimi" veya "Kütahya'da yatırım" derse, bu verileri kaydet ve bir sonraki eksik veriye geç.
-2. TEK SORU: Her seferinde SADECE TEK BİR soru sor.
-3. PDF AKIŞI: 1) Sektör → 2) İl → 3) İlçe → 4) OSB durumu
-4. ESNEKLİK (SORU CEVAPLAMA): Kullanıcı akış sırasında bilgi talep ederse (Örn: "Kütahya kaçıncı bölge?"), "Bilgi veremem" DEME. Belgeden (özellikle 9903 Karar Ekleri) bilgiyi bul, soruyu cevapla ve akışa kaldığın yerden devam et.
-
-⚠️ YASAK DAVRANIŞLAR:
-- Kullanıcıya ders verir gibi uzun, gereksiz paragraflar yazma.
-- Kullanıcı veri girdiğinde (Sektör: Demir) tekrar "Hangi sektör?" diye sorma.
-`;
+    // --- SYSTEM PROMPT (GÜNCELLENMİŞ DETAYLI VERSİYON) ---
 
     const baseInstructions = `
 **Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
-**Kullanıcı tarafından sorulan bir soruyu öncelikle tüm dökümanlarda ara, eğer sorunun cevabı özel kurallara uygunsa hangi kural en uygun ise ona göre cevabı oluştur, eğer interaktif bir sohbet olarak algılarsan "interactiveInstructions" buna göre hareket et.
 **Tüm cevaplarını her zaman YÜKLEDİĞİN BELGELERE dayanarak ver.
-**Soruları **Türkçe** cevapla.
-**Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
+**Soruları Türkçe cevapla.
 
-⚠️⚠️⚠️ KAPSAMLI İL ARAMA STRATEJİSİ ⚠️⚠️⚠️
+⚠️ KRİTİK ARAMA VE CEVAPLAMA KURALLARI:
+1. **ASLA ÖZETLEME:** Kullanıcı bir liste istiyorsa (örneğin "hangi illerde?"), bulduğun 1-2 sonucu yazıp bırakma. Dökümanlarda geçen TÜM sonuçları madde madde yaz. "Ve diğerleri" ifadesini kullanmak YASAKTIR.
+2. **SİNONİM ARAMASI:** Kullanıcının terimini (Örn: "Pektin") ararken, bunun teknik adlarını, gümrük tarife pozisyonu (GTİP) tanımlarını veya genel kategorilerini (Örn: "Kimyasal", "Gıda Katkı") de düşünerek arama yap.
+3. **NEGATİF DURUM:** Eğer bir bilgi belgelerde YOKSA, "Genel bilgimle cevaplıyorum" deme. "Yüklenen belgelerde bu bilgi bulunmamaktadır" de. En az 2 farklı kelime kombinasyonu ile aramadan "yok" deme.
 
-**KULLANICI "HANGİ İLLERDE / NEREDE" SORUSU SORDUĞUNDA:**
+⚠️ HANGİ DOSYADA NE ARAMALISIN? (ÖZEL DOSYA REHBERİ):
 
-1. **İLK ARAMA:** Ürün/sektör adıyla ara (örn: "pektin")
-2. **İKİNCİ ARAMA:** Alternatif terimlerle ara (örn: "meyve atıklarından katma değerli ürün")
-3. **ÜÇÜNCÜ ARAMA:** Genel kategoriyle ara (örn: "gıda işleme", "tarımsal ürün")
-4. **KONTROL:** İlk 3 aramada 4'ten az il bulduysan → TEKRAR ARA!
+**1. YEREL YATIRIMLAR VE ÜRÜN BAZLI ARAMA (⚠️ EN KRİTİK DOSYA):**
+* **Dosya:** "ykh_teblig_yatirim_konulari_listesi_yeni.pdf"
+* **Ne Zaman Bak:** Kullanıcı "Pektin yatırımı nerede yapılır?", "Kağıt üretimi hangi illerde desteklenir?", "Yerel kalkınma hamlesi" veya spesifik bir ürün adı sorduğunda.
+* **NASIL ARA:** Bu dosyayı **SATIR SATIR TARA.** Bir ürünün adı 5 farklı ilin altında geçiyorsa, 5'ini de bulmadan cevabı oluşturma.
 
-**KRİTİK KURAL:**
-- Kullanıcı "hangi illerde" dediğinde sadece 2-3 il söyleyip DURMA!
-- Belgede geçen TÜM illeri listelemeden yanıt verme!
-- Her aramada farklı keyword kombinasyonları dene!
+**2. GENEL TEŞVİK MEVZUATI VE İDARİ SÜREÇLER:**
+* **Dosya:** "9903_karar.pdf"
+* **Ne Zaman Bak:** Genel tanımlar, destek unsurları, müeyyide, devir, belge revize, tamamlama vizesi, mücbir sebep.
+* **Bölge:** "Hangi il kaçıncı bölge?" sorularında Ek-1 listesine bak.
 
-**YASAK:** "Sadece X, Y, Z illerinde desteklenir" deyip durmak. 
-**DOĞRU:** Tüm dosyada anahtar kelimeleri tarayıp ilgili TÜM illeri listele.
+**3. UYGULAMA USUL VE ESASLARI (DETAYLAR):**
+* **Dosya:** "2025-1-9903_teblig.pdf"
+* **Ne Zaman Bak:** Başvuru şartları, harcamaların kapsamı, güneş/rüzgar enerjisi şartları, veri merkezi, şarj istasyonu kriterleri, faiz/kar payı ödeme usulleri.
 
-⚠️ YEREL YATIRIM KONULARI:
-- "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ÇOK DİKKATLİ ara
-- İl bazlı aramada: İl ismini MUTLAKA arama sorgunda kullan
-- Eğer ilk aramada bulamazsan, FARKLI KELİMELERLE tekrar ara
-- "Bilgi bulunmamaktadır" demeden önce en az 2 farklı arama yap
+**4. PROJE BAZLI SÜPER TEŞVİKLER:**
+* **Dosya:** "2016-9495_Proje_Bazli.pdf" ve "2019-1_9495_teblig.pdf"
+* **Ne Zaman Bak:** Çok büyük ölçekli yatırımlar, proje bazlı destekler.
 
-⚠️ ÖNEMLİ: Belge içeriklerini AYNEN KOPYALAMA. Bilgileri kendi cümlelerinle yeniden ifade et, özetle ve açıkla. Hiçbir zaman doğrudan alıntı yapma.
+**5. YÜKSEK TEKNOLOJİ (HIT-30):**
+* **Dosya:** "Hit30.pdf"
+* **Ne Zaman Bak:** Elektrikli araç, batarya, çip, veri merkezi, Ar-Ge, kuantum, robotik.
 
-⚠️ ÖZEL KURALLAR:
-- 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_karar.pdf" dosyasında ara.
-- İllerin Bölge Sınıflandırması sorulduğunda (Örn: Kütahya kaçıncı bölge?), cevabı 9903 sayılı kararın eklerinde veya ilgili tebliğ dosyalarında (EK-1 İllerin Bölgesel Sınıflandırması) ara.
-- 9903 sayılı kararın uygulanmasına ilişkin usul ve esaslar, yatırım teşvik belgesi başvuru şartları (yöntem, gerekli belgeler), hangi yatırım cinslerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, özel sektör projeleri için Stratejik Hamle Programı değerlendirme kriterleri ve süreci, güneş/rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için aranan ek şartlar ile faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama usullerine ilişkin bir soru geldiğinde, cevabı öncelikle ve ağırlıklı olarak "2025-1-9903_teblig.pdf" dosyası içinde ara ve yanıtını mümkün olduğunca bu dosyadaki hükümlere dayandır.
-- yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, yada Pektin yatırımını nerde yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara
-- 9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara
-- 9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara
-- HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara
-- Yatırım taahhütlü avans kredisi, ytak hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara
-- 9903 saylı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara 
-- Bir yatırım konusu sorulursa veya bir yatırım konusu hakkında veya nace kodu sorulursa "sectorsearching.xlsx" dosyasında ara.
-- Etuys için "Sistemsel Sorunlar (Açılmama, İmza Hatası vs.)", "Belge Başvurusuna İlişkin sorular", "Devir İşlemleri", "Revize Başvuruları", "Yerli ve İthal Gerçekleştirmeler-Fatura ve Gümrük İşlemleri", "Vergi İstisna Yazısı Alma İşlemleri", "Tamamlama Vizesi İşlemleri", ve "hata mesajları" ile ilgili sistemsel sorunlarda çözüm arayanlar için "etuys_systemsel_sorunlar.txt" dosyasında ara.
-- Bilgileri verirken mutlaka kendi cümlelerinle açıkla, özetle ve yeniden ifade et. Belge içeriğini kelimesi kelimesine kopyalama.
-- Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
-- En son satıra detaylı bilgi almak için ilgili ilin yatırım destek ofisi ile iletişime geçebilirsiniz.
+**6. TEKNOLOJİ ODAKLI SANAYİ HAMLESİ:**
+* **Dosya:** "teblig_teknoloji_hamlesi_degisiklik.pdf"
+* **Ne Zaman Bak:** TÜBİTAK Ar-Ge süreçleri, Komite değerlendirmesi, Hamle programı.
+
+**7. NACE KODU VE SEKTÖR ARAMA:**
+* **Dosya:** "sectorsearching.xlsx"
+* **Ne Zaman Bak:** NACE kodu veya sektör adı sorulduğunda.
+
+**8. SİSTEMSEL HATALAR (ETUYS):**
+* **Dosya:** "etuys_systemsel_sorunlar.txt"
+* **Ne Zaman Bak:** "Sistem açılmıyor", "İmza hatası", "Hata mesajları".
+
+**Unutma:** Bilgileri verirken kopyala-yapıştır yapma, kendi cümlelerinle net ve anlaşılır şekilde açıkla. Detaylı bilgi için ilgili ilin Yatırım Destek Ofisi'ne yönlendir.
 `;
 
+    const interactiveInstructions = `
+Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+Mevcut Durum: ${incentiveQuery ? JSON.stringify(incentiveQuery) : "Bilinmiyor"}
+Kullanıcıdan eksik bilgileri (Sektör -> İl -> İlçe -> OSB) sırasıyla iste.
+`;
+
+    const systemPrompt =
+      incentiveQuery && incentiveQuery.status === "collecting"
+        ? baseInstructions + "\n\n" + interactiveInstructions
+        : baseInstructions;
+
+    // --- SORG U ZENGİNLEŞTİRME (QUERY INJECTION) ---
+    // Modelin daha dikkatli çalışmasını sağlamak için kullanıcının mesajını arkada modifiye ediyoruz.
     const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
+
+    const augmentedUserMessage = `
+${normalizedUserMessage}
+
+(SİSTEM NOTU: Bu soruyu yanıtlarken File Search aracını kullan. 
+Aradığın terimin eş anlamlılarını (synonyms) ve farklı yazılışlarını da sorguya dahil et. 
+Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele. 
+Özetleme yapma. Tüm sonuçları getir. Özellikle 'ykh_teblig_yatirim_konulari_listesi_yeni.pdf' içinde detaylı arama yap.)
+`;
+
     const messagesForGemini = [
       ...messages.slice(0, -1),
       {
         ...lastUserMessage,
-        content: normalizedUserMessage,
+        content: augmentedUserMessage, // Güçlendirilmiş mesajı gönder
       },
     ];
 
-    // STEP 4: Özel system prompt ekleme
-    const comprehensiveSearchInstruction = needsComprehensiveSearch
-      ? `
-
-⚠️⚠️⚠️ KAPSAMLI ARAMA MODU AKTİF ⚠️⚠️⚠️
-
-Kullanıcı "hangi illerde/nerede" türü soru sordu. ÇOK ÖNEMLİ:
-
-**ZORUNLU ARAMALAR (SIRAYLA YAPMA):**
-1. Ana ürün/sektör adıyla ara
-2. Alternatif terimlerle ara
-3. Genel kategoriyle ara
-4. İlk 3 aramada 4'ten az il bulduysan → TEKRAR ARA
-
-**UNUTMA:** Kullanıcı TÜM illeri öğrenmek istiyor. 2-3 il söyleyip durma!
-
-**DOĞRULAMA:** Belgede geçen TÜM illeri listelemeden yanıt verme.
-
-`
-      : "";
-
-    const systemPrompt =
-      incentiveQuery && incentiveQuery.status === "collecting"
-        ? baseInstructions + "\n\n" + interactiveInstructions + "\n\n" + incentiveSlotFillingInstruction
-        : baseInstructions + comprehensiveSearchInstruction;
+    const generationConfig = {
+      temperature: 0.1, // Halüsinasyonu en aza indirmek için
+      maxOutputTokens: 8192,
+    };
 
     console.log("=== Calling Gemini ===");
-    console.log("systemPrompt length:", systemPrompt.length);
+    console.log("Using Model:", GEMINI_MODEL_NAME);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: GEMINI_MODEL_NAME,
       contents: messagesForGemini
         .map((m: any) => ({
           role: m.role === "user" ? "user" : "model",
           parts: [{ text: m.content }],
         }))
-        // FIX 3: Filter out assistant messages containing leaked tool content more generically
+        // Tool leakage (araç çıktı sızıntısı) engelleme filtresi
         .filter((m: any) => {
           if (m.role === "user") return true;
           const txt = m.parts?.[0]?.text || "";
@@ -493,17 +361,10 @@ Kullanıcı "hangi illerde/nerede" türü soru sordu. ÇOK ÖNEMLİ:
 
     const { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
 
-    console.log("finishReason:", finishReason);
-    console.log("textOut length:", textOut?.length);
-    console.log("groundingChunks count:", groundingChunks?.length);
-
     if (finishReason === "SAFETY") {
-      console.log("⚠️ Response blocked due to:", finishReason);
-
       return new Response(
         JSON.stringify({
-          error:
-            "Üzgünüm, bu soruya güvenli bir şekilde cevap veremiyorum. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin.",
+          error: "Güvenlik politikası nedeniyle yanıt oluşturulamadı. Lütfen sorunuzu farklı ifade edin.",
           blocked: true,
           reason: finishReason,
         }),
@@ -513,124 +374,61 @@ Kullanıcı "hangi illerde/nerede" türü soru sordu. ÇOK ÖNEMLİ:
         },
       );
     }
-    let finalText = textOut;
 
+    // --- ENRICHMENT (Dosya İsimlerini Düzeltme) ---
+    // Grounding chunk'lardan dosya ID'lerini alıp gerçek dosya isimleriyle eşleştiriyoruz.
+    let enrichedChunks = [];
     if (groundingChunks && groundingChunks.length > 0) {
-      console.log("=== GROUNDING CHUNKS DEBUG (Backend) ===");
-      console.log("Total chunks:", groundingChunks.length);
+      const docIds = groundingChunks
+        .map((c: any) => {
+          const rc = c.retrievedContext ?? {};
+          if (rc.documentName) return rc.documentName;
+          if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
+          return rc.title ? `${storeName}/documents/${rc.title}` : null;
+        })
+        .filter((id: string | null): id is string => !!id);
 
-      groundingChunks.forEach((chunk: any, idx: number) => {
-        console.log(`\n--- Chunk ${idx + 1} ---`);
-        console.log("Full chunk structure:", JSON.stringify(chunk, null, 2));
+      const uniqueDocIds = [...new Set(docIds)];
+      const documentMetadataMap: Record<string, string> = {};
+      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-        if (chunk.retrievedContext) {
-          console.log("retrievedContext keys:", Object.keys(chunk.retrievedContext));
-          console.log("retrievedContext.title:", chunk.retrievedContext?.title);
-          console.log("retrievedContext.uri:", chunk.retrievedContext?.uri);
-          console.log("retrievedContext.documentName:", chunk.retrievedContext?.documentName);
-          console.log("retrievedContext.source:", chunk.retrievedContext?.source);
-          console.log("retrievedContext.document:", chunk.retrievedContext?.document);
-        } else {
-          console.log("⚠️ No retrievedContext found in chunk");
-        }
+      // Dosya metadatasını çekmek için döngü
+      for (const rawId of uniqueDocIds) {
+        try {
+          const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
+          const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
 
-        console.log("customMetadata type:", typeof chunk.retrievedContext?.customMetadata);
-        console.log("customMetadata isArray:", Array.isArray(chunk.retrievedContext?.customMetadata));
-        console.log("customMetadata full:", JSON.stringify(chunk.retrievedContext?.customMetadata, null, 2));
+          const docResp = await fetch(url);
+          if (docResp.ok) {
+            const docData = await docResp.json();
+            const customMeta = docData.customMetadata || [];
+            const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
 
-        if (chunk.retrievedContext?.customMetadata) {
-          const metadata = chunk.retrievedContext.customMetadata;
-          if (Array.isArray(metadata)) {
-            console.log(`  customMetadata array length: ${metadata.length}`);
-            metadata.forEach((meta: any, metaIdx: number) => {
-              console.log(`  Meta ${metaIdx}:`, JSON.stringify(meta, null, 2));
-              if (meta.key) {
-                console.log(`    - key: "${meta.key}"`);
-                console.log(`    - stringValue: "${meta.stringValue}"`);
-                console.log(`    - value: "${meta.value}"`);
-              }
-            });
+            if (filenameMeta) {
+              const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
+              documentMetadataMap[rawId] = enrichedName;
+            }
           }
+        } catch (e) {
+          console.error(`Error fetching metadata for ${rawId}:`, e);
         }
+      }
+
+      enrichedChunks = groundingChunks.map((chunk: any) => {
+        const rc = chunk.retrievedContext ?? {};
+        const rawId = rc.documentName || rc.title || null;
+        return {
+          ...chunk,
+          enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
+        };
       });
-      console.log("=== END GROUNDING CHUNKS DEBUG ===\n");
     }
-
-    const docIds = groundingChunks
-      .map((c: any) => {
-        const rc = c.retrievedContext ?? {};
-        if (rc.documentName) return rc.documentName;
-        if (rc.title) {
-          return rc.title.startsWith("fileSearchStores/") ? rc.title : `${storeName}/documents/${rc.title}`;
-        }
-        return null;
-      })
-      .filter((id: string | null): id is string => !!id);
-
-    const uniqueDocIds = [...new Set(docIds)];
-
-    console.log("=== Fetching Document Metadata ===");
-    console.log("Unique document IDs:", uniqueDocIds);
-
-    const documentMetadataMap: Record<string, string> = {};
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-
-    const normalizeDocumentName = (rawId: string): string => {
-      if (rawId.startsWith("fileSearchStores/")) {
-        return rawId;
-      }
-      return `${storeName}/documents/${rawId}`;
-    };
-
-    for (const rawId of uniqueDocIds) {
-      try {
-        const documentName = normalizeDocumentName(rawId);
-        const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
-        console.log(`Fetching metadata for: ${documentName}`);
-
-        const docResp = await fetch(url);
-        if (docResp.ok) {
-          const docData = await docResp.json();
-          const customMeta = docData.customMetadata || [];
-
-          console.log(`Document ${rawId} customMetadata:`, customMeta);
-
-          const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
-
-          if (filenameMeta) {
-            const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
-            documentMetadataMap[rawId] = enrichedName;
-            console.log(`✓ Enriched ${rawId} -> ${enrichedName}`);
-          } else {
-            console.log(`⚠ No filename metadata found for ${rawId}`);
-          }
-        } else {
-          console.error(`Failed to fetch ${documentName}: ${docResp.status} - ${await docResp.text()}`);
-        }
-      } catch (e) {
-        console.error(`Error fetching metadata for ${rawId}:`, e);
-      }
-    }
-
-    const enrichedChunks = groundingChunks.map((chunk: any) => {
-      const rc = chunk.retrievedContext ?? {};
-      const rawId = rc.documentName || rc.title || null;
-
-      return {
-        ...chunk,
-        enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
-      };
-    });
-
-    console.log("=== Enrichment Complete ===");
-    console.log("Metadata map:", documentMetadataMap);
 
     const result = {
-      text: finalText,
+      text: textOut,
       groundingChunks: enrichedChunks || [],
     };
 
-    console.log("✓ Returning successful response");
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
