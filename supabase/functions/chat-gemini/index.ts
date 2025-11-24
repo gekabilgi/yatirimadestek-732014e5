@@ -5,7 +5,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 // --- AYARLAR ---
 // Hız ve maliyet için 2.5 Flash seçildi.
 // Eğer bu model henüz API anahtarınızda aktif değilse 'gemini-1.5-flash' yapabilirsiniz.
-const GEMINI_MODEL_NAME = "gemini-2.5-flash";
+const GEMINI_MODEL_NAME = "gemini-2.5-pro";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
