@@ -440,7 +440,7 @@ GÖREV:
 
 2. ŞİMDİ bu alternatif terimlerle File Search yap:
    - Dosyalar: ykh_teblig_yatirim_konulari_listesi_yeni.pdf, 9903_karar.pdf, sectorsearching.xlsx
-   - SATIR SATIR TAR, her sayfayı kontrol et
+   - SATIR SATIR TARA, her sayfayı kontrol et
    - Her aramayı farklı terimlerle TEKRARLA (en az 3 varyasyon)
 
 3. BULDUĞUN TÜM SONUÇLARI LİSTELE:
@@ -485,12 +485,12 @@ BAŞLA! 🚀
             emptyResponse: true,
             retriedWithDynamicSearch: true,
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
       console.log("✅ Retry successful - using new results");
-      
+
       let enrichedRetryChunks = [];
       if (retryResult.groundingChunks && retryResult.groundingChunks.length > 0) {
         const docIds = retryResult.groundingChunks
@@ -543,7 +543,7 @@ BAŞLA! 🚀
           groundingChunks: enrichedRetryChunks,
           retriedWithDynamicSearch: true,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -553,7 +553,9 @@ BAŞLA! 🚀
     const uniqueProvinces = [...new Set(provinceMatches)];
 
     if (isProvinceQuery && uniqueProvinces.length > 0 && uniqueProvinces.length < 3) {
-      console.warn(`⚠️ Insufficient province results (${uniqueProvinces.length}/expected ≥3). Triggering feedback loop...`);
+      console.warn(
+        `⚠️ Insufficient province results (${uniqueProvinces.length}/expected ≥3). Triggering feedback loop...`,
+      );
 
       const feedbackPrompt = `
 ⚠️ ÖNCEKİ CEVABINIZ YETERSİZ BULUNDU - GENİŞLETİLMİŞ ARAMA GEREKLİ
@@ -566,7 +568,7 @@ SORUN: Sadece ${uniqueProvinces.length} il buldun (${uniqueProvinces.join(", ")}
 Bu sayı şüpheli derecede az!
 
 YENİ GÖREV:
-1. ykh_teblig_yatirim_konulari_listesi_yeni.pdf dosyasını BAŞTAN SONA yeniden tara
+1. Tüm dosyalarda BAŞTAN SONA yeniden tara lütfen
 2. Ana anahtar kelimenin (${normalizedUserMessage}) tüm varyasyonlarını ara:
    - Tam eşleşme
    - Kök kelime
@@ -605,7 +607,7 @@ BAŞLA! 🔍
 
       if (feedbackResult.textOut && feedbackResult.textOut.length > textOut.length) {
         console.log("✅ Feedback loop improved results - using enhanced response");
-        
+
         let enrichedFeedbackChunks = [];
         if (feedbackResult.groundingChunks && feedbackResult.groundingChunks.length > 0) {
           const docIds = feedbackResult.groundingChunks
@@ -658,7 +660,7 @@ BAŞLA! 🔍
             groundingChunks: enrichedFeedbackChunks,
             enhancedViaFeedbackLoop: true,
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     }
