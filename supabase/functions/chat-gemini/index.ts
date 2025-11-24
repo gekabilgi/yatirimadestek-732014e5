@@ -569,12 +569,12 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
     // Extract main keyword from user query for validation (e.g., "pektin" from "pektin hangi illerde")
     const queryKeywords = normalizedUserMessage
       .toLowerCase()
-      .replace(/hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|desteklen.*|var|üretim/gi, '')
+      .replace(/hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|desteklen.*|var|üretim/gi, "")
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 3); // Min 4 character words
+      .filter((word) => word.length > 3); // Min 4 character words
 
-    console.log('🔍 Extracted query keywords for validation:', queryKeywords);
+    console.log("🔍 Extracted query keywords for validation:", queryKeywords);
 
     // ============= ADIM 1: BOŞ YANIT KONTROLÜ VE DYNAMIC RETRY =============
     if (!textOut || textOut.trim().length === 0) {
@@ -594,7 +594,7 @@ GÖREV:
 
 2. ŞİMDİ bu alternatif terimlerle File Search yap:
    - Dosyalar: ykh_teblig_yatirim_konulari_listesi_yeni.pdf, 9903_karar.pdf, sectorsearching.xlsx
-   - SATIR SATIR TAR, her sayfayı kontrol et
+   - SATIR SATIR TARA, her sayfayı kontrol et
    - Her aramayı farklı terimlerle TEKRARLA (en az 3 varyasyon)
 
 3. BULDUĞUN TÜM SONUÇLARI LİSTELE:
@@ -663,23 +663,25 @@ BAŞLA! 🚀
     // VALIDATE grounding chunks contain query keywords (for province queries)
     let validatedChunks = groundingChunks;
     if (isProvinceQuery && queryKeywords.length > 0) {
-      validatedChunks = groundingChunks.filter(chunk => {
-        const chunkContent = (chunk.retrievedContext?.text || '').toLowerCase();
+      validatedChunks = groundingChunks.filter((chunk) => {
+        const chunkContent = (chunk.retrievedContext?.text || "").toLowerCase();
         // Check if ANY of the query keywords appear in the chunk
-        const hasKeyword = queryKeywords.some(keyword => chunkContent.includes(keyword));
-        
+        const hasKeyword = queryKeywords.some((keyword) => chunkContent.includes(keyword));
+
         if (!hasKeyword) {
           console.log(`⚠️ Filtered out chunk (no keyword match):`, {
             title: chunk.retrievedContext?.title,
-            preview: chunkContent.substring(0, 100)
+            preview: chunkContent.substring(0, 100),
           });
         }
-        
+
         return hasKeyword;
       });
 
-      console.log(`🔍 Keyword validation: ${groundingChunks.length} chunks → ${validatedChunks.length} validated chunks`);
-      
+      console.log(
+        `🔍 Keyword validation: ${groundingChunks.length} chunks → ${validatedChunks.length} validated chunks`,
+      );
+
       // Update groundingChunks with validated ones
       groundingChunks = validatedChunks;
     }
