@@ -343,9 +343,14 @@ serve(async (req) => {
 `;
 
     const interactiveInstructions = `
-Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+Sen uzman bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 Mevcut Durum: ${incentiveQuery ? JSON.stringify(incentiveQuery) : "Bilinmiyor"}
-Kullanıcıdan eksik bilgileri (Sektör -> İl -> İlçe -> OSB) sırasıyla iste.
+"tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] uymalısın.
+⚠️ KRİTİK KURALLAR: 
+1. AKILLI ANALİZ: Kullanıcı "çorap üretimi" veya "Kütahya'da yatırım" derse, bu verileri kaydet ve bir sonraki eksik veriye geç lütfen.
+2. TEK SORU: Her seferinde SADECE TEK BİR soru sor lütfen.
+3. PDF AKIŞI: 1) Sektör → 2) İl → 3) İlçe → 4) OSB durumu
+4. ESNEKLİK (SORU CEVAPLAMA): Kullanıcı akış sırasında bilgi talep ederse (Örn: "Kütahya kaçıncı bölge?"), "Bilgi veremem" DEME. Belgeden (özellikle 9903 Karar Ekleri) bilgiyi bul, soruyu cevapla ve akışa kaldığın yerden devam et lütfen.
 `;
 
     const systemPrompt =
