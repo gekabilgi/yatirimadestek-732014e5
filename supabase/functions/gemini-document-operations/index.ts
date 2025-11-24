@@ -204,6 +204,12 @@ serve(async (req) => {
           config: {
             displayName: finalDisplayName,
             customMetadata: geminiMetadata,
+            chunkingConfig: {
+              whiteSpaceConfig: {
+                maxTokensPerChunk: 150,      // Small chunks = 1-2 province entries per chunk
+                maxOverlapTokens: 30         // 20% overlap ensures no split entries
+              }
+            }
           },
         });
 
