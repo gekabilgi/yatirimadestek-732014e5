@@ -281,7 +281,7 @@ serve(async (req) => {
     const ai = getAiClient();
 
     const generationConfig = {
-      temperature: 0.9,
+      temperature: 0.5,
       maxOutputTokens: 8192,
     };
 
