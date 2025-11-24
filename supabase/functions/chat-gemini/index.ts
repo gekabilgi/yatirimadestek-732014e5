@@ -332,6 +332,7 @@ serve(async (req) => {
     }
 
     const ai = getAiClient();
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
     const generationConfig = {
       temperature: 0.1,
@@ -676,7 +677,6 @@ BAŞLA! 🔍
     let finalText = textOut;
 
     // Normal flow için de enrichment yap
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     return await enrichAndReturn(finalText, groundingChunks, storeName, GEMINI_API_KEY || "");
   } catch (error) {
     console.error("❌ Error in chat-gemini:", error);
