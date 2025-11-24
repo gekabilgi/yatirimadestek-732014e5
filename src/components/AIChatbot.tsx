@@ -119,9 +119,9 @@ function MessageBubble({ message }: { message: Message }) {
 
 export function AIChatbot() {
   const location = useLocation();
-  
+
   // Hide chatbot on the /chat page
-  if (location.pathname === '/chat') {
+  if (location.pathname === "/chat") {
     return null;
   }
 
@@ -145,7 +145,7 @@ export function AIChatbot() {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
-  const [currentSuggestion, setCurrentSuggestion] = useState('');
+  const [currentSuggestion, setCurrentSuggestion] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
@@ -169,7 +169,7 @@ export function AIChatbot() {
         const questions = await generateExampleQuestions(activeStoreCache);
         setExampleQuestions(questions);
       } catch (error) {
-        console.error('Failed to load example questions:', error);
+        console.error("Failed to load example questions:", error);
         setExampleQuestions([]);
       } finally {
         setIsGeneratingQuestions(false);
@@ -182,13 +182,13 @@ export function AIChatbot() {
   // Rotate through example questions
   useEffect(() => {
     if (exampleQuestions.length === 0) {
-      setCurrentSuggestion('');
+      setCurrentSuggestion("");
       return;
     }
 
     setCurrentSuggestion(exampleQuestions[0]);
     let suggestionIndex = 0;
-    
+
     const intervalId = setInterval(() => {
       suggestionIndex = (suggestionIndex + 1) % exampleQuestions.length;
       setCurrentSuggestion(exampleQuestions[suggestionIndex]);
@@ -277,7 +277,7 @@ export function AIChatbot() {
     try {
       // Ensure session exists before saving message
       await createSessionIfNeeded(sessionId);
-      
+
       await supabase.from("cb_messages").insert({
         id: message.id,
         session_id: sessionId,
@@ -329,6 +329,7 @@ export function AIChatbot() {
         body: {
           storeName: activeStoreCache,
           messages: [...messages, { role: "user", content: userMessage }],
+          sessionId: currentSessionId,
         },
       });
 
@@ -709,9 +710,7 @@ export function AIChatbot() {
             )}
 
             {/* Example Questions Section - Single Rotating Question */}
-            {!isLoading && 
-             messages.length <= 2 && 
-             currentSuggestion && (
+            {!isLoading && messages.length <= 2 && currentSuggestion && (
               <div className="px-3 sm:px-4 py-2 border-t border-b bg-muted/20">
                 <button
                   onClick={() => handleQuestionClick(currentSuggestion)}
@@ -729,12 +728,8 @@ export function AIChatbot() {
                       →
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground font-medium mb-1">
-                        Örnek soru:
-                      </p>
-                      <p className="text-sm text-foreground line-clamp-2">
-                        {currentSuggestion}
-                      </p>
+                      <p className="text-xs text-muted-foreground font-medium mb-1">Örnek soru:</p>
+                      <p className="text-sm text-foreground line-clamp-2">{currentSuggestion}</p>
                     </div>
                   </div>
                 </button>
