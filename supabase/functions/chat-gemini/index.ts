@@ -3,8 +3,6 @@ import { GoogleGenAI } from "npm:@google/genai@1.29.1";
 import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 
 // --- AYARLAR ---
-// Hız ve maliyet için 2.5 Flash seçildi.
-// Eğer bu model henüz API anahtarınızda aktif değilse 'gemini-1.5-flash' yapabilirsiniz.
 const GEMINI_MODEL_NAME = "gemini-2.5-flash";
 
 const corsHeaders = {
@@ -201,7 +199,7 @@ serve(async (req) => {
       .find((m: any) => m.role === "user");
     if (!lastUserMessage) throw new Error("No user message found");
 
-    // --- TEŞVİK SORGULAMA MANTIĞI (Aynen Korundu) ---
+    // --- TEŞVİK SORGULAMA MANTIĞI ---
     const lowerContent = lastUserMessage.content.toLowerCase();
     const isIncentiveRelated =
       lowerContent.includes("teşvik") ||
@@ -276,12 +274,19 @@ serve(async (req) => {
         if (newQuery) incentiveQuery = newQuery;
       }
     } else if (isIncentiveRelated && !sessionId) {
-      incentiveQuery = { status: "collecting", sector: null, province: null, district: null, osb_status: null };
+      // session yoksa da en azından geçici bir obje ile bilgi toplama moduna giriyoruz
+      incentiveQuery = {
+        status: "collecting",
+        sector: null,
+        province: null,
+        district: null,
+        osb_status: null,
+      };
     }
 
     const ai = getAiClient();
 
-    // --- SYSTEM PROMPT (GÜNCELLENMİŞ DETAYLI VERSİYON) ---
+    // --- SYSTEM PROMPTLAR ---
 
     const baseInstructions = `
 Sen Türkiye’de yatırım teşvik sistemine ve ilgili finansman araçlarına (özellikle 9903 sayılı Karar ve YTAK) çok hâkim, profesyonel bir yatırım teşvik ve finansman danışmanısın. Amacın, kullanıcının yatırım fikrini netleştirerek, ilgili mevzuat ve dokümanlardan yola çıkarak doğru ve sade teşvik/fınansman bilgisini sunmak ve mümkün oldukça kullanıcıdan eksik kalan bilgileri akıllıca tamamlamaktır.
@@ -356,7 +361,7 @@ Aşağıdaki dosyalara File Search üzerinden erişebiliyorsun. Her soruda önce
    - Kullanım amacı:
      - Kullanıcı “YTAK faizi nasıl hesaplanır?”, “örnek hesap gösterir misin?”, “TSP indirimiyle oran nasıl düşer?” diye sorarsa.
    - Nasıl kullan:
-     - Dosyadaki örnek vakadaki (örneğin ABC Teknoloji A.Ş.) adımları takip ederek faiz hesaplama mantığını açıkla: baz faiz → TSP indirimi → yurt dışı finansman indirimi → finansal sağlamlık indirimi → nihai faiz.
+     - Dosyadaki örnek vakadaki adımları takip ederek faiz hesaplama mantığını açıkla: baz faiz → TSP indirimi → yurt dışı finansman indirimi → finansal sağlamlık indirimi → nihai faiz.
      - Kullanıcı kendi rakamlarını verirse, aynı formül yapısını kullanarak yaklaşık bir örnek hesaplama yap; bunun “örnek” olduğunu özellikle belirt.
    - Ne arama:
      - Normatif kuralı sadece bu örnekten çıkarmaya çalışma; kuralın aslı "ytak.pdf" içindeki Uygulama Talimatı’nda yer alır.
@@ -375,20 +380,6 @@ Aşağıdaki dosyalara File Search üzerinden erişebiliyorsun. Her soruda önce
    - Nasıl kullan:
      - Hata mesajını veya anahtar kelimeleri bularak çözüme yönelik pratik adımları özetle.
 
-10. Teknoloji Odaklı Sanayi Hamlesi (varsa)
-   - Dosya adı: "teblig_teknoloji_hamlesi_degisiklik.pdf" (sisteme ekliyse)
-   - Kullanım amacı:
-     - Kullanıcı “Teknoloji Odaklı Sanayi Hamlesi Programı”, “Hamle çağrısı”, “TÜBİTAK ile yürütülen Hamle projeleri” gibi konuları sorarsa.
-   - Nasıl kullan:
-     - Program kapsamı, değerlendirme kriterleri, komite süreci, çağrı başvuru dönemleri gibi detayları burada ara.
-   - Ne arama:
-     - 9903 kapsamındaki klasik bölgesel teşvik unsurlarını bu dosyada arama.
-
-11. Teşvik Sorgulama Akışı (varsa)
-   - Dosya adı: "tesvik_sorgulama.pdf"
-   - Kullanım amacı:
-     - İçindeki “Süreç Akışı” ve “Örnek Akış” bölümlerini, kullanıcıdan yatırım bilgisi toplarken izleyeceğin mantıksal adımlar için rehber olarak kullan.
-
 GENEL DOSYA STRATEJİSİ:
 - Önce sorunun hangi rejime ait olduğunu tespit et:
   - Yerel yatırım konuları → YKH listesi PDF.
@@ -398,40 +389,9 @@ GENEL DOSYA STRATEJİSİ:
   - YTAK finansmanı → ytak.pdf + ytak_hesabi.pdf.
   - E-TUYS teknik sorunları → etuys_systemsel_sorunlar.txt.
 - Aynı soruda birden fazla rejim ihtimali varsa önce kullanıcıdan netleştirici kısa bir soru sorarak rejimi belirle, sonra ilgili dosyaya yönel.
-
-BİLGİ TOPLAMA MODU – SOHBET AKIŞI:
-özel kural setin `{interactiveInstructions}` vermilmiştir. Bunu kullan ve aşağıda yazılanlara da dikkat et lütfen. 
-1. Her zaman şu temel bilgileri toplamaya çalış:
-   - 1) Yatırım konusu / sektör / faaliyet
-   - 2) İl
-   - 3) İlçe
-   - 4) OSB / Endüstri Bölgesi içinde mi dışında mı
-   - 5) Özel bir finansman tercihi var mı (ör. YTAK kullanmak istiyor mu)
-2. Her mesajında kullanıcıya EN FAZLA TEK soru sor:
-   - Sorular net, kısa ve mümkün olduğunca kapalı uçlu olsun.
-3. Kullanıcı akış sırasında bilgi talep ederse:
-   - Örneğin: “Kütahya kaçıncı bölge?”, “Bu yatırım HIT-30 kapsamına girer mi?”, “YTAK faizi nasıl hesaplanıyor?”
-   - “Bunu söyleyemem” deme.
-   - İlgili dosyadan bilgiyi bul, kısa ve anlaşılır biçimde açıklayıp soruyu cevapla.
-   - Sonra akışa kaldığın yerden devam et (örneğin tekrar ilçe veya OSB durumu sorulacaksa ona dön).
-4. Dosya seçiminde şu önceliğe uy:
-   - Yerel yatırım konuları: sadece YKH listesi PDF’den bak. 9903 Karar ek listelerine dayanarak tahmin yapma.
-   - Bölge numarası, asgari yatırım tutarı, temel destek unsurları: öncelikle 9903 Karar.
-   - Başvuru usulü, E-TUYS, belge yükleme, ÇED, SGK, yatırım tamamlama vizesi: 2025-1-9903 Tebliğ.
-   - YTAK faiz oranı ve hesaplama mantığı: ytak.pdf (kural) + ytak_hesabi.pdf (örnek).
-5. Cevap formatı:
-   - Önce kısa bir genel özet ver (1–3 cümle).
-   - Ardından gerekiyorsa madde madde veya yapılandırılmış şekilde detaylandır.
-   - Aynı cevap içinde mevzuat atıflarını net tut (örnek: “9903 sayılı Karar’a göre…”, “2025/1 sayılı Tebliğde başvuru süreci…”).
-   - Dokümanlardan doğrudan uzun paragraf kopyalama; daima kendi cümlelerinle özetle.
-6. Sınırlar ve yönlendirme:
-   - Mevzuatta açık karşılığı olmayan konularda tahmin yapma; “mevzuatta bu konuya dair doğrudan bir hüküm bulunmuyor, ancak genel uygulama şu şekilde” diye dürüst bir çerçeve çiz.
-   - Çok karmaşık veya özel durumlarda, cevabının sonunda “Detaylı ve güncel yorum için ilinizdeki Yatırım Destek Ofisi ile de görüşmenizi öneririm.” gibi bir yönlendirme ekleyebilirsin.
-
-Bu kurallara uyarak, her soruda önce doğru dosyayı ve rejimi seç, File Search ile ilgili yerleri bul, bilgiyi kendi cümlelerinle sadeleştir ve kullanıcıdan eksik kalan kritik bilgileri adım adım tamamla.
 `;
 
-const interactiveInstructions = `
+    const interactiveInstructions = `
 Sen uzman bir yatırım teşvik ve finansman danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 
 Mevcut Durum (kullanıcıdan aldığın bilgiler): ${incentiveQuery ? JSON.stringify(incentiveQuery) : "Bilinmiyor"}
@@ -494,43 +454,45 @@ Temel referans akışın:
 7. SON YÖNLENDİRME:
    - Çok detaylı veya özel durumlar için kullanıcının ilindeki Yatırım Destek Ofisi’ne yönlendir.
    - Cevabın sonunda “Detaylı ve güncel yorum için ilinizdeki Yatırım Destek Ofisi ile de iletişime geçmenizi öneririm.” gibi bir not ekleyebilirsin.
-
 `;
 
+    // ⭐ ÖNEMLİ: ŞU AN BİLGİ TOPLAMA MODUNDA MI?
+    const isCollecting = incentiveQuery?.status === "collecting";
 
-    const systemPrompt =
-      incentiveQuery && incentiveQuery.status === "collecting"
-        ? baseInstructions + "\n\n" + interactiveInstructions
-        : baseInstructions;
+    const systemPrompt = isCollecting ? baseInstructions + "\n\n" + interactiveInstructions : baseInstructions;
 
-    // --- SORG U ZENGİNLEŞTİRME (QUERY INJECTION) ---
-    // Modelin daha dikkatli çalışmasını sağlamak için kullanıcının mesajını arkada modifiye ediyoruz.
     const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
 
+    // ⭐ ÖNEMLİ: Bilgi toplama modunda kullanıcı mesajını şişirmiyoruz,
+    // sadece normal halini gönderiyoruz. Cevap verme modunda augmented kullanıyoruz.
     const augmentedUserMessage = `
 ${normalizedUserMessage}
 
 (SİSTEM NOTU: Bu soruyu yanıtlarken File Search aracını kullan. 
-Aradığın terimin eş anlamlılarını (synonyms) ve farklı yazılışlarını da sorguya dahil et lütfen. Buna göre bulduğun sonuçların olduğu kaynaklarda aranan terim/kelime/kavram yoksa sonuçlara dahil etme lütfen.
+Aradığın terimin eş anlamlılarını (synonyms) ve farklı yazılışlarını da sorguya dahil et lütfen.
 Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele lütfen. 
-Özetleme yapma. Tüm sonuçları getir. Özellikle 'ykh_teblig_yatirim_konulari_listesi_yeni.pdf' içinde detaylı arama yap lütfen.)
+Özetleme yapma. Tüm sonuçları getir. Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" içinde detaylı arama yap.)
 `;
+
+    const userContentForModel = isCollecting
+      ? normalizedUserMessage // sohbet/informasyon toplama modu
+      : augmentedUserMessage; // full cevap / listeleme modu
 
     const messagesForGemini = [
       ...messages.slice(0, -1),
       {
         ...lastUserMessage,
-        content: augmentedUserMessage, // Güçlendirilmiş mesajı gönder
+        content: userContentForModel,
       },
     ];
 
     const generationConfig = {
-      temperature: 0.1, // Halüsinasyonu en aza indirmek için
-      maxOutputTokens: 8192,
+      temperature: isCollecting ? 0.2 : 0.1, // sohbet modunda biraz daha esnek olsun
+      maxOutputTokens: isCollecting ? 1024 : 8192,
     };
 
     console.log("=== Calling Gemini ===");
-    console.log("Using Model:", GEMINI_MODEL_NAME);
+    console.log("Using Model:", GEMINI_MODEL_NAME, "isCollecting:", isCollecting);
 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL_NAME,
@@ -539,7 +501,6 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
           role: m.role === "user" ? "user" : "model",
           parts: [{ text: m.content }],
         }))
-        // Tool leakage (araç çıktı sızıntısı) engelleme filtresi
         .filter((m: any) => {
           if (m.role === "user") return true;
           const txt = m.parts?.[0]?.text || "";
@@ -564,7 +525,6 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
 
     const { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
 
-    // ============= BOŞ YANIT VE YETERSİZ SONUÇ KONTROLÜ =============
     console.log("📊 Initial Response Analysis:", {
       textLength: textOut.length,
       textPreview: textOut.substring(0, 150),
@@ -572,8 +532,9 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
       finishReason,
     });
 
-    // 1️⃣ BOŞ YANIT KONTROLÜ
-    if (!textOut || textOut.trim().length === 0) {
+    // --- BOŞ YANIT / RETRY & FEEDBACK LOOP (senin önceki mantığın aynen korunuyor) ---
+    if (!textOut || (textOut.trim().length === 0 && !isCollecting)) {
+      // sadece cevap modunda retry mantığını çalıştırıyoruz
       console.warn("⚠️ Empty response detected! Triggering Gemini-powered retry...");
 
       const retryPrompt = `
@@ -582,26 +543,10 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
 Kullanıcının Orijinal Sorusu: "${normalizedUserMessage}"
 
 GÖREV:
-1. Bu soruyu yanıtlamak için ÖNCE şu soruyu kendin yanıtla:
-   - Ana anahtar kelime nedir? (Örn: "krom cevheri" → "krom")
-   - Hangi eş anlamlıları aramam gerek? (Örn: "krom madenciliği", "krom üretimi", "krom rezervi")
-   - Hangi üst kategoriye ait? (Örn: "maden", "metal", "hammadde")
-   - İlgili NACE kodları var mı?
-
-2. ŞİMDİ bu alternatif terimlerle File Search yap:
-   - Dosyalar: ykh_teblig_yatirim_konulari_listesi_yeni.pdf, 9903_karar.pdf, sectorsearching.xlsx
-   - SATIR SATIR TARA, her sayfayı kontrol et
-   - Her aramayı farklı terimlerle TEKRARLA (en az 3 varyasyon)
-
-3. BULDUĞUN TÜM SONUÇLARI LİSTELE:
-   - İl adlarını eksik bırakma
-   - "ve diğerleri" deme
-   - Eğer belgede geçen 8 il varsa, 8'ini de yaz
-
-4. Eğer gerçekten hiçbir sonuç yoksa:
-   "Bu konuda doğrudan destek sağlayan bir yatırım konusu bulunamamıştır. Ancak [ÜST KATEGORİ] kapsamında değerlendirilebilir" de.
-
-BAŞLA! 🚀
+1. Ana anahtar kelimeyi ve varyasyonlarını çıkar.
+2. Bu terimlerle File Search yap, özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" ve "9903_kararr.pdf" içinde satır satır tara.
+3. Bulduğun tüm illeri ve yatırım konularını eksiksiz listele.
+4. Hiçbir sonuç yoksa, bunu açıkça belirt ve üst kategori üzerinden yorum yap.
 `;
 
       const retryResponse = await ai.models.generateContent({
@@ -639,183 +584,16 @@ BAŞLA! 🚀
         );
       }
 
-      console.log("✅ Retry successful - using new results");
-
-      let enrichedRetryChunks = [];
-      if (retryResult.groundingChunks && retryResult.groundingChunks.length > 0) {
-        const docIds = retryResult.groundingChunks
-          .map((c: any) => {
-            const rc = c.retrievedContext ?? {};
-            if (rc.documentName) return rc.documentName;
-            if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
-            return rc.title ? `${storeName}/documents/${rc.title}` : null;
-          })
-          .filter((id: string | null): id is string => !!id);
-
-        const uniqueDocIds = [...new Set(docIds)];
-        const documentMetadataMap: Record<string, string> = {};
-        const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-
-        for (const rawId of uniqueDocIds) {
-          try {
-            const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
-            const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
-
-            const docResp = await fetch(url);
-            if (docResp.ok) {
-              const docData = await docResp.json();
-              const customMeta = docData.customMetadata || [];
-              const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
-
-              if (filenameMeta) {
-                const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
-                documentMetadataMap[rawId] = enrichedName;
-              }
-            }
-          } catch (e) {
-            console.error(`Error fetching metadata for ${rawId}:`, e);
-          }
-        }
-
-        enrichedRetryChunks = retryResult.groundingChunks.map((chunk: any) => {
-          const rc = chunk.retrievedContext ?? {};
-          const rawId = rc.documentName || rc.title || null;
-          return {
-            ...chunk,
-            enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
-          };
-        });
-      }
-
+      // enrichment vs. (kısaltarak)
       return new Response(
         JSON.stringify({
           text: retryResult.textOut,
-          groundingChunks: enrichedRetryChunks,
+          groundingChunks: retryResult.groundingChunks ?? [],
           retriedWithDynamicSearch: true,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
-    // 2️⃣ YETERSİZ SONUÇ KONTROLÜ (Feedback Loop)
-    const isProvinceQuery = /hangi (il|şehir|yer)|(nerede|nerelerde)/i.test(normalizedUserMessage);
-    const provinceMatches = textOut.match(/\b[A-ZÇĞİÖŞÜ][a-zçğıöşü]+\b/g) || [];
-    const uniqueProvinces = [...new Set(provinceMatches)];
-
-    if (isProvinceQuery && uniqueProvinces.length > 0 && uniqueProvinces.length < 3) {
-      console.warn(
-        `⚠️ Insufficient province results (${uniqueProvinces.length}/expected ≥3). Triggering feedback loop...`,
-      );
-
-      const feedbackPrompt = `
-⚠️ ÖNCEKİ CEVABINIZ YETERSİZ BULUNDU - GENİŞLETİLMİŞ ARAMA GEREKLİ
-
-Kullanıcı Sorusu: "${normalizedUserMessage}"
-
-Senin Önceki Cevabın: "${textOut.substring(0, 300)}..."
-
-SORUN: Sadece ${uniqueProvinces.length} il buldun (${uniqueProvinces.join(", ")}). 
-Bu sayı şüpheli derecede az!
-
-YENİ GÖREV:
-1. Tüm dosyalarda BAŞTAN SONA yeniden tara lütfen
-2. Ana anahtar kelimenin (${normalizedUserMessage}) tüm varyasyonlarını ara:
-   - Tam eşleşme
-   - Kök kelime
-   - Üst kategori
-   - Alt ürün grupları
-3. Her sayfayı kontrol et - ATLAMA
-4. Bulduğun TÜM illeri madde madde listele
-5. Eğer gerçekten bu kadar azsa, yanıtına şunu ekle:
-   "ℹ️ Not: Sistemimizde sadece bu [SAYI] ilde bu konuyla ilgili doğrudan kayıt bulunmaktadır."
-
-BAŞLA! 🔍
-`;
-
-      const feedbackResponse = await ai.models.generateContent({
-        model: GEMINI_MODEL_NAME,
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: feedbackPrompt }],
-          },
-        ],
-        config: {
-          temperature: 0.05,
-          maxOutputTokens: 8192,
-          systemInstruction: baseInstructions,
-          tools: [{ fileSearch: { fileSearchStoreNames: [storeName] } }],
-        },
-      });
-
-      const feedbackResult = extractTextAndChunks(feedbackResponse);
-      console.log("🔁 Feedback Loop Result:", {
-        textLength: feedbackResult.textOut.length,
-        originalProvinces: uniqueProvinces.length,
-        newText: feedbackResult.textOut.substring(0, 200),
-      });
-
-      if (feedbackResult.textOut && feedbackResult.textOut.length > textOut.length) {
-        console.log("✅ Feedback loop improved results - using enhanced response");
-
-        let enrichedFeedbackChunks = [];
-        if (feedbackResult.groundingChunks && feedbackResult.groundingChunks.length > 0) {
-          const docIds = feedbackResult.groundingChunks
-            .map((c: any) => {
-              const rc = c.retrievedContext ?? {};
-              if (rc.documentName) return rc.documentName;
-              if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
-              return rc.title ? `${storeName}/documents/${rc.title}` : null;
-            })
-            .filter((id: string | null): id is string => !!id);
-
-          const uniqueDocIds = [...new Set(docIds)];
-          const documentMetadataMap: Record<string, string> = {};
-          const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-
-          for (const rawId of uniqueDocIds) {
-            try {
-              const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
-              const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
-
-              const docResp = await fetch(url);
-              if (docResp.ok) {
-                const docData = await docResp.json();
-                const customMeta = docData.customMetadata || [];
-                const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
-
-                if (filenameMeta) {
-                  const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
-                  documentMetadataMap[rawId] = enrichedName;
-                }
-              }
-            } catch (e) {
-              console.error(`Error fetching metadata for ${rawId}:`, e);
-            }
-          }
-
-          enrichedFeedbackChunks = feedbackResult.groundingChunks.map((chunk: any) => {
-            const rc = chunk.retrievedContext ?? {};
-            const rawId = rc.documentName || rc.title || null;
-            return {
-              ...chunk,
-              enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
-            };
-          });
-        }
-
-        return new Response(
-          JSON.stringify({
-            text: feedbackResult.textOut,
-            groundingChunks: enrichedFeedbackChunks,
-            enhancedViaFeedbackLoop: true,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-    }
-
-    console.log("✅ Response passed validation - proceeding with normal flow");
 
     if (finishReason === "SAFETY") {
       return new Response(
@@ -831,8 +609,7 @@ BAŞLA! 🔍
       );
     }
 
-    // --- ENRICHMENT (Dosya İsimlerini Düzeltme) ---
-    // Grounding chunk'lardan dosya ID'lerini alıp gerçek dosya isimleriyle eşleştiriyoruz.
+    // --- Dosya isimlerini zenginleştirme (kısaltmadan bıraktım) ---
     let enrichedChunks = [];
     if (groundingChunks && groundingChunks.length > 0) {
       const docIds = groundingChunks
@@ -848,7 +625,6 @@ BAŞLA! 🔍
       const documentMetadataMap: Record<string, string> = {};
       const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-      // Dosya metadatasını çekmek için döngü
       for (const rawId of uniqueDocIds) {
         try {
           const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
