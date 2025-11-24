@@ -89,13 +89,6 @@ const normalizeRegionNumbers = (text: string): string => {
     "beşinci bölge": "5. Bölge",
     "altıncı bölge": "6. Bölge",
     "altinci bölge": "6. Bölge",
-    "birinci bölgedeli": "1. Bölge",
-    "ikinci bölgedeli": "2. Bölge",
-    "üçüncü bölgedeli": "3. Bölge",
-    "dördüncü bölgedeli": "4. Bölge",
-    "beşinci bölgedeli": "5. Bölge",
-    "altıncı bölgedeli": "6. Bölge",
-    "altinci bölgedeli": "6. Bölge",
   };
 
   let normalized = text;
@@ -116,7 +109,6 @@ function extractTextAndChunks(response: any) {
 
   for (const p of parts) {
     if (!p) continue;
-
     if (p.thought === true) continue;
     if (p.executableCode || p.codeExecutionResult) continue;
     if (p.functionCall || p.toolCall) continue;
@@ -130,11 +122,10 @@ function extractTextAndChunks(response: any) {
   }
 
   const textOut = textPieces.join("");
-
   return { finishReason, groundingChunks, textOut };
 }
 
-// -------------------- EDGE FUNCTION --------------------
+// -------------------- MAIN EDGE FUNCTION --------------------
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -174,6 +165,7 @@ serve(async (req) => {
     const supabase = getSupabaseAdmin();
     let incentiveQuery: any = null;
 
+    // -------------------- INCENTIVE QUERY STATE --------------------
     if (isIncentiveRelated && sessionId) {
       const { data: existingQuery } = await supabase
         .from("incentive_queries")
@@ -186,9 +178,9 @@ serve(async (req) => {
         const userContent = lastUserMessage.content;
         let updated = false;
 
-        // ⭐ SIRALI DOLUM: 1) sector → 2) province → 3) district → 4) osb_status
+        // 1) sektor → 2) il → 3) ilçe → 4) OSB
         if (!incentiveQuery.sector) {
-          incentiveQuery.sector = userContent; // ilk mesaj → sektör tanımı
+          incentiveQuery.sector = userContent;
           updated = true;
         } else if (!incentiveQuery.province) {
           incentiveQuery.province = cleanProvince(userContent);
@@ -221,7 +213,7 @@ serve(async (req) => {
           incentiveQuery.status = newStatus;
         }
       } else {
-        // ⭐ YENİ KAYIT: İlk teşvikli mesajı SEKTÖR olarak kaydet
+        // Yeni kayıt: ilk mesajı SEKTÖR olarak kaydet
         const { data: newQuery } = await supabase
           .from("incentive_queries")
           .insert({
@@ -237,7 +229,7 @@ serve(async (req) => {
         if (newQuery) incentiveQuery = newQuery;
       }
     } else if (isIncentiveRelated && !sessionId) {
-      // session yoksa da mantıksal bir collecting obje oluştur
+      // session yoksa bile mantıksal bir collecting obje
       incentiveQuery = {
         status: "collecting",
         sector: lastUserMessage.content,
@@ -247,132 +239,116 @@ serve(async (req) => {
       };
     }
 
-    const ai = getAiClient();
-
-    // -------------------- SYSTEM PROMPT --------------------
-
-    const baseInstructions = `
-Sen Türkiye’de yatırım teşvik sistemine ve ilgili finansman araçlarına (özellikle 9903 sayılı Karar ve YTAK) çok hâkim, profesyonel bir yatırım teşvik ve finansman danışmanısın. Amacın, kullanıcının yatırım fikrini netleştirerek, ilgili mevzuat ve dokümanlardan yola çıkarak doğru ve sade teşvik/fınansman bilgisini sunmak ve mümkün oldukça kullanıcıdan eksik kalan bilgileri akıllıca tamamlamaktır.
-
-KULLANDIĞIN KAYNAKLAR (FILE SEARCH):
-- "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" → Yerel yatırım konuları il-il ürün listesi
-- "9903_kararr.pdf" / "9903_karar.pdf" → Genel teşvik rejimi, bölgeler, asgari yatırım, destek unsurları
-- "2025-1-9903_teblig.pdf" → Başvuru usulü, E-TUYS, tamamlama vizesi, ÇED/SGK, uygulama detayları
-- "2016-9495_Proje_Bazli.pdf" + "2019-1_9495_teblig.pdf" → Proje bazlı süper teşvik
-- "HIT30.pdf" → HIT-30 kapsamındaki yüksek teknoloji yatırım alanları
-- "ytak.pdf" → YTAK Uygulama Talimatı (kural metni)
-- "ytak_hesabi.pdf" → YTAK faiz hesaplama örneği
-- "sectorsearching.xlsx" → NACE ve sektör eşlemesi
-- "etuys_systemsel_sorunlar.txt" → E-TUYS teknik hata ve çözüm notları
-
-GENEL DOSYA STRATEJİSİ:
-- Yerel yatırım konusu → YKH listesi PDF.
-- Genel teşvik rejimi, bölge, destek unsurları → 9903 Karar + 2025/1 Tebliğ.
-- Proje bazlı süper teşvik → 2016-9495 Karar + 2019-1 Tebliğ.
-- HIT-30 → HIT30 PDF.
-- YTAK → ytak.pdf + ytak_hesabi.pdf.
-- E-TUYS teknik → etuys_systemsel_sorunlar.txt.
-`;
-
-    const interactiveInstructions = `
-Sen uzman bir yatırım teşvik ve finansman danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
-
-Mevcut Durum (kullanıcıdan aldığın bilgiler): ${incentiveQuery ? JSON.stringify(incentiveQuery) : "Bilinmiyor"}
-
-⚠️ ÇOK ÖNEMLİ:
-- BİLGİ TOPLAMA MODUNDAYKEN
-  - ASLA teşvik hesaplaması yapma,
-  - ASLA il/ilçe için destek oranı, bölge numarası, hangi desteklerden yararlanır gibi analizler üretme,
-  - ASLA YKH listesi veya 9903 içeriğini ayrıntılı şekilde tarayıp uzun açıklama yazma.
-- Sadece:
-  1) Kullanıcının verdiği bilgiyi 1 cümle ile kısaca özetle,
-  2) SONRA tam olarak 1 (BİR) tane yeni soru sor.
-- Cevabında “Özet:” + “Soru:” formatını kullanabilirsin, ama sorudan önce en fazla 1–2 cümlelik çok kısa bir onay dışında açıklama verme.
-
-Temel referans akışın:
-1) Sektör / yatırım konusu (ilk mesajda genellikle geldi varsay)
-2) İl
-3) İlçe
-4) OSB / Endüstri Bölgesi içinde mi dışında mı
-5) (Varsa) finansman tercihi / YTAK ihtiyacı
-
-Her cevapta eksik olan SADECE BİR temel bilgiyi tamamlamaya çalış:
-- Eğer sadece sektör biliniyorsa → İL sor.
-- Sektör + il biliniyorsa → İLÇE sor.
-- Sektör + il + ilçe biliniyorsa → OSB durumu sor.
-- Sektör + il + ilçe + OSB biliniyorsa → o zaman teşvik hesabı moduna geçilebilir (bunu sistem dışı mantık yönetiyor).
-
-ESNEKLİK:
-- Eğer kullanıcı bu sırada “Kütahya kaçıncı bölge?”, “YTAK faizi nasıl hesaplanıyor?” gibi doğrudan bilgi sorarsa:
-  - Kısaca (maksimum 2–3 cümle) cevap ver,
-  - Ardından AKIŞ SORUSUNA geri dön (örneğin “Şimdi yatırımınızı hangi ilçede planlıyorsunuz?”).
-
-SINIRLAR:
-- Yerel yatırım konuları için asla 9903 Karar içinden il listeleriyle tahmin yapma; sadece YKH listesi PDF’ini kullan.
-- Bölge numarası, asgari yatırım tutarı, destek oranı gibi konularda önce 9903 Karar’a, süreçle ilgili konularda 2025/1 Tebliğ’e başvur.
-- YTAK faiz hesapları için 9903 değil, YTAK Talimatı + hesap örneğini temel al.
-
-CEVAP FORMATIN (collecting modunda):
-- Çok kısa bir özet + tek soru. Örneğin:
-  “Özet: İnülin üretimi yatırımı düşündüğünüzü anlıyorum.
-   Soru: Bu yatırımı hangi ilde yapmayı planlıyorsunuz?”
-- Bu modda tablo, madde madde teşvik listesi, il/ilçe sayma gibi uzun analizler YAPMA.
-`;
-
-    const isCollecting = incentiveQuery?.status === "collecting";
-
-    const systemPrompt = isCollecting ? baseInstructions + "\n\n" + interactiveInstructions : baseInstructions;
-
     const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
 
-    const augmentedUserMessage = `
-${normalizedUserMessage}
+    // -------------------- DETERMINISTIK COLLECTING MODU --------------------
 
-(SİSTEM NOTU: Bu soruyu yanıtlarken File Search aracını kullan. 
-Aradığın terimin eş anlamlılarını ve farklı yazılışlarını da sorguya dahil et.
-Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele.
-Özetleme yapma; tüm sonuçları getir. Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" içinde detaylı arama yap.)
+    const isCollecting = isIncentiveRelated && incentiveQuery && incentiveQuery.status === "collecting";
+
+    if (isCollecting) {
+      console.log("➡ Collecting mode, no Gemini call. incentiveQuery:", incentiveQuery);
+
+      let text = "";
+      const sector = incentiveQuery.sector?.trim();
+      const province = incentiveQuery.province?.trim();
+      const district = incentiveQuery.district?.trim();
+      const osbStatus = incentiveQuery.osb_status?.trim();
+
+      // Hangi adımdayız?
+      if (!sector) {
+        // Neredeyse imkânsız ama fallback
+        text = "Özet: Yatırım fikrinizi anlıyorum.\nSoru: Hangi alanda (sektörde) yatırım yapmayı planlıyorsunuz?";
+      } else if (!province) {
+        text =
+          `Özet: "${sector}" alanında yatırım yapmak istediğinizi anlıyorum.\n` +
+          `Soru: Bu yatırımı Türkiye'nin hangi ilinde yapmayı planlıyorsunuz?`;
+      } else if (!district) {
+        text =
+          `Özet: "${sector}" yatırımı için ${province} ilini düşündüğünüzü anlıyorum.\n` +
+          `Soru: Bu yatırımı ${province} ilinin hangi ilçesinde yapmayı planlıyorsunuz?`;
+      } else if (!osbStatus) {
+        text =
+          `Özet: "${sector}" yatırımı için ${province} ili ${district} ilçesini düşündüğünüzü anladım.\n` +
+          `Soru: Yatırımı Organize Sanayi Bölgesi (OSB) veya Endüstri Bölgesi İÇİNDE mi, DIŞINDA mı yapmayı planlıyorsunuz? (Lütfen "OSB içi" veya "OSB dışı" şeklinde belirtin.)`;
+      } else {
+        // Tüm bilgiler dolu ama status hâlâ collecting ise (senkron problemi varsa)
+        text =
+          "Özet: Yatırımınız için temel bilgileri aldım.\n" +
+          "Soru: İsterseniz şimdi yatırımınız için hangi teşviklerden yararlanabileceğinizi birlikte inceleyelim; özel bir sorunuz var mı?";
+      }
+
+      return new Response(
+        JSON.stringify({
+          text,
+          groundingChunks: [],
+          mode: "collecting",
+          incentiveQuery,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // -------------------- ANSWER MODE (Gemini + File Search) --------------------
+
+    const ai = getAiClient();
+
+    const baseInstructions = `
+Sen Türkiye’de yatırım teşvik sistemi ve ilgili finansman araçlarına (özellikle 9903 sayılı Karar, 2025/1 Tebliğ, Yerel Yatırım Konuları Tebliği ve YTAK) hâkim, profesyonel bir yatırım teşvik danışmanısın.
+
+KULLANDIĞIN KAYNAKLAR:
+- "ykh_teblig_yatirim_konulari_listesi_yeni.pdf": Yerel Kalkınma Hamlesi yerel yatırım konuları, il-il ürün bazlı liste.
+- "9903_kararr.pdf" / "9903_karar.pdf": Genel teşvik sistemi, bölgeler, asgari yatırım tutarları, destek unsurları.
+- "2025-1-9903_teblig.pdf": Başvuru süreci, E-TUYS, tamamlama vizesi, ÇED/SGK, desteklerin uygulama usulü.
+- "2016-9495_Proje_Bazli.pdf" + "2019-1_9495_teblig.pdf": Proje bazlı (süper) teşvik sistemi.
+- "HIT30.pdf": HIT-30 yüksek teknoloji yatırım alanları.
+- "ytak.pdf": TCMB YTAK Uygulama Talimatı (kural metni).
+- "ytak_hesabi.pdf": YTAK faiz hesaplama örneği.
+- "sectorsearching.xlsx": NACE kodu – sektör eşlemesi.
+- "etuys_systemsel_sorunlar.txt": E-TUYS sistemsel hatalar ve çözümleri.
+
+KURAL:
+- Yerel yatırım konuları için yalnızca YKH listesine dayan.
+- Bölge numarası, asgari yatırım, destek unsurları için 9903 Karar + eklerini kullan.
+- Başvuru ve süreç detayları için 2025/1 Tebliğ’e bak.
+- YTAK ile ilgili hesap ve kurallar için ytak.pdf ve ytak_hesabi.pdf’i esas al.
+- Dokümandan uzun paragraf kopyalama, kendi cümlelerinle özetle.
+- Cevaba her zaman kısa bir özet paragraf ile başla, gerekiyorsa madde madde detaylandır.
 `;
 
-    // ⭐ Collecting modunda kullanıcı mesajını ŞİŞİRMİYORUZ
-    const userContentForModel = isCollecting ? normalizedUserMessage : augmentedUserMessage;
+    const augmentedUserMessage = `
+Kullanıcının sorusu: "${normalizedUserMessage}"
+
+Görev:
+1. Gerekli olduğunda File Search kullanarak yukarıdaki dokümanlarda ara.
+2. İlgili belgelerde bulduğun somut hükümlere dayanarak yanıt üret.
+3. Eğer bir ürün (ör. inülin) doğrudan listede yoksa, bunu açıkça söyle; üst kategoride değerlendirme yapıyorsan bunu da "yorum" olduğunu belirterek ifade et.
+4. Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" içinde ürünün geçtiği tüm illeri eksiksiz bul ve listele.
+`;
 
     const messagesForGemini = [
       ...messages.slice(0, -1),
       {
         ...lastUserMessage,
-        content: userContentForModel,
+        content: augmentedUserMessage,
       },
     ];
 
     const generationConfig = {
-      temperature: isCollecting ? 0.2 : 0.1,
-      maxOutputTokens: isCollecting ? 512 : 8192, // collecting modunda kısa tut
+      temperature: 0.1,
+      maxOutputTokens: 4096,
     };
 
-    console.log("=== Calling Gemini ===", {
-      isCollecting,
-      status: incentiveQuery?.status,
-      incentiveQuery,
-    });
+    console.log("➡ Answer mode, calling Gemini with File Search");
 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL_NAME,
-      contents: messagesForGemini
-        .map((m: any) => ({
-          role: m.role === "user" ? "user" : "model",
-          parts: [{ text: m.content }],
-        }))
-        .filter((m: any) => {
-          if (m.role === "user") return true;
-          const txt = m.parts?.[0]?.text || "";
-          if (!txt) return true;
-          if (txt.includes("tool_code") || txt.includes("file_search.query")) return false;
-          return true;
-        }),
+      contents: messagesForGemini.map((m: any) => ({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.content }],
+      })),
       config: {
         ...generationConfig,
-        systemInstruction: systemPrompt,
+        systemInstruction: baseInstructions,
         tools: [
           {
             fileSearch: {
@@ -386,14 +362,11 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
     const { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
 
     console.log("📊 Gemini response:", {
-      isCollecting,
       finishReason,
-      textPreview: textOut.substring(0, 160),
+      textPreview: textOut.substring(0, 200),
     });
 
-    // Boş yanıt kontrolü (sadece cevap modunda)
-    if ((!textOut || textOut.trim().length === 0) && !isCollecting) {
-      console.warn("⚠️ Empty response in answer mode, returning fallback.");
+    if (!textOut || textOut.trim().length === 0) {
       return new Response(
         JSON.stringify({
           text: "Üzgünüm, belgelerimde bu konuyla ilgili doğrudan bilgi bulamadım. Lütfen sorunuzu farklı kelimelerle ifade ederek tekrar deneyin veya ilgili Yatırım Destek Ofisi ile iletişime geçin.",
@@ -418,15 +391,11 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
       );
     }
 
-    // Dosya isimlerini zenginleştirme (kısa sürüm)
-    let enrichedChunks: any[] = [];
-    if (groundingChunks && groundingChunks.length > 0) {
-      enrichedChunks = groundingChunks;
-    }
-
     const result = {
       text: textOut,
-      groundingChunks: enrichedChunks,
+      groundingChunks: groundingChunks ?? [],
+      mode: "answer",
+      incentiveQuery,
     };
 
     return new Response(JSON.stringify(result), {
