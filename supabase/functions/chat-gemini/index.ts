@@ -566,6 +566,16 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
       finishReason,
     });
 
+    // Extract main keyword from user query for validation (e.g., "pektin" from "pektin hangi illerde")
+    const queryKeywords = normalizedUserMessage
+      .toLowerCase()
+      .replace(/hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|desteklen.*|var|üretim/gi, '')
+      .trim()
+      .split(/\s+/)
+      .filter(word => word.length > 3); // Min 4 character words
+
+    console.log('🔍 Extracted query keywords for validation:', queryKeywords);
+
     // ============= ADIM 1: BOŞ YANIT KONTROLÜ VE DYNAMIC RETRY =============
     if (!textOut || textOut.trim().length === 0) {
       console.warn("⚠️ Empty response detected! Triggering Gemini-powered retry...");
@@ -643,12 +653,36 @@ BAŞLA! 🚀
       // Enrichment işlemini retry sonuçları için de yapacağız (aşağıda)
     }
 
-    // ============= ADIM 2: YETERSİZ SONUÇ KONTROLÜ (FEEDBACK LOOP) =============
+    // ============= ADIM 2: ANAHTAR KELİME VALİDASYONU (KEYWORD FILTERING) =============
     // Genişletilmiş il sorgusu pattern'i
     const isProvinceQuery =
       /hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|nereye|kaç il|tek il|birkaç il|hangi bölge|desteklenen iller|desteklenen şehirler/i.test(
         normalizedUserMessage,
       );
+
+    // VALIDATE grounding chunks contain query keywords (for province queries)
+    let validatedChunks = groundingChunks;
+    if (isProvinceQuery && queryKeywords.length > 0) {
+      validatedChunks = groundingChunks.filter(chunk => {
+        const chunkContent = (chunk.retrievedContext?.text || '').toLowerCase();
+        // Check if ANY of the query keywords appear in the chunk
+        const hasKeyword = queryKeywords.some(keyword => chunkContent.includes(keyword));
+        
+        if (!hasKeyword) {
+          console.log(`⚠️ Filtered out chunk (no keyword match):`, {
+            title: chunk.retrievedContext?.title,
+            preview: chunkContent.substring(0, 100)
+          });
+        }
+        
+        return hasKeyword;
+      });
+
+      console.log(`🔍 Keyword validation: ${groundingChunks.length} chunks → ${validatedChunks.length} validated chunks`);
+      
+      // Update groundingChunks with validated ones
+      groundingChunks = validatedChunks;
+    }
 
     // Gerçek Türkiye il listesiyle filtreleme
     const foundProvinces = TURKISH_PROVINCES.filter((province) => textOut.includes(province));
