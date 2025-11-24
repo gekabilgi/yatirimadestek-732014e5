@@ -5,7 +5,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 // --- AYARLAR ---
 // Hız ve maliyet için 2.5 Flash seçildi.
 // Eğer bu model henüz API anahtarınızda aktif değilse 'gemini-1.5-flash' yapabilirsiniz.
-const GEMINI_MODEL_NAME = "gemini-2.5-pro";
+const GEMINI_MODEL_NAME = "gemini-2.5-flash";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -248,14 +248,14 @@ serve(async (req) => {
 ⚠️ KRİTİK ARAMA VE CEVAPLAMA KURALLARI:
 **1. **ASLA ÖZETLEME:** Kullanıcı bir liste istiyorsa (örneğin "hangi illerde?"), bulduğun 1-2 sonucu yazıp bırakma. Dökümanlarda geçen TÜM sonuçları madde madde yaz. "Ve diğerleri" ifadesini kullanmak YASAKTIR.
 **2. **ASLA YORUM YAPMA (Inference Yasak):**
-   - Kullanıcı "Pektin" sorduysa, belgede SADECE "Pektin" kelimesinin geçtiği illeri listele.
+   - Kullanıcı "Pektin" sorduysa, belgede SADECE "Pektin" kelimesinin geçtiği illeri listele lütfen.
    - Örnek Hata: "Afyon'da gıda katkı maddesi var, pektin de katkı maddesidir, o zaman Afyon'u da ekleyeyim" DEME. Bu YASAKTIR.
-   - Belgede kelime **birebir** geçmiyorsa, o ili listeye alma.
+   - Belgede kelime **birebir** geçmiyorsa, o ili listeye alma lütfen.
 
 **3. **EKSİKSİZ LİSTELEME (Deep Search):**
-   - Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında arama yaparken, **belgenin tamamını** taradığından emin ol.
-   - Eğer sonuç 10 tane ise 10'unu da yaz. "Bazıları şunlardır" deyip kesme.
-   - illerin hepsi farklı sayfalarda olabilir. Hepsini bul.
+   - Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında arama yaparken, **belgenin tamamını** taradığından emin ol lütfen.
+   - Eğer sonuç 10 tane ise 10'unu da yaz. "Bazıları şunlardır" deyip kesme lütfen.
+   - illerin hepsi farklı sayfalarda olabilir. Hepsini bul lütfen.
 
 **4. **NEGATİF KONTROL:**
    - Eğer bir ilde "Meyve tozu" yazıyor ama "Pektin" yazmıyorsa, o ili Pektin listesine EKLEME.
@@ -264,7 +264,7 @@ serve(async (req) => {
 
 **1. YEREL YATIRIMLAR VE ÜRÜN BAZLI ARAMA (⚠️ EN KRİTİK DOSYA):**
 * **Dosya:** "ykh_teblig_yatirim_konulari_listesi_yeni.pdf"
-* **Ne Zaman Bak:** Kullanıcı "Pektin yatırımı nerede yapılır?", "Kağıt üretimi hangi illerde desteklenir?", "Yerel kalkınma hamlesi" veya spesifik bir ürün adı sorduğunda.
+* **Ne Zaman Bak:** Kullanıcı "Pektin yatırımı nerede yapılır?", "Kağıt üretimi hangi illerde desteklenir?", "Yerel kalkınma hamlesi" veya spesifik bir ürün adı sorduğunda:
 * **NASIL ARA:** Bu dosyayı **SATIR SATIR TARA.** Bir ürünün adı 5 farklı ilin altında geçiyorsa, 5'ini de bulmadan cevabı oluşturma.
 
 **2. GENEL TEŞVİK MEVZUATI VE İDARİ SÜREÇLER:**
@@ -318,9 +318,9 @@ Kullanıcıdan eksik bilgileri (Sektör -> İl -> İlçe -> OSB) sırasıyla ist
 ${normalizedUserMessage}
 
 (SİSTEM NOTU: Bu soruyu yanıtlarken File Search aracını kullan. 
-Aradığın terimin eş anlamlılarını (synonyms) ve farklı yazılışlarını da sorguya dahil et. 
-Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele. 
-Özetleme yapma. Tüm sonuçları getir. Özellikle 'ykh_teblig_yatirim_konulari_listesi_yeni.pdf' içinde detaylı arama yap.)
+Aradığın terimin eş anlamlılarını (synonyms) ve farklı yazılışlarını da sorguya dahil et lütfen. Buna göre bulduğun sonuçların olduğu kaynaklarda aranan terim/kelime/kavram yoksa sonuçlara dahil etme lütfen.
+Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele lütfen. 
+Özetleme yapma. Tüm sonuçları getir. Özellikle 'ykh_teblig_yatirim_konulari_listesi_yeni.pdf' içinde detaylı arama yap lütfen.)
 `;
 
     const messagesForGemini = [
