@@ -166,6 +166,26 @@ serve(async (req) => {
     }
 
     const lowerContent = lastUserMessage.content.toLowerCase();
+    
+    // STEP 3: Kapsamlı arama algılama fonksiyonu
+    const isComprehensiveSearchQuery = (content: string): boolean => {
+      const lower = content.toLowerCase();
+      const hasLocationQuestion = 
+        lower.includes("hangi il") || 
+        lower.includes("nerede") || 
+        lower.includes("nerelerde") ||
+        lower.includes("hangi şehir") ||
+        lower.includes("hangi yer");
+        
+      const hasInvestmentContext = 
+        lower.includes("desteklen") || 
+        lower.includes("yatırım") ||
+        lower.includes("yapabilirim") ||
+        lower.includes("teşvik");
+        
+      return hasLocationQuestion && hasInvestmentContext;
+    };
+    
     const isIncentiveRelated =
       lowerContent.includes("teşvik") ||
       lowerContent.includes("tesvik") ||
@@ -179,7 +199,9 @@ serve(async (req) => {
       lowerContent.includes("uretim") ||
       lowerContent.includes("imalat");
 
+    const needsComprehensiveSearch = isComprehensiveSearchQuery(lowerContent);
     console.log("isIncentiveRelated:", isIncentiveRelated);
+    console.log("needsComprehensiveSearch:", needsComprehensiveSearch);
 
     const supabase = getSupabaseAdmin();
     let incentiveQuery: any = null;
@@ -280,8 +302,9 @@ serve(async (req) => {
 
     const ai = getAiClient();
 
+    // STEP 2: Temperature 0.1'e düşür
     const generationConfig = {
-      temperature: 0.3,
+      temperature: 0.1,
       maxOutputTokens: 8192,
     };
 
@@ -358,10 +381,26 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 **Soruları **Türkçe** cevapla.
 **Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
 
-⚠️ ÖZEL ARAMA STRATEJİSİ:
-- Yerel yatırım konuları sorulduğunda: "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ÇOK DİKKATLİ ara
+⚠️⚠️⚠️ KAPSAMLI İL ARAMA STRATEJİSİ ⚠️⚠️⚠️
+
+**KULLANICI "HANGİ İLLERDE / NEREDE" SORUSU SORDUĞUNDA:**
+
+1. **İLK ARAMA:** Ürün/sektör adıyla ara (örn: "pektin")
+2. **İKİNCİ ARAMA:** Alternatif terimlerle ara (örn: "meyve atıklarından katma değerli ürün")
+3. **ÜÇÜNCÜ ARAMA:** Genel kategoriyle ara (örn: "gıda işleme", "tarımsal ürün")
+4. **KONTROL:** İlk 3 aramada 4'ten az il bulduysan → TEKRAR ARA!
+
+**KRİTİK KURAL:**
+- Kullanıcı "hangi illerde" dediğinde sadece 2-3 il söyleyip DURMA!
+- Belgede geçen TÜM illeri listelemeden yanıt verme!
+- Her aramada farklı keyword kombinasyonları dene!
+
+**YASAK:** "Sadece X, Y, Z illerinde desteklenir" deyip durmak. 
+**DOĞRU:** Tüm dosyada anahtar kelimeleri tarayıp ilgili TÜM illeri listele.
+
+⚠️ YEREL YATIRIM KONULARI:
+- "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ÇOK DİKKATLİ ara
 - İl bazlı aramada: İl ismini MUTLAKA arama sorgunda kullan
-- Bir ürün adı örneğin: pektin hangi illerde desteklenir?  veya yatırım adı pektin yatırımı hangi illerde destelenir? vb. sorularda tüm dosyada DİKKATLİ ara ve bahsi geçen kelimeler kaç ilin yatırım konularında geçiyorsa o illeri sırala.  
 - Eğer ilk aramada bulamazsan, FARKLI KELİMELERLE tekrar ara
 - "Bilgi bulunmamaktadır" demeden önce en az 2 farklı arama yap
 
@@ -393,10 +432,31 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
       },
     ];
 
+    // STEP 4: Özel system prompt ekleme
+    const comprehensiveSearchInstruction = needsComprehensiveSearch
+      ? `
+
+⚠️⚠️⚠️ KAPSAMLI ARAMA MODU AKTİF ⚠️⚠️⚠️
+
+Kullanıcı "hangi illerde/nerede" türü soru sordu. ÇOK ÖNEMLİ:
+
+**ZORUNLU ARAMALAR (SIRAYLA YAPMA):**
+1. Ana ürün/sektör adıyla ara
+2. Alternatif terimlerle ara
+3. Genel kategoriyle ara
+4. İlk 3 aramada 4'ten az il bulduysan → TEKRAR ARA
+
+**UNUTMA:** Kullanıcı TÜM illeri öğrenmek istiyor. 2-3 il söyleyip durma!
+
+**DOĞRULAMA:** Belgede geçen TÜM illeri listelemeden yanıt verme.
+
+`
+      : "";
+
     const systemPrompt =
       incentiveQuery && incentiveQuery.status === "collecting"
         ? baseInstructions + "\n\n" + interactiveInstructions + "\n\n" + incentiveSlotFillingInstruction
-        : baseInstructions;
+        : baseInstructions + comprehensiveSearchInstruction;
 
     console.log("=== Calling Gemini ===");
     console.log("systemPrompt length:", systemPrompt.length);
