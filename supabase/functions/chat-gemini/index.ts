@@ -255,7 +255,7 @@ serve(async (req) => {
 **3. **EKSİKSİZ LİSTELEME (Deep Search):**
    - Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında arama yaparken, **belgenin tamamını** taradığından emin ol.
    - Eğer sonuç 10 tane ise 10'unu da yaz. "Bazıları şunlardır" deyip kesme.
-   - Karaman, Isparta, Adana, Mersin gibi illerin hepsi farklı sayfalarda olabilir. Hepsini bul.
+   - illerin hepsi farklı sayfalarda olabilir. Hepsini bul.
 
 **4. **NEGATİF KONTROL:**
    - Eğer bir ilde "Meyve tozu" yazıyor ama "Pektin" yazmıyorsa, o ili Pektin listesine EKLEME.
