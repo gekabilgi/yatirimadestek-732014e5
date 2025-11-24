@@ -334,22 +334,27 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 `;
 
     const baseInstructions = `
-Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
-Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
-Soruları **Türkçe** cevapla.
-Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
+**Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
+**Kullanıcı tarafından sorulan bir soruyu öncelikle tüm dökümanlarda ara, eğer sorunun cevabı özel kurallara uygunsa hangi kural en uygun ise ona göre cevabı oluştur, eğer interaktif bir sohbet olarak algılarsan "interactiveInstructions" buna göre hareket et.
+**Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
+**Soruları **Türkçe** cevapla.
+**Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
+
+⚠️ ÖNEMLİ: Belge içeriklerini AYNEN KOPYALAMA. Bilgileri kendi cümlelerinle yeniden ifade et, özetle ve açıkla. Hiçbir zaman doğrudan alıntı yapma.
 
 Özel Kurallar:
-- 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_Sayılı_Karar.pdf" dosyasında ara.
+- 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_karar.pdf" dosyasında ara.
 - İllerin Bölge Sınıflandırması sorulduğunda (Örn: Kütahya kaçıncı bölge?), cevabı 9903 sayılı kararın eklerinde veya ilgili tebliğ dosyalarında (EK-1 İllerin Bölgesel Sınıflandırması) ara.
-- 9903 sayılı kararın uygulama usul ve esasları niteliğinde tebliğ, teşvik belgesi başvuru şartları... "2025-1-9903_teblig.pdf" dosyasında ara.
+- 9903 sayılı kararın uygulanmasına ilişkin usul ve esaslar, yatırım teşvik belgesi başvuru şartları (yöntem, gerekli belgeler), hangi yatırım cinslerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, özel sektör projeleri için Stratejik Hamle Programı değerlendirme kriterleri ve süreci, güneş/rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için aranan ek şartlar ile faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama usullerine ilişkin bir soru geldiğinde, cevabı öncelikle ve ağırlıklı olarak "2025-1-9903_teblig.pdf" dosyası içinde ara ve yanıtını mümkün olduğunca bu dosyadaki hükümlere dayandır.
 - yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, yada Pektin yatırımını nerde yapabilirim gibi sorular geldiğinde sorunun cevaplarını mümkün mertebe "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında ara
 - 9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara
 - 9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara
 - HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara
 - Yatırım taahhütlü avans kredisi, ytak hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara
 - 9903 saylı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara 
-- bir yatırım konusu sorulursa veya bir yatırım konusu hakkında veya nace kodu sorulursa "sectorsearching.xlsx" dosyasında ara.
+- Bir yatırım konusu sorulursa veya bir yatırım konusu hakkında veya nace kodu sorulursa "sectorsearching.xlsx" dosyasında ara.
+- Etuys için "Sistemsel Sorunlar (Açılmama, İmza Hatası vs.)", "Belge Başvurusuna İlişkin sorular", "Devir İşlemleri", "Revize Başvuruları", "Yerli ve İthal Gerçekleştirmeler-Fatura ve Gümrük İşlemleri", "Vergi İstisna Yazısı Alma İşlemleri", "Tamamlama Vizesi İşlemleri", ve "hata mesajları" ile ilgili sistemsel sorunlarda çözüm arayanlar için "etuys_systemsel_sorunlar.txt" dosyasında ara.
+- Bilgileri verirken mutlaka kendi cümlelerinle açıkla, özetle ve yeniden ifade et. Belge içeriğini kelimesi kelimesine kopyalama.
 - Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
 - En son satıra detaylı bilgi almak için ilgili ilin yatırım destek ofisi ile iletişime geçebilirsiniz.
 `;
@@ -402,23 +407,8 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
     console.log("textOut length:", textOut?.length);
     console.log("groundingChunks count:", groundingChunks?.length);
 
-    if (finishReason === "RECITATION" || finishReason === "SAFETY") {
+    if (finishReason === "SAFETY") {
       console.log("⚠️ Response blocked due to:", finishReason);
-
-      const userContentLower = lastUserMessage.content.toLowerCase();
-      const isKdvQuestion = userContentLower.includes("kdv") && userContentLower.includes("istisna");
-
-      if (isKdvQuestion) {
-        console.log("→ Using KDV fallback response");
-        const kdvFallbackResponse = {
-          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
-          groundingChunks: [],
-        };
-
-        return new Response(JSON.stringify(kdvFallbackResponse), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
 
       return new Response(
         JSON.stringify({
@@ -433,44 +423,129 @@ Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
         },
       );
     }
-
     let finalText = textOut;
+    // === DEBUG: Log groundingChunks structure ===
+    if (groundingChunks && groundingChunks.length > 0) {
+      console.log("=== GROUNDING CHUNKS DEBUG (Backend) ===");
+      console.log("Total chunks:", groundingChunks.length);
 
-    if (!finalText) {
-      console.warn("⚠️ No text content extracted from Gemini response");
+      groundingChunks.forEach((chunk: any, idx: number) => {
+        console.log(`\n--- Chunk ${idx + 1} ---`);
+        console.log("Full chunk structure:", JSON.stringify(chunk, null, 2));
 
-      const userContentLower = lastUserMessage.content.toLowerCase();
-      const isKdvQuestion = userContentLower.includes("kdv") && userContentLower.includes("istisna");
+        // Log retrievedContext properties
+        if (chunk.retrievedContext) {
+          console.log("retrievedContext keys:", Object.keys(chunk.retrievedContext));
+          console.log("retrievedContext.title:", chunk.retrievedContext?.title);
+          console.log("retrievedContext.uri:", chunk.retrievedContext?.uri);
+          console.log("retrievedContext.documentName:", chunk.retrievedContext?.documentName);
+          console.log("retrievedContext.source:", chunk.retrievedContext?.source);
+          console.log("retrievedContext.document:", chunk.retrievedContext?.document);
+        } else {
+          console.log("⚠️ No retrievedContext found in chunk");
+        }
 
-      // Eğer KDV istisnası ile ilgili bir soruysa, her durumda kullanıcıya sabit bir açıklama ver
-      if (isKdvQuestion) {
-        console.log("→ Using KDV fallback response (no text content)");
-        const kdvFallbackResponse = {
-          text: "Genel olarak, teşvik belgesi kapsamındaki yatırım için alınacak yeni makine ve teçhizatın yurt içi teslimi ve ithalinde KDV uygulanmaz. İnşaat-bina işleri, arsa edinimi, taşıt alımları, sarf malzemeleri, bakım-onarım ve danışmanlık gibi hizmetler ile ikinci el ekipman ise genellikle kapsam dışıdır. Nihai kapsam, belgenizdeki makine-teçhizat listesine ve ilgili mevzuata göre belirlenir.",
-          groundingChunks: [],
-        };
+        console.log("customMetadata type:", typeof chunk.retrievedContext?.customMetadata);
+        console.log("customMetadata isArray:", Array.isArray(chunk.retrievedContext?.customMetadata));
+        console.log("customMetadata full:", JSON.stringify(chunk.retrievedContext?.customMetadata, null, 2));
 
-        return new Response(JSON.stringify(kdvFallbackResponse), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Diğer durumlarda 400 yerine nazik bir fallback cevabı dön, böylece arayüz hata vermesin
-      const safeFallbackResponse = {
-        text: "Yüklenen belgelerden bu soruya şu anda net bir yanıt üretemedim. Lütfen sorunuzu biraz daha detaylandırarak veya farklı bir şekilde ifade ederek tekrar deneyin.",
-        groundingChunks: [],
-      };
-
-      return new Response(JSON.stringify(safeFallbackResponse), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        if (chunk.retrievedContext?.customMetadata) {
+          const metadata = chunk.retrievedContext.customMetadata;
+          if (Array.isArray(metadata)) {
+            console.log(`  customMetadata array length: ${metadata.length}`);
+            metadata.forEach((meta: any, metaIdx: number) => {
+              console.log(`  Meta ${metaIdx}:`, JSON.stringify(meta, null, 2));
+              if (meta.key) {
+                console.log(`    - key: "${meta.key}"`);
+                console.log(`    - stringValue: "${meta.stringValue}"`);
+                console.log(`    - value: "${meta.value}"`);
+              }
+            });
+          }
+        }
       });
+      console.log("=== END GROUNDING CHUNKS DEBUG ===\n");
     }
+
+    // === Real-time Document Metadata Enrichment ===
+    // Extract document IDs (prioritize documentName, fallback to title)
+    const docIds = groundingChunks
+      .map((c: any) => {
+        const rc = c.retrievedContext ?? {};
+        // Öncelik: documentName (tam resource adı) → title (ID only)
+        if (rc.documentName) return rc.documentName;
+        if (rc.title) {
+          // title sadece ID ise, store ile birleştir
+          return rc.title.startsWith("fileSearchStores/") ? rc.title : `${storeName}/documents/${rc.title}`;
+        }
+        return null;
+      })
+      .filter((id: string | null): id is string => !!id);
+
+    const uniqueDocIds = [...new Set(docIds)];
+
+    console.log("=== Fetching Document Metadata ===");
+    console.log("Unique document IDs:", uniqueDocIds);
+
+    const documentMetadataMap: Record<string, string> = {};
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+
+    const normalizeDocumentName = (rawId: string): string => {
+      if (rawId.startsWith("fileSearchStores/")) {
+        return rawId;
+      }
+      // rawId sadece belge ID'si ise
+      return `${storeName}/documents/${rawId}`;
+    };
+
+    for (const rawId of uniqueDocIds) {
+      try {
+        const documentName = normalizeDocumentName(rawId);
+        const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
+        console.log(`Fetching metadata for: ${documentName}`);
+
+        const docResp = await fetch(url);
+        if (docResp.ok) {
+          const docData = await docResp.json();
+          const customMeta = docData.customMetadata || [];
+
+          console.log(`Document ${rawId} customMetadata:`, customMeta);
+
+          // Find "Dosya" or "fileName" key
+          const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
+
+          if (filenameMeta) {
+            const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
+            documentMetadataMap[rawId] = enrichedName;
+            console.log(`✓ Enriched ${rawId} -> ${enrichedName}`);
+          } else {
+            console.log(`⚠ No filename metadata found for ${rawId}`);
+          }
+        } else {
+          console.error(`Failed to fetch ${documentName}: ${docResp.status} - ${await docResp.text()}`);
+        }
+      } catch (e) {
+        console.error(`Error fetching metadata for ${rawId}:`, e);
+      }
+    }
+
+    // Enrich groundingChunks with filenames
+    const enrichedChunks = groundingChunks.map((chunk: any) => {
+      const rc = chunk.retrievedContext ?? {};
+      const rawId = rc.documentName || rc.title || null;
+
+      return {
+        ...chunk,
+        enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
+      };
+    });
+
+    console.log("=== Enrichment Complete ===");
+    console.log("Metadata map:", documentMetadataMap);
 
     const result = {
       text: finalText,
-      groundingChunks: groundingChunks || [],
+      groundingChunks: enrichedChunks || [],
     };
 
     console.log("✓ Returning successful response");
