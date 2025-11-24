@@ -661,25 +661,39 @@ BAŞLA! 🚀
       );
 
     // VALIDATE grounding chunks contain query keywords (for province queries)
+    // CRITICAL FIX: Only include chunks where investment topic ACTUALLY mentions the searched keyword
     let validatedChunks = groundingChunks;
     if (isProvinceQuery && queryKeywords.length > 0) {
+      const mainKeyword = queryKeywords[0]; // Primary keyword (e.g., "pektin")
+      
       validatedChunks = groundingChunks.filter((chunk) => {
         const chunkContent = (chunk.retrievedContext?.text || "").toLowerCase();
-        // Check if ANY of the query keywords appear in the chunk
-        const hasKeyword = queryKeywords.some((keyword) => chunkContent.includes(keyword));
-
-        if (!hasKeyword) {
-          console.log(`⚠️ Filtered out chunk (no keyword match):`, {
+        
+        // Extract investment topic from chunk (text between "- " and newline or end)
+        const topicMatch = chunkContent.match(/(?:^|\n)(.+?(?:\(.*?\))?)\s*(?:\n|$)/);
+        const investmentTopic = topicMatch ? topicMatch[1] : chunkContent;
+        
+        // Check if the main keyword appears in the investment topic description
+        // This prevents "Fındık Kabuğu... (aktif karbon...)" from matching "pektin" queries
+        const topicContainsKeyword = investmentTopic.includes(mainKeyword);
+        
+        if (!topicContainsKeyword) {
+          console.log(`❌ FILTERED chunk - keyword "${mainKeyword}" NOT in investment topic:`, {
             title: chunk.retrievedContext?.title,
-            preview: chunkContent.substring(0, 100),
+            investmentTopic: investmentTopic.substring(0, 150),
+          });
+        } else {
+          console.log(`✅ VALID chunk - keyword "${mainKeyword}" found in:`, {
+            title: chunk.retrievedContext?.title,
+            investmentTopic: investmentTopic.substring(0, 150),
           });
         }
 
-        return hasKeyword;
+        return topicContainsKeyword;
       });
 
       console.log(
-        `🔍 Keyword validation: ${groundingChunks.length} chunks → ${validatedChunks.length} validated chunks`,
+        `🔍 Strict keyword validation: ${groundingChunks.length} chunks → ${validatedChunks.length} validated chunks`,
       );
 
       // Update groundingChunks with validated ones
