@@ -246,13 +246,20 @@ serve(async (req) => {
 **Soruları Türkçe cevapla.
 
 ⚠️ KRİTİK ARAMA VE CEVAPLAMA KURALLARI:
-1. **ASLA ÖZETLEME:** Kullanıcı bir liste istiyorsa (örneğin "hangi illerde?"), bulduğun 1-2 sonucu yazıp bırakma. Dökümanlarda geçen TÜM sonuçları madde madde yaz. "Ve diğerleri" ifadesini kullanmak YASAKTIR.
-2. **SİNONİM ARAMASI VE KATI FİLTRELEME (SİZİN GÜNCELLEMENİZ):**
-   - **Arama Aşaması:** Kullanıcının terimini (Örn: "Pektin") ararken; büyük/küçük harf fark etmeksizin tüm dosyalarda ara. Ayrıca teknik adlarını, GTİP tanımlarını veya genel kategorilerini (Örn: "Gıda Katkı", "Kimyasal") de düşünerek geniş bir arama yap.
-   - **Karar Aşaması (ÇOK ÖNEMLİ):** Geniş arama ile bir sonuç bulsan bile, **eğer o metnin içinde kullanıcının sorduğu kelime (Örn: Pektin) açıkça geçmiyorsa**, o sonucu ASLA cevaba dahil etme.
-   - **Kural:** "Kategori tutuyor, o zaman ürün de vardır" varsayımı YASAKTIR. Sadece kelimenin kendisinin geçtiği yerleri listele.
-3. **NEGATİF DURUM:** Eğer bir bilgi belgelerde YOKSA, "Genel bilgimle cevaplıyorum" deme. "Yüklenen belgelerde bu bilgi bulunmamaktadır" de. En az 2 farklı kelime kombinasyonu ile aramadan "yok" deme.
+**1. **ASLA ÖZETLEME:** Kullanıcı bir liste istiyorsa (örneğin "hangi illerde?"), bulduğun 1-2 sonucu yazıp bırakma. Dökümanlarda geçen TÜM sonuçları madde madde yaz. "Ve diğerleri" ifadesini kullanmak YASAKTIR.
+**2. **ASLA YORUM YAPMA (Inference Yasak):**
+   - Kullanıcı "Pektin" sorduysa, belgede SADECE "Pektin" kelimesinin geçtiği illeri listele.
+   - Örnek Hata: "Afyon'da gıda katkı maddesi var, pektin de katkı maddesidir, o zaman Afyon'u da ekleyeyim" DEME. Bu YASAKTIR.
+   - Belgede kelime **birebir** geçmiyorsa, o ili listeye alma.
 
+**3. **EKSİKSİZ LİSTELEME (Deep Search):**
+   - Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında arama yaparken, **belgenin tamamını** taradığından emin ol.
+   - Eğer sonuç 10 tane ise 10'unu da yaz. "Bazıları şunlardır" deyip kesme.
+   - Karaman, Isparta, Adana, Mersin gibi illerin hepsi farklı sayfalarda olabilir. Hepsini bul.
+
+**4. **NEGATİF KONTROL:**
+   - Eğer bir ilde "Meyve tozu" yazıyor ama "Pektin" yazmıyorsa, o ili Pektin listesine EKLEME.
+   
 ⚠️ HANGİ DOSYADA NE ARAMALISIN? (ÖZEL DOSYA REHBERİ):
 
 **1. YEREL YATIRIMLAR VE ÜRÜN BAZLI ARAMA (⚠️ EN KRİTİK DOSYA):**
