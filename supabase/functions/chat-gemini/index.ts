@@ -78,16 +78,87 @@ const parseOsbStatus = (text: string): "İÇİ" | "DIŞI" | null => {
 
 // Türkiye'deki tüm il isimleri
 const TURKISH_PROVINCES = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya',
-  'Ardahan', 'Artvin', 'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik',
-  'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
-  'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir',
-  'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul',
-  'İzmir', 'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kilis',
-  'Kırıkkale', 'Kırklareli', 'Kırşehir', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa',
-  'Mardin', 'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize',
-  'Sakarya', 'Samsun', 'Şanlıurfa', 'Siirt', 'Sinop', 'Sivas', 'Şırnak', 'Tekirdağ',
-  'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
+  "Adana",
+  "Adıyaman",
+  "Afyonkarahisar",
+  "Ağrı",
+  "Aksaray",
+  "Amasya",
+  "Ankara",
+  "Antalya",
+  "Ardahan",
+  "Artvin",
+  "Aydın",
+  "Balıkesir",
+  "Bartın",
+  "Batman",
+  "Bayburt",
+  "Bilecik",
+  "Bingöl",
+  "Bitlis",
+  "Bolu",
+  "Burdur",
+  "Bursa",
+  "Çanakkale",
+  "Çankırı",
+  "Çorum",
+  "Denizli",
+  "Diyarbakır",
+  "Düzce",
+  "Edirne",
+  "Elazığ",
+  "Erzincan",
+  "Erzurum",
+  "Eskişehir",
+  "Gaziantep",
+  "Giresun",
+  "Gümüşhane",
+  "Hakkari",
+  "Hatay",
+  "Iğdır",
+  "Isparta",
+  "İstanbul",
+  "İzmir",
+  "Kahramanmaraş",
+  "Karabük",
+  "Karaman",
+  "Kars",
+  "Kastamonu",
+  "Kayseri",
+  "Kilis",
+  "Kırıkkale",
+  "Kırklareli",
+  "Kırşehir",
+  "Kocaeli",
+  "Konya",
+  "Kütahya",
+  "Malatya",
+  "Manisa",
+  "Mardin",
+  "Mersin",
+  "Muğla",
+  "Muş",
+  "Nevşehir",
+  "Niğde",
+  "Ordu",
+  "Osmaniye",
+  "Rize",
+  "Sakarya",
+  "Samsun",
+  "Şanlıurfa",
+  "Siirt",
+  "Sinop",
+  "Sivas",
+  "Şırnak",
+  "Tekirdağ",
+  "Tokat",
+  "Trabzon",
+  "Tunceli",
+  "Uşak",
+  "Van",
+  "Yalova",
+  "Yozgat",
+  "Zonguldak",
 ];
 
 const normalizeRegionNumbers = (text: string): string => {
@@ -335,7 +406,7 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
     const generationConfig = {
-      temperature: 0.1,
+      temperature: 0.5,
       maxOutputTokens: 8192,
     };
 
@@ -559,7 +630,7 @@ BAŞLA! 🚀
             emptyResponse: true,
             retriedWithDynamicSearch: true,
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
@@ -574,10 +645,13 @@ BAŞLA! 🚀
 
     // ============= ADIM 2: YETERSİZ SONUÇ KONTROLÜ (FEEDBACK LOOP) =============
     // Genişletilmiş il sorgusu pattern'i
-    const isProvinceQuery = /hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|nereye|kaç il|tek il|birkaç il|hangi bölge|desteklenen iller|desteklenen şehirler/i.test(normalizedUserMessage);
-    
+    const isProvinceQuery =
+      /hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|nereye|kaç il|tek il|birkaç il|hangi bölge|desteklenen iller|desteklenen şehirler/i.test(
+        normalizedUserMessage,
+      );
+
     // Gerçek Türkiye il listesiyle filtreleme
-    const foundProvinces = TURKISH_PROVINCES.filter(province => textOut.includes(province));
+    const foundProvinces = TURKISH_PROVINCES.filter((province) => textOut.includes(province));
     const uniqueProvinces = [...new Set(foundProvinces)];
 
     console.log("🔍 Province Query Analysis:", {
@@ -587,7 +661,9 @@ BAŞLA! 🚀
     });
 
     if (isProvinceQuery && uniqueProvinces.length > 0 && uniqueProvinces.length < 3) {
-      console.warn(`⚠️ Insufficient province results (${uniqueProvinces.length}/expected ≥3). Triggering feedback loop...`);
+      console.warn(
+        `⚠️ Insufficient province results (${uniqueProvinces.length}/expected ≥3). Triggering feedback loop...`,
+      );
 
       const feedbackPrompt = `
 ⚠️ ÖNCEKİ CEVABINIZ YETERSİZ BULUNDU - GENİŞLETİLMİŞ ARAMA GEREKLİ
@@ -645,13 +721,9 @@ BAŞLA! 🔍
         finishReason = feedbackResult.finishReason;
 
         // Flag ekle ki frontend bilsin
-        const finalWithFeedback = await enrichAndReturn(
-          textOut,
-          groundingChunks,
-          storeName,
-          GEMINI_API_KEY || "",
-          { enhancedViaFeedbackLoop: true }
-        );
+        const finalWithFeedback = await enrichAndReturn(textOut, groundingChunks, storeName, GEMINI_API_KEY || "", {
+          enhancedViaFeedbackLoop: true,
+        });
         return finalWithFeedback;
       }
     }
@@ -698,7 +770,7 @@ async function enrichAndReturn(
   groundingChunks: any[],
   storeName: string,
   apiKey: string,
-  extraFlags: Record<string, any> = {}
+  extraFlags: Record<string, any> = {},
 ) {
   // Extract document IDs
   const docIds = groundingChunks
