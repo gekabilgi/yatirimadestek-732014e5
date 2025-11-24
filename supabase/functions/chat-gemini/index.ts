@@ -108,12 +108,33 @@ function extractTextAndChunks(response: any) {
   const candidate = response?.candidates?.[0];
   const finishReason: string | undefined = candidate?.finishReason;
   const groundingChunks = candidate?.groundingMetadata?.groundingChunks ?? [];
-  const parts = candidate?.content?.parts ?? []; // Iterate over parts and only collect the 'text' property.
-  // This explicitly filters out internal 'toolCall', 'executableCode', 'codeExecutionResult', and 'thought' blocks.
-  const textOut = parts
-    .map((p: any) => p.text)
-    .filter((text: string | undefined) => typeof text === "string")
-    .join("");
+  const parts = candidate?.content?.parts ?? [];
+
+  const textPieces: string[] = [];
+
+  for (const p of parts) {
+    // Skip any non-user-visible content
+    if (!p) continue;
+
+    // Gemini "thought" / internal reasoning
+    if (p.thought === true) continue;
+
+    // Tool / code execution structures
+    if (p.executableCode || p.codeExecutionResult) continue;
+    if (p.functionCall || p.toolCall) continue;
+
+    // Only keep real text
+    if (typeof p.text !== "string") continue;
+
+    // Defensive: skip any text that clearly looks like debug/tool traces
+    const t = p.text.trim();
+    if (t.startsWith("tool_code") || t.startsWith("code_execution_result")) continue;
+    if (t.includes("file_search.query(")) continue;
+
+    textPieces.push(p.text);
+  }
+
+  const textOut = textPieces.join("");
   return { finishReason, groundingChunks, textOut };
 }
 
@@ -181,9 +202,6 @@ serve(async (req) => {
         const userContent = lastUserMessage.content;
         let updated = false;
 
-        // Note: The slot filling logic below is sequential and prone to the "greedy" problem.
-        // It's left as is to match your original structure, but the prompt fixes
-        // and history cleanup should make the chatbot's *output* cleaner.
         if (!incentiveQuery.sector) {
           incentiveQuery.sector = userContent;
           updated = true;
@@ -290,13 +308,13 @@ serve(async (req) => {
 
 **CEVAP STRATEJİSİ (ÖNEMLİ):**
 1. **Eğer Kullanıcı Soru Sorduysa:** (Örn: "Kütahya hangi bölgede?", "KDV istisnası nedir?")
-   - **ÖNCE CEVAPLA:** Yüklenen belgelerden (Karar ekleri, il listeleri vb.) cevabı bul ve kullanıcıya ver.
-   - **SONRA DEVAM ET:** Cevabın hemen ardından, eksik olan sıradaki bilgiyi sor.
-   - *Örnek:* "Kütahya ili genel teşvik sisteminde 4. bölgede yer almaktadır. Peki yatırımınızı hangi ilçede yapmayı planlıyorsunuz?"
+   - **ÖNCE CEVAPLA:** Yüklenen belgelerden (Karar ekleri, il listeleri vb.) cevabı bul ve kullanıcıya ver.
+   - **SONRA DEVAM ET:** Cevabın hemen ardından, eksik olan sıradaki bilgiyi sor.
+   - *Örnek:* "Kütahya ili genel teşvik sisteminde 4. bölgede yer almaktadır. Peki yatırımınızı hangi ilçede yapmayı planlıyorsunuz?"
 
 2. **Eğer Kullanıcı Sadece Veri Verdiyse:** (Örn: "Tekstil", "Ankara")
-   - Kısa bir onay ver ve sıradaki eksik bilgiyi sor.
-   - Maksimum 2 cümle kullan.
+   - Kısa bir onay ver ve sıradaki eksik bilgiyi sor.
+   - Maksimum 2 cümle kullan.
 
 **Toplanan Bilgiler:**
 ${incentiveQuery.sector ? `✓ Sektör: ${incentiveQuery.sector}` : "○ Sektör: Bekleniyor"}
@@ -383,9 +401,14 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
           role: m.role === "user" ? "user" : "model",
           parts: [{ text: m.content }],
         }))
-        // FIX 3: Filter out assistant messages containing the leaked tool content
-        // to prevent the AI from learning the bad behavior.
-        .filter((m: any) => m.role === "user" || !m.parts[0].text.includes("tool_code\nprint(file_search.query")),
+        // FIX 3: Filter out assistant messages containing leaked tool content more generically
+        .filter((m: any) => {
+          if (m.role === "user") return true;
+          const txt = m.parts?.[0]?.text || "";
+          if (!txt) return true;
+          if (txt.includes("tool_code") || txt.includes("file_search.query")) return false;
+          return true;
+        }),
       config: {
         ...generationConfig,
         systemInstruction: systemPrompt,
@@ -424,7 +447,7 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
       );
     }
     let finalText = textOut;
-    // === DEBUG: Log groundingChunks structure ===
+
     if (groundingChunks && groundingChunks.length > 0) {
       console.log("=== GROUNDING CHUNKS DEBUG (Backend) ===");
       console.log("Total chunks:", groundingChunks.length);
@@ -432,8 +455,7 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
       groundingChunks.forEach((chunk: any, idx: number) => {
         console.log(`\n--- Chunk ${idx + 1} ---`);
         console.log("Full chunk structure:", JSON.stringify(chunk, null, 2));
-        
-        // Log retrievedContext properties
+
         if (chunk.retrievedContext) {
           console.log("retrievedContext keys:", Object.keys(chunk.retrievedContext));
           console.log("retrievedContext.title:", chunk.retrievedContext?.title);
@@ -444,7 +466,7 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
         } else {
           console.log("⚠️ No retrievedContext found in chunk");
         }
-        
+
         console.log("customMetadata type:", typeof chunk.retrievedContext?.customMetadata);
         console.log("customMetadata isArray:", Array.isArray(chunk.retrievedContext?.customMetadata));
         console.log("customMetadata full:", JSON.stringify(chunk.retrievedContext?.customMetadata, null, 2));
@@ -467,15 +489,11 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
       console.log("=== END GROUNDING CHUNKS DEBUG ===\n");
     }
 
-    // === Real-time Document Metadata Enrichment ===
-    // Extract document IDs (prioritize documentName, fallback to title)
     const docIds = groundingChunks
       .map((c: any) => {
         const rc = c.retrievedContext ?? {};
-        // Öncelik: documentName (tam resource adı) → title (ID only)
         if (rc.documentName) return rc.documentName;
         if (rc.title) {
-          // title sadece ID ise, store ile birleştir
           return rc.title.startsWith("fileSearchStores/") ? rc.title : `${storeName}/documents/${rc.title}`;
         }
         return null;
@@ -494,7 +512,6 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
       if (rawId.startsWith("fileSearchStores/")) {
         return rawId;
       }
-      // rawId sadece belge ID'si ise
       return `${storeName}/documents/${rawId}`;
     };
 
@@ -511,7 +528,6 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 
           console.log(`Document ${rawId} customMetadata:`, customMeta);
 
-          // Find "Dosya" or "fileName" key
           const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
 
           if (filenameMeta) {
@@ -529,7 +545,6 @@ Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
       }
     }
 
-    // Enrich groundingChunks with filenames
     const enrichedChunks = groundingChunks.map((chunk: any) => {
       const rc = chunk.retrievedContext ?? {};
       const rawId = rc.documentName || rc.title || null;
