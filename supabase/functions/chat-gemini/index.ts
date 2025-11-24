@@ -2,10 +2,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI } from "npm:@google/genai@1.29.1";
 import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 
-// --- AYARLAR ---
-// Hız ve maliyet için 2.5 Flash seçildi.
-// Eğer bu model henüz API anahtarınızda aktif değilse 'gemini-1.5-flash' yapabilirsiniz.
+// --- KONFİGÜRASYON ---
+// 1. Model: Uzun bağlam penceresi ve hız dengesi için 2.5 Flash idealdir.
 const GEMINI_MODEL_NAME = "gemini-2.5-flash";
+
+// 2. Kritik Dosya URI: Listeleme sorunu yaşanan dosyanın DOĞRUDAN URI adresi.
+// Google AI Studio -> Library -> Files kısmından yükleyip URI'yi alıp Env Variable'a ekleyin.
+const CRITICAL_LIST_FILE_URI = Deno.env.get("CRITICAL_PDF_URI");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +16,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// --- YARDIMCI FONKSİYONLAR ---
+// --- YARDIMCI SERVİSLER ---
 
 function getAiClient(): GoogleGenAI {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -30,7 +33,8 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// Metin Temizleme ve Normalize Etme Fonksiyonları
+// --- METİN İŞLEME VE TEMİZLEME ---
+
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -42,49 +46,24 @@ const cleanProvince = (text: string): string => {
     .replace(/\sili$/i, "")
     .replace(/\sİli$/i, "")
     .trim();
-
   if (!cleaned) return text.trim();
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 };
 
 const cleanDistrict = (text: string): string => {
   const cleaned = text.trim();
-  if (!cleaned) return text.trim();
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : text.trim();
 };
 
 const parseOsbStatus = (text: string): "İÇİ" | "DIŞI" | null => {
   const lower = text.toLowerCase().trim();
-  if (
-    lower.includes("içi") ||
-    lower.includes("içinde") ||
-    lower.includes("osb içi") ||
-    lower.includes("organize sanayi içi") ||
-    lower === "içi" ||
-    lower === "ici" ||
-    lower === "evet" ||
-    lower === "var"
-  ) {
-    return "İÇİ";
-  }
-  if (
-    lower.includes("dışı") ||
-    lower.includes("dışında") ||
-    lower.includes("osb dışı") ||
-    lower === "dışı" ||
-    lower === "disi" ||
-    lower.includes("hayır") ||
-    lower.includes("hayir") ||
-    lower.includes("değil") ||
-    lower.includes("degil") ||
-    lower === "yok"
-  ) {
-    return "DIŞI";
-  }
+  if (lower.match(/içi|içinde|evet|var/)) return "İÇİ";
+  if (lower.match(/dışı|dışında|hayır|yok|değil/)) return "DIŞI";
   return null;
 };
 
 const normalizeRegionNumbers = (text: string): string => {
+  // Kullanıcının yazdığı bölge ifadelerini standartlaştırır
   const replacements: Record<string, string> = {
     "birinci bölge": "1. Bölge",
     "ikinci bölge": "2. Bölge",
@@ -93,129 +72,66 @@ const normalizeRegionNumbers = (text: string): string => {
     "beşinci bölge": "5. Bölge",
     "altıncı bölge": "6. Bölge",
     "altinci bölge": "6. Bölge",
-    "birinci bölgedeli": "1. Bölge",
-    "ikinci bölgedeli": "2. Bölge",
-    "üçüncü bölgedeli": "3. Bölge",
-    "dördüncü bölgedeli": "4. Bölge",
-    "beşinci bölgedeli": "5. Bölge",
-    "altıncı bölgedeli": "6. Bölge",
-    "altinci bölgedeli": "6. Bölge",
   };
-
   let normalized = text;
   for (const [pattern, replacement] of Object.entries(replacements)) {
-    const regex = new RegExp(pattern, "gi");
-    normalized = normalized.replace(regex, replacement);
+    normalized = normalized.replace(new RegExp(pattern, "gi"), replacement);
   }
   return normalized;
 };
 
-// Response Temizleme (Tool Leakage Önleme)
+// --- GEMINI ÇIKTISINI TEMİZLEME (Tool Leakage Önleme) ---
 function extractTextAndChunks(response: any) {
   const candidate = response?.candidates?.[0];
   const finishReason: string | undefined = candidate?.finishReason;
   const groundingChunks = candidate?.groundingMetadata?.groundingChunks ?? [];
   const parts = candidate?.content?.parts ?? [];
 
-  console.log("🔍 extractTextAndChunks - Input Analysis:", {
-    hasCandidates: !!response?.candidates,
-    candidateCount: response?.candidates?.length || 0,
-    finishReason,
-    partsCount: parts.length,
-    groundingChunksCount: groundingChunks.length,
-  });
-
   const textPieces: string[] = [];
-
   for (const p of parts) {
     if (!p) continue;
+    // Modelin kendi iç düşüncelerini veya tool kodlarını filtrele
+    if (p.thought === true) continue;
+    if (p.executableCode || p.codeExecutionResult) continue;
+    if (p.functionCall || p.toolCall) continue;
 
-    console.log("📝 Processing part:", {
-      hasText: !!p.text,
-      textLength: p.text?.length || 0,
-      isThought: p.thought === true,
-      hasCode: !!(p.executableCode || p.codeExecutionResult),
-      hasFunctionCall: !!(p.functionCall || p.toolCall),
-    });
-
-    if (p.thought === true) {
-      console.log("⏭️ Skipping thought part");
-      continue;
+    if (typeof p.text === "string") {
+      const t = p.text.trim();
+      if (!t.startsWith("tool_code") && !t.includes("file_search.query")) {
+        textPieces.push(p.text);
+      }
     }
-    if (p.executableCode || p.codeExecutionResult) {
-      console.log("⏭️ Skipping code execution part");
-      continue;
-    }
-    if (p.functionCall || p.toolCall) {
-      console.log("⏭️ Skipping tool call part");
-      continue;
-    }
-    if (typeof p.text !== "string") {
-      console.log("⏭️ Skipping non-string part");
-      continue;
-    }
-
-    const t = p.text.trim();
-    if (t.startsWith("tool_code") || t.startsWith("code_execution_result")) {
-      console.log("⏭️ Skipping tool_code block");
-      continue;
-    }
-    if (t.includes("file_search.query(")) {
-      console.log("⏭️ Skipping file_search query");
-      continue;
-    }
-
-    textPieces.push(p.text);
-    console.log("✅ Added text piece (length:", p.text.length, ")");
   }
-
-  const textOut = textPieces.join("");
-
-  console.log("📊 extractTextAndChunks - Final Result:", {
-    totalTextLength: textOut.length,
-    textPreview: textOut.substring(0, 150) + (textOut.length > 150 ? "..." : ""),
-    groundingChunksCount: groundingChunks.length,
-  });
-
-  return { finishReason, groundingChunks, textOut };
+  return { finishReason, groundingChunks, textOut: textPieces.join("") };
 }
 
 // --- ANA EDGE FUNCTION ---
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // CORS Preflight
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { storeName, messages, sessionId } = await req.json();
-    console.log(`=== chat-gemini (${GEMINI_MODEL_NAME}) request ===`);
-    console.log("sessionId:", sessionId);
+    console.log(`=== Request: ${GEMINI_MODEL_NAME} ===`);
 
     if (!storeName) throw new Error("storeName is required");
-    if (!Array.isArray(messages) || messages.length === 0) throw new Error("messages must be a non-empty array");
+    if (!messages || messages.length === 0) throw new Error("No messages found");
 
+    // Kullanıcının son mesajını al
     const lastUserMessage = messages
       .slice()
       .reverse()
       .find((m: any) => m.role === "user");
     if (!lastUserMessage) throw new Error("No user message found");
 
-    // --- TEŞVİK SORGULAMA MANTIĞI (Aynen Korundu) ---
+    // ---------------------------------------------------------
+    // 1. ADIM: SUPABASE TEŞVİK SORGUSU TAKİBİ (Context Logic)
+    // ---------------------------------------------------------
     const lowerContent = lastUserMessage.content.toLowerCase();
-    const isIncentiveRelated =
-      lowerContent.includes("teşvik") ||
-      lowerContent.includes("tesvik") ||
-      lowerContent.includes("hesapla") ||
-      lowerContent.includes("yatırım") ||
-      lowerContent.includes("yatirim") ||
-      lowerContent.includes("destek") ||
-      lowerContent.includes("sektör") ||
-      lowerContent.includes("sektor") ||
-      lowerContent.includes("üretim") ||
-      lowerContent.includes("uretim") ||
-      lowerContent.includes("imalat");
-
+    const isIncentiveRelated = /teşvik|tesvik|hesapla|yatırım|yatirim|destek|sektör|sektor|üretim|uretim/.test(
+      lowerContent,
+    );
     const supabase = getSupabaseAdmin();
     let incentiveQuery: any = null;
 
@@ -228,20 +144,20 @@ serve(async (req) => {
 
       if (existingQuery) {
         incentiveQuery = existingQuery;
-        const userContent = lastUserMessage.content;
+        const uMsg = lastUserMessage.content;
         let updated = false;
-
+        // Slot filling logic (Eksik bilgileri doldurma)
         if (!incentiveQuery.sector) {
-          incentiveQuery.sector = userContent;
+          incentiveQuery.sector = uMsg;
           updated = true;
         } else if (!incentiveQuery.province) {
-          incentiveQuery.province = cleanProvince(userContent);
+          incentiveQuery.province = cleanProvince(uMsg);
           updated = true;
         } else if (!incentiveQuery.district) {
-          incentiveQuery.district = cleanDistrict(userContent);
+          incentiveQuery.district = cleanDistrict(uMsg);
           updated = true;
         } else if (!incentiveQuery.osb_status) {
-          const osb = parseOsbStatus(userContent);
+          const osb = parseOsbStatus(uMsg);
           if (osb) {
             incentiveQuery.osb_status = osb;
             updated = true;
@@ -251,7 +167,6 @@ serve(async (req) => {
         if (updated && incentiveQuery.id) {
           const allFilled =
             incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
-          const newStatus = allFilled ? "complete" : "collecting";
           await supabase
             .from("incentive_queries")
             .update({
@@ -259,18 +174,15 @@ serve(async (req) => {
               province: incentiveQuery.province,
               district: incentiveQuery.district,
               osb_status: incentiveQuery.osb_status,
-              status: newStatus,
+              status: allFilled ? "complete" : "collecting",
             })
             .eq("id", incentiveQuery.id);
-          incentiveQuery.status = newStatus;
+          if (allFilled) incentiveQuery.status = "complete";
         }
       } else {
         const { data: newQuery } = await supabase
           .from("incentive_queries")
-          .insert({
-            session_id: sessionId,
-            status: "collecting",
-          })
+          .insert({ session_id: sessionId, status: "collecting" })
           .select()
           .single();
         if (newQuery) incentiveQuery = newQuery;
@@ -281,71 +193,44 @@ serve(async (req) => {
 
     const ai = getAiClient();
 
-    // --- SYSTEM PROMPT (GÜNCELLENMİŞ DETAYLI VERSİYON) ---
-
+    // ---------------------------------------------------------
+    // 2. ADIM: SYSTEM PROMPT (DETAYLI & KATI KURALLAR)
+    // ---------------------------------------------------------
     const baseInstructions = `
-**Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
-**Tüm cevaplarını her zaman YÜKLEDİĞİN BELGELERE dayanarak ver.
-**Soruları Türkçe cevapla.
+**Sen Türkiye'deki yatırım teşvikleri konusunda uzman, AŞIRI DİKKATLİ bir veri analistisin.**
+**Tüm cevaplarını SADECE ve SADECE sana sunulan belgelere (Ekli Dosya ve File Search) dayandır.**
 
-⚠️ KRİTİK ARAMA VE CEVAPLAMA KURALLARI:
-**1. **ASLA ÖZETLEME:** Kullanıcı bir liste istiyorsa (örneğin "hangi illerde?"), bulduğun 1-2 sonucu yazıp bırakma. Dökümanlarda geçen TÜM sonuçları madde madde yaz. "Ve diğerleri" ifadesini kullanmak YASAKTIR.
-**2. **ASLA YORUM YAPMA (Inference Yasak):**
-   - Kullanıcı "Pektin" sorduysa, belgede SADECE "Pektin" kelimesinin geçtiği illeri listele lütfen.
-   - Örnek Hata: "Afyon'da gıda katkı maddesi var, pektin de katkı maddesidir, o zaman Afyon'u da ekleyeyim" DEME. Bu YASAKTIR.
-   - Belgede kelime **birebir** geçmiyorsa, o ili listeye alma lütfen.
+⚠️ HATA ÖNLEME VE ARAMA KURALLARI (BU KURALLARIN DIŞINA ÇIKMA):
 
-**3. **EKSİKSİZ LİSTELEME (Deep Search):**
-   - Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında arama yaparken, **belgenin tamamını** taradığından emin ol lütfen.
-   - Eğer sonuç 10 tane ise 10'unu da yaz. "Bazıları şunlardır" deyip kesme lütfen.
-   - illerin hepsi farklı sayfalarda olabilir. Hepsini bul lütfen.
+1. **KESİN EŞLEŞME (STRICT MATCHING ONLY):**
+   - Kullanıcı bir ürün sorduğunda (Örn: "Pektin"), metinde SADECE "Pektin" kelimesinin geçtiği yerleri dikkate al.
+   - **YASAK:** "Afyon'da gıda katkı maddesi var, pektin de katkı maddesidir, o zaman Afyon'u ekleyeyim" gibi bir çıkarım yapman KESİNLİKLE YASAKTIR. (Inference Yasak).
+   - Metinde kelime açıkça geçmiyorsa, o ili listeye alma.
 
-**4. **NEGATİF KONTROL:**
-   - Eğer bir ilde "Meyve tozu" yazıyor ama "Pektin" yazmıyorsa, o ili Pektin listesine EKLEME.
-   
-⚠️ HANGİ DOSYADA NE ARAMALISIN? (ÖZEL DOSYA REHBERİ):
+2. **EKSİKSİZ TARAMA (FULL SCAN):**
+   - Özellikle sana doğrudan içerik olarak verdiğim "Yatırım Konuları Listesi" dosyasını başından sonuna kadar oku.
+   - Eğer bir ürün 5 farklı ilde geçiyorsa, 5'ini de listelemeden cevap verme.
+   - "Bazıları şunlardır", "ve diğerleri" gibi ifadeler kullanma. Tam liste ver.
 
-**1. YEREL YATIRIMLAR VE ÜRÜN BAZLI ARAMA (⚠️ EN KRİTİK DOSYA):**
-* **Dosya:** "ykh_teblig_yatirim_konulari_listesi_yeni.pdf"
-* **Ne Zaman Bak:** Kullanıcı "Pektin yatırımı nerede yapılır?", "Kağıt üretimi hangi illerde desteklenir?", "Yerel kalkınma hamlesi" veya spesifik bir ürün adı sorduğunda:
-* **NASIL ARA:** Bu dosyayı **SATIR SATIR TARA.** Bir ürünün adı 5 farklı ilin altında geçiyorsa, 5'ini de bulmadan cevabı oluşturma.
+3. **SİNONİM ARAMASI (DOĞRULAMA ŞARTIYLA):**
+   - Kullanıcının terimini ararken (Örn: "Güneş Paneli"), metinde "Fotovoltaik", "Güneş enerjisi santrali" gibi teknik terimlerin geçtiği yerleri de kontrol et.
+   - ANCAK: Bulduğun paragrafın gerçekten kullanıcının kastettiği ürünle ilgili olduğundan %100 emin ol.
 
-**2. GENEL TEŞVİK MEVZUATI VE İDARİ SÜREÇLER:**
-* **Dosya:** "9903_karar.pdf"
-* **Ne Zaman Bak:** Genel tanımlar, destek unsurları, müeyyide, devir, belge revize, tamamlama vizesi, mücbir sebep.
-* **Bölge:** "Hangi il kaçıncı bölge?" sorularında Ek-1 listesine bak.
+4. **KAYNAK BELİRTME:**
+   - Verdiğin bilginin hangi dökümana veya hangi maddeye dayandığını belirtmeye çalış.
+   - Bilgi belgelerde yoksa, "Yüklenen belgelerde bu bilgi bulunmamaktadır" de.
 
-**3. UYGULAMA USUL VE ESASLARI (DETAYLAR):**
-* **Dosya:** "2025-1-9903_teblig.pdf"
-* **Ne Zaman Bak:** Başvuru şartları, harcamaların kapsamı, güneş/rüzgar enerjisi şartları, veri merkezi, şarj istasyonu kriterleri, faiz/kar payı ödeme usulleri.
-
-**4. PROJE BAZLI SÜPER TEŞVİKLER:**
-* **Dosya:** "2016-9495_Proje_Bazli.pdf" ve "2019-1_9495_teblig.pdf"
-* **Ne Zaman Bak:** Çok büyük ölçekli yatırımlar, proje bazlı destekler.
-
-**5. YÜKSEK TEKNOLOJİ (HIT-30):**
-* **Dosya:** "Hit30.pdf"
-* **Ne Zaman Bak:** Elektrikli araç, batarya, çip, veri merkezi, Ar-Ge, kuantum, robotik.
-
-**6. TEKNOLOJİ ODAKLI SANAYİ HAMLESİ:**
-* **Dosya:** "teblig_teknoloji_hamlesi_degisiklik.pdf"
-* **Ne Zaman Bak:** TÜBİTAK Ar-Ge süreçleri, Komite değerlendirmesi, Hamle programı.
-
-**7. NACE KODU VE SEKTÖR ARAMA:**
-* **Dosya:** "sectorsearching.xlsx"
-* **Ne Zaman Bak:** NACE kodu veya sektör adı sorulduğunda.
-
-**8. SİSTEMSEL HATALAR (ETUYS):**
-* **Dosya:** "etuys_systemsel_sorunlar.txt"
-* **Ne Zaman Bak:** "Sistem açılmıyor", "İmza hatası", "Hata mesajları".
-
-**Unutma:** Bilgileri verirken kopyala-yapıştır yapma, kendi cümlelerinle net ve anlaşılır şekilde açıkla. Detaylı bilgi için ilgili ilin Yatırım Destek Ofisi'ne yönlendir.
+⚠️ DOSYA KULLANIM REHBERİ:
+- **Yatırım Listesi / Ürünler:** Sana doğrudan eklediğim PDF dosyasını oku.
+- **Mevzuat / İdari Süreçler:** "9903 Sayılı Karar", "Tebliğler" vb. (File Search ile bul).
+- **Proje Bazlı / Hit-30:** İlgili özel dosyalar (File Search ile bul).
 `;
 
     const interactiveInstructions = `
-Sen bir yatırım teşvik danışmanısın. ŞU AN BİLGİ TOPLAMA MODUNDASIN.
+ŞU AN BİLGİ TOPLAMA MODUNDASIN.
 Mevcut Durum: ${incentiveQuery ? JSON.stringify(incentiveQuery) : "Bilinmiyor"}
-Kullanıcıdan eksik bilgileri (Sektör -> İl -> İlçe -> OSB) sırasıyla iste.
+Kullanıcıdan eksik bilgileri sırasıyla (Sektör -> İl -> İlçe -> OSB) iste.
+Eğer kullanıcı soru sorarsa, önce soruyu cevapla, sonra kaldığın yerden bilgi istemeye devam et.
 `;
 
     const systemPrompt =
@@ -353,55 +238,66 @@ Kullanıcıdan eksik bilgileri (Sektör -> İl -> İlçe -> OSB) sırasıyla ist
         ? baseInstructions + "\n\n" + interactiveInstructions
         : baseInstructions;
 
-    // --- SORG U ZENGİNLEŞTİRME (QUERY INJECTION) ---
-    // Modelin daha dikkatli çalışmasını sağlamak için kullanıcının mesajını arkada modifiye ediyoruz.
-    const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
+    // ---------------------------------------------------------
+    // 3. ADIM: HİBRİT İÇERİK OLUŞTURMA (Prompt Engineering)
+    // ---------------------------------------------------------
 
-    const augmentedUserMessage = `
-${normalizedUserMessage}
+    const userContentParts: any[] = [];
 
-(SİSTEM NOTU: Bu soruyu yanıtlarken File Search aracını kullan. 
-Aradığın terimin eş anlamlılarını (synonyms) ve farklı yazılışlarını da sorguya dahil et lütfen. Buna göre bulduğun sonuçların olduğu kaynaklarda aranan terim/kelime/kavram yoksa sonuçlara dahil etme lütfen.
-Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele lütfen. 
-Özetleme yapma. Tüm sonuçları getir. Özellikle 'ykh_teblig_yatirim_konulari_listesi_yeni.pdf' içinde detaylı arama yap lütfen.)
+    // A) Kritik Dosyayı İçeriğe Ekleme (Long Context)
+    // Bu sayede "Pektin" araması için vektör veritabanına güvenmeyiz, model dosyayı okur.
+    if (CRITICAL_LIST_FILE_URI) {
+      userContentParts.push({
+        fileData: {
+          mimeType: "application/pdf",
+          fileUri: CRITICAL_LIST_FILE_URI,
+        },
+      });
+      userContentParts.push({
+        text: "\n(SİSTEM: Yukarıdaki PDF, 'Yatırım Konuları Listesi'dir. Ürün/İl aramalarında bu dosyayı BAŞTAN SONA OKU.)\n",
+      });
+    } else {
+      console.warn("⚠️ CRITICAL_PDF_URI tanımlı değil! Listeleme eksik olabilir.");
+    }
+
+    // B) Kullanıcı Mesajını Güçlendirme (Query Injection)
+    const normalizedMsg = normalizeRegionNumbers(lastUserMessage.content);
+    const augmentedMsg = `
+${normalizedMsg}
+
+(GÖREV YÖNERGESİ:
+1. Eğer bir ürün veya sektör listesi isteniyorsa, ekteki PDF dosyasını satır satır tara.
+2. Aranan kelimenin (Örn: "${normalizedMsg}") **tam eşleştiği** tüm satırları bul.
+3. Asla kategori tahmini yapma ("Bu kategoriye girer" deme). Sadece metinde yazıyorsa listele.
+4. Bütün sonuçları madde madde dök. Eksik bırakma.)
 `;
+    userContentParts.push({ text: augmentedMsg });
 
+    // C) Mesaj Geçmişini Hazırlama
     const messagesForGemini = [
-      ...messages.slice(0, -1),
-      {
-        ...lastUserMessage,
-        content: augmentedUserMessage, // Güçlendirilmiş mesajı gönder
-      },
+      ...messages.slice(0, -1), // Önceki mesajlar
+      { role: "user", parts: userContentParts }, // Yeni hibrit mesaj
     ];
 
+    // ---------------------------------------------------------
+    // 4. ADIM: GEMINI API ÇAĞRISI
+    // ---------------------------------------------------------
+    console.log("=== Calling Gemini (Hybrid Mode) ===");
+
     const generationConfig = {
-      temperature: 0.1, // Halüsinasyonu en aza indirmek için
+      temperature: 0.0, // 0.0 = En yüksek doğruluk, En az halüsinasyon.
       maxOutputTokens: 8192,
     };
 
-    console.log("=== Calling Gemini ===");
-    console.log("Using Model:", GEMINI_MODEL_NAME);
-
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL_NAME,
-      contents: messagesForGemini
-        .map((m: any) => ({
-          role: m.role === "user" ? "user" : "model",
-          parts: [{ text: m.content }],
-        }))
-        // Tool leakage (araç çıktı sızıntısı) engelleme filtresi
-        .filter((m: any) => {
-          if (m.role === "user") return true;
-          const txt = m.parts?.[0]?.text || "";
-          if (!txt) return true;
-          if (txt.includes("tool_code") || txt.includes("file_search.query")) return false;
-          return true;
-        }),
+      contents: messagesForGemini,
       config: {
         ...generationConfig,
         systemInstruction: systemPrompt,
         tools: [
           {
+            // Mevzuat soruları için File Search hala aktif
             fileSearch: {
               fileSearchStoreNames: [storeName],
             },
@@ -410,279 +306,19 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
       },
     });
 
-    console.log("=== Gemini response received ===");
-
+    // ---------------------------------------------------------
+    // 5. ADIM: YANIT İŞLEME VE CITATION (Enrichment)
+    // ---------------------------------------------------------
     const { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
 
-    // ============= BOŞ YANIT VE YETERSİZ SONUÇ KONTROLÜ =============
-    console.log("📊 Initial Response Analysis:", {
-      textLength: textOut.length,
-      textPreview: textOut.substring(0, 150),
-      chunksCount: groundingChunks.length,
-      finishReason,
-    });
-
-    // 1️⃣ BOŞ YANIT KONTROLÜ
-    if (!textOut || textOut.trim().length === 0) {
-      console.warn("⚠️ Empty response detected! Triggering Gemini-powered retry...");
-
-      const retryPrompt = `
-🔍 ÖNCEKİ ARAMADA SONUÇ BULUNAMADI - DERİN ARAMA MODUNA GEÇİLİYOR
-
-Kullanıcının Orijinal Sorusu: "${normalizedUserMessage}"
-
-GÖREV:
-1. Bu soruyu yanıtlamak için ÖNCE şu soruyu kendin yanıtla:
-   - Ana anahtar kelime nedir? (Örn: "krom cevheri" → "krom")
-   - Hangi eş anlamlıları aramam gerek? (Örn: "krom madenciliği", "krom üretimi", "krom rezervi")
-   - Hangi üst kategoriye ait? (Örn: "maden", "metal", "hammadde")
-   - İlgili NACE kodları var mı?
-
-2. ŞİMDİ bu alternatif terimlerle File Search yap:
-   - Dosyalar: ykh_teblig_yatirim_konulari_listesi_yeni.pdf, 9903_karar.pdf, sectorsearching.xlsx
-   - SATIR SATIR TARA, her sayfayı kontrol et
-   - Her aramayı farklı terimlerle TEKRARLA (en az 3 varyasyon)
-
-3. BULDUĞUN TÜM SONUÇLARI LİSTELE:
-   - İl adlarını eksik bırakma
-   - "ve diğerleri" deme
-   - Eğer belgede geçen 8 il varsa, 8'ini de yaz
-
-4. Eğer gerçekten hiçbir sonuç yoksa:
-   "Bu konuda doğrudan destek sağlayan bir yatırım konusu bulunamamıştır. Ancak [ÜST KATEGORİ] kapsamında değerlendirilebilir" de.
-
-BAŞLA! 🚀
-`;
-
-      const retryResponse = await ai.models.generateContent({
-        model: GEMINI_MODEL_NAME,
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: retryPrompt }],
-          },
-        ],
-        config: {
-          temperature: 0.1,
-          maxOutputTokens: 8192,
-          systemInstruction: baseInstructions,
-          tools: [{ fileSearch: { fileSearchStoreNames: [storeName] } }],
-        },
-      });
-
-      const retryResult = extractTextAndChunks(retryResponse);
-      console.log("🔄 Retry Result:", {
-        textLength: retryResult.textOut.length,
-        chunksCount: retryResult.groundingChunks.length,
-      });
-
-      if (!retryResult.textOut || retryResult.textOut.trim().length === 0) {
-        console.error("❌ Retry failed - returning fallback message");
-        return new Response(
-          JSON.stringify({
-            text: "Üzgünüm, belgelerimde bu konuyla ilgili doğrudan bilgi bulamadım. Lütfen sorunuzu farklı kelimelerle ifade ederek tekrar deneyin veya ilgili Yatırım Destek Ofisi ile iletişime geçin.",
-            groundingChunks: [],
-            emptyResponse: true,
-            retriedWithDynamicSearch: true,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-
-      console.log("✅ Retry successful - using new results");
-
-      let enrichedRetryChunks = [];
-      if (retryResult.groundingChunks && retryResult.groundingChunks.length > 0) {
-        const docIds = retryResult.groundingChunks
-          .map((c: any) => {
-            const rc = c.retrievedContext ?? {};
-            if (rc.documentName) return rc.documentName;
-            if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
-            return rc.title ? `${storeName}/documents/${rc.title}` : null;
-          })
-          .filter((id: string | null): id is string => !!id);
-
-        const uniqueDocIds = [...new Set(docIds)];
-        const documentMetadataMap: Record<string, string> = {};
-        const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-
-        for (const rawId of uniqueDocIds) {
-          try {
-            const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
-            const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
-
-            const docResp = await fetch(url);
-            if (docResp.ok) {
-              const docData = await docResp.json();
-              const customMeta = docData.customMetadata || [];
-              const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
-
-              if (filenameMeta) {
-                const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
-                documentMetadataMap[rawId] = enrichedName;
-              }
-            }
-          } catch (e) {
-            console.error(`Error fetching metadata for ${rawId}:`, e);
-          }
-        }
-
-        enrichedRetryChunks = retryResult.groundingChunks.map((chunk: any) => {
-          const rc = chunk.retrievedContext ?? {};
-          const rawId = rc.documentName || rc.title || null;
-          return {
-            ...chunk,
-            enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
-          };
-        });
-      }
-
-      return new Response(
-        JSON.stringify({
-          text: retryResult.textOut,
-          groundingChunks: enrichedRetryChunks,
-          retriedWithDynamicSearch: true,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    // 2️⃣ YETERSİZ SONUÇ KONTROLÜ (Feedback Loop)
-    const isProvinceQuery = /hangi (il|şehir|yer)|(nerede|nerelerde)/i.test(normalizedUserMessage);
-    const provinceMatches = textOut.match(/\b[A-ZÇĞİÖŞÜ][a-zçğıöşü]+\b/g) || [];
-    const uniqueProvinces = [...new Set(provinceMatches)];
-
-    if (isProvinceQuery && uniqueProvinces.length > 0 && uniqueProvinces.length < 3) {
-      console.warn(
-        `⚠️ Insufficient province results (${uniqueProvinces.length}/expected ≥3). Triggering feedback loop...`,
-      );
-
-      const feedbackPrompt = `
-⚠️ ÖNCEKİ CEVABINIZ YETERSİZ BULUNDU - GENİŞLETİLMİŞ ARAMA GEREKLİ
-
-Kullanıcı Sorusu: "${normalizedUserMessage}"
-
-Senin Önceki Cevabın: "${textOut.substring(0, 300)}..."
-
-SORUN: Sadece ${uniqueProvinces.length} il buldun (${uniqueProvinces.join(", ")}). 
-Bu sayı şüpheli derecede az!
-
-YENİ GÖREV:
-1. Tüm dosyalarda BAŞTAN SONA yeniden tara lütfen
-2. Ana anahtar kelimenin (${normalizedUserMessage}) tüm varyasyonlarını ara:
-   - Tam eşleşme
-   - Kök kelime
-   - Üst kategori
-   - Alt ürün grupları
-3. Her sayfayı kontrol et - ATLAMA
-4. Bulduğun TÜM illeri madde madde listele
-5. Eğer gerçekten bu kadar azsa, yanıtına şunu ekle:
-   "ℹ️ Not: Sistemimizde sadece bu [SAYI] ilde bu konuyla ilgili doğrudan kayıt bulunmaktadır."
-
-BAŞLA! 🔍
-`;
-
-      const feedbackResponse = await ai.models.generateContent({
-        model: GEMINI_MODEL_NAME,
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: feedbackPrompt }],
-          },
-        ],
-        config: {
-          temperature: 0.05,
-          maxOutputTokens: 8192,
-          systemInstruction: baseInstructions,
-          tools: [{ fileSearch: { fileSearchStoreNames: [storeName] } }],
-        },
-      });
-
-      const feedbackResult = extractTextAndChunks(feedbackResponse);
-      console.log("🔁 Feedback Loop Result:", {
-        textLength: feedbackResult.textOut.length,
-        originalProvinces: uniqueProvinces.length,
-        newText: feedbackResult.textOut.substring(0, 200),
-      });
-
-      if (feedbackResult.textOut && feedbackResult.textOut.length > textOut.length) {
-        console.log("✅ Feedback loop improved results - using enhanced response");
-
-        let enrichedFeedbackChunks = [];
-        if (feedbackResult.groundingChunks && feedbackResult.groundingChunks.length > 0) {
-          const docIds = feedbackResult.groundingChunks
-            .map((c: any) => {
-              const rc = c.retrievedContext ?? {};
-              if (rc.documentName) return rc.documentName;
-              if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
-              return rc.title ? `${storeName}/documents/${rc.title}` : null;
-            })
-            .filter((id: string | null): id is string => !!id);
-
-          const uniqueDocIds = [...new Set(docIds)];
-          const documentMetadataMap: Record<string, string> = {};
-          const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-
-          for (const rawId of uniqueDocIds) {
-            try {
-              const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
-              const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
-
-              const docResp = await fetch(url);
-              if (docResp.ok) {
-                const docData = await docResp.json();
-                const customMeta = docData.customMetadata || [];
-                const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
-
-                if (filenameMeta) {
-                  const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
-                  documentMetadataMap[rawId] = enrichedName;
-                }
-              }
-            } catch (e) {
-              console.error(`Error fetching metadata for ${rawId}:`, e);
-            }
-          }
-
-          enrichedFeedbackChunks = feedbackResult.groundingChunks.map((chunk: any) => {
-            const rc = chunk.retrievedContext ?? {};
-            const rawId = rc.documentName || rc.title || null;
-            return {
-              ...chunk,
-              enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
-            };
-          });
-        }
-
-        return new Response(
-          JSON.stringify({
-            text: feedbackResult.textOut,
-            groundingChunks: enrichedFeedbackChunks,
-            enhancedViaFeedbackLoop: true,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-    }
-
-    console.log("✅ Response passed validation - proceeding with normal flow");
-
     if (finishReason === "SAFETY") {
-      return new Response(
-        JSON.stringify({
-          error: "Güvenlik politikası nedeniyle yanıt oluşturulamadı. Lütfen sorunuzu farklı ifade edin.",
-          blocked: true,
-          reason: finishReason,
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "Güvenlik Engeli", blocked: true }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // --- ENRICHMENT (Dosya İsimlerini Düzeltme) ---
-    // Grounding chunk'lardan dosya ID'lerini alıp gerçek dosya isimleriyle eşleştiriyoruz.
+    // Grounding chunk'lardan dosya isimlerini bulup zenginleştirme
     let enrichedChunks = [];
     if (groundingChunks && groundingChunks.length > 0) {
       const docIds = groundingChunks
@@ -698,25 +334,22 @@ BAŞLA! 🔍
       const documentMetadataMap: Record<string, string> = {};
       const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-      // Dosya metadatasını çekmek için döngü
+      // Metadata fetch (Dosya adlarını UI'da göstermek için)
       for (const rawId of uniqueDocIds) {
         try {
           const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
           const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
-
           const docResp = await fetch(url);
           if (docResp.ok) {
             const docData = await docResp.json();
             const customMeta = docData.customMetadata || [];
             const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
-
             if (filenameMeta) {
-              const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
-              documentMetadataMap[rawId] = enrichedName;
+              documentMetadataMap[rawId] = filenameMeta.stringValue || filenameMeta.value || rawId;
             }
           }
         } catch (e) {
-          console.error(`Error fetching metadata for ${rawId}:`, e);
+          console.error(`Meta fetch error ${rawId}`, e);
         }
       }
 
@@ -739,15 +372,10 @@ BAŞLA! 🔍
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("❌ Error in chat-gemini:", error);
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    console.error("❌ Error:", error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
