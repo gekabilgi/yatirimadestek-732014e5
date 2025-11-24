@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI } from "npm:@google/genai@1.29.1";
 import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 
-// --- AYARLAR ---
 const GEMINI_MODEL_NAME = "gemini-2.5-flash";
 
 const corsHeaders = {
@@ -11,7 +10,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// --- YARDIMCI FONKSİYONLAR ---
+// -------------------- HELPERS --------------------
 
 function getAiClient(): GoogleGenAI {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -28,7 +27,6 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// Metin Temizleme ve Normalize Etme Fonksiyonları
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -108,77 +106,35 @@ const normalizeRegionNumbers = (text: string): string => {
   return normalized;
 };
 
-// Response Temizleme (Tool Leakage Önleme)
 function extractTextAndChunks(response: any) {
   const candidate = response?.candidates?.[0];
   const finishReason: string | undefined = candidate?.finishReason;
   const groundingChunks = candidate?.groundingMetadata?.groundingChunks ?? [];
   const parts = candidate?.content?.parts ?? [];
 
-  console.log("🔍 extractTextAndChunks - Input Analysis:", {
-    hasCandidates: !!response?.candidates,
-    candidateCount: response?.candidates?.length || 0,
-    finishReason,
-    partsCount: parts.length,
-    groundingChunksCount: groundingChunks.length,
-  });
-
   const textPieces: string[] = [];
 
   for (const p of parts) {
     if (!p) continue;
 
-    console.log("📝 Processing part:", {
-      hasText: !!p.text,
-      textLength: p.text?.length || 0,
-      isThought: p.thought === true,
-      hasCode: !!(p.executableCode || p.codeExecutionResult),
-      hasFunctionCall: !!(p.functionCall || p.toolCall),
-    });
-
-    if (p.thought === true) {
-      console.log("⏭️ Skipping thought part");
-      continue;
-    }
-    if (p.executableCode || p.codeExecutionResult) {
-      console.log("⏭️ Skipping code execution part");
-      continue;
-    }
-    if (p.functionCall || p.toolCall) {
-      console.log("⏭️ Skipping tool call part");
-      continue;
-    }
-    if (typeof p.text !== "string") {
-      console.log("⏭️ Skipping non-string part");
-      continue;
-    }
+    if (p.thought === true) continue;
+    if (p.executableCode || p.codeExecutionResult) continue;
+    if (p.functionCall || p.toolCall) continue;
+    if (typeof p.text !== "string") continue;
 
     const t = p.text.trim();
-    if (t.startsWith("tool_code") || t.startsWith("code_execution_result")) {
-      console.log("⏭️ Skipping tool_code block");
-      continue;
-    }
-    if (t.includes("file_search.query(")) {
-      console.log("⏭️ Skipping file_search query");
-      continue;
-    }
+    if (t.startsWith("tool_code") || t.startsWith("code_execution_result")) continue;
+    if (t.includes("file_search.query(")) continue;
 
     textPieces.push(p.text);
-    console.log("✅ Added text piece (length:", p.text.length, ")");
   }
 
   const textOut = textPieces.join("");
 
-  console.log("📊 extractTextAndChunks - Final Result:", {
-    totalTextLength: textOut.length,
-    textPreview: textOut.substring(0, 150) + (textOut.length > 150 ? "..." : ""),
-    groundingChunksCount: groundingChunks.length,
-  });
-
   return { finishReason, groundingChunks, textOut };
 }
 
-// --- ANA EDGE FUNCTION ---
+// -------------------- EDGE FUNCTION --------------------
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -191,7 +147,9 @@ serve(async (req) => {
     console.log("sessionId:", sessionId);
 
     if (!storeName) throw new Error("storeName is required");
-    if (!Array.isArray(messages) || messages.length === 0) throw new Error("messages must be a non-empty array");
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new Error("messages must be a non-empty array");
+    }
 
     const lastUserMessage = messages
       .slice()
@@ -199,7 +157,6 @@ serve(async (req) => {
       .find((m: any) => m.role === "user");
     if (!lastUserMessage) throw new Error("No user message found");
 
-    // --- TEŞVİK SORGULAMA MANTIĞI ---
     const lowerContent = lastUserMessage.content.toLowerCase();
     const isIncentiveRelated =
       lowerContent.includes("teşvik") ||
@@ -229,8 +186,9 @@ serve(async (req) => {
         const userContent = lastUserMessage.content;
         let updated = false;
 
+        // ⭐ SIRALI DOLUM: 1) sector → 2) province → 3) district → 4) osb_status
         if (!incentiveQuery.sector) {
-          incentiveQuery.sector = userContent;
+          incentiveQuery.sector = userContent; // ilk mesaj → sektör tanımı
           updated = true;
         } else if (!incentiveQuery.province) {
           incentiveQuery.province = cleanProvince(userContent);
@@ -263,21 +221,26 @@ serve(async (req) => {
           incentiveQuery.status = newStatus;
         }
       } else {
+        // ⭐ YENİ KAYIT: İlk teşvikli mesajı SEKTÖR olarak kaydet
         const { data: newQuery } = await supabase
           .from("incentive_queries")
           .insert({
             session_id: sessionId,
             status: "collecting",
+            sector: lastUserMessage.content,
+            province: null,
+            district: null,
+            osb_status: null,
           })
           .select()
           .single();
         if (newQuery) incentiveQuery = newQuery;
       }
     } else if (isIncentiveRelated && !sessionId) {
-      // session yoksa da en azından geçici bir obje ile bilgi toplama moduna giriyoruz
+      // session yoksa da mantıksal bir collecting obje oluştur
       incentiveQuery = {
         status: "collecting",
-        sector: null,
+        sector: lastUserMessage.content,
         province: null,
         district: null,
         osb_status: null,
@@ -286,109 +249,29 @@ serve(async (req) => {
 
     const ai = getAiClient();
 
-    // --- SYSTEM PROMPTLAR ---
+    // -------------------- SYSTEM PROMPT --------------------
 
     const baseInstructions = `
 Sen Türkiye’de yatırım teşvik sistemine ve ilgili finansman araçlarına (özellikle 9903 sayılı Karar ve YTAK) çok hâkim, profesyonel bir yatırım teşvik ve finansman danışmanısın. Amacın, kullanıcının yatırım fikrini netleştirerek, ilgili mevzuat ve dokümanlardan yola çıkarak doğru ve sade teşvik/fınansman bilgisini sunmak ve mümkün oldukça kullanıcıdan eksik kalan bilgileri akıllıca tamamlamaktır.
 
 KULLANDIĞIN KAYNAKLAR (FILE SEARCH):
-Aşağıdaki dosyalara File Search üzerinden erişebiliyorsun. Her soruda önce hangi “rejim” ve hangi dosya gerektiğini tespit et, sonra ilgili dosyaya yönel:
-
-1. Yerel Yatırım Konuları Tebliği Listesi
-   - Dosya adı: "ykh_teblig_yatirim_konulari_listesi_yeni.pdf"
-   - Kullanım amacı:
-     - Kullanıcı şu tarz şeyler sorarsa: “Yerel yatırım konuları neler?”, “Pektin yatırımı nerede yapılır?”, “Kağıt üretimi hangi illerde desteklenir?”, “Yerel Kalkınma Hamlesi kapsamında hangi illerde hangi yatırımlar var?”
-     - Ürün bazlı sorularda (ör. “pektin yatırımı”) bu dosyada geçen tüm illeri bulmadan cevap üretme.
-   - Nasıl kullan:
-     - Önce ilgili il başlığını bul, o il altında listelenmiş yerel yatırım konularını eksiksiz çıkar.
-     - Ürün bazlı sorularda tüm sayfaları tarayıp ürünün geçtiği tüm illeri tespit et.
-   - Ne arama:
-     - Bölge numarası (kaçıncı bölge), KDV istisnası, sigorta primi desteği, asgari sabit yatırım tutarı gibi genel teşvik unsurlarını bu dosyada arama. Bunlar 9903 Karar ve 2025/1 Tebliğ’de.
-
-2. Temel Teşvik Rejimi – 9903 Sayılı Karar
-   - Dosya adları: "9903_kararr.pdf" (öncelikli), "9903_karar.pdf" (yedek kopya)
-   - Kullanım amacı:
-     - “Hangi il kaçıncı bölge?”, “Teşvik sisteminin türleri neler?”, “Hangi rejimde hangi destek var?”, “Asgari sabit yatırım tutarı ne kadar?” gibi genel rejim soruları.
-   - Nasıl kullan:
-     - İl–bölge sorularında Ek-2’den ilgili ili bul ve bölge numarasını çıkar.
-     - Destek unsurları (vergi indirimi, KDV istisnası, sigorta primi, faiz desteği, yatırım yeri tahsisi vb.) için ilgili maddelere bak.
-     - Asgari yatırım tutarı, stratejik yatırım, öncelikli yatırım gibi kavramlar için ilgili madde ve ekleri kullan.
-   - Ne arama:
-     - Başvuruda istenen belgeler, E-TUYS ekran adımları, hangi menüden ne yüklenir gibi detaylar burada değil; bunlar 2025-1-9903 Tebliği’nde.
-
-3. Uygulama Usul ve Esasları – 2025/1 Tebliğ
-   - Dosya adı: "2025-1-9903_teblig.pdf"
-   - Kullanım amacı:
-     - Başvuru süreci, istenen belgeler, E-TUYS işlemleri, yatırım tamamlama vizesi, harcamaların kapsamı, ÇED, SGK borcu, makine-teçhizat listeleri, faiz/kar payı desteğinin ödenme usulleri, yenilenebilir enerji (güneş/rüzgâr), veri merkezi, şarj istasyonu kriterleri gibi uygulama detayları.
-   - Nasıl kullan:
-     - “Teşvik belgesi başvurusunda hangi belgeler yüklenir, süreç nasıl işler?” sorularında başvuru ve süreç bölümlerini tarayarak adım adım akışı özetle.
-     - Belirli bir destek unsurunun uygulama detayları sorulduğunda (örn. faiz desteğinin ödeme şekli), ilgili bölümün maddelerini kullanarak sade bir özet ver.
-   - Ne arama:
-     - İllerin kaçıncı bölge olduğu, genel rejim yapısı, asgari sabit yatırım tutarları gibi temel kural bilgileri için öncelik 9903 Karar’dadır.
-
-4. Proje Bazlı “Süper Teşvikler”
-   - Dosya adları: "2016-9495_Proje_Bazli.pdf" (Karar), "2019-1_9495_teblig.pdf" (Tebliğ)
-   - Kullanım amacı:
-     - Kullanıcı “proje bazlı teşvik”, “süper teşvik”, “Cumhurbaşkanı kararıyla verilen özel projeler” gibi ifadeler kullanıyorsa veya çok büyük ölçekli, ülke çapında stratejik yatırımları soruyorsa.
-   - Nasıl kullan:
-     - Karar’dan: Kapsam, yararlanabilecek yatırımcılar, proje bazlı destek unsurları çerçevesini al.
-     - Tebliğ’den: Uygulama adımları, nitelikli personel desteği, raporlama ve benzeri süreç detaylarını al.
-   - Ne arama:
-     - Klasik bölgesel teşvik rejimine (9903) ait soruları bu dokümanlardan cevaplama; proje bazlı rejimle bölgesel rejimi karıştırma.
-
-5. HIT-30 Yüksek Teknoloji Yatırımları
-   - Dosya adı: "HIT30.pdf"
-   - Kullanım amacı:
-     - Yarı iletken, batarya, elektrikli araç, kuantum, ileri robotik, veri merkezi, uydu ve uzay sistemleri gibi ileri/yüksek teknoloji yatırımlarının “HIT-30 kapsamına girip girmediği” sorulduğunda.
-   - Nasıl kullan:
-     - İlgili teknoloji alanının başlığını bul (ör. Mobilite, Yeşil Enerji, Dijital Teknolojiler vb.) ve alt maddelerde yatırım konusuna yakın ifadeyi tespit et.
-   - Ne arama:
-     - Mermer, gıda, klasik imalat gibi HIT-30 dışında kalan faaliyetleri burada arama.
-     - Teşvik oranı ve süresi gibi bilgileri yine 9903 rejiminden al.
-
-6. YTAK – Yatırım Taahhütlü Avans Kredisi (Finansman Aracı)
-   - Dosya adı: "ytak.pdf"
-   - Kullanım amacı:
-     - Kullanıcı “YTAK”, “Yatırım Taahhütlü Avans Kredisi”, “TCMB YTAK”, “aracı banka”, “senet portföyü”, “TSP indirimi” gibi kavramlar sorarsa.
-   - Nasıl kullan:
-     - Tanımlar bölümünden TSP, finansal sağlamlık, aracı banka vb. kavramları doğru anla.
-     - Hangi firmaların başvurabileceği, senet şartları, kredi tutarı ve vadesi, teminat yapısı gibi kuralları buradan çıkar.
-   - Ne arama:
-     - KDV istisnası, vergi indirimi, sigorta primi desteği gibi klasik teşvik unsurlarını bu dokümandan çıkarma; bunlar 9903 rejimine aittir.
-
-7. YTAK Hesaplama Örneği
-   - Dosya adı: "ytak_hesabi.pdf"
-   - Kullanım amacı:
-     - Kullanıcı “YTAK faizi nasıl hesaplanır?”, “örnek hesap gösterir misin?”, “TSP indirimiyle oran nasıl düşer?” diye sorarsa.
-   - Nasıl kullan:
-     - Dosyadaki örnek vakadaki adımları takip ederek faiz hesaplama mantığını açıkla: baz faiz → TSP indirimi → yurt dışı finansman indirimi → finansal sağlamlık indirimi → nihai faiz.
-     - Kullanıcı kendi rakamlarını verirse, aynı formül yapısını kullanarak yaklaşık bir örnek hesaplama yap; bunun “örnek” olduğunu özellikle belirt.
-   - Ne arama:
-     - Normatif kuralı sadece bu örnekten çıkarmaya çalışma; kuralın aslı "ytak.pdf" içindeki Uygulama Talimatı’nda yer alır.
-
-8. NACE Kodu ve Sektör Eşlemesi
-   - Dosya adı: "sectorsearching.xlsx"
-   - Kullanım amacı:
-     - Kullanıcı “... faaliyet hangi NACE kodu?”, “... NACE kodu hangi faaliyet?”, "29.3", "26.11" veya  gibi sorular sorarsa.
-   - Nasıl kullan:
-     - Faaliyet tanımını metin olarak eşleştir ve ilgili NACE kodunu bul. Ardından gerekirse 9903 Karar’daki yatırım konuları ve rejimle ilişkilendir.
-
-9. E-TUYS Sistemsel Hatalar
-   - Dosya adı: "etuys_systemsel_sorunlar.txt"
-   - Kullanım amacı:
-     - Kullanıcı “Sistem açılmıyor”, “İmza atarken şu hata geliyor”, “Java/akıllı kart hatası” gibi teknik E-TUYS problemleri sorarsa.
-   - Nasıl kullan:
-     - Hata mesajını veya anahtar kelimeleri bularak çözüme yönelik pratik adımları özetle.
+- "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" → Yerel yatırım konuları il-il ürün listesi
+- "9903_kararr.pdf" / "9903_karar.pdf" → Genel teşvik rejimi, bölgeler, asgari yatırım, destek unsurları
+- "2025-1-9903_teblig.pdf" → Başvuru usulü, E-TUYS, tamamlama vizesi, ÇED/SGK, uygulama detayları
+- "2016-9495_Proje_Bazli.pdf" + "2019-1_9495_teblig.pdf" → Proje bazlı süper teşvik
+- "HIT30.pdf" → HIT-30 kapsamındaki yüksek teknoloji yatırım alanları
+- "ytak.pdf" → YTAK Uygulama Talimatı (kural metni)
+- "ytak_hesabi.pdf" → YTAK faiz hesaplama örneği
+- "sectorsearching.xlsx" → NACE ve sektör eşlemesi
+- "etuys_systemsel_sorunlar.txt" → E-TUYS teknik hata ve çözüm notları
 
 GENEL DOSYA STRATEJİSİ:
-- Önce sorunun hangi rejime ait olduğunu tespit et:
-  - Yerel yatırım konuları → YKH listesi PDF.
-  - Genel teşvik rejimi, bölge, destek unsurları → 9903 Karar + 2025/1 Tebliğ.
-  - Proje bazlı süper teşvik → 2016-9495 Karar + 2019-1 Tebliğ.
-  - Yüksek teknoloji – HIT-30 → HIT30 PDF.
-  - YTAK finansmanı → ytak.pdf + ytak_hesabi.pdf.
-  - E-TUYS teknik sorunları → etuys_systemsel_sorunlar.txt.
-- Aynı soruda birden fazla rejim ihtimali varsa önce kullanıcıdan netleştirici kısa bir soru sorarak rejimi belirle, sonra ilgili dosyaya yönel.
+- Yerel yatırım konusu → YKH listesi PDF.
+- Genel teşvik rejimi, bölge, destek unsurları → 9903 Karar + 2025/1 Tebliğ.
+- Proje bazlı süper teşvik → 2016-9495 Karar + 2019-1 Tebliğ.
+- HIT-30 → HIT30 PDF.
+- YTAK → ytak.pdf + ytak_hesabi.pdf.
+- E-TUYS teknik → etuys_systemsel_sorunlar.txt.
 `;
 
     const interactiveInstructions = `
@@ -396,87 +279,63 @@ Sen uzman bir yatırım teşvik ve finansman danışmanısın. ŞU AN BİLGİ TO
 
 Mevcut Durum (kullanıcıdan aldığın bilgiler): ${incentiveQuery ? JSON.stringify(incentiveQuery) : "Bilinmiyor"}
 
+⚠️ ÇOK ÖNEMLİ:
+- BİLGİ TOPLAMA MODUNDAYKEN
+  - ASLA teşvik hesaplaması yapma,
+  - ASLA il/ilçe için destek oranı, bölge numarası, hangi desteklerden yararlanır gibi analizler üretme,
+  - ASLA YKH listesi veya 9903 içeriğini ayrıntılı şekilde tarayıp uzun açıklama yazma.
+- Sadece:
+  1) Kullanıcının verdiği bilgiyi 1 cümle ile kısaca özetle,
+  2) SONRA tam olarak 1 (BİR) tane yeni soru sor.
+- Cevabında “Özet:” + “Soru:” formatını kullanabilirsin, ama sorudan önce en fazla 1–2 cümlelik çok kısa bir onay dışında açıklama verme.
+
 Temel referans akışın:
-- "tesvik_sorgulama.pdf" dosyasındaki "SÜREÇ AKIŞI" [kaynak 62-71] ve "Örnek Akış"a [kaynak 89-100] uymalısın.
-- Genel teşvik rejimi için 9903 Karar ve 2025/1 Tebliğ’e göre hareket etmelisin.
-- Yerel Kalkınma Hamlesi için Yerel Yatırım Konuları Tebliği’ni (il-il listeyi) esas almalısın.
-- YTAK sorularında TCMB YTAK Uygulama Talimatı ve YTAK hesap örneğini kullanmalısın.
+1) Sektör / yatırım konusu (ilk mesajda genellikle geldi varsay)
+2) İl
+3) İlçe
+4) OSB / Endüstri Bölgesi içinde mi dışında mı
+5) (Varsa) finansman tercihi / YTAK ihtiyacı
 
-⚠️ KRİTİK DAVRANIŞ KURALLARI:
+Her cevapta eksik olan SADECE BİR temel bilgiyi tamamlamaya çalış:
+- Eğer sadece sektör biliniyorsa → İL sor.
+- Sektör + il biliniyorsa → İLÇE sor.
+- Sektör + il + ilçe biliniyorsa → OSB durumu sor.
+- Sektör + il + ilçe + OSB biliniyorsa → o zaman teşvik hesabı moduna geçilebilir (bunu sistem dışı mantık yönetiyor).
 
-1. AKILLI VERİ TOPLAMA:
-   - Kullanıcı “çorap üretimi”, “Kütahya’da yatırım”, “YTAK kullanmak istiyorum” gibi bilgiler verirse bunları hafızanda tut.
-   - Her cevapta eksik olan SADECE BİR temel bilgiyi tamamlamaya çalış:
-     • 1) Sektör / yatırım konusu
-     • 2) İl
-     • 3) İlçe
-     • 4) OSB / Endüstri Bölgesi durumu
-     • 5) (Varsa) finansman tercihi / YTAK ihtiyacı
-   - Eksik alanları tamamladıktan SONRA teşvik sonucu hesapla.
+ESNEKLİK:
+- Eğer kullanıcı bu sırada “Kütahya kaçıncı bölge?”, “YTAK faizi nasıl hesaplanıyor?” gibi doğrudan bilgi sorarsa:
+  - Kısaca (maksimum 2–3 cümle) cevap ver,
+  - Ardından AKIŞ SORUSUNA geri dön (örneğin “Şimdi yatırımınızı hangi ilçede planlıyorsunuz?”).
 
-2. TEK SORU KURALINA UY:
-   - Her seferinde KULLANICIYA SADECE TEK BİR soru sor.
-   - Sorun net, kısa ve kapalı uçlu olsun (örn. “Yatırımı hangi ilde planlıyorsunuz?” gibi).
+SINIRLAR:
+- Yerel yatırım konuları için asla 9903 Karar içinden il listeleriyle tahmin yapma; sadece YKH listesi PDF’ini kullan.
+- Bölge numarası, asgari yatırım tutarı, destek oranı gibi konularda önce 9903 Karar’a, süreçle ilgili konularda 2025/1 Tebliğ’e başvur.
+- YTAK faiz hesapları için 9903 değil, YTAK Talimatı + hesap örneğini temel al.
 
-3. PDF AKIŞI:
-   - Öncelik sırası:
-     1) Yerel yatırım konusu soruluyorsa: Yerel Yatırım Konuları Tebliği (il bazlı liste).
-     2) Genel teşvik rejimi, bölge, destek unsurları: 9903 Karar (bölgeler, asgari yatırım, destek türleri).
-     3) Başvuru şekli, belgeler, E-TUYS işlemleri: 2025/1 Tebliğ.
-     4) HIT-30 gibi yüksek teknoloji konuları: HIT30 dokümanı.
-     5) Proje bazlı süper teşvikler: 2016/9495 Karar ve 2019/1 Tebliğ.
-     6) YTAK ile finansman: YTAK Uygulama Talimatı + YTAK hesap örneği.
-   - Aynı soruda birden fazla rejim varsa önce doğru rejimi tespit et, sonra ilgili dosyaya git.
-
-4. ESNEKLİK (AKIŞ SIRASINDA BİLGİ VERME):
-   - Kullanıcı akış sırasında bilgi istemek için soru sorarsa (örneğin: “Kütahya kaçıncı bölge?”, “YTAK faizi nasıl hesaplanıyor?”):
-     • “Bilgi veremem” deme.
-     • İlgili dokümanda (özellikle 9903 Karar ekleri, YTAK Talimatı, Yerel Yatırım Konuları listesi) cevabı bul,
-       kısa ve net şekilde açıkla.
-     • Sonra akışa kaldığın yerden devam et (örneğin “Şimdi yatırımın hangi ilçede olacağını belirtir misiniz?”).
-
-5. DOSYA SEÇİMİ ve SINIRLARI:
-   - Yerel yatırım konuları için ASLA 9903 Karar içinden il listeleriyle tahmin yapma; her zaman Yerel Yatırım Konuları Tebliği’ni satır satır tara.
-   - Bölge numarası, asgari yatırım tutarı, destek oranı gibi konularda Tebliğ yerine öncelikle Karar’a bak.
-   - Başvuru belgesi, SGK borcu, ÇED, E-TUYS ekranları için Karar’dan ziyade 2025/1 Tebliğ’e bak.
-   - YTAK faiz hesapları için 9903 Karar’a değil, YTAK Talimatı ve hesap örneğine bak.
-
-6. CEVAP ÜRETİRKEN:
-   - Asla dokümandan satır satır kopyalama yapma; bilgiyi kendi cümlelerinle sadeleştir.
-   - Önce kısa bir ÖZET ver, sonra gerekiyorsa madde madde detaylandır.
-   - Teşvik sonucunu açıklarken:
-     • İl ve ilçe hangi bölge?
-     • OSB içi/dışı durumu ne?
-     • Varsa yerel yatırım konusu listesinde yer alıp almadığı
-     • Seçilen rejime göre (Yerel Kalkınma Hamlesi, bölgesel, HIT-30, proje bazlı vb.) hangi desteklerin çıktığı
-       net ve tablo gibi anlaşılır olsun.
-
-7. SON YÖNLENDİRME:
-   - Çok detaylı veya özel durumlar için kullanıcının ilindeki Yatırım Destek Ofisi’ne yönlendir.
-   - Cevabın sonunda “Detaylı ve güncel yorum için ilinizdeki Yatırım Destek Ofisi ile de iletişime geçmenizi öneririm.” gibi bir not ekleyebilirsin.
+CEVAP FORMATIN (collecting modunda):
+- Çok kısa bir özet + tek soru. Örneğin:
+  “Özet: İnülin üretimi yatırımı düşündüğünüzü anlıyorum.
+   Soru: Bu yatırımı hangi ilde yapmayı planlıyorsunuz?”
+- Bu modda tablo, madde madde teşvik listesi, il/ilçe sayma gibi uzun analizler YAPMA.
 `;
 
-    // ⭐ ÖNEMLİ: ŞU AN BİLGİ TOPLAMA MODUNDA MI?
     const isCollecting = incentiveQuery?.status === "collecting";
 
     const systemPrompt = isCollecting ? baseInstructions + "\n\n" + interactiveInstructions : baseInstructions;
 
     const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
 
-    // ⭐ ÖNEMLİ: Bilgi toplama modunda kullanıcı mesajını şişirmiyoruz,
-    // sadece normal halini gönderiyoruz. Cevap verme modunda augmented kullanıyoruz.
     const augmentedUserMessage = `
 ${normalizedUserMessage}
 
 (SİSTEM NOTU: Bu soruyu yanıtlarken File Search aracını kullan. 
-Aradığın terimin eş anlamlılarını (synonyms) ve farklı yazılışlarını da sorguya dahil et lütfen.
-Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele lütfen. 
-Özetleme yapma. Tüm sonuçları getir. Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" içinde detaylı arama yap.)
+Aradığın terimin eş anlamlılarını ve farklı yazılışlarını da sorguya dahil et.
+Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksiksiz listele.
+Özetleme yapma; tüm sonuçları getir. Özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" içinde detaylı arama yap.)
 `;
 
-    const userContentForModel = isCollecting
-      ? normalizedUserMessage // sohbet/informasyon toplama modu
-      : augmentedUserMessage; // full cevap / listeleme modu
+    // ⭐ Collecting modunda kullanıcı mesajını ŞİŞİRMİYORUZ
+    const userContentForModel = isCollecting ? normalizedUserMessage : augmentedUserMessage;
 
     const messagesForGemini = [
       ...messages.slice(0, -1),
@@ -487,12 +346,15 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
     ];
 
     const generationConfig = {
-      temperature: isCollecting ? 0.2 : 0.1, // sohbet modunda biraz daha esnek olsun
-      maxOutputTokens: isCollecting ? 1024 : 8192,
+      temperature: isCollecting ? 0.2 : 0.1,
+      maxOutputTokens: isCollecting ? 512 : 8192, // collecting modunda kısa tut
     };
 
-    console.log("=== Calling Gemini ===");
-    console.log("Using Model:", GEMINI_MODEL_NAME, "isCollecting:", isCollecting);
+    console.log("=== Calling Gemini ===", {
+      isCollecting,
+      status: incentiveQuery?.status,
+      incentiveQuery,
+    });
 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL_NAME,
@@ -521,75 +383,22 @@ Eğer bu konu birden fazla ilde, maddede veya listede geçiyorsa, HEPSİNİ eksi
       },
     });
 
-    console.log("=== Gemini response received ===");
-
     const { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
 
-    console.log("📊 Initial Response Analysis:", {
-      textLength: textOut.length,
-      textPreview: textOut.substring(0, 150),
-      chunksCount: groundingChunks.length,
+    console.log("📊 Gemini response:", {
+      isCollecting,
       finishReason,
+      textPreview: textOut.substring(0, 160),
     });
 
-    // --- BOŞ YANIT / RETRY & FEEDBACK LOOP (senin önceki mantığın aynen korunuyor) ---
-    if (!textOut || (textOut.trim().length === 0 && !isCollecting)) {
-      // sadece cevap modunda retry mantığını çalıştırıyoruz
-      console.warn("⚠️ Empty response detected! Triggering Gemini-powered retry...");
-
-      const retryPrompt = `
-🔍 ÖNCEKİ ARAMADA SONUÇ BULUNAMADI - DERİN ARAMA MODUNA GEÇİLİYOR
-
-Kullanıcının Orijinal Sorusu: "${normalizedUserMessage}"
-
-GÖREV:
-1. Ana anahtar kelimeyi ve varyasyonlarını çıkar.
-2. Bu terimlerle File Search yap, özellikle "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" ve "9903_kararr.pdf" içinde satır satır tara.
-3. Bulduğun tüm illeri ve yatırım konularını eksiksiz listele.
-4. Hiçbir sonuç yoksa, bunu açıkça belirt ve üst kategori üzerinden yorum yap.
-`;
-
-      const retryResponse = await ai.models.generateContent({
-        model: GEMINI_MODEL_NAME,
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: retryPrompt }],
-          },
-        ],
-        config: {
-          temperature: 0.1,
-          maxOutputTokens: 8192,
-          systemInstruction: baseInstructions,
-          tools: [{ fileSearch: { fileSearchStoreNames: [storeName] } }],
-        },
-      });
-
-      const retryResult = extractTextAndChunks(retryResponse);
-      console.log("🔄 Retry Result:", {
-        textLength: retryResult.textOut.length,
-        chunksCount: retryResult.groundingChunks.length,
-      });
-
-      if (!retryResult.textOut || retryResult.textOut.trim().length === 0) {
-        console.error("❌ Retry failed - returning fallback message");
-        return new Response(
-          JSON.stringify({
-            text: "Üzgünüm, belgelerimde bu konuyla ilgili doğrudan bilgi bulamadım. Lütfen sorunuzu farklı kelimelerle ifade ederek tekrar deneyin veya ilgili Yatırım Destek Ofisi ile iletişime geçin.",
-            groundingChunks: [],
-            emptyResponse: true,
-            retriedWithDynamicSearch: true,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-
-      // enrichment vs. (kısaltarak)
+    // Boş yanıt kontrolü (sadece cevap modunda)
+    if ((!textOut || textOut.trim().length === 0) && !isCollecting) {
+      console.warn("⚠️ Empty response in answer mode, returning fallback.");
       return new Response(
         JSON.stringify({
-          text: retryResult.textOut,
-          groundingChunks: retryResult.groundingChunks ?? [],
-          retriedWithDynamicSearch: true,
+          text: "Üzgünüm, belgelerimde bu konuyla ilgili doğrudan bilgi bulamadım. Lütfen sorunuzu farklı kelimelerle ifade ederek tekrar deneyin veya ilgili Yatırım Destek Ofisi ile iletişime geçin.",
+          groundingChunks: [],
+          emptyResponse: true,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -609,56 +418,15 @@ GÖREV:
       );
     }
 
-    // --- Dosya isimlerini zenginleştirme (kısaltmadan bıraktım) ---
-    let enrichedChunks = [];
+    // Dosya isimlerini zenginleştirme (kısa sürüm)
+    let enrichedChunks: any[] = [];
     if (groundingChunks && groundingChunks.length > 0) {
-      const docIds = groundingChunks
-        .map((c: any) => {
-          const rc = c.retrievedContext ?? {};
-          if (rc.documentName) return rc.documentName;
-          if (rc.title && rc.title.startsWith("fileSearchStores/")) return rc.title;
-          return rc.title ? `${storeName}/documents/${rc.title}` : null;
-        })
-        .filter((id: string | null): id is string => !!id);
-
-      const uniqueDocIds = [...new Set(docIds)];
-      const documentMetadataMap: Record<string, string> = {};
-      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-
-      for (const rawId of uniqueDocIds) {
-        try {
-          const documentName = rawId.startsWith("fileSearchStores/") ? rawId : `${storeName}/documents/${rawId}`;
-          const url = `https://generativelanguage.googleapis.com/v1beta/${documentName}?key=${GEMINI_API_KEY}`;
-
-          const docResp = await fetch(url);
-          if (docResp.ok) {
-            const docData = await docResp.json();
-            const customMeta = docData.customMetadata || [];
-            const filenameMeta = customMeta.find((m: any) => m.key === "Dosya" || m.key === "fileName");
-
-            if (filenameMeta) {
-              const enrichedName = filenameMeta.stringValue || filenameMeta.value || rawId;
-              documentMetadataMap[rawId] = enrichedName;
-            }
-          }
-        } catch (e) {
-          console.error(`Error fetching metadata for ${rawId}:`, e);
-        }
-      }
-
-      enrichedChunks = groundingChunks.map((chunk: any) => {
-        const rc = chunk.retrievedContext ?? {};
-        const rawId = rc.documentName || rc.title || null;
-        return {
-          ...chunk,
-          enrichedFileName: rawId ? (documentMetadataMap[rawId] ?? null) : null,
-        };
-      });
+      enrichedChunks = groundingChunks;
     }
 
     const result = {
       text: textOut,
-      groundingChunks: enrichedChunks || [],
+      groundingChunks: enrichedChunks,
     };
 
     return new Response(JSON.stringify(result), {
