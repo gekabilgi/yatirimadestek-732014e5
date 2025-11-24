@@ -369,7 +369,7 @@ Aşağıdaki dosyalara File Search üzerinden erişebiliyorsun. Her soruda önce
 8. NACE Kodu ve Sektör Eşlemesi
    - Dosya adı: "sectorsearching.xlsx"
    - Kullanım amacı:
-     - Kullanıcı “bu faaliyet hangi NACE kodu?”, “Şu NACE kodu hangi faaliyet?” gibi sorular sorarsa.
+     - Kullanıcı “... faaliyet hangi NACE kodu?”, “... NACE kodu hangi faaliyet?”, "29.3", "26.11" veya  gibi sorular sorarsa.
    - Nasıl kullan:
      - Faaliyet tanımını metin olarak eşleştir ve ilgili NACE kodunu bul. Ardından gerekirse 9903 Karar’daki yatırım konuları ve rejimle ilişkilendir.
 
