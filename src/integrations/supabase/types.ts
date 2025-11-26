@@ -296,6 +296,152 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_rag_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string | null
+          document_id: string | null
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          store_id: string | null
+          token_count: number | null
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          store_id?: string | null
+          token_count?: number | null
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          store_id?: string | null
+          token_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_rag_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "custom_rag_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_rag_chunks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "custom_rag_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_rag_documents: {
+        Row: {
+          chunks_count: number | null
+          created_at: string | null
+          custom_metadata: Json | null
+          display_name: string
+          error_message: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          name: string
+          original_content: string | null
+          status: string | null
+          store_id: string | null
+        }
+        Insert: {
+          chunks_count?: number | null
+          created_at?: string | null
+          custom_metadata?: Json | null
+          display_name: string
+          error_message?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          name: string
+          original_content?: string | null
+          status?: string | null
+          store_id?: string | null
+        }
+        Update: {
+          chunks_count?: number | null
+          created_at?: string | null
+          custom_metadata?: Json | null
+          display_name?: string
+          error_message?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          name?: string
+          original_content?: string | null
+          status?: string | null
+          store_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_rag_documents_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "custom_rag_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_rag_stores: {
+        Row: {
+          chunk_overlap: number | null
+          chunk_size: number | null
+          created_at: string | null
+          created_by: string | null
+          display_name: string
+          embedding_dimensions: number
+          embedding_model: string
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          chunk_overlap?: number | null
+          chunk_size?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          display_name: string
+          embedding_dimensions?: number
+          embedding_model?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          chunk_overlap?: number | null
+          chunk_size?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          display_name?: string
+          embedding_dimensions?: number
+          embedding_model?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       districts: {
         Row: {
           created_at: string | null
@@ -2299,6 +2445,22 @@ export type Database = {
               similarity: number
             }[]
           }
+      match_custom_rag_chunks: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_store_id: string
+          query_embedding: string
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          document_id: string
+          document_name: string
+          id: string
+          similarity: number
+        }[]
+      }
       match_document_chunks: {
         Args: {
           match_count?: number

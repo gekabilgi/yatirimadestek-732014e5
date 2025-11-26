@@ -241,4 +241,68 @@ export const adminSettingsService = {
       throw new Error(`Failed to set active theme: ${error.message}`);
     }
   },
+
+  async getChatbotRagMode(): Promise<'gemini_file_search' | 'custom_rag'> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'chatbot_rag_mode')
+      .single();
+
+    if (error) {
+      console.error('Error fetching chatbot RAG mode:', error);
+      return 'gemini_file_search';
+    }
+
+    return (data?.setting_value_text as any) || 'gemini_file_search';
+  },
+
+  async setChatbotRagMode(mode: 'gemini_file_search' | 'custom_rag'): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'chatbot_rag_mode',
+        category: 'chatbot',
+        setting_value: 0,
+        setting_value_text: mode,
+        description: 'Chatbot RAG mode: gemini_file_search or custom_rag'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting chatbot RAG mode:', error);
+      throw error;
+    }
+  },
+
+  async getActiveCustomRagStore(): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'active_custom_rag_store')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching active custom RAG store:', error);
+      return null;
+    }
+
+    return data?.setting_value_text || null;
+  },
+
+  async setActiveCustomRagStore(storeId: string | null): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'active_custom_rag_store',
+        category: 'chatbot',
+        setting_value: 0,
+        setting_value_text: storeId,
+        description: 'Active Custom RAG store ID'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting active custom RAG store:', error);
+      throw error;
+    }
+  },
 };
