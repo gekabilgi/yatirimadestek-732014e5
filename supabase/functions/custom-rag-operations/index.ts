@@ -219,13 +219,17 @@ async function uploadDocument(supabase: any, params: any) {
 
     // Generate embeddings and store chunks
     for (let i = 0; i < chunks.length; i++) {
+      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
+      
       const embedding = await generateEmbedding(
         chunks[i],
         store.embedding_model,
         store.embedding_dimensions
       );
+      
+      console.log(`Generated embedding with ${embedding.length} dimensions`);
 
-      await supabase
+      const { error: chunkError } = await supabase
         .from("custom_rag_chunks")
         .insert({
           document_id: document.id,
@@ -235,6 +239,13 @@ async function uploadDocument(supabase: any, params: any) {
           embedding: `[${embedding.join(",")}]`,
           token_count: chunks[i].split(/\s+/).length,
         });
+
+      if (chunkError) {
+        console.error(`Chunk ${i} insert error:`, chunkError);
+        throw new Error(`Failed to insert chunk ${i}: ${chunkError.message}`);
+      }
+      
+      console.log(`Chunk ${i} inserted successfully`);
     }
 
     // Update document status

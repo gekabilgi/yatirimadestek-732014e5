@@ -109,7 +109,27 @@ export function CustomRagStoreManager() {
     }
 
     try {
-      const content = await file.text();
+      setLoading(true);
+      
+      let content: string;
+      
+      // Handle PDF files with special parsing
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        toast({
+          title: "İşleniyor",
+          description: "PDF dosyası okunuyor...",
+        });
+        
+        const { extractTextFromPDF } = await import('@/utils/pdfParser');
+        content = await extractTextFromPDF(file);
+      } else {
+        // Handle TXT, CSV, JSON files with direct reading
+        content = await file.text();
+      }
+
+      if (!content || content.trim().length === 0) {
+        throw new Error("Dosya içeriği boş veya okunamadı");
+      }
 
       await customRagService.uploadDocument({
         storeId: selectedStore.id,
@@ -121,17 +141,20 @@ export function CustomRagStoreManager() {
 
       toast({
         title: "Başarılı",
-        description: "Doküman yüklendi ve işlendi",
+        description: "Doküman yüklendi ve işleniyor",
       });
 
+      e.currentTarget.reset();
       setUploadDialogOpen(false);
-      await loadDocuments(selectedStore.id);
-    } catch (error) {
+      loadDocuments(selectedStore.id);
+    } catch (error: any) {
       toast({
         title: "Hata",
-        description: "Doküman yüklenemedi",
+        description: error.message || "Doküman yüklenemedi",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -364,9 +387,9 @@ export function CustomRagStoreManager() {
                   <form onSubmit={handleUploadDocument} className="space-y-4">
                     <div>
                       <Label>Dosya</Label>
-                      <Input name="file" type="file" accept=".txt,.md,.pdf,.docx,.csv" required />
+                      <Input name="file" type="file" accept=".txt,.md,.pdf,.csv,.json" required />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Desteklenen formatlar: TXT, MD, PDF, DOCX, CSV
+                        Desteklenen formatlar: PDF, TXT, MD, CSV, JSON
                       </p>
                     </div>
                     <Button type="submit" className="w-full">Yükle ve İşle</Button>
