@@ -23,6 +23,86 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// Custom RAG handler
+async function handleCustomRagChat(supabase: any, storeId: string, messages: any[], sessionId: string) {
+  const lastUserMessage = messages[messages.length - 1];
+  
+  // Get store config
+  const { data: store } = await supabase
+    .from('custom_rag_stores')
+    .select('*')
+    .eq('id', storeId)
+    .single();
+
+  if (!store) throw new Error("Custom RAG store not found");
+
+  // Generate embedding for query
+  const embedding = await generateEmbedding(
+    lastUserMessage.content,
+    store.embedding_model,
+    store.embedding_dimensions
+  );
+
+  // Search chunks
+  const { data: chunks } = await supabase.rpc('match_custom_rag_chunks', {
+    query_embedding: `[${embedding.join(',')}]`,
+    p_store_id: storeId,
+    match_threshold: 0.3,
+    match_count: 30,
+  });
+
+  // Build context
+  const context = chunks?.map((c: any) => c.content).join('\n\n---\n\n') || '';
+
+  // Generate response with Gemini
+  const ai = getAiClient();
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [{
+      role: 'user',
+      parts: [{ text: `Context:\n${context}\n\nSoru: ${lastUserMessage.content}` }]
+    }],
+    config: { temperature: 0.1 }
+  });
+
+  const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  return new Response(
+    JSON.stringify({ text, sources: chunks?.map((c: any) => c.document_name) || [], customRag: true }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function generateEmbedding(text: string, model: string, dimensions: number): Promise<number[]> {
+  if (model === 'gemini') {
+    const ai = getAiClient();
+    const result = await ai.models.embedContent({
+      model: 'models/text-embedding-004',
+      contents: [{ parts: [{ text }] }],
+      config: {
+        taskType: 'RETRIEVAL_QUERY',
+        outputDimensionality: dimensions,
+      },
+    });
+    return result.embeddings[0].values;
+  } else {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-3-large',
+        input: text,
+        dimensions: dimensions,
+      }),
+    });
+    const data = await response.json();
+    return data.data[0].embedding;
+  }
+}
+
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -271,6 +351,36 @@ serve(async (req) => {
     console.log("sessionId:", sessionId);
     console.log("messages count:", messages?.length);
 
+    const supabase = getSupabaseAdmin();
+
+    // Check RAG mode
+    const { data: ragModeData } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'chatbot_rag_mode')
+      .single();
+
+    const ragMode = ragModeData?.setting_value_text || 'gemini_file_search';
+    console.log("🔧 RAG Mode:", ragMode);
+
+    // If custom RAG mode, use custom RAG search
+    if (ragMode === 'custom_rag') {
+      const { data: customStoreData } = await supabase
+        .from('admin_settings')
+        .select('setting_value_text')
+        .eq('setting_key', 'active_custom_rag_store')
+        .single();
+
+      const customStoreId = customStoreData?.setting_value_text;
+
+      if (customStoreId) {
+        console.log("🔍 Using Custom RAG store:", customStoreId);
+        // Delegate to custom RAG handler
+        return await handleCustomRagChat(supabase, customStoreId, messages, sessionId);
+      }
+    }
+
+    // Default: Use Gemini File Search (existing flow)
     if (!storeName) {
       throw new Error("storeName is required");
     }
@@ -302,7 +412,6 @@ serve(async (req) => {
 
     console.log("isIncentiveRelated:", isIncentiveRelated);
 
-    const supabase = getSupabaseAdmin();
     let incentiveQuery: any = null;
 
     if (isIncentiveRelated && sessionId) {
