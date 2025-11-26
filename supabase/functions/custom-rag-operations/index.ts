@@ -184,6 +184,9 @@ async function deleteDocument(supabase: any, documentId: string) {
 async function uploadDocument(supabase: any, params: any) {
   const { storeId, fileName, content, fileType, fileSize } = params;
 
+  // Sanitize content to remove null bytes and control characters
+  const sanitizedContent = sanitizeText(content);
+
   // Get store config
   const { data: store, error: storeError } = await supabase
     .from("custom_rag_stores")
@@ -193,7 +196,7 @@ async function uploadDocument(supabase: any, params: any) {
 
   if (storeError) throw storeError;
 
-  // Create document record
+  // Create document record with sanitized content
   const { data: document, error: docError } = await supabase
     .from("custom_rag_documents")
     .insert({
@@ -202,7 +205,7 @@ async function uploadDocument(supabase: any, params: any) {
       display_name: fileName,
       file_type: fileType,
       file_size: fileSize,
-      original_content: content,
+      original_content: sanitizedContent,
       status: "processing",
     })
     .select()
@@ -211,8 +214,8 @@ async function uploadDocument(supabase: any, params: any) {
   if (docError) throw docError;
 
   try {
-    // Chunk the document
-    const chunks = chunkText(content, store.chunk_size, store.chunk_overlap);
+    // Chunk the sanitized document
+    const chunks = chunkText(sanitizedContent, store.chunk_size, store.chunk_overlap);
 
     // Generate embeddings and store chunks
     for (let i = 0; i < chunks.length; i++) {
@@ -296,6 +299,16 @@ async function searchTest(supabase: any, params: any) {
   );
 }
 
+function sanitizeText(text: string): string {
+  if (!text) return "";
+  
+  // Remove null bytes and other problematic control characters
+  return text
+    .replace(/\u0000/g, "")  // Remove null bytes
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "")  // Remove other control characters
+    .trim();
+}
+
 function chunkText(text: string, chunkSize: number, overlap: number): string[] {
   const words = text.split(/\s+/);
   const chunks: string[] = [];
@@ -315,12 +328,15 @@ async function generateEmbedding(
   model: string,
   dimensions: number
 ): Promise<number[]> {
+  // Sanitize text as extra safety measure
+  const sanitizedText = sanitizeText(text);
+  
   if (model === "gemini") {
     const ai = new GoogleGenAI({ apiKey: Deno.env.get("GEMINI_API_KEY") });
     
     const result = await ai.models.embedContent({
       model: "models/text-embedding-004",
-      contents: [{ parts: [{ text }] }],
+      contents: [{ parts: [{ text: sanitizedText }] }],
       config: {
         taskType: "RETRIEVAL_DOCUMENT",
         outputDimensionality: dimensions,
@@ -338,7 +354,7 @@ async function generateEmbedding(
       },
       body: JSON.stringify({
         model: "text-embedding-3-large",
-        input: text,
+        input: sanitizedText,
         dimensions: dimensions,
       }),
     });
