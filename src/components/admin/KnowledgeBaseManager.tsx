@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GeminiStoreManager } from './GeminiStoreManager';
 import { CustomRagStoreManager } from './CustomRagStoreManager';
+import { VertexRagStoreManager } from './VertexRagStoreManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -9,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export function KnowledgeBaseManager() {
-  const [ragMode, setRagMode] = useState<'gemini_file_search' | 'custom_rag'>('gemini_file_search');
+  const [ragMode, setRagMode] = useState<'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'>('gemini_file_search');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -29,7 +30,7 @@ export function KnowledgeBaseManager() {
   }
 
   async function handleModeChange(value: string) {
-    const newMode = value as 'gemini_file_search' | 'custom_rag';
+    const newMode = value as 'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora';
     
     try {
       await adminSettingsService.setChatbotRagMode(newMode);
@@ -91,6 +92,18 @@ export function KnowledgeBaseManager() {
                 </p>
               </div>
             </div>
+            
+            <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+              <RadioGroupItem value="vertex_rag_corpora" id="vertex" />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="vertex" className="font-medium cursor-pointer">
+                  Vertex AI RAG Corpora
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Google Cloud RAG Engine • Mevcut corpus • Kurumsal seviye • GCP entegrasyonu
+                </p>
+              </div>
+            </div>
           </RadioGroup>
         </CardContent>
       </Card>
@@ -98,8 +111,10 @@ export function KnowledgeBaseManager() {
       {/* Conditional Store Manager */}
       {ragMode === 'gemini_file_search' ? (
         <GeminiStoreManager />
-      ) : (
+      ) : ragMode === 'custom_rag' ? (
         <CustomRagStoreManager />
+      ) : (
+        <VertexRagStoreManager />
       )}
     </div>
   );

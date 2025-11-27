@@ -242,7 +242,7 @@ export const adminSettingsService = {
     }
   },
 
-  async getChatbotRagMode(): Promise<'gemini_file_search' | 'custom_rag'> {
+  async getChatbotRagMode(): Promise<'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'> {
     const { data, error } = await supabase
       .from('admin_settings')
       .select('setting_value_text')
@@ -257,7 +257,7 @@ export const adminSettingsService = {
     return (data?.setting_value_text as any) || 'gemini_file_search';
   },
 
-  async setChatbotRagMode(mode: 'gemini_file_search' | 'custom_rag'): Promise<void> {
+  async setChatbotRagMode(mode: 'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'): Promise<void> {
     const { error } = await supabase
       .from('admin_settings')
       .upsert({
@@ -265,7 +265,7 @@ export const adminSettingsService = {
         category: 'chatbot',
         setting_value: 0,
         setting_value_text: mode,
-        description: 'Chatbot RAG mode: gemini_file_search or custom_rag'
+        description: 'Chatbot RAG mode: gemini_file_search, custom_rag, or vertex_rag_corpora'
       }, { onConflict: 'setting_key' });
 
     if (error) {
@@ -303,6 +303,68 @@ export const adminSettingsService = {
     if (error) {
       console.error('Error setting active custom RAG store:', error);
       throw error;
+    }
+  },
+
+  async getActiveVertexCorpus(): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'active_vertex_corpus')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching active Vertex corpus:', error);
+      return null;
+    }
+
+    return data?.setting_value_text || null;
+  },
+
+  async setActiveVertexCorpus(corpusName: string | null): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'active_vertex_corpus',
+        category: 'chatbot',
+        setting_value: 0,
+        setting_value_text: corpusName,
+        description: 'Active Vertex AI RAG Corpus resource name'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting active Vertex corpus:', error);
+      throw error;
+    }
+  },
+
+  async setVertexRagSettings(settings: { topK: number; vectorDistanceThreshold: number }): Promise<void> {
+    const updates = [
+      {
+        setting_key: 'vertex_rag_top_k',
+        category: 'chatbot',
+        setting_value: settings.topK,
+        setting_value_text: null,
+        description: 'Vertex RAG top K similarity count'
+      },
+      {
+        setting_key: 'vertex_rag_threshold',
+        category: 'chatbot',
+        setting_value: settings.vectorDistanceThreshold,
+        setting_value_text: null,
+        description: 'Vertex RAG vector distance threshold'
+      }
+    ];
+
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('admin_settings')
+        .upsert(update, { onConflict: 'setting_key' });
+
+      if (error) {
+        console.error(`Error setting ${update.setting_key}:`, error);
+        throw error;
+      }
     }
   },
 };

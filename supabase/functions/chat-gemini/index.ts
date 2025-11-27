@@ -380,6 +380,54 @@ serve(async (req) => {
       }
     }
 
+    // If Vertex RAG mode, delegate to vertex-rag-query function
+    if (ragMode === 'vertex_rag_corpora') {
+      const { data: vertexCorpusData } = await supabase
+        .from('admin_settings')
+        .select('setting_value_text')
+        .eq('setting_key', 'active_vertex_corpus')
+        .single();
+
+      const corpusName = vertexCorpusData?.setting_value_text;
+
+      if (corpusName) {
+        console.log("🔍 Using Vertex RAG Corpus:", corpusName);
+        
+        // Get Vertex RAG settings
+        const { data: settingsData } = await supabase
+          .from('admin_settings')
+          .select('setting_key, setting_value')
+          .in('setting_key', ['vertex_rag_top_k', 'vertex_rag_threshold']);
+
+        const topK = settingsData?.find(s => s.setting_key === 'vertex_rag_top_k')?.setting_value || 10;
+        const threshold = settingsData?.find(s => s.setting_key === 'vertex_rag_threshold')?.setting_value || 0.3;
+
+        // Call vertex-rag-query function
+        const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/vertex-rag-query`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': req.headers.get('Authorization') || '',
+          },
+          body: JSON.stringify({
+            corpusName,
+            messages,
+            topK,
+            vectorDistanceThreshold: threshold,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Vertex RAG query failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Default: Use Gemini File Search (existing flow)
     if (!storeName) {
       throw new Error("storeName is required");
