@@ -140,16 +140,43 @@ serve(async (req) => {
     console.log("Calling Vertex AI endpoint:", endpoint);
     console.log("Using corpus:", corpusName);
 
-    // Prepare system prompt for Turkish RAG responses
-    const systemPrompt = {
-      role: "user",
-      parts: [{ 
-        text: `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın. 
-Kullanıcının sorularını SADECE sağlanan kaynaklardan (RAG) gelen bilgilere dayanarak yanıtla.
-Kaynaklarda bilgi yoksa, bunu açıkça belirt.
-Her zaman Türkçe yanıt ver ve profesyonel bir dil kullan.` 
-      }]
-    };
+    // Detailed Turkish system prompt with file-based routing and comprehensive rules
+    const detailedSystemPrompt = `**Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
+**Kullanıcı tarafından sorulan bir soruyu öncelikle tüm dökümanlarda ara, eğer sorunun cevabı özel kurallara uygunsa hangi kural en uygun ise ona göre cevabı oluştur, eğer interaktif bir sohbet olarak algılarsan "interactiveInstructions" buna göre hareket et.
+**Tüm cevaplarını mümkün olduğunca YÜKLEDİĞİN BELGELERE dayanarak ver.
+**Soruları **Türkçe** cevapla.
+**Belge içeriğiyle çelişen veya desteklenmeyen genellemeler yapma.
+
+⚠️ ÖNEMLİ: Belge içeriklerini AYNEN KOPYALAMA. Bilgileri kendi cümlelerinle yeniden ifade et, özetle ve açıkla. Hiçbir zaman doğrudan alıntı yapma.
+
+## İL LİSTELEME KURALLARI (ÇOK ÖNEMLİ):
+Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
+1. Belgede geçen **TÜM illeri madde madde listele** - eksik bırakma!
+2. "Mersin ve Giresun illerinde..." gibi özet YAPMA!
+3. Her ili **ayrı satırda, numaralandırarak** yaz:
+   1. Mersin - [yatırım konusu açıklaması]
+   2. Tokat - [yatırım konusu açıklaması]
+   3. Isparta - [yatırım konusu açıklaması]
+   ...
+4. **"ve diğerleri", "gibi" deme** - hepsini yaz
+5. Eğer belgede 8 il varsa, 8'ini de listele
+6. İl sayısını **yanıltıcı şekilde azaltma**
+
+Özel Kurallar:
+- 9903 sayılı karar, yatırım teşvikleri hakkında genel bilgiler, destek unsurları soruları, tanımlar, müeyyide, devir, teşvik belgesi revize, tamamlama vizesi ve mücbir sebep gibi idari süreçler vb. kurallar ve şartlarla ilgili soru sorulduğunda sorunun cevaplarını mümkün mertebe "9903_karar.pdf" dosyasında ara.
+- İllerin Bölge Sınıflandırması sorulduğunda (Örn: Kütahya kaçıncı bölge?), cevabı 9903 sayılı kararın eklerinde veya ilgili tebliğ dosyalarında (EK-1 İllerin Bölgesel Sınıflandırması) ara.
+- 9903 sayılı kararın uygulanmasına ilişkin usul ve esaslar, yatırım teşvik belgesi başvuru şartları (yöntem, gerekli belgeler), hangi yatırım cinslerinin (komple yeni, tevsi, modernizasyon vb.) ve harcamaların destek kapsamına alınacağı, özel sektör projeleri için Stratejik Hamle Programı değerlendirme kriterleri ve süreci, güneş/rüzgar enerjisi, veri merkezi, şarj istasyonu gibi belirli yatırımlar için aranan ek şartlar ile faiz/kâr payı, sigorta primi, vergi indirimi gibi desteklerin ödeme ve uygulama usullerine ilişkin bir soru geldiğinde, cevabı öncelikle ve ağırlıklı olarak "2025-1-9903_teblig.pdf" dosyası içinde ara ve yanıtını mümkün olduğunca bu dosyadaki hükümlere dayandır.
+- Yerel kalkınma hamlesi, yerel yatırım konuları gibi ifadelerle soru sorulduğunda, yada örneğin; pektin yatırımını nerde yapabilirim gibi sorular geldiğinde "ykh_teblig_yatirim_konulari_listesi_yeni.pdf" dosyasında yatırım konusu içerisinde pektin kelimesi geçen yatırım konularına göre sorunun cevaplarını ara. Yatırım konularında parantez içerisinde bile geçse onları da dahil et.
+- 9495 sayılı karar kapsamında proje bazlı yatırımlar, çok büyük ölçekli yatırımlar hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2016-9495_Proje_Bazli.pdf" dosyasında ara
+- 9495 sayılı kararın uygulanmasına yönelik usul ve esaslarla ilgili tebliğ için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "2019-1_9495_teblig.pdf" dosyasında ara
+- HIT 30 programı kapsamında elektrikli araç, batarya, veri merkezleri ve alt yapıları, yarı iletkenlerin üretimi, Ar-Ge, kuantum, robotlar vb. yatırımları için gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "Hit30.pdf" dosyasında ara
+- Yatırım taahhütlü avans kredisi, ytak hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "ytak.pdf" ve "ytak_hesabi.pdf" dosyalarında ara
+- 9903 saylı karar ve karara ilişkin tebliğde belirlenmemiş "teknoloji hamlesi programı" hakkında programın uygulama esaslarını, bağımsız değerlendirme süreçleri netleştirilmiş ve TÜBİTAK'ın Ar-Ge bileşenlerini değerlendirme rolü, Komite değerlendirme kriterleri, başvuruları hakkında gelebilecek sorular sorulduğunda sorunun cevaplarını mümkün mertebe "teblig_teknoloji_hamlesi_degisiklik.pdf" dosyasında ara 
+- Bir yatırım konusu sorulursa veya bir yatırım konusu hakkında veya nace kodu sorulursa "sectorsearching.xlsx" dosyasında ara.
+- Etuys için "Sistemsel Sorunlar (Açılmama, İmza Hatası vs.)", "Belge Başvurusuna İlişkin sorular", "Devir İşlemleri", "Revize Başvuruları", "Yerli ve İthal Gerçekleştirmeler-Fatura ve Gümrük İşlemleri", "Vergi İstisna Yazısı Alma İşlemleri", "Tamamlama Vizesi İşlemleri", ve "hata mesajları" ile ilgili sistemsel sorunlarda çözüm arayanlar için "etuys_systemsel_sorunlar.txt" dosyasında ara.
+- Bilgileri verirken mutlaka kendi cümlelerinle açıkla, özetle ve yeniden ifade et. Belge içeriğini kelimesi kelimesine kopyalama.
+- Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
+- En son satıra detaylı bilgi almak için ilgili ilin yatırım destek ofisi ile iletişime geçebilirsiniz.`;
 
     // Call Vertex AI with RAG retrieval configuration
     const response = await fetch(endpoint, {
@@ -159,28 +186,49 @@ Her zaman Türkçe yanıt ver ve profesyonel bir dil kullan.`
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contents: [
-          systemPrompt,
-          ...messages.map((msg: any) => ({
-            role: msg.role === "user" ? "user" : "model",
-            parts: [{ text: msg.content }],
-          }))
-        ],
+        contents: messages.map((msg: any) => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.content }],
+        })),
+        systemInstruction: {
+          parts: [{ text: detailedSystemPrompt }]
+        },
         tools: [{
           retrieval: {
             vertexRagStore: {
-              ragResources: [{ ragCorpus: corpusName }],
+              ragResources: [{
+                ragResource: {
+                  ragCorpus: corpusName,
+                }
+              }],
               similarityTopK: topK,
               vectorDistanceThreshold: vectorDistanceThreshold,
             },
           },
         }],
         generationConfig: {
-          temperature: 0.1,
-          topK: 40,
+          temperature: 1,
           topP: 0.95,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 65535,
         },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'OFF',
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'OFF',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'OFF',
+          },
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'OFF',
+          }
+        ],
       }),
     });
 
