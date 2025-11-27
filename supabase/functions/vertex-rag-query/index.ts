@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Get OAuth2 access token from GCP Service Account
+// Get OAuth2 access token from GCP Service Account with proper RS256 JWT signing
 async function getAccessToken(): Promise<string> {
   const serviceAccountJson = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
   if (!serviceAccountJson) {
@@ -16,8 +16,9 @@ async function getAccessToken(): Promise<string> {
 
   const serviceAccount = JSON.parse(serviceAccountJson);
   
-  // Create JWT for OAuth2
+  // Create JWT header and payload
   const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
   const payload = {
     iss: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/cloud-platform",
@@ -26,21 +27,66 @@ async function getAccessToken(): Promise<string> {
     iat: now,
   };
 
-  // Sign JWT (simplified, using service account key)
-  const header = { alg: "RS256", typ: "JWT" };
-  const encodedHeader = btoa(JSON.stringify(header));
-  const encodedPayload = btoa(JSON.stringify(payload));
+  // Base64url encode
+  const base64urlEncode = (data: string) => {
+    return btoa(data)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  };
+
+  const encodedHeader = base64urlEncode(JSON.stringify(header));
+  const encodedPayload = base64urlEncode(JSON.stringify(payload));
+  const signatureInput = `${encodedHeader}.${encodedPayload}`;
+
+  // Import private key and sign with RS256
+  const privateKeyPem = serviceAccount.private_key;
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = privateKeyPem.substring(
+    pemHeader.length,
+    privateKeyPem.length - pemFooter.length
+  ).replace(/\s/g, '');
   
-  // For production, use proper JWT signing with private key
-  // This is a simplified version - you may need crypto library
+  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryKey,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+
+  const encoder = new TextEncoder();
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    encoder.encode(signatureInput)
+  );
+
+  const signatureArray = new Uint8Array(signature);
+  const signatureBase64url = base64urlEncode(
+    String.fromCharCode(...signatureArray)
+  );
+
+  const jwt = `${signatureInput}.${signatureBase64url}`;
+
+  // Exchange JWT for access token
   const tokenRequest = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: `${encodedHeader}.${encodedPayload}.signature`, // Simplified
-    }),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
+
+  if (!tokenRequest.ok) {
+    const errorText = await tokenRequest.text();
+    console.error("Token request failed:", tokenRequest.status, errorText);
+    throw new Error(`Failed to get access token: ${tokenRequest.status}`);
+  }
 
   const tokenData = await tokenRequest.json();
   return tokenData.access_token;
@@ -82,9 +128,14 @@ serve(async (req) => {
     }
 
     const [_, projectId, location] = corpusMatch;
-    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/${corpusName}:generateContent`;
+    
+    // Call model's generateContent endpoint with RAG retrieval
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-1.5-flash:generateContent`;
 
-    // Call Vertex AI RAG Corpora API
+    console.log("Calling Vertex AI endpoint:", endpoint);
+    console.log("Using corpus:", corpusName);
+
+    // Call Vertex AI with RAG retrieval configuration
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -96,16 +147,20 @@ serve(async (req) => {
           role: msg.role === "user" ? "user" : "model",
           parts: [{ text: msg.content }],
         })),
-        generation_config: {
+        tools: [{
+          retrieval: {
+            vertexRagStore: {
+              ragResources: [{ ragCorpus: corpusName }],
+              similarityTopK: topK,
+              vectorDistanceThreshold: vectorDistanceThreshold,
+            },
+          },
+        }],
+        generationConfig: {
           temperature: 0.1,
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 8192,
-        },
-        vertex_rag_store: {
-          rag_resources: [corpusName],
-          similarity_top_k: topK,
-          vector_distance_threshold: vectorDistanceThreshold,
         },
       }),
     });
