@@ -101,11 +101,13 @@ serve(async (req) => {
   }
 
   try {
-    const { corpusName, messages, topK = 10, vectorDistanceThreshold = 0.3 } = await req.json();
+    const { corpusName, messages, topK = 10, vectorDistanceThreshold = 0.7 } = await req.json();
     
     console.log("=== vertex-rag-query request ===");
     console.log("corpusName:", corpusName);
     console.log("messages count:", messages?.length);
+    console.log("topK:", topK);
+    console.log("vectorDistanceThreshold:", vectorDistanceThreshold);
 
     if (!corpusName) {
       throw new Error("corpusName is required");
@@ -138,6 +140,17 @@ serve(async (req) => {
     console.log("Calling Vertex AI endpoint:", endpoint);
     console.log("Using corpus:", corpusName);
 
+    // Prepare system prompt for Turkish RAG responses
+    const systemPrompt = {
+      role: "user",
+      parts: [{ 
+        text: `Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın. 
+Kullanıcının sorularını SADECE sağlanan kaynaklardan (RAG) gelen bilgilere dayanarak yanıtla.
+Kaynaklarda bilgi yoksa, bunu açıkça belirt.
+Her zaman Türkçe yanıt ver ve profesyonel bir dil kullan.` 
+      }]
+    };
+
     // Call Vertex AI with RAG retrieval configuration
     const response = await fetch(endpoint, {
       method: "POST",
@@ -146,10 +159,13 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contents: messages.map((msg: any) => ({
-          role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.content }],
-        })),
+        contents: [
+          systemPrompt,
+          ...messages.map((msg: any) => ({
+            role: msg.role === "user" ? "user" : "model",
+            parts: [{ text: msg.content }],
+          }))
+        ],
         tools: [{
           retrieval: {
             vertexRagStore: {
@@ -182,6 +198,30 @@ serve(async (req) => {
     const parts = candidate?.content?.parts || [];
     const text = parts.map((p: any) => p.text).join("");
     const groundingChunks = candidate?.groundingMetadata?.groundingChunks || [];
+
+    // Detailed debug logging
+    console.log("=== Vertex AI Response Details ===");
+    console.log("Text length:", text.length);
+    console.log("Grounding chunks count:", groundingChunks.length);
+    console.log("First 200 chars:", text.substring(0, 200));
+    console.log("Candidate finish reason:", candidate?.finishReason);
+
+    // Check for empty or insufficient response
+    if (!text || text.trim().length === 0) {
+      console.log("WARNING: Empty response from Vertex AI RAG");
+      return new Response(
+        JSON.stringify({
+          text: "Üzgünüm, sağlanan kaynaklarda bu soruya yanıt verecek bilgi bulunamadı. Lütfen sorunuzu farklı şekilde ifade etmeyi deneyin veya daha spesifik detaylar ekleyin.",
+          sources: [],
+          groundingChunks: [],
+          vertexRag: true,
+          emptyResponse: true,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Extract sources from grounding chunks
     const sources = groundingChunks.map((chunk: any) => ({

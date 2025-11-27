@@ -352,7 +352,7 @@ export const adminSettingsService = {
         category: 'chatbot',
         setting_value: settings.vectorDistanceThreshold,
         setting_value_text: null,
-        description: 'Vertex RAG vector distance threshold'
+        description: 'Vertex RAG similarity threshold (0.0-1.0, higher = more strict matching)'
       }
     ];
 
