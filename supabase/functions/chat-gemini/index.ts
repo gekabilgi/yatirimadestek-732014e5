@@ -557,7 +557,7 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
     const generationConfig = {
-      temperature: 0.05,
+      temperature: 0.3,
       maxOutputTokens: 8192,
     };
 
