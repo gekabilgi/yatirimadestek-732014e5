@@ -130,7 +130,7 @@ serve(async (req) => {
     const [_, projectId, location] = corpusMatch;
     
     // Call model's generateContent endpoint with RAG retrieval
-    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-1.5-flash:generateContent`;
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-2.5-flash:generateContent`;
 
     console.log("Calling Vertex AI endpoint:", endpoint);
     console.log("Using corpus:", corpusName);
