@@ -197,9 +197,7 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
           retrieval: {
             vertexRagStore: {
               ragResources: [{
-                ragResource: {
-                  ragCorpus: corpusName,
-                }
+                ragCorpus: corpusName,
               }],
               similarityTopK: topK,
               vectorDistanceThreshold: vectorDistanceThreshold,
