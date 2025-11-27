@@ -43,10 +43,13 @@ async function getAccessToken(): Promise<string> {
   const privateKeyPem = serviceAccount.private_key;
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
-  const pemContents = privateKeyPem.substring(
-    pemHeader.length,
-    privateKeyPem.length - pemFooter.length
-  ).replace(/\s/g, '');
+  
+  // Extract base64 content between header and footer
+  const pemLines = privateKeyPem.split('\n');
+  const base64Lines = pemLines.filter(line => 
+    !line.includes('BEGIN') && !line.includes('END') && line.trim().length > 0
+  );
+  const pemContents = base64Lines.join('');
   
   const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
   
