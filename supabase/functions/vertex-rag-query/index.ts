@@ -1,11 +1,84 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenAI } from "npm:@google/genai@1.29.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// Helper function to get OAuth2 token
+async function getAccessToken(serviceAccountJson: string): Promise<string> {
+  const serviceAccount = JSON.parse(serviceAccountJson);
+  
+  const header = {
+    alg: "RS256",
+    typ: "JWT",
+  };
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+    scope: "https://www.googleapis.com/auth/cloud-platform",
+  };
+
+  // Create JWT
+  const base64Header = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const base64Payload = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const signatureInput = `${base64Header}.${base64Payload}`;
+
+  // Import private key
+  const privateKey = serviceAccount.private_key;
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = privateKey.substring(pemHeader.length, privateKey.length - pemFooter.length);
+  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+
+  // Sign JWT
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    new TextEncoder().encode(signatureInput)
+  );
+
+  const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  const jwt = `${signatureInput}.${base64Signature}`;
+
+  // Exchange JWT for access token
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error(`Token exchange failed: ${await tokenResponse.text()}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,19 +107,18 @@ serve(async (req) => {
       throw new Error("Last message must be from user");
     }
 
-    // Get Gemini API key
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY not configured");
+    // Get GCP Service Account credentials
+    const GCP_SERVICE_ACCOUNT_JSON = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
+    if (!GCP_SERVICE_ACCOUNT_JSON) {
+      throw new Error("GCP_SERVICE_ACCOUNT_JSON not configured");
     }
 
-    // Initialize Gemini client
-    const ai = new GoogleGenAI({
-      apiKey: GEMINI_API_KEY,
-    });
+    // Get OAuth2 access token
+    const accessToken = await getAccessToken(GCP_SERVICE_ACCOUNT_JSON);
 
     // Model configuration matching AI Studio working code
     const model = 'gemini-3-pro-preview';
+    const endpoint = `https://europe-west1-aiplatform.googleapis.com/v1/projects/394408754498/locations/europe-west1/publishers/google/models/${model}:generateContent`;
 
     // Detailed Turkish system prompt with file-based routing and comprehensive rules
     const detailedSystemPrompt = `**Sen Türkiye'deki yatırım teşvikleri konusunda uzman bir asistansın.
@@ -86,86 +158,77 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
 - Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
 - En son satıra detaylı bilgi almak için ilgili ilin yatırım destek ofisi ile iletişime geçebilirsiniz.`;
 
-    // Tools configuration with ragResource wrapper
-    const tools = [{
-      retrieval: {
-        vertexRagStore: {
-          ragResources: [{
-            ragResource: {
-              ragCorpus: corpusName,
-            },
-          }],
-        },
+    // Build request body for Vertex AI
+    const requestBody = {
+      contents: messages.map((msg: any) => ({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }]
+      })),
+      generation_config: {
+        maxOutputTokens: 65535,
+        temperature: 1,
+        topP: 0.95,
       },
-    }];
-
-    // Generation config matching AI Studio working code
-    const generationConfig = {
-      maxOutputTokens: 65535,
-      temperature: 1,
-      topP: 0.95,
-      thinkingConfig: {
-        thinkingLevel: "HIGH",
-      },
-      safetySettings: [
-        {
-          category: 'HARM_CATEGORY_HATE_SPEECH',
-          threshold: 'OFF',
-        },
-        {
-          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-          threshold: 'OFF',
-        },
-        {
-          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          threshold: 'OFF',
-        },
-        {
-          category: 'HARM_CATEGORY_HARASSMENT',
-          threshold: 'OFF',
-        }
+      safety_settings: [
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
       ],
-      tools: tools,
-      systemInstruction: {
+      system_instruction: {
         parts: [{ text: detailedSystemPrompt }]
       },
+      tools: [{
+        retrieval: {
+          vertex_rag_store: {
+            rag_resources: [{
+              rag_corpus: corpusName,
+            }],
+            similarity_top_k: topK,
+            vector_distance_threshold: vectorDistanceThreshold,
+          }
+        }
+      }]
     };
 
-    console.log("Creating chat with model:", model);
+    console.log("Calling Vertex AI endpoint:", endpoint);
     console.log("Using corpus:", corpusName);
 
-    // Create chat session
-    const chat = ai.chats.create({
-      model: model,
-      config: generationConfig
+    // Call Vertex AI API
+    const vertexResponse = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
 
-    // Convert messages to Gemini format
-    const formattedMessages = messages.map((msg: any) => ({
-      role: msg.role,
-      content: msg.content
-    }));
+    if (!vertexResponse.ok) {
+      const errorText = await vertexResponse.text();
+      console.error("Vertex AI error:", errorText);
+      throw new Error(`Vertex AI request failed: ${vertexResponse.status} ${errorText}`);
+    }
 
-    console.log("Sending message to chat...");
+    const vertexData = await vertexResponse.json();
+    console.log("Vertex AI response received");
 
-    // Send message
-    const response = await chat.sendMessage({
-      message: formattedMessages
-    });
+    // Extract text and grounding metadata from response
+    const candidate = vertexData.candidates?.[0];
+    if (!candidate) {
+      throw new Error("No candidate in Vertex AI response");
+    }
 
-    console.log("Response received from Gemini");
-
-    // Extract text from response
-    const text = response.text || "";
-    
-    // Extract grounding chunks if available
-    const groundingChunks = response.groundingChunks || [];
+    const text = candidate.content?.parts?.map((p: any) => p.text).join("") || "";
+    const groundingMetadata = candidate.groundingMetadata || {};
+    const groundingChunks = groundingMetadata.retrievalQueries || [];
 
     // Detailed debug logging
-    console.log("=== Gemini Response Details ===");
+    console.log("=== Vertex AI Response Details ===");
     console.log("Text length:", text.length);
     console.log("Grounding chunks count:", groundingChunks.length);
     console.log("First 200 chars:", text.substring(0, 200));
+    console.log("Candidate finish reason:", candidate.finishReason);
 
     // Check for empty or insufficient response
     if (!text || text.trim().length === 0) {
@@ -184,11 +247,11 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
       );
     }
 
-    // Extract sources from grounding chunks
-    const sources = groundingChunks.map((chunk: any) => ({
+    // Extract sources from grounding metadata
+    const sources = groundingMetadata.groundingChunks?.map((chunk: any) => ({
       title: chunk.retrievedContext?.title || "Unknown",
       uri: chunk.retrievedContext?.uri || "",
-    }));
+    })) || [];
 
     return new Response(
       JSON.stringify({
