@@ -70,3 +70,6 @@ verify_jwt = false
 
 [functions.custom-rag-operations]
 verify_jwt = true
+
+[functions.vertex-rag-query]
+verify_jwt = false
