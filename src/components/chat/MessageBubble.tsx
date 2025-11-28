@@ -21,9 +21,9 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ role, content, timestamp, onRegenerate, children, sources }: MessageBubbleProps) {
   const isUser = role === "user";
-  
+
   const formatTime = (date: string | number) => {
-    const timestamp = typeof date === 'number' ? date : date;
+    const timestamp = typeof date === "number" ? date : date;
     return new Date(timestamp).toLocaleTimeString("tr-TR", {
       hour: "2-digit",
       minute: "2-digit",
@@ -44,34 +44,36 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
 
     while ((match = citationRegex.exec(content)) !== null) {
       const [fullMatch, indexStr] = match;
-      const indices = indexStr.split(/,\s*/).map(s => parseInt(s.trim()));
-      
-      const badges = indices.map((index) => {
-        const source = sources.find(s => s.index === index);
-        
-        if (source) {
-          return (
-            <HoverCard key={`citation-${citationKey++}`}>
-              <HoverCardTrigger asChild>
-                <sup className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-help mx-0.5 hover:bg-primary/80 transition-colors">
-                  {index}
-                </sup>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-full max-w-[90vw] sm:w-80 text-sm" side="top" align="center">
-                <div className="space-y-2">
-                  <p className="font-semibold text-primary break-words">{source.title}</p>
-                  {(source.snippet || source.text) && (
-                    <p className="text-xs text-muted-foreground leading-relaxed break-words max-h-48 overflow-y-auto">
-                      {source.snippet || source.text}
-                    </p>
-                  )}
-                </div>
-              </HoverCardContent>
-            </HoverCard>
-          );
-        }
-        return null;
-      }).filter(Boolean) as JSX.Element[];
+      const indices = indexStr.split(/,\s*/).map((s) => parseInt(s.trim()));
+
+      const badges = indices
+        .map((index) => {
+          const source = sources.find((s) => s.index === index);
+
+          if (source) {
+            return (
+              <HoverCard key={`citation-${citationKey++}`}>
+                <HoverCardTrigger asChild>
+                  <sup className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-help mx-0.5 hover:bg-primary/80 transition-colors">
+                    {index}
+                  </sup>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-full max-w-[90vw] sm:w-80 text-sm" side="top" align="center">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-primary break-words">Dosya:{source.title}</p>
+                    {(source.snippet || source.text) && (
+                      <p className="text-xs text-muted-foreground leading-relaxed break-words max-h-48 overflow-y-auto">
+                        Kaynak: {source.snippet || source.text}
+                      </p>
+                    )}
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+            );
+          }
+          return null;
+        })
+        .filter(Boolean) as JSX.Element[];
 
       citationMap.set(fullMatch, badges);
     }
@@ -80,19 +82,22 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
     const components = {
       p: ({ children, ...props }: any) => {
         const processedChildren = processTextWithCitations(children);
-        return <p className="mb-2 last:mb-0" {...props}>{processedChildren}</p>;
+        return (
+          <p className="mb-2 last:mb-0" {...props}>
+            {processedChildren}
+          </p>
+        );
       },
       li: ({ children, ...props }: any) => {
         const processedChildren = processTextWithCitations(children);
-        return <li className="mb-1" {...props}>{processedChildren}</li>;
+        return (
+          <li className="mb-1" {...props}>
+            {processedChildren}
+          </li>
+        );
       },
       a: ({ node, ...props }: any) => (
-        <a
-          {...props}
-          className="text-primary hover:underline font-medium"
-          target="_blank"
-          rel="noopener noreferrer"
-        />
+        <a {...props} className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer" />
       ),
       code: ({ node, className, children, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || "");
@@ -111,7 +116,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
     };
 
     function processTextWithCitations(children: any): any {
-      if (typeof children === 'string') {
+      if (typeof children === "string") {
         const parts: (string | JSX.Element)[] = [];
         let lastIndex = 0;
         const regex = /\[(\d+(?:,\s*\d+)*)\]/g;
@@ -138,18 +143,12 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
 
         return parts.length > 0 ? parts : children;
       } else if (Array.isArray(children)) {
-        return children.map((child, i) => 
-          typeof child === 'string' ? processTextWithCitations(child) : child
-        );
+        return children.map((child, i) => (typeof child === "string" ? processTextWithCitations(child) : child));
       }
       return children;
     }
 
-    return (
-      <ReactMarkdown components={components}>
-        {content}
-      </ReactMarkdown>
-    );
+    return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
   };
 
   return (
@@ -159,14 +158,17 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
           <Bot className="h-5 w-5 text-primary" />
         </div>
       )}
-      
-      <div className={cn("flex flex-col gap-1.5 md:gap-2 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]", isUser && "items-end")}>
+
+      <div
+        className={cn(
+          "flex flex-col gap-1.5 md:gap-2 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]",
+          isUser && "items-end",
+        )}
+      >
         <div
           className={cn(
             "rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-sm break-words",
-            isUser
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted/50 border border-border/50"
+            isUser ? "bg-primary text-primary-foreground" : "bg-muted/50 border border-border/50",
           )}
         >
           {isUser ? (
@@ -189,7 +191,10 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
                     code: ({ node, className, children, ...props }) => {
                       const match = /language-(\w+)/.exec(className || "");
                       return match ? (
-                        <code className={cn("block bg-muted p-3 rounded-lg my-2 text-xs overflow-x-auto", className)} {...props}>
+                        <code
+                          className={cn("block bg-muted p-3 rounded-lg my-2 text-xs overflow-x-auto", className)}
+                          {...props}
+                        >
                           {children}
                         </code>
                       ) : (
@@ -211,18 +216,10 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
           )}
           {children}
         </div>
-        
+
         <div className="flex items-center gap-2 px-2">
-          {timestamp && (
-            <span className="text-xs text-muted-foreground">
-              {formatTime(timestamp)}
-            </span>
-          )}
-          <MessageActions
-            content={content}
-            isAssistant={!isUser}
-            onRegenerate={onRegenerate}
-          />
+          {timestamp && <span className="text-xs text-muted-foreground">{formatTime(timestamp)}</span>}
+          <MessageActions content={content} isAssistant={!isUser} onRegenerate={onRegenerate} />
         </div>
       </div>
 
