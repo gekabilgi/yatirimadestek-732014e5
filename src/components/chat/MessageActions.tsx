@@ -31,26 +31,14 @@ export function MessageActions({ content, isAssistant, onRegenerate }: MessageAc
   };
 
   return (
-    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 hover:bg-accent/80 transition-all duration-200 hover:scale-105"
-        onClick={handleCopy}
-        title="Kopyala"
-      >
-        {copied ? <Check className="h-4 w-4 text-green-600 dark:text-green-400" /> : <Copy className="h-4 w-4" />}
+    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopy} title="Kopyala">
+        {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
       </Button>
 
       {isAssistant && onRegenerate && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 hover:bg-accent/80 transition-all duration-200 hover:scale-105"
-          onClick={onRegenerate}
-          title="Yeniden oluştur"
-        >
-          <RotateCw className="h-4 w-4" />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRegenerate} title="Yeniden oluştur">
+          <RotateCw className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>
