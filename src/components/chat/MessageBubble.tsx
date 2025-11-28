@@ -86,9 +86,8 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
         .filter(Boolean) as JSX.Element[];
 
       if (badges.length > 0) {
-    citationMap.set(fullMatch, badges);
-  }
-}
+        citationMap.set(fullMatch, badges);
+      }
     }
 
     const components = {
@@ -271,7 +270,7 @@ function processTextWithCitations(children: any, citationMap: Map<string, JSX.El
       }
 
       const badges = citationMap.get(textMatch[0]);
-      if (badges  && badges.length > 0) {
+      if (badges && badges.length > 0) {
         parts.push(...badges);
       } else {
         parts.push(textMatch[0]);
