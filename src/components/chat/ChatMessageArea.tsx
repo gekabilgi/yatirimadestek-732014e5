@@ -182,47 +182,49 @@ export function ChatMessageArea({
             role={message.role}
             content={message.content}
             timestamp={message.timestamp}
+            sources={message.sources}
             onRegenerate={
               message.role === "assistant" && index === messages.length - 1
                 ? () => onRegenerateMessage?.(index)
                 : undefined
             }
           >
-            {/* Display sources for assistant messages */}
+            {/* Display "Grounding Sources" section for assistant messages */}
             {message.role === "assistant" && message.sources && message.sources.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-                <div className="text-xs font-medium text-muted-foreground">Kaynaklar:</div>
-                 <div className="flex flex-wrap gap-1.5 md:gap-2">
-                   {message.sources.map((source: any, idx) => {
-                     const isObject = typeof source === "object" && source !== null;
-                     const href = isObject ? source.uri || source.url : undefined;
-                     const label = isObject ? source.title || source.uri || source.url : String(source);
-                     const indexLabel = isObject && source.index ? `[${source.index}]` : `[${idx + 1}]`;
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-semibold text-foreground">Grounding Sources</span>
+                  <div className="h-4 w-4 rounded-full border border-border flex items-center justify-center">
+                    <span className="text-[10px] text-muted-foreground">?</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {message.sources.map((source: any, idx) => {
+                    const isObject = typeof source === "object" && source !== null;
+                    const href = isObject ? source.uri || source.url : undefined;
+                    const label = isObject ? source.title || source.uri || source.url : String(source);
+                    const displayIndex = isObject && source.index ? source.index : idx + 1;
 
-                     return href ? (
-                       <a
-                         key={idx}
-                         href={href}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-primary/10 
-                                  hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
-                                  hover:border-primary/40 transition-all"
-                       >
-                         <span className="font-bold mr-1">{indexLabel}</span>
-                         <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
-                         <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
-                       </a>
-                     ) : (
-                       <div key={idx} className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full 
-                                                bg-primary/10 text-[10px] md:text-xs text-primary border border-primary/20">
-                         <span className="font-bold mr-1">{indexLabel}</span>
-                         <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
-                         <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
-                       </div>
-                     );
-                   })}
-                 </div>
+                    return (
+                      <div key={idx} className="flex items-start gap-2">
+                        <span className="text-sm font-medium text-muted-foreground flex-shrink-0 mt-0.5">{displayIndex}.</span>
+                        {href ? (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline inline-flex items-center gap-1.5 flex-1"
+                          >
+                            {label}
+                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-sm text-foreground flex-1">{label}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

@@ -2,6 +2,7 @@ import { Bot, User } from "lucide-react";
 import { MessageActions } from "./MessageActions";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -9,9 +10,15 @@ interface MessageBubbleProps {
   timestamp?: string | number;
   onRegenerate?: () => void;
   children?: React.ReactNode;
+  sources?: Array<{
+    title: string;
+    uri?: string;
+    snippet?: string;
+    index?: number;
+  }>;
 }
 
-export function MessageBubble({ role, content, timestamp, onRegenerate, children }: MessageBubbleProps) {
+export function MessageBubble({ role, content, timestamp, onRegenerate, children, sources }: MessageBubbleProps) {
   const isUser = role === "user";
   
   const formatTime = (date: string | number) => {
@@ -20,6 +27,62 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Process content to replace [n] with hoverable citations
+  const renderContentWithCitations = () => {
+    if (!sources || sources.length === 0 || isUser) {
+      return content;
+    }
+    
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    const citationRegex = /\[(\d+)\]/g;
+    let match;
+    let key = 0;
+    
+    while ((match = citationRegex.exec(content)) !== null) {
+      const [fullMatch, indexStr] = match;
+      const index = parseInt(indexStr);
+      const source = sources.find(s => s.index === index);
+      
+      // Add text before citation
+      if (match.index > lastIndex) {
+        parts.push(content.slice(lastIndex, match.index));
+      }
+      
+      // Add citation with hover
+      if (source) {
+        parts.push(
+          <HoverCard key={`citation-${key++}`}>
+            <HoverCardTrigger asChild>
+              <sup className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-help mx-0.5 hover:bg-primary/80 transition-colors">
+                {index}
+              </sup>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80 text-sm" side="top">
+              <div className="space-y-2">
+                <p className="font-semibold text-primary">{source.title}</p>
+                {source.snippet && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">{source.snippet}</p>
+                )}
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        );
+      } else {
+        parts.push(fullMatch);
+      }
+      
+      lastIndex = match.index + fullMatch.length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.slice(lastIndex));
+    }
+    
+    return <div className="whitespace-pre-wrap">{parts}</div>;
   };
 
   return (
@@ -43,36 +106,40 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
             <p className="whitespace-pre-wrap text-sm break-words">{content}</p>
           ) : (
             <div className="prose prose-sm max-w-none dark:prose-invert break-words">
-              <ReactMarkdown
-                components={{
-                  a: ({ node, ...props }) => (
-                    <a
-                      {...props}
-                      className="text-primary hover:underline font-medium"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  ),
-                  code: ({ node, className, children, ...props }) => {
-                    const match = /language-(\w+)/.exec(className || "");
-                    return match ? (
-                      <code className={cn("block bg-muted p-3 rounded-lg my-2 text-xs", className)} {...props}>
-                        {children}
-                      </code>
-                    ) : (
-                      <code className="bg-muted px-1.5 py-0.5 rounded text-xs" {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                  p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                  ul: ({ node, ...props }) => <ul className="mb-2 ml-4 list-disc" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="mb-2 ml-4 list-decimal" {...props} />,
-                  li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                }}
-              >
-                {content}
-              </ReactMarkdown>
+              {sources && sources.length > 0 ? (
+                renderContentWithCitations()
+              ) : (
+                <ReactMarkdown
+                  components={{
+                    a: ({ node, ...props }) => (
+                      <a
+                        {...props}
+                        className="text-primary hover:underline font-medium"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    ),
+                    code: ({ node, className, children, ...props }) => {
+                      const match = /language-(\w+)/.exec(className || "");
+                      return match ? (
+                        <code className={cn("block bg-muted p-3 rounded-lg my-2 text-xs", className)} {...props}>
+                          {children}
+                        </code>
+                      ) : (
+                        <code className="bg-muted px-1.5 py-0.5 rounded text-xs" {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                    ul: ({ node, ...props }) => <ul className="mb-2 ml-4 list-disc" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="mb-2 ml-4 list-decimal" {...props} />,
+                    li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                  }}
+                >
+                  {content}
+                </ReactMarkdown>
+              )}
             </div>
           )}
           {children}
