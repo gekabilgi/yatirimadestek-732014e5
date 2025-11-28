@@ -9,6 +9,7 @@ export interface ChatMessage {
     title: string;
     uri: string;
     snippet?: string;
+    index?: number; // [1], [2] referansları için
   }>;
   groundingChunks?: Array<{
     retrievedContext?: {
