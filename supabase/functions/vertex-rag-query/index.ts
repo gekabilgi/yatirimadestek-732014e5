@@ -9,7 +9,7 @@ const corsHeaders = {
 // Helper function to get OAuth2 token
 async function getAccessToken(serviceAccountJson: string): Promise<string> {
   const serviceAccount = JSON.parse(serviceAccountJson);
-  
+
   const header = {
     alg: "RS256",
     typ: "JWT",
@@ -35,7 +35,7 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
   const pemContents = privateKey.substring(pemHeader.length, privateKey.length - pemFooter.length);
-  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
 
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
@@ -45,15 +45,11 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
       hash: "SHA-256",
     },
     false,
-    ["sign"]
+    ["sign"],
   );
 
   // Sign JWT
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    new TextEncoder().encode(signatureInput)
-  );
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, new TextEncoder().encode(signatureInput));
 
   const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)))
     .replace(/=/g, "")
@@ -87,7 +83,7 @@ serve(async (req) => {
 
   try {
     const { corpusName, messages, topK = 20, vectorDistanceThreshold = 0.3 } = await req.json();
-    
+
     console.log("=== vertex-rag-query request ===");
     console.log("corpusName:", corpusName);
     console.log("messages count:", messages?.length);
@@ -117,7 +113,7 @@ serve(async (req) => {
     const accessToken = await getAccessToken(GCP_SERVICE_ACCOUNT_JSON);
 
     // Model configuration matching AI Studio working code
-    const model = 'gemini-3-pro-preview';
+    const model = "gemini-3-pro-preview";
     const endpoint = `https://europe-west1-aiplatform.googleapis.com/v1/projects/394408754498/locations/europe-west1/publishers/google/models/${model}:generateContent`;
 
     // Detailed Turkish system prompt with file-based routing and comprehensive rules
@@ -162,11 +158,11 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
     const requestBody = {
       contents: messages.map((msg: any) => ({
         role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }]
+        parts: [{ text: msg.content }],
       })),
       generation_config: {
         maxOutputTokens: 65535,
-        temperature: 1,
+        temperature: 0.1,
         topP: 0.95,
       },
       safety_settings: [
@@ -176,19 +172,23 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
       ],
       system_instruction: {
-        parts: [{ text: detailedSystemPrompt }]
+        parts: [{ text: detailedSystemPrompt }],
       },
-      tools: [{
-        retrieval: {
-          vertex_rag_store: {
-            rag_resources: [{
-              rag_corpus: corpusName,
-            }],
-            similarity_top_k: topK,
-            vector_distance_threshold: vectorDistanceThreshold,
-          }
-        }
-      }]
+      tools: [
+        {
+          retrieval: {
+            vertex_rag_store: {
+              rag_resources: [
+                {
+                  rag_corpus: corpusName,
+                },
+              ],
+              similarity_top_k: topK,
+              vector_distance_threshold: vectorDistanceThreshold,
+            },
+          },
+        },
+      ],
     };
 
     console.log("Calling Vertex AI endpoint:", endpoint);
@@ -198,7 +198,7 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
     const vertexResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),
@@ -243,15 +243,16 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
     // Extract sources from grounding metadata
-    const sources = groundingMetadata.groundingChunks?.map((chunk: any) => ({
-      title: chunk.retrievedContext?.title || "Unknown",
-      uri: chunk.retrievedContext?.uri || "",
-    })) || [];
+    const sources =
+      groundingMetadata.groundingChunks?.map((chunk: any) => ({
+        title: chunk.retrievedContext?.title || "Unknown",
+        uri: chunk.retrievedContext?.uri || "",
+      })) || [];
 
     return new Response(
       JSON.stringify({
@@ -262,7 +263,7 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("vertex-rag-query error:", error);
@@ -273,7 +274,7 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });
