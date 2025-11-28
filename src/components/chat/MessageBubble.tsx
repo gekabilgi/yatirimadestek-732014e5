@@ -29,7 +29,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
     });
   };
 
-  // Process content to replace [n] with hoverable citations
+  // Process content to replace [n] and [n, n, n, ...] with hoverable citations
   const renderContentWithCitations = () => {
     if (!sources || sources.length === 0 || isUser) {
       return content;
@@ -37,42 +37,48 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
     
     const parts: (string | JSX.Element)[] = [];
     let lastIndex = 0;
-    const citationRegex = /\[(\d+)\]/g;
+    // Match both single [n] and grouped [n, n, n, ...] patterns
+    const citationRegex = /\[(\d+(?:,\s*\d+)*)\]/g;
     let match;
     let key = 0;
     
     while ((match = citationRegex.exec(content)) !== null) {
       const [fullMatch, indexStr] = match;
-      const index = parseInt(indexStr);
-      const source = sources.find(s => s.index === index);
       
-      // Add text before citation
+      // Add text before citation(s)
       if (match.index > lastIndex) {
         parts.push(content.slice(lastIndex, match.index));
       }
       
-      // Add citation with hover
-      if (source) {
-        parts.push(
-          <HoverCard key={`citation-${key++}`}>
-            <HoverCardTrigger asChild>
-              <sup className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-help mx-0.5 hover:bg-primary/80 transition-colors">
-                {index}
-              </sup>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-80 text-sm" side="top">
-              <div className="space-y-2">
-                <p className="font-semibold text-primary">{source.title}</p>
-                {source.snippet && (
-                  <p className="text-xs text-muted-foreground leading-relaxed">{source.snippet}</p>
-                )}
-              </div>
-            </HoverCardContent>
-          </HoverCard>
-        );
-      } else {
-        parts.push(fullMatch);
-      }
+      // Split comma-separated indices
+      const indices = indexStr.split(/,\s*/).map(s => parseInt(s.trim()));
+      
+      // Add citation badges for each index
+      indices.forEach((index, idx) => {
+        const source = sources.find(s => s.index === index);
+        
+        if (source) {
+          parts.push(
+            <HoverCard key={`citation-${key++}`}>
+              <HoverCardTrigger asChild>
+                <sup className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-help mx-0.5 hover:bg-primary/80 transition-colors">
+                  {index}
+                </sup>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 text-sm" side="top">
+                <div className="space-y-2">
+                  <p className="font-semibold text-primary">{source.title}</p>
+                  {source.snippet && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">{source.snippet}</p>
+                  )}
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+          );
+        } else {
+          parts.push(`[${index}]`);
+        }
+      });
       
       lastIndex = match.index + fullMatch.length;
     }
