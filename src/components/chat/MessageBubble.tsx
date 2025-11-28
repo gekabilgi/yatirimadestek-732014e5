@@ -21,7 +21,12 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ role, content, timestamp, onRegenerate, children, sources }: MessageBubbleProps) {
   const isUser = role === "user";
+if (role === "assistant") {
+    console.log("SOURCES FOR MESSAGE:", { content: content.slice(0, 60), sources });
+  }
 
+  ...
+}
   const formatTime = (date: string | number) => {
     const ts = typeof date === "number" ? date : date;
     return new Date(ts).toLocaleTimeString("tr-TR", {
