@@ -31,13 +31,24 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
   const signatureInput = `${base64Header}.${base64Payload}`;
 
   // Import private key
-  const privateKey = serviceAccount.private_key;
-  const pemHeader = "-----BEGIN PRIVATE KEY-----";
-  const pemFooter = "-----END PRIVATE KEY-----";
-  const pemContents = privateKey
-    .substring(pemHeader.length, privateKey.length - pemFooter.length)
-    .replace(/\s/g, ''); // Remove all whitespace including newlines
-  const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+  const rawPrivateKey = serviceAccount.private_key as string;
+  const normalizedPrivateKey = rawPrivateKey.includes("\\n")
+    ? rawPrivateKey.replace(/\\n/g, "\n")
+    : rawPrivateKey;
+
+  const pemLines = normalizedPrivateKey
+    .split(/\r?\n/)
+    .map((l: string) => l.trim())
+    .filter((l: string) => l && !l.includes("BEGIN PRIVATE KEY") && !l.includes("END PRIVATE KEY"));
+  const pemBody = pemLines.join("");
+
+  let binaryDer: Uint8Array;
+  try {
+    binaryDer = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+  } catch (e) {
+    console.error("Failed to base64-decode private key body. Length:", pemBody.length);
+    throw e;
+  }
 
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
