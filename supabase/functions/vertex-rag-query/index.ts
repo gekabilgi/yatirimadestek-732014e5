@@ -125,8 +125,8 @@ serve(async (req) => {
     // Get OAuth2 access token
     const accessToken = await getAccessToken(GCP_SERVICE_ACCOUNT_JSON);
 
-    // Model configuration matching AI Studio working code
-    const model = "gemini-3-pro-preview";
+    // Use a Vertex AI Gemini model that is available in europe-west1
+    const model = "gemini-1.5-pro-001";
     const endpoint = `https://europe-west1-aiplatform.googleapis.com/v1/projects/394408754498/locations/europe-west1/publishers/google/models/${model}:generateContent`;
 
     // Detailed Turkish system prompt with file-based routing and comprehensive rules
