@@ -189,7 +189,7 @@ export function ChatMessageArea({
                 : undefined
             }
           >
-            {/* Display "Grounding Sources" section for assistant messages */}
+            {/* Display "Grounding Sources" section for assistant messages with grouped documents */}
             {message.role === "assistant" && message.sources && message.sources.length > 0 && (
               <div className="mt-4 pt-4 border-t border-border/50">
                 <div className="flex items-center gap-2 mb-3">
@@ -199,18 +199,31 @@ export function ChatMessageArea({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  {message.sources.map((source: any, idx) => {
-                    const isObject = typeof source === "object" && source !== null;
-                    const href = isObject ? source.uri || source.url : undefined;
-                    const label = isObject ? source.title || source.uri || source.url : String(source);
-                    const displayIndex = isObject && source.index ? source.index : idx + 1;
-
-                    return (
+                  {(() => {
+                    // Group sources by document name
+                    const groupedSources = new Map<string, { indices: number[], href?: string }>();
+                    
+                    message.sources.forEach((source: any, idx) => {
+                      const isObject = typeof source === "object" && source !== null;
+                      const label = isObject ? source.title || source.uri || source.url : String(source);
+                      const href = isObject ? source.uri || source.url : undefined;
+                      const displayIndex = isObject && source.index ? source.index : idx + 1;
+                      
+                      if (!groupedSources.has(label)) {
+                        groupedSources.set(label, { indices: [], href });
+                      }
+                      groupedSources.get(label)!.indices.push(displayIndex);
+                    });
+                    
+                    // Render grouped sources
+                    return Array.from(groupedSources.entries()).map(([label, data], idx) => (
                       <div key={idx} className="flex items-start gap-2">
-                        <span className="text-sm font-medium text-muted-foreground flex-shrink-0 mt-0.5">{displayIndex}.</span>
-                        {href ? (
+                        <span className="text-sm font-medium text-muted-foreground flex-shrink-0 mt-0.5">
+                          {data.indices.join(', ')}.
+                        </span>
+                        {data.href ? (
                           <a
-                            href={href}
+                            href={data.href}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-primary hover:underline inline-flex items-center gap-1.5 flex-1"
@@ -222,8 +235,8 @@ export function ChatMessageArea({
                           <span className="text-sm text-foreground flex-1">{label}</span>
                         )}
                       </div>
-                    );
-                  })}
+                    ));
+                  })()}
                 </div>
               </div>
             )}
