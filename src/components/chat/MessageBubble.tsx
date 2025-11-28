@@ -14,6 +14,7 @@ interface MessageBubbleProps {
     title: string;
     uri?: string;
     snippet?: string;
+    text?: string;
     index?: number;
   }>;
 }
@@ -68,8 +69,8 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
               <HoverCardContent className="w-80 text-sm" side="top">
                 <div className="space-y-2">
                   <p className="font-semibold text-primary">{source.title}</p>
-                  {source.snippet && (
-                    <p className="text-xs text-muted-foreground leading-relaxed">{source.snippet}</p>
+                  {(source.snippet || source.text) && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">{source.snippet || source.text}</p>
                   )}
                 </div>
               </HoverCardContent>
