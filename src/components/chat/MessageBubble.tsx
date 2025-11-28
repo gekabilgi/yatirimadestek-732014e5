@@ -108,6 +108,73 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
     return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
   };
 
+  // --- Alt kısım: Kullanılan Kaynaklar (chip'ler) ---
+  const renderSourceSummary = () => {
+    if (!sources || sources.length === 0 || isUser) return null;
+
+    // Aynı dosyayı grupla (title + uri)
+    type Group = { title: string; uri?: string; indices: number[] };
+    const grouped = new Map<string, Group>();
+
+    for (const s of sources) {
+      const key = `${s.title}__${s.uri ?? ""}`;
+      const existing = grouped.get(key) ?? {
+        title: s.title,
+        uri: s.uri,
+        indices: [],
+      };
+      if (typeof s.index === "number" && !existing.indices.includes(s.index)) {
+        existing.indices.push(s.index);
+      }
+      grouped.set(key, existing);
+    }
+
+    const groups = Array.from(grouped.values());
+    const totalUnique = groups.length;
+
+    return (
+      <div className="mt-2 rounded-xl bg-muted/40 border border-border/40 px-2.5 py-2">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+            Kullanılan Kaynaklar ({totalUnique})
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {groups.map((g, i) => {
+            const chipInner = (
+              <div className="inline-flex items-center gap-1 rounded-full bg-background/80 border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-background cursor-pointer max-w-full">
+                <span className="font-medium truncate max-w-[140px]">{g.title}</span>
+                {g.indices.length > 0 && (
+                  <span className="flex items-center gap-0.5">
+                    {g.indices.slice(0, 4).map((idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex justify-center items-center w-4 h-4 rounded-full bg-primary/10 text-[9px] text-primary border border-primary/40"
+                      >
+                        {idx}
+                      </span>
+                    ))}
+                    {g.indices.length > 4 && (
+                      <span className="text-[9px] text-muted-foreground">+{g.indices.length - 4}</span>
+                    )}
+                  </span>
+                )}
+              </div>
+            );
+
+            return g.uri ? (
+              <a key={i} href={g.uri} target="_blank" rel="noopener noreferrer" className="no-underline">
+                {chipInner}
+              </a>
+            ) : (
+              <div key={i}>{chipInner}</div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={cn("flex gap-2 md:gap-3 group px-2 md:px-0", isUser ? "justify-end" : "justify-start")}>
       {/* Avatar */}
@@ -132,7 +199,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
               : "bg-card/95 text-card-foreground border-border/60",
           )}
         >
-          {/* Başlık (Asistan / Siz) */}
+          {/* Başlık (Asistan / Siz) + Saat */}
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
               {isUser ? "Siz" : "Asistan"}
@@ -149,8 +216,11 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
             </div>
           )}
 
-          {/* Ek içerik (ör. progress, chips vs.) */}
+          {/* Ek içerik (progress, ekstra info vs.) */}
           {children}
+
+          {/* Kullanılan Kaynaklar chip'leri */}
+          {renderSourceSummary()}
 
           {/* Alt bar: aksiyonlar */}
           <div className="mt-2 pt-1 border-t border-border/40 flex justify-end">
@@ -219,9 +289,7 @@ function processTextWithCitations(children: any, citationMap: Map<string, JSX.El
 
     return parts.length > 0 ? parts : children;
   } else if (Array.isArray(children)) {
-    return children.map((child, i) =>
-      typeof child === "string" ? processTextWithCitations(child, citationMap) : child,
-    );
+    return children.map((child) => (typeof child === "string" ? processTextWithCitations(child, citationMap) : child));
   }
   return children;
 }
