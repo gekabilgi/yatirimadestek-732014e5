@@ -2184,6 +2184,57 @@ export type Database = {
         }
         Relationships: []
       }
+      vertex_configs: {
+        Row: {
+          created_at: string | null
+          id: number
+          internal_api_key: string | null
+          max_output_tokens: number | null
+          model_name: string
+          rag_corpus: string | null
+          similarity_top_k: number | null
+          system_instruction: string | null
+          temperature: number | null
+          top_p: number | null
+          updated_at: string | null
+          vertex_client_email: string | null
+          vertex_private_key: string | null
+          vertex_project_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          internal_api_key?: string | null
+          max_output_tokens?: number | null
+          model_name: string
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vertex_client_email?: string | null
+          vertex_private_key?: string | null
+          vertex_project_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          internal_api_key?: string | null
+          max_output_tokens?: number | null
+          model_name?: string
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vertex_client_email?: string | null
+          vertex_private_key?: string | null
+          vertex_project_id?: string | null
+        }
+        Relationships: []
+      }
       ydo_users: {
         Row: {
           created_at: string
