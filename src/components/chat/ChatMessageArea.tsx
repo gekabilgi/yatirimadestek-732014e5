@@ -192,13 +192,14 @@ export function ChatMessageArea({
             {/* Display "Grounding Sources" section for assistant messages with grouped documents */}
             {message.role === "assistant" && message.sources && message.sources.length > 0 && (
               <div className="mt-4 pt-4 border-t border-border/50">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-semibold text-foreground">Grounding Sources</span>
-                  <div className="h-4 w-4 rounded-full border border-border flex items-center justify-center">
-                    <span className="text-[10px] text-muted-foreground">?</span>
-                  </div>
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Kaynaklar</span>
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                    {message.sources.length}
+                  </Badge>
                 </div>
-                <div className="space-y-2">
+                <div className="grid gap-3">
                   {(() => {
                     // Group sources by document name
                     const groupedSources = new Map<string, { indices: number[], href?: string }>();
@@ -215,25 +216,43 @@ export function ChatMessageArea({
                       groupedSources.get(label)!.indices.push(displayIndex);
                     });
                     
-                    // Render grouped sources
+                    // Render grouped sources as cards
                     return Array.from(groupedSources.entries()).map(([label, data], idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <span className="text-sm font-medium text-muted-foreground flex-shrink-0 mt-0.5">
-                          {data.indices.join(', ')}.
-                        </span>
-                        {data.href ? (
-                          <a
-                            href={data.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline inline-flex items-center gap-1.5 flex-1"
-                          >
-                            {label}
-                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                          </a>
-                        ) : (
-                          <span className="text-sm text-foreground flex-1">{label}</span>
-                        )}
+                      <div 
+                        key={idx} 
+                        className="group relative flex items-start gap-3 p-3 rounded-lg border border-border/60 
+                                   bg-muted/30 hover:bg-muted/50 hover:border-primary/30 transition-all duration-200"
+                      >
+                        {/* Citation badges */}
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {data.indices.map((num, i) => (
+                            <div 
+                              key={i}
+                              className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 
+                                         rounded-full bg-primary text-primary-foreground text-[10px] font-bold"
+                            >
+                              {num}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Document info */}
+                        <div className="flex-1 min-w-0">
+                          {data.href ? (
+                            <a
+                              href={data.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-foreground hover:text-primary font-medium inline-flex 
+                                         items-center gap-1.5 group-hover:gap-2 transition-all break-words"
+                            >
+                              <span className="break-all">{label}</span>
+                              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-60 group-hover:opacity-100" />
+                            </a>
+                          ) : (
+                            <span className="text-sm text-foreground font-medium break-words block">{label}</span>
+                          )}
+                        </div>
                       </div>
                     ));
                   })()}
@@ -243,9 +262,15 @@ export function ChatMessageArea({
 
             {/* Display grounding chunks */}
             {message.role === "assistant" && message.groundingChunks && message.groundingChunks.length > 0 && (
-              <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-border/50 space-y-1.5 md:space-y-2">
-                <div className="text-[10px] md:text-xs font-medium text-muted-foreground">Belge Kaynakları:</div>
-                <div className="flex flex-wrap gap-1.5 md:gap-2 max-h-32 overflow-y-auto">
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Belge Kaynakları</span>
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                    {message.groundingChunks.length}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-1">
                   {message.groundingChunks.map((chunk, chunkIndex) => {
                     // === DEBUG: Log chunk structure ===
                     console.log(`=== CHUNK ${chunkIndex + 1} DEBUG (Frontend) ===`);
@@ -309,13 +334,19 @@ export function ChatMessageArea({
                       <button
                         key={chunkIndex}
                         onClick={() => handleSourceClick(sourceData)}
-                        className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-primary/10 
-                                 hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
-                                 hover:border-primary/40 transition-all"
+                        className="group flex items-center gap-2 p-2.5 rounded-lg border border-border/60 
+                                   bg-muted/30 hover:bg-muted/50 hover:border-primary/30 transition-all 
+                                   text-left w-full"
                         title={fileName}
                       >
-                        <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
-                        <span className="max-w-[100px] md:max-w-[150px] truncate">{displayName}</span>
+                        <div className="p-1.5 rounded-md bg-primary/10 text-primary flex-shrink-0">
+                          <FileText className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-xs text-foreground font-medium truncate flex-1">
+                          {displayName}
+                        </span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary 
+                                                 transition-colors flex-shrink-0 opacity-60 group-hover:opacity-100" />
                       </button>
                     );
                   })}
