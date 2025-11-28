@@ -30,66 +30,126 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
     });
   };
 
-  // Process content to replace [n] and [n, n, n, ...] with hoverable citations
+  // Process markdown content and inject citation badges
   const renderContentWithCitations = () => {
     if (!sources || sources.length === 0 || isUser) {
       return content;
     }
-    
-    const parts: (string | JSX.Element)[] = [];
-    let lastIndex = 0;
-    // Match both single [n] and grouped [n, n, n, ...] patterns
+
+    // Create a map of citation patterns to badge components
+    const citationMap = new Map<string, JSX.Element[]>();
     const citationRegex = /\[(\d+(?:,\s*\d+)*)\]/g;
     let match;
-    let key = 0;
-    
+    let citationKey = 0;
+
     while ((match = citationRegex.exec(content)) !== null) {
       const [fullMatch, indexStr] = match;
-      
-      // Add text before citation(s)
-      if (match.index > lastIndex) {
-        parts.push(content.slice(lastIndex, match.index));
-      }
-      
-      // Split comma-separated indices
       const indices = indexStr.split(/,\s*/).map(s => parseInt(s.trim()));
       
-      // Add citation badges for each index
-      indices.forEach((index, idx) => {
+      const badges = indices.map((index) => {
         const source = sources.find(s => s.index === index);
         
         if (source) {
-          parts.push(
-            <HoverCard key={`citation-${key++}`}>
+          return (
+            <HoverCard key={`citation-${citationKey++}`}>
               <HoverCardTrigger asChild>
                 <sup className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-help mx-0.5 hover:bg-primary/80 transition-colors">
                   {index}
                 </sup>
               </HoverCardTrigger>
-              <HoverCardContent className="w-80 text-sm" side="top">
+              <HoverCardContent className="w-full max-w-[90vw] sm:w-80 text-sm" side="top" align="center">
                 <div className="space-y-2">
-                  <p className="font-semibold text-primary">{source.title}</p>
+                  <p className="font-semibold text-primary break-words">{source.title}</p>
                   {(source.snippet || source.text) && (
-                    <p className="text-xs text-muted-foreground leading-relaxed">{source.snippet || source.text}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed break-words max-h-48 overflow-y-auto">
+                      {source.snippet || source.text}
+                    </p>
                   )}
                 </div>
               </HoverCardContent>
             </HoverCard>
           );
-        } else {
-          parts.push(`[${index}]`);
         }
-      });
-      
-      lastIndex = match.index + fullMatch.length;
+        return null;
+      }).filter(Boolean) as JSX.Element[];
+
+      citationMap.set(fullMatch, badges);
     }
-    
-    // Add remaining text
-    if (lastIndex < content.length) {
-      parts.push(content.slice(lastIndex));
+
+    // Custom text renderer that replaces citation patterns with badges
+    const components = {
+      p: ({ children, ...props }: any) => {
+        const processedChildren = processTextWithCitations(children);
+        return <p className="mb-2 last:mb-0" {...props}>{processedChildren}</p>;
+      },
+      li: ({ children, ...props }: any) => {
+        const processedChildren = processTextWithCitations(children);
+        return <li className="mb-1" {...props}>{processedChildren}</li>;
+      },
+      a: ({ node, ...props }: any) => (
+        <a
+          {...props}
+          className="text-primary hover:underline font-medium"
+          target="_blank"
+          rel="noopener noreferrer"
+        />
+      ),
+      code: ({ node, className, children, ...props }: any) => {
+        const match = /language-(\w+)/.exec(className || "");
+        return match ? (
+          <code className={cn("block bg-muted p-3 rounded-lg my-2 text-xs overflow-x-auto", className)} {...props}>
+            {children}
+          </code>
+        ) : (
+          <code className="bg-muted px-1.5 py-0.5 rounded text-xs" {...props}>
+            {children}
+          </code>
+        );
+      },
+      ul: ({ node, ...props }: any) => <ul className="mb-2 ml-4 list-disc" {...props} />,
+      ol: ({ node, ...props }: any) => <ol className="mb-2 ml-4 list-decimal" {...props} />,
+    };
+
+    function processTextWithCitations(children: any): any {
+      if (typeof children === 'string') {
+        const parts: (string | JSX.Element)[] = [];
+        let lastIndex = 0;
+        const regex = /\[(\d+(?:,\s*\d+)*)\]/g;
+        let textMatch;
+
+        while ((textMatch = regex.exec(children)) !== null) {
+          if (textMatch.index > lastIndex) {
+            parts.push(children.slice(lastIndex, textMatch.index));
+          }
+
+          const badges = citationMap.get(textMatch[0]);
+          if (badges) {
+            parts.push(...badges);
+          } else {
+            parts.push(textMatch[0]);
+          }
+
+          lastIndex = textMatch.index + textMatch[0].length;
+        }
+
+        if (lastIndex < children.length) {
+          parts.push(children.slice(lastIndex));
+        }
+
+        return parts.length > 0 ? parts : children;
+      } else if (Array.isArray(children)) {
+        return children.map((child, i) => 
+          typeof child === 'string' ? processTextWithCitations(child) : child
+        );
+      }
+      return children;
     }
-    
-    return <div className="whitespace-pre-wrap">{parts}</div>;
+
+    return (
+      <ReactMarkdown components={components}>
+        {content}
+      </ReactMarkdown>
+    );
   };
 
   return (
@@ -100,7 +160,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
         </div>
       )}
       
-      <div className={cn("flex flex-col gap-1.5 md:gap-2 max-w-[85%] md:max-w-[80%]", isUser && "items-end")}>
+      <div className={cn("flex flex-col gap-1.5 md:gap-2 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]", isUser && "items-end")}>
         <div
           className={cn(
             "rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-sm break-words",
@@ -129,7 +189,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
                     code: ({ node, className, children, ...props }) => {
                       const match = /language-(\w+)/.exec(className || "");
                       return match ? (
-                        <code className={cn("block bg-muted p-3 rounded-lg my-2 text-xs", className)} {...props}>
+                        <code className={cn("block bg-muted p-3 rounded-lg my-2 text-xs overflow-x-auto", className)} {...props}>
                           {children}
                         </code>
                       ) : (
