@@ -1,8 +1,10 @@
-import { Bot, User } from "lucide-react";
+import { Bot, User, FileText, ExternalLink } from "lucide-react";
 import { MessageActions } from "./MessageActions";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -30,204 +32,226 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
     });
   };
 
-  // Process markdown content and inject citation badges
+  // --- ALINTI İŞLEME (CITATION HANDLING) ---
   const renderContentWithCitations = () => {
     if (!sources || sources.length === 0 || isUser) {
-      return content;
+      return <MarkdownRenderer content={content} />;
     }
 
-    // Create a map of citation patterns to badge components
-    const citationMap = new Map<string, JSX.Element[]>();
-    const citationRegex = /\[(\d+(?:,\s*\d+)*)\]/g;
-    let match;
-    let citationKey = 0;
+    // Metni [1], [2] referanslarına göre parçalara ayır
+    const parts = content.split(/(\[\d+(?:,\s*\d+)*\])/g);
 
-    while ((match = citationRegex.exec(content)) !== null) {
-      const [fullMatch, indexStr] = match;
-      const indices = indexStr.split(/,\s*/).map((s) => parseInt(s.trim()));
-
-      const badges = indices
-        .map((index) => {
-          const source = sources.find((s) => s.index === index);
-
-          if (source) {
+    return (
+      <div className="markdown-content">
+        {parts.map((part, i) => {
+          // Eğer parça bir referans ise (Örn: [1])
+          if (/^\[\d+(?:,\s*\d+)*\]$/.test(part)) {
+            const indices = part
+              .replace(/[\[\]]/g, "")
+              .split(",")
+              .map((s) => parseInt(s.trim()));
             return (
-              <HoverCard key={`citation-${citationKey++}`}>
-                <HoverCardTrigger asChild>
-                  <sup className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-help mx-0.5 hover:bg-primary/80 transition-colors">
-                    {index}
-                  </sup>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-full max-w-[90vw] sm:w-80 text-sm" side="top" align="center">
-                  <div className="space-y-2">
-                    <p className="font-semibold text-primary break-words">Dosya:{source.title}</p>
-                    {(source.snippet || source.text) && (
-                      <p className="text-xs text-muted-foreground leading-relaxed break-words max-h-48 overflow-y-auto">
-                        Kaynak: {source.snippet || source.text}
-                      </p>
-                    )}
-                  </div>
-                </HoverCardContent>
-              </HoverCard>
+              <span key={i} className="inline-flex mx-1 align-super text-xs">
+                {indices.map((index, j) => {
+                  const source = sources.find((s) => s.index === index);
+                  if (!source) return null;
+
+                  return (
+                    <HoverCard key={`${i}-${j}`} openDelay={200}>
+                      <HoverCardTrigger asChild>
+                        <button className="inline-flex items-center justify-center min-w-[1.2rem] h-[1.2rem] px-1 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/20 text-[10px] font-bold transition-all cursor-help select-none">
+                          {index}
+                        </button>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80 p-0 overflow-hidden shadow-lg border-primary/20" align="start">
+                        <div className="bg-muted/50 px-3 py-2 border-b flex items-center gap-2">
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs font-semibold truncate">{source.title}</span>
+                        </div>
+                        <ScrollArea className="h-full max-h-[200px]">
+                          <div className="p-3 text-xs text-muted-foreground leading-relaxed">
+                            {source.snippet || source.text || "İçerik önizlemesi yok."}
+                          </div>
+                        </ScrollArea>
+                        {source.uri && (
+                          <div className="bg-muted/30 px-3 py-2 border-t">
+                            <a
+                              href={source.uri}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] flex items-center gap-1 text-primary hover:underline"
+                            >
+                              Kaynağı Görüntüle <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
+                      </HoverCardContent>
+                    </HoverCard>
+                  );
+                })}
+              </span>
             );
           }
-          return null;
-        })
-        .filter(Boolean) as JSX.Element[];
-
-      citationMap.set(fullMatch, badges);
-    }
-
-    // Custom text renderer that replaces citation patterns with badges
-    const components = {
-      p: ({ children, ...props }: any) => {
-        const processedChildren = processTextWithCitations(children);
-        return (
-          <p className="mb-2 last:mb-0" {...props}>
-            {processedChildren}
-          </p>
-        );
-      },
-      li: ({ children, ...props }: any) => {
-        const processedChildren = processTextWithCitations(children);
-        return (
-          <li className="mb-1" {...props}>
-            {processedChildren}
-          </li>
-        );
-      },
-      a: ({ node, ...props }: any) => (
-        <a {...props} className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer" />
-      ),
-      code: ({ node, className, children, ...props }: any) => {
-        const match = /language-(\w+)/.exec(className || "");
-        return match ? (
-          <code className={cn("block bg-muted p-3 rounded-lg my-2 text-xs overflow-x-auto", className)} {...props}>
-            {children}
-          </code>
-        ) : (
-          <code className="bg-muted px-1.5 py-0.5 rounded text-xs" {...props}>
-            {children}
-          </code>
-        );
-      },
-      ul: ({ node, ...props }: any) => <ul className="mb-2 ml-4 list-disc" {...props} />,
-      ol: ({ node, ...props }: any) => <ol className="mb-2 ml-4 list-decimal" {...props} />,
-    };
-
-    function processTextWithCitations(children: any): any {
-      if (typeof children === "string") {
-        const parts: (string | JSX.Element)[] = [];
-        let lastIndex = 0;
-        const regex = /\[(\d+(?:,\s*\d+)*)\]/g;
-        let textMatch;
-
-        while ((textMatch = regex.exec(children)) !== null) {
-          if (textMatch.index > lastIndex) {
-            parts.push(children.slice(lastIndex, textMatch.index));
-          }
-
-          const badges = citationMap.get(textMatch[0]);
-          if (badges) {
-            parts.push(...badges);
-          } else {
-            parts.push(textMatch[0]);
-          }
-
-          lastIndex = textMatch.index + textMatch[0].length;
-        }
-
-        if (lastIndex < children.length) {
-          parts.push(children.slice(lastIndex));
-        }
-
-        return parts.length > 0 ? parts : children;
-      } else if (Array.isArray(children)) {
-        return children.map((child, i) => (typeof child === "string" ? processTextWithCitations(child) : child));
-      }
-      return children;
-    }
-
-    return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
+          // Normal metin ise Markdown olarak render et
+          return <MarkdownRenderer key={i} content={part} />;
+        })}
+      </div>
+    );
   };
 
   return (
-    <div className={cn("flex gap-2 md:gap-3 group px-2 md:px-0", isUser ? "justify-end" : "justify-start")}>
+    <div
+      className={cn(
+        "flex gap-3 md:gap-4 w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
+        isUser ? "justify-end" : "justify-start",
+      )}
+    >
+      {/* Avatar (Bot) */}
       {!isUser && (
-        <div className="hidden md:flex flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+        <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-sm border border-primary/10">
           <Bot className="h-5 w-5 text-primary" />
         </div>
       )}
 
-      <div
-        className={cn(
-          "flex flex-col gap-1.5 md:gap-2 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]",
-          isUser && "items-end",
-        )}
-      >
+      {/* Mesaj Balonu */}
+      <div className={cn("flex flex-col gap-1 max-w-[85%] sm:max-w-[80%] md:max-w-[75%]", isUser && "items-end")}>
         <div
           className={cn(
-            "rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-sm break-words",
-            isUser ? "bg-primary text-primary-foreground" : "bg-muted/50 border border-border/50",
+            "relative px-4 py-3 md:px-5 md:py-4 shadow-sm text-sm leading-relaxed",
+            // Baloncuk şekli ve rengi
+            isUser
+              ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+              : "bg-card border border-border/60 rounded-2xl rounded-tl-sm text-card-foreground shadow-sm",
           )}
         >
-          {isUser ? (
-            <p className="whitespace-pre-wrap text-sm break-words">{content}</p>
-          ) : (
-            <div className="prose prose-sm max-w-none dark:prose-invert break-words">
-              {sources && sources.length > 0 ? (
-                renderContentWithCitations()
-              ) : (
-                <ReactMarkdown
-                  components={{
-                    a: ({ node, ...props }) => (
-                      <a
-                        {...props}
-                        className="text-primary hover:underline font-medium"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      />
-                    ),
-                    code: ({ node, className, children, ...props }) => {
-                      const match = /language-(\w+)/.exec(className || "");
-                      return match ? (
-                        <code
-                          className={cn("block bg-muted p-3 rounded-lg my-2 text-xs overflow-x-auto", className)}
-                          {...props}
-                        >
-                          {children}
-                        </code>
-                      ) : (
-                        <code className="bg-muted px-1.5 py-0.5 rounded text-xs" {...props}>
-                          {children}
-                        </code>
-                      );
-                    },
-                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                    ul: ({ node, ...props }) => <ul className="mb-2 ml-4 list-disc" {...props} />,
-                    ol: ({ node, ...props }) => <ol className="mb-2 ml-4 list-decimal" {...props} />,
-                    li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                  }}
-                >
-                  {content}
-                </ReactMarkdown>
-              )}
+          {/* İçerik */}
+          <div className={cn("prose prose-sm max-w-none break-words", isUser ? "prose-invert" : "dark:prose-invert")}>
+            {renderContentWithCitations()}
+          </div>
+
+          {/* Kaynakça Kutusu (Sadece Bot ve Kaynak Varsa) */}
+          {!isUser && sources && sources.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-border/50">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                <Database className="h-3 w-3" /> Kullanılan Kaynaklar
+              </p>
+              <div className="grid gap-1.5">
+                {sources.map((source, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2 text-xs bg-muted/30 p-1.5 rounded-md hover:bg-muted/50 transition-colors"
+                  >
+                    <span className="inline-flex items-center justify-center min-w-[1.2rem] h-[1.2rem] rounded-full bg-background border text-[10px] font-medium text-muted-foreground shadow-sm mt-0.5">
+                      {source.index}
+                    </span>
+                    <span className="text-muted-foreground truncate">{source.title}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
+
           {children}
         </div>
 
-        <div className="flex items-center gap-2 px-2">
-          {timestamp && <span className="text-xs text-muted-foreground">{formatTime(timestamp)}</span>}
+        {/* Alt Bilgi (Zaman ve Butonlar) */}
+        <div className="flex items-center gap-2 px-1">
+          {timestamp && (
+            <span className="text-[10px] text-muted-foreground/60 font-medium">{formatTime(timestamp)}</span>
+          )}
           <MessageActions content={content} isAssistant={!isUser} onRegenerate={onRegenerate} />
         </div>
       </div>
 
+      {/* Avatar (User) */}
       {isUser && (
-        <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary flex items-center justify-center">
-          <User className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
+        <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-xl bg-muted flex items-center justify-center shadow-sm">
+          <User className="h-5 w-5 text-muted-foreground" />
         </div>
       )}
     </div>
+  );
+}
+
+// --- YARDIMCI BİLEŞENLER ---
+
+function MarkdownRenderer({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ node, ...props }) => <span {...props} />, // p yerine span kullanarak iç içe p hatasını önleriz
+        a: ({ node, ...props }) => (
+          <a
+            {...props}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium underline underline-offset-4 decoration-primary/50 hover:decoration-primary transition-all"
+          />
+        ),
+        ul: ({ node, ...props }) => <ul {...props} className="my-2 ml-4 list-disc marker:text-primary/50 space-y-1" />,
+        ol: ({ node, ...props }) => (
+          <ol {...props} className="my-2 ml-4 list-decimal marker:text-primary/50 space-y-1" />
+        ),
+        li: ({ node, ...props }) => <li {...props} className="pl-1" />,
+        code: ({ node, className, children, ...props }: any) => {
+          const match = /language-(\w+)/.exec(className || "");
+          return match ? (
+            <code
+              className={cn(
+                "block bg-muted/80 p-3 rounded-lg my-3 text-xs font-mono overflow-x-auto border border-border/50",
+                className,
+              )}
+              {...props}
+            >
+              {children}
+            </code>
+          ) : (
+            <code
+              className="bg-muted/80 px-1.5 py-0.5 rounded text-[11px] font-mono border border-border/50"
+              {...props}
+            >
+              {children}
+            </code>
+          );
+        },
+        h1: ({ node, ...props }) => <h1 {...props} className="text-lg font-bold mb-2 mt-4 first:mt-0" />,
+        h2: ({ node, ...props }) => <h2 {...props} className="text-base font-bold mb-2 mt-3" />,
+        h3: ({ node, ...props }) => <h3 {...props} className="text-sm font-bold mb-1 mt-2" />,
+        blockquote: ({ node, ...props }) => (
+          <blockquote
+            {...props}
+            className="border-l-2 border-primary/30 pl-4 py-1 my-2 italic text-muted-foreground bg-muted/10 rounded-r-lg"
+          />
+        ),
+        table: ({ node, ...props }) => (
+          <div className="my-4 w-full overflow-y-auto rounded-lg border">
+            <table className="w-full text-sm" {...props} />
+          </div>
+        ),
+        th: ({ node, ...props }) => <th {...props} className="border-b bg-muted/50 px-4 py-2 text-left font-medium" />,
+        td: ({ node, ...props }) => <td {...props} className="border-b px-4 py-2 last:border-0" />,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
+
+function Database({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+      <path d="M3 5v14c0 1.66 4 3 9 3s 9-1.34 9-3V5" />
+    </svg>
   );
 }
