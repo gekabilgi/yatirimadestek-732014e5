@@ -197,6 +197,7 @@ export function ChatMessageArea({
                      const isObject = typeof source === "object" && source !== null;
                      const href = isObject ? source.uri || source.url : undefined;
                      const label = isObject ? source.title || source.uri || source.url : String(source);
+                     const indexLabel = isObject && source.index ? `[${source.index}]` : `[${idx + 1}]`;
 
                      return href ? (
                        <a
@@ -208,12 +209,14 @@ export function ChatMessageArea({
                                   hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
                                   hover:border-primary/40 transition-all"
                        >
+                         <span className="font-bold mr-1">{indexLabel}</span>
                          <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
                          <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
                        </a>
                      ) : (
                        <div key={idx} className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full 
-                                                bg-muted text-[10px] md:text-xs text-muted-foreground border border-border">
+                                                bg-primary/10 text-[10px] md:text-xs text-primary border border-primary/20">
+                         <span className="font-bold mr-1">{indexLabel}</span>
                          <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
                          <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
                        </div>

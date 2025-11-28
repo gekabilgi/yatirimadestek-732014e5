@@ -75,11 +75,24 @@ serve(async (req) => {
 
     console.log('Stream complete. Total response length:', fullText.length);
 
+    // Parse __METADATA__ separator
+    const [messageContent, metadataJson] = fullText.split('__METADATA__');
+    
+    let sources = [];
+    if (metadataJson && metadataJson.trim()) {
+      try {
+        sources = JSON.parse(metadataJson.trim());
+        console.log('Parsed sources from metadata:', sources);
+      } catch (e) {
+        console.error('Failed to parse __METADATA__ JSON:', e);
+      }
+    }
+
     // Return in chat-gemini compatible format
     return new Response(
       JSON.stringify({
-        text: fullText,
-        sources: [],
+        text: messageContent.trim(),
+        sources: sources, // [{ title: "9903_Karar.pdf", index: 1 }, ...]
         groundingChunks: [],
         vertexRag: true, // Flag to indicate this came from Vertex RAG
       }),
