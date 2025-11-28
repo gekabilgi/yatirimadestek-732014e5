@@ -115,62 +115,53 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
   const renderSourceSummary = () => {
     if (!sources || sources.length === 0 || isUser) return null;
 
-    // Aynı dosyayı grupla (title + uri)
+    // Kaynakları index'e göre sırala (index yoksa dizideki sırayı kullan)
+    const sorted = [...sources].sort((a, b) => {
+      const ai = a.index ?? 0;
+      const bi = b.index ?? 0;
+      return ai - bi;
+    });
+
+    // Aynı başlık + uri olanları grupla
     type Group = { title: string; uri?: string; indices: number[] };
     const grouped = new Map<string, Group>();
 
-    for (const s of sources) {
+    sorted.forEach((s, i) => {
       const key = `${s.title}__${s.uri ?? ""}`;
-      const existing = grouped.get(key) ?? {
-        title: s.title,
-        uri: s.uri,
-        indices: [],
-      };
-      if (typeof s.index === "number" && !existing.indices.includes(s.index)) {
-        existing.indices.push(s.index);
-      }
-      grouped.set(key, existing);
-    }
+      const g = grouped.get(key) ?? { title: s.title, uri: s.uri, indices: [] };
+      if (typeof s.index === "number") g.indices.push(s.index);
+      grouped.set(key, g);
+    });
 
     const groups = Array.from(grouped.values());
-    const totalUnique = groups.length;
+    const total = groups.length;
 
     return (
       <div className="mt-2 rounded-xl bg-muted/40 border border-border/40 px-2.5 py-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-            Kullanılan Kaynaklar ({totalUnique})
+            KULLANILAN KAYNAKLAR ({total})
           </span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {groups.map((g, i) => {
-            const chipInner = (
+            const chip = (
               <div className="inline-flex items-center gap-1 rounded-full bg-background/80 border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-background cursor-pointer max-w-full">
-                <span className="font-medium truncate max-w-[140px]">{g.title}</span>
-                {g.indices.length > 0 && (
-                  <span className="flex items-center gap-0.5">
-                    {g.indices.slice(0, 4).map((idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex justify-center items-center w-4 h-4 rounded-full bg-primary/10 text-[9px] text-primary border border-primary/40"
-                      >
-                        {idx}
-                      </span>
-                    ))}
-                    {g.indices.length > 4 && (
-                      <span className="text-[9px] text-muted-foreground">+{g.indices.length - 4}</span>
-                    )}
-                  </span>
-                )}
+                {/* Numara */}
+                <span className="inline-flex justify-center items-center w-4 h-4 rounded-full bg-primary text-[10px] text-primary-foreground">
+                  {i + 1}
+                </span>
+                {/* Dosya adı */}
+                <span className="font-medium truncate max-w-[150px]">{g.title}</span>
               </div>
             );
 
             return g.uri ? (
               <a key={i} href={g.uri} target="_blank" rel="noopener noreferrer" className="no-underline">
-                {chipInner}
+                {chip}
               </a>
             ) : (
-              <div key={i}>{chipInner}</div>
+              <div key={i}>{chip}</div>
             );
           })}
         </div>
