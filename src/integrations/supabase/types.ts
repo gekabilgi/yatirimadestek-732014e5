@@ -2186,6 +2186,7 @@ export type Database = {
       }
       vertex_configs: {
         Row: {
+          config_key: string
           created_at: string | null
           id: number
           internal_api_key: string | null
@@ -2202,6 +2203,7 @@ export type Database = {
           vertex_project_id: string | null
         }
         Insert: {
+          config_key?: string
           created_at?: string | null
           id?: number
           internal_api_key?: string | null
@@ -2218,6 +2220,7 @@ export type Database = {
           vertex_project_id?: string | null
         }
         Update: {
+          config_key?: string
           created_at?: string | null
           id?: number
           internal_api_key?: string | null
