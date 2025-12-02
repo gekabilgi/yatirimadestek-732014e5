@@ -175,7 +175,7 @@ export function ChatInput({
   return (
     <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 md:p-4">
       <div className="max-w-3xl mx-auto">
-        <div className="flex gap-2 items-end">
+        <div className="flex gap-2 items-end" role="group" aria-label="Mesaj giriş alanı">
           {/* Voice input button */}
           <Button
             variant="ghost"
@@ -187,9 +187,10 @@ export function ChatInput({
                 : 'text-muted-foreground hover:text-primary'
             }`}
             disabled={disabled || isGenerating}
-            title={isRecording ? "Dinleniyor... (durdurmak için tekrar tıklayın)" : "Sesli giriş başlat"}
+            aria-label={isRecording ? "Dinleniyor, durdurmak için tıklayın" : "Sesli giriş başlat"}
+            aria-pressed={isRecording}
           >
-            <Mic className="h-5 w-5" />
+            <Mic className="h-5 w-5" aria-hidden="true" />
           </Button>
 
           <div className="flex-1 relative">
@@ -206,16 +207,24 @@ export function ChatInput({
               disabled={disabled}
               className="min-h-[52px] md:min-h-[56px] max-h-[200px] resize-none pr-16 text-sm shadow-sm transition-all"
               rows={1}
+              aria-label="Mesaj metni"
+              aria-describedby="char-limit-hint"
+              aria-invalid={isOverLimit}
             />
             
             {/* Character counter */}
             {(isNearLimit || currentValue.length > 0) && (
-              <div className={`absolute bottom-2 right-3 text-[10px] transition-colors ${
-                isOverLimit ? 'text-destructive font-medium' : 
-                isNearLimit ? 'text-warning' : 
-                'text-muted-foreground'
-              }`}>
+              <div 
+                id="char-limit-hint"
+                className={`absolute bottom-2 right-3 text-[10px] transition-colors ${
+                  isOverLimit ? 'text-destructive font-medium' : 
+                  isNearLimit ? 'text-warning' : 
+                  'text-muted-foreground'
+                }`}
+                aria-live="polite"
+              >
                 {charCount}/{maxLength}
+                {isOverLimit && <span className="sr-only"> - Karakter limiti aşıldı</span>}
               </div>
             )}
             
@@ -234,9 +243,9 @@ export function ChatInput({
               size="icon"
               variant="destructive"
               className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 shadow-lg hover:shadow-xl transition-all"
-              title="Durdurun"
+              aria-label="Yanıt oluşturmayı durdur"
             >
-              <Square className="h-4 w-4 md:h-5 md:w-5 fill-current" />
+              <Square className="h-4 w-4 md:h-5 md:w-5 fill-current" aria-hidden="true" />
             </Button>
           ) : (
             <Button 
@@ -244,12 +253,12 @@ export function ChatInput({
               disabled={disabled || !currentValue.trim() || isOverLimit} 
               size="icon"
               className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 disabled:opacity-50"
-              title="Gönder"
+              aria-label="Mesajı gönder"
             >
               {disabled && !isGenerating ? (
-                <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin" />
+                <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin" aria-hidden="true" />
               ) : (
-                <Send className="h-4 w-4 md:h-5 md:w-5" />
+                <Send className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
               )}
             </Button>
           )}
