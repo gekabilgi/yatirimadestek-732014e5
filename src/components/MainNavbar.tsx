@@ -55,7 +55,12 @@ const MainNavbar = () => {
   }, [user, isAdmin]);
 
   return (
-    <nav className="nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm">
+    <nav 
+      id="main-navigation"
+      className="nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm"
+      role="navigation"
+      aria-label="Ana menü"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}

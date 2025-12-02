@@ -188,12 +188,12 @@ export default function Chat() {
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block w-80">
+      <aside className="hidden lg:block w-80" role="complementary" aria-label="Sohbet geçmişi">
         {SidebarContent}
-      </div>
+      </aside>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <main id="main-content" className="flex-1 flex flex-col" role="main" aria-label="Sohbet alanı">
         {/* Mobile Sidebar */}
         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
           <div className="lg:hidden border-b p-2">
@@ -242,7 +242,7 @@ export default function Chat() {
             });
           }}
         />
-      </div>
+      </main>
     </div>
   );
 }

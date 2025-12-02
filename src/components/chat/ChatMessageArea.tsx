@@ -106,7 +106,13 @@ export function ChatMessageArea({
   }, [activeSessionId]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div 
+      ref={containerRef} 
+      className="relative"
+      role="log"
+      aria-live="polite"
+      aria-label="Sohbet mesajları"
+    >
       <div className="p-4 pb-8">
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Show incentive progress if active */}
@@ -116,7 +122,7 @@ export function ChatMessageArea({
             <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
               <div className="max-w-2xl w-full text-center space-y-8">
                 <div className="space-y-3">
-                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
                     <Bot className="w-8 h-8 text-primary" />
                   </div>
                   <h2 className="text-3xl font-bold">Nasıl yardımcı olabilirim?</h2>
@@ -128,8 +134,8 @@ export function ChatMessageArea({
                 {/* Rotating Suggestion */}
                 <div className="min-h-[4rem] flex items-center justify-center">
                   {isGeneratingQuestions ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                    <div className="flex items-center gap-2 text-muted-foreground" role="status" aria-live="polite">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" aria-hidden="true" />
                       <span className="text-sm">Örnek sorular hazırlanıyor...</span>
                     </div>
                   ) : currentSuggestion && !isLoading ? (
@@ -138,7 +144,8 @@ export function ChatMessageArea({
                       className="group relative px-6 py-3 rounded-full border border-primary/20 
                                  bg-primary/5 hover:bg-primary/10 hover:border-primary/40
                                  transition-all duration-200 shadow-sm hover:shadow-md
-                                 max-w-xl w-full"
+                                 max-w-xl w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                      aria-label={`Örnek soru: ${currentSuggestion}`}
                     >
                       <div className="flex items-center justify-center gap-2">
                         <span className="text-xs text-muted-foreground font-medium">Örnek soru:</span>
@@ -187,13 +194,14 @@ export function ChatMessageArea({
           })}
 
           {isLoading && (
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="flex gap-3" role="status" aria-live="polite" aria-label="Yanıt hazırlanıyor">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center" aria-hidden="true">
                 <Bot className="h-5 w-5 text-primary" />
               </div>
               <div className="bg-muted/50 border border-border/50 rounded-2xl">
                 <TypingDots />
               </div>
+              <span className="sr-only">Yanıt hazırlanıyor, lütfen bekleyin...</span>
             </div>
           )}
 
@@ -207,9 +215,9 @@ export function ChatMessageArea({
               onClick={scrollToBottom}
               size="icon"
               className="rounded-full shadow-lg h-10 w-10"
-              title="Aşağı kaydır"
+              aria-label="Sohbetin sonuna git"
             >
-              <ArrowDown className="h-5 w-5" />
+              <ArrowDown className="h-5 w-5" aria-hidden="true" />
             </Button>
           </div>
         )}

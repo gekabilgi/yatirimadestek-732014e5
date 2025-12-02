@@ -7,9 +7,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import ProtectedMenuRoute from "@/components/ProtectedMenuRoute";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import SkipLinks from "@/components/SkipLinks";
+import AccessibilityWidget from "@/components/AccessibilityWidget";
 import Index from "./pages/Index";
 import Start from "./pages/Start";
 import IncentiveTools from "./pages/IncentiveTools";
@@ -72,13 +75,16 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <AIChatbot />
+        <AccessibilityProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <SkipLinks />
+                <ScrollToTop />
+                <AccessibilityWidget />
+                <AIChatbot />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/start" element={<Start />} />
@@ -243,10 +249,11 @@ const App = () => {
               <Route path="/program/:id" element={<ProgramDetails />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </AccessibilityProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
