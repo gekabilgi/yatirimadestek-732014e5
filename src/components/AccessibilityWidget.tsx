@@ -221,7 +221,7 @@ const AccessibilityWidget = () => {
                 <SelectTrigger id="line-spacing" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="normal">Normal</SelectItem>
                   <SelectItem value="wide">Geniş</SelectItem>
                   <SelectItem value="wider">Çok Geniş</SelectItem>
