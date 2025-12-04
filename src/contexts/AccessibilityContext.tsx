@@ -6,6 +6,7 @@ interface AccessibilitySettings {
   highlightLinks: boolean;
   reduceMotion: boolean;
   lineSpacing: 'normal' | 'wide' | 'wider';
+  wordSpacing: 'normal' | 'wide' | 'wider';
   largeCursor: boolean;
   readingGuide: boolean;
 }
@@ -22,6 +23,7 @@ const defaultSettings: AccessibilitySettings = {
   highlightLinks: false,
   reduceMotion: false,
   lineSpacing: 'normal',
+  wordSpacing: 'normal',
   largeCursor: false,
   readingGuide: false,
 };
@@ -61,8 +63,15 @@ export const AccessibilityProvider = ({ children }: { children: ReactNode }) => 
     root.classList.remove('line-spacing-normal', 'line-spacing-wide', 'line-spacing-wider');
     root.classList.add(`line-spacing-${settings.lineSpacing}`);
     
+    // Word spacing
+    root.classList.remove('word-spacing-normal', 'word-spacing-wide', 'word-spacing-wider');
+    root.classList.add(`word-spacing-${settings.wordSpacing}`);
+    
     // Large cursor
     root.classList.toggle('large-cursor', settings.largeCursor);
+    
+    // Reading guide
+    root.classList.toggle('reading-guide-active', settings.readingGuide);
     
     // Save to localStorage
     localStorage.setItem('accessibility-settings', JSON.stringify(settings));

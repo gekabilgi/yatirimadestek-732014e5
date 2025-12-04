@@ -829,6 +829,48 @@ html {
   line-height: 2.2;
 }
 
+/* Word Spacing */
+.word-spacing-normal {
+  word-spacing: normal;
+}
+
+.word-spacing-wide {
+  word-spacing: 0.16em;
+}
+
+.word-spacing-wide p,
+.word-spacing-wide li,
+.word-spacing-wide span {
+  word-spacing: 0.16em;
+}
+
+.word-spacing-wider {
+  word-spacing: 0.32em;
+}
+
+.word-spacing-wider p,
+.word-spacing-wider li,
+.word-spacing-wider span {
+  word-spacing: 0.32em;
+}
+
+/* Reading Guide - horizontal line that follows mouse cursor */
+.reading-guide-active {
+  cursor: crosshair;
+}
+
+.reading-guide-line {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent);
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+  transition: top 0.05s ease-out;
+}
+
 /* Large Cursor */
 .large-cursor,
 .large-cursor * {
