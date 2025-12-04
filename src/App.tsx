@@ -13,6 +13,7 @@ import ProtectedMenuRoute from "@/components/ProtectedMenuRoute";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import SkipLinks from "@/components/SkipLinks";
 import AccessibilityWidget from "@/components/AccessibilityWidget";
+import ReadingGuide from "@/components/ReadingGuide";
 import Index from "./pages/Index";
 import Start from "./pages/Start";
 import IncentiveTools from "./pages/IncentiveTools";
@@ -84,6 +85,7 @@ const App = () => {
                 <SkipLinks />
                 <ScrollToTop />
                 <AccessibilityWidget />
+                <ReadingGuide />
                 <AIChatbot />
         <Routes>
           <Route path="/" element={<Index />} />

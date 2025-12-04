@@ -10,7 +10,9 @@ import {
   AlignJustify,
   MousePointer2,
   RotateCcw,
-  BookOpen
+  BookOpen,
+  Space,
+  ScanLine
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -229,6 +231,27 @@ const AccessibilityWidget = () => {
               </Select>
             </div>
 
+            {/* Word Spacing */}
+            <div className="space-y-2">
+              <Label htmlFor="word-spacing" className="text-sm font-medium flex items-center gap-2">
+                <Space className="w-4 h-4" aria-hidden="true" />
+                Kelime Aralığı
+              </Label>
+              <Select
+                value={settings.wordSpacing}
+                onValueChange={(value: 'normal' | 'wide' | 'wider') => updateSetting('wordSpacing', value)}
+              >
+                <SelectTrigger id="word-spacing" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[200]">
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="wide">Geniş</SelectItem>
+                  <SelectItem value="wider">Çok Geniş</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Large Cursor */}
             <div className="flex items-center justify-between">
               <Label htmlFor="large-cursor" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
@@ -241,6 +264,23 @@ const AccessibilityWidget = () => {
                 onCheckedChange={(checked) => updateSetting('largeCursor', checked)}
               />
             </div>
+
+            {/* Reading Guide */}
+            <div className="flex items-center justify-between">
+              <Label htmlFor="reading-guide" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                <ScanLine className="w-4 h-4" aria-hidden="true" />
+                Okuma Kılavuzu
+              </Label>
+              <Switch
+                id="reading-guide"
+                checked={settings.readingGuide}
+                onCheckedChange={(checked) => updateSetting('readingGuide', checked)}
+                aria-describedby="reading-guide-desc"
+              />
+            </div>
+            <p id="reading-guide-desc" className="sr-only">
+              Fare imlecini takip eden yatay çizgi okuma odağını korur
+            </p>
 
             {/* Reset Button */}
             <Button
