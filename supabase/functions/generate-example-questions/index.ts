@@ -81,22 +81,48 @@ JSON array formatında dön: ["soru1", "soru2", ..., "soru12"]`;
     let jsonText = response.text.trim();
     console.log("Raw AI response:", jsonText);
 
-    // Extract JSON from markdown code blocks
+    let questions: string[] = [];
+
+    // Try to extract JSON from markdown code blocks
     const jsonMatch = jsonText.match(/```json\n([\s\S]*?)\n```/);
     if (jsonMatch && jsonMatch[1]) {
       jsonText = jsonMatch[1];
       console.log("Extracted from code block");
-    } else {
-      // Fallback: extract array directly
-      const firstBracket = jsonText.indexOf("[");
-      const lastBracket = jsonText.lastIndexOf("]");
-      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-        jsonText = jsonText.substring(firstBracket, lastBracket + 1);
-        console.log("Extracted array directly");
+      try {
+        questions = JSON.parse(jsonText);
+      } catch (e) {
+        console.log("Failed to parse code block JSON:", e);
       }
     }
 
-    const questions = JSON.parse(jsonText);
+    // Fallback: extract array directly
+    if (questions.length === 0) {
+      const firstBracket = jsonText.indexOf("[");
+      const lastBracket = jsonText.lastIndexOf("]");
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        const arrayText = jsonText.substring(firstBracket, lastBracket + 1);
+        console.log("Trying to extract array directly");
+        try {
+          questions = JSON.parse(arrayText);
+        } catch (e) {
+          console.log("Failed to parse array JSON:", e);
+        }
+      }
+    }
+
+    // Fallback: extract numbered list
+    if (questions.length === 0) {
+      console.log("Trying numbered list extraction");
+      const numberedListRegex = /^\d+\.\s*(.+)$/gm;
+      let match;
+      while ((match = numberedListRegex.exec(jsonText)) !== null) {
+        const question = match[1].trim();
+        if (question && question.length > 5) {
+          questions.push(question);
+        }
+      }
+      console.log(`Extracted ${questions.length} questions from numbered list`);
+    }
 
     if (!Array.isArray(questions) || questions.length === 0) {
       console.warn("No questions generated, returning empty array");
