@@ -20,6 +20,8 @@ import {
   Search,
   Volume2,
   VolumeX,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -177,12 +179,57 @@ export function AIChatbot() {
   const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Load active store on mount
+  // Voice input handler
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      toast({
+        variant: "destructive",
+        title: "Desteklenmiyor",
+        description: "Tarayıcınız sesli giriş özelliğini desteklemiyor.",
+      });
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'tr-TR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onend = () => setIsRecording(false);
+    recognition.onerror = (event: any) => {
+      setIsRecording(false);
+      if (event.error === 'not-allowed') {
+        toast({
+          variant: "destructive",
+          title: "Mikrofon Erişimi Reddedildi",
+          description: "Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.",
+        });
+      }
+    };
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+
+    recognition.start();
+  };
   useEffect(() => {
     getActiveStore().then(setActiveStoreCache);
   }, []);
@@ -817,19 +864,31 @@ export function AIChatbot() {
                   disabled={isLoading}
                   aria-label="Soru girin"
                 />
-                <Button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  size="icon"
-                  className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto min-w-[44px]"
-                  aria-label="Gönder"
-                >
-                  {isLoading && !isStreaming ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
+                <div className="flex flex-col gap-1">
+                  <Button
+                    onClick={handleVoiceInput}
+                    disabled={isLoading}
+                    size="icon"
+                    variant={isRecording ? "destructive" : "outline"}
+                    className={`h-[22px] min-w-[44px] ${isRecording ? 'animate-pulse' : ''}`}
+                    aria-label={isRecording ? "Kaydı durdur" : "Sesli giriş"}
+                  >
+                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 flex-1 min-w-[44px]"
+                    aria-label="Gönder"
+                  >
+                    {isLoading && !isStreaming ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
