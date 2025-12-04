@@ -18,12 +18,15 @@ import {
   PlusCircle,
   History,
   Search,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getActiveStore, generateExampleQuestions } from "@/services/geminiRagService";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 
 interface Message {
   role: "user" | "assistant";
@@ -101,6 +104,21 @@ function renderContentWithBadges(content: string) {
 
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
+  const { speak, stop, isSpeaking, isSupported } = useSpeechSynthesis({ lang: 'tr-TR', rate: 0.9 });
+
+  const handleSpeak = () => {
+    if (isSpeaking) {
+      stop();
+    } else {
+      const cleanText = message.content
+        .replace(/\[badge:[^\]]+\]/gi, '')
+        .replace(/\[(\d+)\]/g, '')
+        .replace(/[#*_`]/g, '')
+        .replace(/\n+/g, '. ')
+        .trim();
+      speak(cleanText);
+    }
+  };
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -112,6 +130,19 @@ function MessageBubble({ message }: { message: Message }) {
         <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
           {renderContentWithBadges(message.content)}
         </div>
+        {!isUser && isSupported && (
+          <div className="mt-2 pt-1.5 border-t border-border/30 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-6 px-2 text-xs gap-1 ${isSpeaking ? 'text-primary' : 'text-muted-foreground'}`}
+              onClick={handleSpeak}
+            >
+              {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+              {isSpeaking ? "Durdur" : "Sesli Oku"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
