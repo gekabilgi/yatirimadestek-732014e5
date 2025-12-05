@@ -185,7 +185,7 @@ const EnhancedHero = () => {
                 ) : (
                   <Button 
                     variant="outline" 
-                    onClick={() => navigate('/ydo-secure-access')}
+                    onClick={() => navigate('/admin/login')}
                     className="h-9 px-3 gap-2 text-sm"
                   >
                     <User className="h-4 w-4" />
@@ -270,7 +270,7 @@ const EnhancedHero = () => {
                     </>
                   ) : (
                     <Link
-                      to="/ydo-secure-access"
+                      to="/admin/login"
                       className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
                       onClick={() => setIsMenuOpen(false)}
                     >
