@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -104,6 +105,41 @@ function renderContentWithBadges(content: string) {
   return nodes;
 }
 
+// Markdown bileşenleri - asistan mesajları için formatlama
+const markdownComponents = {
+  p: ({ children, ...props }: any) => (
+    <p className="mb-2 last:mb-0" {...props}>{children}</p>
+  ),
+  ul: ({ children, ...props }: any) => (
+    <ul className="list-disc list-inside mb-2 space-y-1 pl-2" {...props}>{children}</ul>
+  ),
+  ol: ({ children, ...props }: any) => (
+    <ol className="list-decimal list-inside mb-2 space-y-1 pl-2" {...props}>{children}</ol>
+  ),
+  li: ({ children, ...props }: any) => (
+    <li className="text-sm leading-relaxed" {...props}>{children}</li>
+  ),
+  strong: ({ children, ...props }: any) => (
+    <strong className="font-semibold text-primary" {...props}>{children}</strong>
+  ),
+  a: ({ href, children, ...props }: any) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" 
+       className="text-primary hover:underline" {...props}>{children}</a>
+  ),
+  code: ({ children, ...props }: any) => (
+    <code className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
+  ),
+  h1: ({ children, ...props }: any) => (
+    <h1 className="text-base font-bold mb-2" {...props}>{children}</h1>
+  ),
+  h2: ({ children, ...props }: any) => (
+    <h2 className="text-sm font-bold mb-2" {...props}>{children}</h2>
+  ),
+  h3: ({ children, ...props }: any) => (
+    <h3 className="text-sm font-semibold mb-1" {...props}>{children}</h3>
+  ),
+};
+
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
   const { speak, stop, isSpeaking, isSupported } = useSpeechSynthesis({ lang: 'tr-TR', rate: 0.9 });
@@ -130,7 +166,13 @@ function MessageBubble({ message }: { message: Message }) {
         }`}
       >
         <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
-          {renderContentWithBadges(message.content)}
+          {isUser ? (
+            <span className="whitespace-pre-wrap">{message.content}</span>
+          ) : (
+            <ReactMarkdown components={markdownComponents}>
+              {message.content}
+            </ReactMarkdown>
+          )}
         </div>
         {!isUser && isSupported && (
           <div className="mt-2 pt-1.5 border-t border-border/30 flex justify-end">
