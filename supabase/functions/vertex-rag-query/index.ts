@@ -5,6 +5,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Inline atıf kontrolü ve fallback enjeksiyonu
+function ensureInlineCitations(text: string, sources: any[]): string {
+  if (!sources || sources.length === 0) return text;
+  
+  // Metin içinde [numara] var mı kontrol et
+  const hasInlineCitations = /\[\d+\]/.test(text);
+  
+  if (!hasInlineCitations) {
+    // Eğer inline atıf yoksa, metnin sonuna toplu atıf ekle
+    const refStr = sources.map((_, i) => `[${i + 1}]`).join(' ');
+    return text.trim() + '\n\n' + refStr;
+  }
+  
+  return text;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -88,10 +104,13 @@ serve(async (req) => {
       }
     }
 
+    // Inline atıf kontrolü ve fallback enjeksiyonu uygula
+    const finalText = ensureInlineCitations(messageContent.trim(), sources);
+
     // Return in chat-gemini compatible format
     return new Response(
       JSON.stringify({
-        text: messageContent.trim(),
+        text: finalText,
         sources: sources, // [{ title: "9903_Karar.pdf", index: 1 }, ...]
         groundingChunks: [],
         vertexRag: true, // Flag to indicate this came from Vertex RAG
