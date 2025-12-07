@@ -71,7 +71,7 @@ async function generateEmbedding(text: string, model: string, dimensions: number
   if (model === "gemini") {
     const ai = getAiClient();
     const result = await ai.models.embedContent({
-      model: "models/text-embedding-004",
+      model: "models/text-embedding-001",
       contents: [{ parts: [{ text }] }],
       config: {
         taskType: "RETRIEVAL_QUERY",
