@@ -42,12 +42,13 @@ export function ChatInput({
     setValueRef.current = setValue;
   }, [currentValue, setValue]);
 
-  // Auto-resize textarea
+  // Auto-resize textarea with stable minimum height
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      const minHeight = 52;
+      textarea.style.height = `${Math.max(minHeight, Math.min(textarea.scrollHeight, 200))}px`;
     }
   }, [currentValue]);
 
@@ -175,7 +176,7 @@ export function ChatInput({
   return (
     <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 md:p-4">
       <div className="max-w-3xl mx-auto">
-        <div className="flex gap-2 items-end" role="group" aria-label="Mesaj giriş alanı">
+        <div className="flex gap-2 items-center" role="group" aria-label="Mesaj giriş alanı">
           {/* Voice input button */}
           <Button
             variant="ghost"
@@ -212,28 +213,24 @@ export function ChatInput({
               aria-invalid={isOverLimit}
             />
             
-            {/* Character counter */}
-            {(isNearLimit || currentValue.length > 0) && (
-              <div 
-                id="char-limit-hint"
-                className={`absolute bottom-2 right-3 text-[10px] transition-colors ${
+            {/* Unified hint container - prevents layout shift */}
+            <div 
+              id="char-limit-hint"
+              className="absolute bottom-2 right-3 text-[10px] text-muted-foreground transition-opacity"
+              aria-live="polite"
+            >
+              {currentValue.length > 0 ? (
+                <span className={
                   isOverLimit ? 'text-destructive font-medium' : 
-                  isNearLimit ? 'text-warning' : 
-                  'text-muted-foreground'
-                }`}
-                aria-live="polite"
-              >
-                {charCount}/{maxLength}
-                {isOverLimit && <span className="sr-only"> - Karakter limiti aşıldı</span>}
-              </div>
-            )}
-            
-            {/* Keyboard hint */}
-            {!isNearLimit && currentValue.length === 0 && (
-              <div className="hidden md:block absolute bottom-2 right-3 text-xs text-muted-foreground">
-                <span className="text-[10px]">Shift+Enter ile yeni satır</span>
-              </div>
-            )}
+                  isNearLimit ? 'text-warning' : ''
+                }>
+                  {charCount}/{maxLength}
+                  {isOverLimit && <span className="sr-only"> - Karakter limiti aşıldı</span>}
+                </span>
+              ) : (
+                <span className="hidden md:inline">Shift+Enter ile yeni satır</span>
+              )}
+            </div>
           </div>
 
           {/* Stop or Send button */}
