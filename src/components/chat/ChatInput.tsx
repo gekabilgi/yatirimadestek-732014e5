@@ -176,16 +176,16 @@ export function ChatInput({
   return (
     <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 md:p-4">
       <div className="max-w-3xl mx-auto">
-        <div className="flex gap-2 items-center" role="group" aria-label="Mesaj giriş alanı">
+        <div className="flex gap-3 items-center" role="group" aria-label="Mesaj giriş alanı">
           {/* Voice input button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={handleVoiceInput}
-            className={`h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 transition-colors ${
+            className={`h-11 w-11 rounded-full flex-shrink-0 transition-all ${
               isRecording 
-                ? 'text-red-500 animate-pulse' 
-                : 'text-muted-foreground hover:text-primary'
+                ? 'text-red-500 bg-red-500/10 animate-pulse' 
+                : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
             }`}
             disabled={disabled || isGenerating}
             aria-label={isRecording ? "Dinleniyor, durdurmak için tıklayın" : "Sesli giriş başlat"}
@@ -194,6 +194,7 @@ export function ChatInput({
             <Mic className="h-5 w-5" aria-hidden="true" />
           </Button>
 
+          {/* Input container */}
           <div className="flex-1 relative">
             <Textarea
               ref={textareaRef}
@@ -206,31 +207,25 @@ export function ChatInput({
               onKeyDown={handleKeyDown}
               placeholder="Mesajınızı yazın..."
               disabled={disabled}
-              className="min-h-[52px] md:min-h-[56px] max-h-[200px] resize-none pr-16 text-sm shadow-sm transition-all"
+              className="min-h-[44px] max-h-[200px] resize-none py-3 px-4 text-sm rounded-2xl border-2 border-muted focus:border-primary transition-colors"
               rows={1}
               aria-label="Mesaj metni"
-              aria-describedby="char-limit-hint"
+              aria-describedby={isNearLimit ? "char-limit-hint" : undefined}
               aria-invalid={isOverLimit}
             />
             
-            {/* Unified hint container - prevents layout shift */}
-            <div 
-              id="char-limit-hint"
-              className="absolute bottom-2 right-3 text-[10px] text-muted-foreground transition-opacity"
-              aria-live="polite"
-            >
-              {currentValue.length > 0 ? (
-                <span className={
-                  isOverLimit ? 'text-destructive font-medium' : 
-                  isNearLimit ? 'text-warning' : ''
-                }>
-                  {charCount}/{maxLength}
-                  {isOverLimit && <span className="sr-only"> - Karakter limiti aşıldı</span>}
-                </span>
-              ) : (
-                <span className="hidden md:inline">Shift+Enter ile yeni satır</span>
-              )}
-            </div>
+            {/* Character counter - only show when near/over limit */}
+            {isNearLimit && (
+              <div 
+                id="char-limit-hint"
+                className={`absolute -bottom-5 right-1 text-[10px] ${
+                  isOverLimit ? 'text-destructive font-medium' : 'text-muted-foreground'
+                }`}
+                aria-live="polite"
+              >
+                {charCount}/{maxLength}
+              </div>
+            )}
           </div>
 
           {/* Stop or Send button */}
@@ -239,23 +234,23 @@ export function ChatInput({
               onClick={handleStop}
               size="icon"
               variant="destructive"
-              className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 shadow-lg hover:shadow-xl transition-all"
+              className="h-11 w-11 rounded-full flex-shrink-0 shadow-md hover:shadow-lg transition-all"
               aria-label="Yanıt oluşturmayı durdur"
             >
-              <Square className="h-4 w-4 md:h-5 md:w-5 fill-current" aria-hidden="true" />
+              <Square className="h-4 w-4 fill-current" aria-hidden="true" />
             </Button>
           ) : (
             <Button 
               onClick={handleSend} 
               disabled={disabled || !currentValue.trim() || isOverLimit} 
               size="icon"
-              className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] flex-shrink-0 shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 disabled:opacity-50"
+              className="h-11 w-11 rounded-full flex-shrink-0 shadow-md hover:shadow-lg transition-all bg-primary hover:bg-primary/90"
               aria-label="Mesajı gönder"
             >
               {disabled && !isGenerating ? (
-                <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin" aria-hidden="true" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
-                <Send className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
+                <Send className="h-4 w-4" aria-hidden="true" />
               )}
             </Button>
           )}
