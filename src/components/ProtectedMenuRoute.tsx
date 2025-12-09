@@ -12,7 +12,7 @@ interface ProtectedMenuRouteProps {
 }
 
 const ProtectedMenuRoute: React.FC<ProtectedMenuRouteProps> = ({ children, settingKey }) => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading, isAdminLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const location = useLocation();
@@ -20,7 +20,8 @@ const ProtectedMenuRoute: React.FC<ProtectedMenuRouteProps> = ({ children, setti
 
   useEffect(() => {
     const checkAccess = async () => {
-      if (authLoading) return;
+      // Wait for both auth and admin status to be resolved
+      if (authLoading || isAdminLoading) return;
 
       try {
         const settings = await menuVisibilityService.getMenuVisibilitySettings();
@@ -53,9 +54,10 @@ const ProtectedMenuRoute: React.FC<ProtectedMenuRouteProps> = ({ children, setti
     };
 
     checkAccess();
-  }, [authLoading, user, isAdmin, settingKey, location, toast]);
+  }, [authLoading, isAdminLoading, user, isAdmin, settingKey, location, toast]);
 
-  if (authLoading || loading) {
+  // Wait for all loading states
+  if (authLoading || isAdminLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

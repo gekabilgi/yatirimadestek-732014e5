@@ -17,6 +17,7 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
+  isAdminLoading: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -147,15 +148,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check admin status from user_roles table via RPC
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
   
   useEffect(() => {
-    if (user) {
-      supabase.rpc('is_admin', { user_id: user.id }).then(({ data }) => {
-        setIsAdmin(!!data);
-      });
-    } else {
-      setIsAdmin(false);
-    }
+    const checkAdminStatus = async () => {
+      if (user) {
+        setIsAdminLoading(true);
+        try {
+          const { data } = await supabase.rpc('is_admin', { user_id: user.id });
+          setIsAdmin(!!data);
+        } catch {
+          setIsAdmin(false);
+        } finally {
+          setIsAdminLoading(false);
+        }
+      } else {
+        setIsAdmin(false);
+        setIsAdminLoading(false);
+      }
+    };
+    checkAdminStatus();
   }, [user]);
 
   const refreshProfile = async () => {
@@ -169,6 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     profile,
     loading,
+    isAdminLoading,
     isAdmin,
     signIn,
     signOut,
