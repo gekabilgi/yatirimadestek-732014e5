@@ -151,6 +151,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdminLoading, setIsAdminLoading] = useState(true);
   
   useEffect(() => {
+    // Wait for auth loading to complete before checking admin status
+    if (loading) return;
+    
     const checkAdminStatus = async () => {
       if (user) {
         setIsAdminLoading(true);
@@ -168,7 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     checkAdminStatus();
-  }, [user]);
+  }, [user, loading]);
 
   const refreshProfile = async () => {
     if (user) {
