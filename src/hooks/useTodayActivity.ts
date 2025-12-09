@@ -124,7 +124,10 @@ export const useTodayActivity = () => {
           }
         )
         .subscribe((status) => {
-          console.log('Today activity subscription status:', status);
+          // Silently handle subscription errors - don't show to user
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('Realtime subscription failed, using polling only');
+          }
         });
       subscribedRef.current = true;
     }
@@ -133,7 +136,6 @@ export const useTodayActivity = () => {
     const interval = setInterval(fetchTodayStats, 60000);
 
     return () => {
-      console.log('Cleaning up today activity subscription');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;

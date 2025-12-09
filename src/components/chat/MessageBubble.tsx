@@ -252,9 +252,34 @@ const markdownComponentsBase = {
     );
   },
   p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
-  ul: ({ node, ...props }: any) => <ul className="mb-2 ml-4 list-disc" {...props} />,
-  ol: ({ node, ...props }: any) => <ol className="mb-2 ml-4 list-decimal" {...props} />,
-  li: ({ node, ...props }: any) => <li className="mb-1" {...props} />,
+  ul: ({ node, ...props }: any) => <ul className="mb-3 space-y-1" {...props} />,
+  ol: ({ node, ...props }: any) => <ol className="mb-3 space-y-1" {...props} />,
+  li: ({ node, children, ...props }: any) => {
+    // Check if this li contains a strong/bold element as the first child (header-like item)
+    const childArray = Array.isArray(children) ? children : [children];
+    const firstChild = childArray[0];
+    const hasBoldHeader = firstChild?.type === 'strong' || 
+      (typeof firstChild === 'object' && firstChild?.props?.children?.[0]?.type === 'strong');
+    
+    // If it has a bold header, render without bullet (cleaner look)
+    if (hasBoldHeader) {
+      return (
+        <li className="mb-2 list-none" {...props}>
+          {children}
+        </li>
+      );
+    }
+    
+    // Regular list item with bullet
+    return (
+      <li className="mb-1 ml-4 list-disc" {...props}>
+        {children}
+      </li>
+    );
+  },
+  strong: ({ node, ...props }: any) => (
+    <strong className="font-semibold text-foreground" {...props} />
+  ),
 };
 
 function processTextWithCitations(children: any, citationMap: Map<string, JSX.Element[]>): any {
