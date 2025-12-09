@@ -2482,17 +2482,6 @@ export type Database = {
           }
       match_chatbot_knowledge:
         | {
-            Args: { p_limit?: number; query_embedding: string }
-            Returns: {
-              answer: string
-              created_at: string
-              embedding: string
-              id: string
-              question: string
-              updated_at: string
-            }[]
-          }
-        | {
             Args: {
               match_count?: number
               match_threshold?: number
@@ -2503,6 +2492,17 @@ export type Database = {
               id: string
               question: string
               similarity: number
+            }[]
+          }
+        | {
+            Args: { p_limit?: number; query_embedding: string }
+            Returns: {
+              answer: string
+              created_at: string
+              embedding: string
+              id: string
+              question: string
+              updated_at: string
             }[]
           }
       match_custom_rag_chunks: {
@@ -2602,16 +2602,6 @@ export type Database = {
         Returns: undefined
       }
       update_chatbot_embedding:
-        | { Args: { payload: Json }; Returns: undefined }
-        | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }
-        | {
-            Args: {
-              match_count: number
-              match_threshold: number
-              query_embedding: string
-            }
-            Returns: undefined
-          }
         | {
             Args: {
               match_count: number
@@ -2620,6 +2610,16 @@ export type Database = {
             }
             Returns: undefined
           }
+        | {
+            Args: {
+              match_count: number
+              match_threshold: number
+              query_embedding: string
+            }
+            Returns: undefined
+          }
+        | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }
+        | { Args: { payload: Json }; Returns: undefined }
       update_chatbot_embedding_768:
         | { Args: { p_row_id: string; p_vals: number }; Returns: undefined }
         | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }
