@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import MainNavbar from '@/components/MainNavbar';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import PasswordChangeForm from '@/components/profile/PasswordChangeForm';
@@ -43,8 +43,7 @@ const UserProfile = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <MainNavbar />
+      <AdminLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-32 w-full mb-6" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -52,7 +51,7 @@ const UserProfile = () => {
             <Skeleton className="h-96" />
           </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -62,18 +61,16 @@ const UserProfile = () => {
 
   if (!profileData) {
     return (
-      <div className="min-h-screen bg-background">
-        <MainNavbar />
+      <AdminLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-center text-muted-foreground">Failed to load profile data</p>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <MainNavbar />
+    <AdminLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProfileHeader profileData={profileData} />
 
@@ -98,7 +95,7 @@ const UserProfile = () => {
           <ActivityHistoryCard userId={user.id} />
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
