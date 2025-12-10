@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { generateUUID } from '@/lib/uuid';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -97,7 +98,7 @@ export function useChatSession() {
 
   const createSession = useCallback(async (title: string = 'New Chat') => {
     try {
-      const sessionId = crypto.randomUUID();
+      const sessionId = generateUUID();
       
       const { error } = await supabase
         .from('chat_sessions')
@@ -255,7 +256,7 @@ export function useChatSession() {
       const words = fullResponse.split(' ');
       
       // Add empty assistant message for streaming
-      const assistantId = crypto.randomUUID();
+      const assistantId = generateUUID();
       const emptyAssistantMessage: ChatMessage = {
         role: 'assistant',
         content: '',
