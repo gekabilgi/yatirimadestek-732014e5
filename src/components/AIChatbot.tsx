@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import { generateUUID } from "@/lib/uuid";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -202,7 +203,7 @@ export function AIChatbot() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => generateUUID());
   const [activeStoreCache, setActiveStoreCache] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -426,7 +427,7 @@ export function AIChatbot() {
     setInput("");
 
     // Add user message
-    const userMsgId = crypto.randomUUID();
+    const userMsgId = generateUUID();
     const newUserMsg: Message = { id: userMsgId, role: "user", content: userMessage };
     setMessages((prev) => [...prev, newUserMsg]);
 
@@ -470,7 +471,7 @@ export function AIChatbot() {
           variant: "default",
         });
 
-        const assistantId = crypto.randomUUID();
+        const assistantId = generateUUID();
         const blockedMsg: Message = {
           id: assistantId,
           role: "assistant",
@@ -497,7 +498,7 @@ export function AIChatbot() {
         }
 
         const errorMsg: Message = {
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           role: "assistant",
           content: fallbackMessage,
         };
@@ -528,7 +529,7 @@ export function AIChatbot() {
       }
 
       // Add assistant response
-      const assistantId = crypto.randomUUID();
+      const assistantId = generateUUID();
 
       // Simulate typing effect
       setIsStreaming(true);
@@ -619,11 +620,11 @@ export function AIChatbot() {
   };
 
   const handleNewChat = () => {
-    const newSessionId = crypto.randomUUID();
+    const newSessionId = generateUUID();
     setCurrentSessionId(newSessionId);
     setMessages([
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: "assistant",
         content: "Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.",
       },
