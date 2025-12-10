@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getActiveStore, generateExampleQuestions } from "@/services/geminiRagService";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { useChatbotStats } from "@/hooks/useChatbotStats";
 
 interface Message {
   role: "user" | "assistant";
@@ -228,6 +229,14 @@ export function AIChatbot() {
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { trackUserMessage, trackAssistantMessage, trackNewSession, trackUniqueSession } = useChatbotStats();
+
+  // Track widget open and unique session
+  useEffect(() => {
+    if (isOpen) {
+      trackUniqueSession('floating_widget');
+    }
+  }, [isOpen, trackUniqueSession]);
 
   // Voice input handler
   const handleVoiceInput = () => {
@@ -433,6 +442,9 @@ export function AIChatbot() {
 
     // Save user message to database
     await saveMessage(newUserMsg, currentSessionId);
+    
+    // Track user message for statistics
+    trackUserMessage('floating_widget');
 
     setIsLoading(true);
     setShouldAutoScroll(true);
@@ -557,6 +569,9 @@ export function AIChatbot() {
 
       // Save assistant message to database
       await saveMessage(finalAssistantMsg, currentSessionId);
+      
+      // Track assistant message for statistics
+      trackAssistantMessage('floating_widget');
 
       // Reload sessions to update list
       loadChatSessions();
@@ -631,6 +646,8 @@ export function AIChatbot() {
     ]);
     setInput("");
     setShowHistory(false);
+    // Track new session
+    trackNewSession('floating_widget');
   };
 
   const handleClear = () => {

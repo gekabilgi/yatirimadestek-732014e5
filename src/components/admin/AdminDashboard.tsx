@@ -19,6 +19,7 @@ import {
 import { Link } from 'react-router-dom';
 import { RecentActivities } from './RecentActivities';
 import { AdminPageHeader } from './AdminPageHeader';
+import { ChatbotStatisticsCard } from './ChatbotStatisticsCard';
 
 const AdminDashboard = () => {
   const { data: qnaStats } = useQuery({
@@ -211,6 +212,9 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Chatbot Statistics */}
+      <ChatbotStatisticsCard />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

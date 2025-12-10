@@ -147,6 +147,7 @@ export type Database = {
           id: string
           role: string
           session_id: string
+          source: string | null
         }
         Insert: {
           content: string
@@ -154,6 +155,7 @@ export type Database = {
           id?: string
           role: string
           session_id: string
+          source?: string | null
         }
         Update: {
           content?: string
@@ -161,6 +163,7 @@ export type Database = {
           id?: string
           role?: string
           session_id?: string
+          source?: string | null
         }
         Relationships: []
       }
@@ -202,6 +205,7 @@ export type Database = {
           id: string
           role: string
           session_id: string
+          source: string | null
           sources: string[] | null
         }
         Insert: {
@@ -211,6 +215,7 @@ export type Database = {
           id?: string
           role: string
           session_id: string
+          source?: string | null
           sources?: string[] | null
         }
         Update: {
@@ -220,6 +225,7 @@ export type Database = {
           id?: string
           role?: string
           session_id?: string
+          source?: string | null
           sources?: string[] | null
         }
         Relationships: []
@@ -293,6 +299,45 @@ export type Database = {
           id?: string
           question?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      chatbot_statistics: {
+        Row: {
+          assistant_messages: number | null
+          created_at: string | null
+          date: string
+          id: string
+          messages_count: number | null
+          sessions_count: number | null
+          source: string
+          unique_sessions: number | null
+          updated_at: string | null
+          user_messages: number | null
+        }
+        Insert: {
+          assistant_messages?: number | null
+          created_at?: string | null
+          date: string
+          id?: string
+          messages_count?: number | null
+          sessions_count?: number | null
+          source: string
+          unique_sessions?: number | null
+          updated_at?: string | null
+          user_messages?: number | null
+        }
+        Update: {
+          assistant_messages?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          messages_count?: number | null
+          sessions_count?: number | null
+          source?: string
+          unique_sessions?: number | null
+          updated_at?: string | null
+          user_messages?: number | null
         }
         Relationships: []
       }
@@ -2427,6 +2472,10 @@ export type Database = {
           source_document: string
           variants: string[]
         }[]
+      }
+      increment_chatbot_stat: {
+        Args: { p_source: string; p_stat_type: string }
+        Returns: undefined
       }
       increment_stat: { Args: { stat_name_param: string }; Returns: undefined }
       is_admin: { Args: { user_id?: string }; Returns: boolean }
