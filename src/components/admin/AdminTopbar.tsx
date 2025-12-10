@@ -36,6 +36,19 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
     if (path === '/admin/email-management') return 'E-posta Yönetimi';
     if (path === '/admin/glossary-management') return 'Sözlük Yönetimi';
     if (path === '/admin/feasibility-reports') return 'Fizibilite Raporları';
+    if (path === '/admin/announcements') return 'Duyuru Yönetimi';
+    if (path === '/admin/incentive-settings') return 'Teşvik Hesaplayıcı Ayarları';
+    if (path === '/admin/knowledge-base') return 'Chatbot Bilgi Bankası';
+    if (path === '/admin/legislation') return 'Mevzuat Yönetimi';
+    if (path === '/admin/user-management') return 'Kullanıcı ve Rol Yönetimi';
+    if (path === '/admin/settings/menu-visibility') return 'Menü Görünürlük Ayarları';
+    if (path === '/profile') return 'Profilim';
+    if (path === '/admin/tzy-products') return 'TZY Ürün Listesi';
+    if (path === '/admin/tzy-product-add') return 'TZY Ürün Ekle';
+    if (path === '/admin/tzy-pre-requests') return 'TZY Ön Talepler';
+    if (path === '/admin/tzy-supplier-applications') return 'TZY Tedarikçi Başvuruları';
+    if (path === '/admin/tzy-email-logs') return 'TZY E-posta Logları';
+    if (path.startsWith('/admin/tzy-company-edit')) return 'TZY Firma Düzenle';
     return 'Admin Panel';
   };
 
