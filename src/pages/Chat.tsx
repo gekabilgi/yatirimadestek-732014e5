@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useChatbotStats } from '@/hooks/useChatbotStats';
 
 export default function Chat() {
   const {
@@ -33,6 +34,12 @@ export default function Chat() {
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { trackUserMessage, trackAssistantMessage, trackNewSession, trackUniqueSession } = useChatbotStats();
+
+  // Track page visit and unique session
+  useEffect(() => {
+    trackUniqueSession('chat_page');
+  }, [trackUniqueSession]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -44,6 +51,7 @@ export default function Chat() {
       // Create first session if none exists after loading
       if (loadedSessions.length === 0) {
         await createSession();
+        trackNewSession('chat_page');
       }
     };
     initialize();
@@ -107,16 +115,24 @@ export default function Chat() {
       return;
     }
 
+    // Track user message
+    trackUserMessage('chat_page');
+
     if (!activeSessionId) {
       const newSession = await createSession();
+      trackNewSession('chat_page');
       await sendMessage(newSession.id, message, activeStore);
     } else {
       await sendMessage(activeSessionId, message, activeStore);
     }
+    
+    // Track assistant message (will be tracked after response)
+    trackAssistantMessage('chat_page');
   };
 
   const handleCreateSession = async () => {
     await createSession();
+    trackNewSession('chat_page');
     setIsSidebarOpen(false);
   };
 
