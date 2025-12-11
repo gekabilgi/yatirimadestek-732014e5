@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { Menu, Globe, Settings } from 'lucide-react';
-import { menuVisibilityService } from '@/services/menuVisibilityService';
-import { 
-  MenuVisibilitySettings, 
-  MenuItemVisibility, 
+import React, { useState, useEffect } from "react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { Menu, Globe, Settings } from "lucide-react";
+import { menuVisibilityService } from "@/services/menuVisibilityService";
+import {
+  MenuVisibilitySettings,
+  MenuItemVisibility,
   MENU_ITEMS,
   AdminMenuVisibilitySettings,
-  ADMIN_MENU_ITEMS
-} from '@/types/menuSettings';
+  ADMIN_MENU_ITEMS,
+} from "@/types/menuSettings";
 
 const AdminMenuSettings = () => {
   const [frontendSettings, setFrontendSettings] = useState<MenuVisibilitySettings | null>(null);
@@ -34,7 +34,7 @@ const AdminMenuSettings = () => {
         setFrontendSettings(frontendData);
         setAdminSettings(adminData);
       } catch (error) {
-        console.error('Error loading menu visibility settings:', error);
+        console.error("Error loading menu visibility settings:", error);
         toast({
           title: "Hata",
           description: "Menü ayarları yüklenirken bir hata oluştu.",
@@ -50,18 +50,18 @@ const AdminMenuSettings = () => {
   const handleFrontendToggleChange = async (
     menuItemKey: keyof MenuVisibilitySettings,
     userType: keyof MenuItemVisibility,
-    newValue: boolean
+    newValue: boolean,
   ) => {
     if (!frontendSettings) return;
 
     const previousVisibility = frontendSettings[menuItemKey];
     const newVisibility = { ...previousVisibility, [userType]: newValue };
-    
-    setFrontendSettings(prev => prev ? ({ ...prev, [menuItemKey]: newVisibility }) : null);
-    
+
+    setFrontendSettings((prev) => (prev ? { ...prev, [menuItemKey]: newVisibility } : null));
+
     const savingKey = `frontend_${menuItemKey}_${userType}`;
-    setSavingStates(prev => ({ ...prev, [savingKey]: true }));
-    
+    setSavingStates((prev) => ({ ...prev, [savingKey]: true }));
+
     try {
       await menuVisibilityService.updateMenuItemVisibility(menuItemKey, newVisibility);
       toast({
@@ -69,33 +69,33 @@ const AdminMenuSettings = () => {
         description: `Menü öğesi görünürlüğü güncellendi.`,
       });
     } catch (error) {
-      console.error('Error saving menu visibility:', error);
-      setFrontendSettings(prev => prev ? ({ ...prev, [menuItemKey]: previousVisibility }) : null);
+      console.error("Error saving menu visibility:", error);
+      setFrontendSettings((prev) => (prev ? { ...prev, [menuItemKey]: previousVisibility } : null));
       toast({
         title: "Hata",
         description: "Ayar kaydedilirken bir hata oluştu.",
         variant: "destructive",
       });
     } finally {
-      setSavingStates(prev => ({ ...prev, [savingKey]: false }));
+      setSavingStates((prev) => ({ ...prev, [savingKey]: false }));
     }
   };
 
   const handleAdminToggleChange = async (
     menuItemKey: keyof AdminMenuVisibilitySettings,
     userType: keyof MenuItemVisibility,
-    newValue: boolean
+    newValue: boolean,
   ) => {
     if (!adminSettings) return;
 
     const previousVisibility = adminSettings[menuItemKey];
     const newVisibility = { ...previousVisibility, [userType]: newValue };
-    
-    setAdminSettings(prev => prev ? ({ ...prev, [menuItemKey]: newVisibility }) : null);
-    
+
+    setAdminSettings((prev) => (prev ? { ...prev, [menuItemKey]: newVisibility } : null));
+
     const savingKey = `admin_${menuItemKey}_${userType}`;
-    setSavingStates(prev => ({ ...prev, [savingKey]: true }));
-    
+    setSavingStates((prev) => ({ ...prev, [savingKey]: true }));
+
     try {
       await menuVisibilityService.updateAdminMenuItemVisibility(menuItemKey, newVisibility);
       toast({
@@ -103,15 +103,15 @@ const AdminMenuSettings = () => {
         description: `Admin menü öğesi görünürlüğü güncellendi.`,
       });
     } catch (error) {
-      console.error('Error saving admin menu visibility:', error);
-      setAdminSettings(prev => prev ? ({ ...prev, [menuItemKey]: previousVisibility }) : null);
+      console.error("Error saving admin menu visibility:", error);
+      setAdminSettings((prev) => (prev ? { ...prev, [menuItemKey]: previousVisibility } : null));
       toast({
         title: "Hata",
         description: "Ayar kaydedilirken bir hata oluştu.",
         variant: "destructive",
       });
     } finally {
-      setSavingStates(prev => ({ ...prev, [savingKey]: false }));
+      setSavingStates((prev) => ({ ...prev, [savingKey]: false }));
     }
   };
 
@@ -142,7 +142,7 @@ const AdminMenuSettings = () => {
     items: typeof MENU_ITEMS | typeof ADMIN_MENU_ITEMS,
     settings: MenuVisibilitySettings | AdminMenuVisibilitySettings,
     handleToggle: (key: any, userType: keyof MenuItemVisibility, value: boolean) => void,
-    keyPrefix: string
+    keyPrefix: string,
   ) => (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse">
@@ -156,50 +156,41 @@ const AdminMenuSettings = () => {
         </thead>
         <tbody>
           {items.map((item, index) => {
-            const settingKey = 'settingKey' in item ? item.settingKey : (item as any).settingKey;
+            const settingKey = "settingKey" in item ? item.settingKey : (item as any).settingKey;
             const visibility = (settings as any)[settingKey];
             const isLastRow = index === items.length - 1;
-            
+
             return (
-              <tr 
-                key={settingKey}
-                className={`hover:bg-muted/30 transition-colors ${!isLastRow ? 'border-b' : ''}`}
-              >
-                <td className="py-4 px-4">
+              <tr key={settingKey} className={`hover:bg-muted/30 transition-colors ${!isLastRow ? "border-b" : ""}`}>
+                <td className="py-2 px-2">
                   <div className="space-y-1">
                     <div className="font-medium text-foreground">{item.title}</div>
                     <div className="text-sm text-muted-foreground">{item.description}</div>
                   </div>
                 </td>
-                <td className="py-4 px-6 text-center">
+                <td className="py-2 px-4 text-center">
                   <div className="flex justify-center">
                     <Switch
                       checked={visibility?.admin ?? false}
-                      onCheckedChange={(checked) => 
-                        handleToggle(settingKey, 'admin', checked)
-                      }
+                      onCheckedChange={(checked) => handleToggle(settingKey, "admin", checked)}
                       disabled={savingStates[`${keyPrefix}_${settingKey}_admin`]}
                     />
                   </div>
                 </td>
-                <td className="py-4 px-6 text-center">
+                <td className="py-2 px-4 text-center">
                   <div className="flex justify-center">
                     <Switch
                       checked={visibility?.registered ?? false}
-                      onCheckedChange={(checked) => 
-                        handleToggle(settingKey, 'registered', checked)
-                      }
+                      onCheckedChange={(checked) => handleToggle(settingKey, "registered", checked)}
                       disabled={savingStates[`${keyPrefix}_${settingKey}_registered`]}
                     />
                   </div>
                 </td>
-                <td className="py-4 px-6 text-center">
+                <td className="py-2 px-4 text-center">
                   <div className="flex justify-center">
                     <Switch
                       checked={visibility?.anonymous ?? false}
-                      onCheckedChange={(checked) => 
-                        handleToggle(settingKey, 'anonymous', checked)
-                      }
+                      onCheckedChange={(checked) => handleToggle(settingKey, "anonymous", checked)}
                       disabled={savingStates[`${keyPrefix}_${settingKey}_anonymous`]}
                     />
                   </div>
@@ -219,7 +210,7 @@ const AdminMenuSettings = () => {
         description="Frontend ve Admin menü öğelerinin görünürlük ayarlarını yönetin."
         icon={Menu}
       />
-      <div className="p-4 sm:p-6">
+      <div className="p-2 sm:p-4">
         <Tabs defaultValue="frontend" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="frontend" className="flex items-center gap-2">
@@ -241,12 +232,7 @@ const AdminMenuSettings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {renderMenuTable(
-                  MENU_ITEMS,
-                  frontendSettings,
-                  handleFrontendToggleChange,
-                  'frontend'
-                )}
+                {renderMenuTable(MENU_ITEMS, frontendSettings, handleFrontendToggleChange, "frontend")}
               </CardContent>
             </Card>
           </TabsContent>
@@ -260,12 +246,7 @@ const AdminMenuSettings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {renderMenuTable(
-                  ADMIN_MENU_ITEMS,
-                  adminSettings,
-                  handleAdminToggleChange,
-                  'admin'
-                )}
+                {renderMenuTable(ADMIN_MENU_ITEMS, adminSettings, handleAdminToggleChange, "admin")}
               </CardContent>
             </Card>
           </TabsContent>
