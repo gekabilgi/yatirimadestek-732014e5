@@ -345,6 +345,7 @@ const AdminLegislation = () => {
       <AdminPageHeader 
         title="Mevzuat Yönetimi"
         description="Mevzuat dökümanlarını yönetin"
+        icon={FileText}
       />
 
       <div className="space-y-6 p-6">
