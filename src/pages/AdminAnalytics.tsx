@@ -5,7 +5,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { BarChart3, Users, FileText, TrendingUp, MessageSquare, Building, Calendar, Globe, Target, DollarSign } from 'lucide-react';
 import GoogleAnalyticsCharts from '@/components/admin/GoogleAnalyticsCharts';
 
@@ -341,18 +341,27 @@ const AdminAnalytics = () => {
                       <Pie
                         data={answerStatusData}
                         cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                        outerRadius={80}
+                        cy="45%"
+                        innerRadius={50}
+                        outerRadius={90}
                         fill="#8884d8"
                         dataKey="value"
+                        paddingAngle={2}
                       >
                         {answerStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value, name) => [`${value} soru`, name]} />
+                      <Legend 
+                        layout="horizontal" 
+                        align="center" 
+                        verticalAlign="bottom"
+                        formatter={(value, entry: any) => {
+                          const percent = entry.payload?.percent ? `(${(entry.payload.percent * 100).toFixed(0)}%)` : '';
+                          return `${value} ${percent}`;
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -520,30 +529,39 @@ const AdminAnalytics = () => {
                   </Card>
                 </div>
 
-                {/* Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Sektör Dağılımı</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
+                      <ResponsiveContainer width="100%" height={350}>
                         <PieChart>
                           <Pie
                             data={sectorChartData}
                             cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                            outerRadius={80}
+                            cy="45%"
+                            innerRadius={50}
+                            outerRadius={90}
                             fill="#8884d8"
                             dataKey="value"
+                            paddingAngle={2}
                           >
                             {sectorChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip />
+                          <Tooltip formatter={(value, name) => [`${value} rapor`, name]} />
+                          <Legend 
+                            layout="horizontal" 
+                            align="center" 
+                            verticalAlign="bottom"
+                            wrapperStyle={{ paddingTop: '20px' }}
+                            formatter={(value, entry: any) => {
+                              const percent = entry.payload?.percent ? `(${(entry.payload.percent * 100).toFixed(0)}%)` : '';
+                              return `${value} ${percent}`;
+                            }}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -554,23 +572,33 @@ const AdminAnalytics = () => {
                       <CardTitle>Yatırım Kapsamı</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
+                      <ResponsiveContainer width="100%" height={350}>
                         <PieChart>
                           <Pie
                             data={scopeChartData}
                             cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                            outerRadius={80}
+                            cy="45%"
+                            innerRadius={50}
+                            outerRadius={90}
                             fill="#82ca9d"
                             dataKey="value"
+                            paddingAngle={2}
                           >
                             {scopeChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip />
+                          <Tooltip formatter={(value, name) => [`${value} rapor`, name]} />
+                          <Legend 
+                            layout="horizontal" 
+                            align="center" 
+                            verticalAlign="bottom"
+                            wrapperStyle={{ paddingTop: '20px' }}
+                            formatter={(value, entry: any) => {
+                              const percent = entry.payload?.percent ? `(${(entry.payload.percent * 100).toFixed(0)}%)` : '';
+                              return `${value} ${percent}`;
+                            }}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </CardContent>
