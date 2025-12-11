@@ -130,17 +130,29 @@ const AdminAnalytics = () => {
   const averagePayback = detailedFeasibilityStats?.length ? 
     detailedFeasibilityStats.reduce((sum, report) => sum + (report.geri_odeme_suresi || 0), 0) / detailedFeasibilityStats.filter(r => r.geri_odeme_suresi).length : 0;
 
-  // Sector breakdown
+  // Sector breakdown - grouped into 5 main categories
+  const mapToMainSector = (sector: string | null): string => {
+    if (!sector) return 'Diğer';
+    const s = sector.toLowerCase();
+    if (s.includes('tarım') || s.includes('hayvancılık') || s.includes('balıkçılık') || s.includes('ormancılık')) return 'Tarım';
+    if (s.includes('sanayi') || s.includes('imalat') || s.includes('üretim') || s.includes('tekstil') || s.includes('gıda') || s.includes('kimya') || s.includes('makine') || s.includes('otomotiv') || s.includes('elektronik') || s.includes('metal')) return 'Sanayi';
+    if (s.includes('maden') || s.includes('madencilik') || s.includes('taş ocağı')) return 'Madencilik';
+    if (s.includes('enerji') || s.includes('elektrik') || s.includes('doğalgaz') || s.includes('güneş') || s.includes('rüzgar')) return 'Enerji';
+    if (s.includes('hizmet') || s.includes('turizm') || s.includes('sağlık') || s.includes('eğitim') || s.includes('finans') || s.includes('lojistik') || s.includes('ulaşım') || s.includes('ticaret') || s.includes('perakende')) return 'Hizmetler';
+    return 'Diğer';
+  };
+
   const sectorData = detailedFeasibilityStats?.reduce((acc, report) => {
-    const sector = report.ust_sektor_tanim_tag || 'Diğer';
-    acc[sector] = (acc[sector] || 0) + 1;
+    const mainSector = mapToMainSector(report.ust_sektor_tanim_tag);
+    acc[mainSector] = (acc[mainSector] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const sectorChartData = Object.entries(sectorData || {}).map(([name, value]) => ({
-    name,
-    value,
-  }));
+  // Filter out "Diğer" if it has 0 value and sort by value
+  const sectorChartData = Object.entries(sectorData || {})
+    .filter(([name, value]) => value > 0)
+    .sort(([,a], [,b]) => b - a)
+    .map(([name, value]) => ({ name, value }));
 
   // Investment scope breakdown
   const scopeData = detailedFeasibilityStats?.reduce((acc, report) => {
