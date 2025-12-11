@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AdminTopbar } from './AdminTopbar';
 import { useAuth } from '@/contexts/AuthContext';
+import { menuVisibilityService } from '@/services/menuVisibilityService';
+import { AdminMenuVisibilitySettings, ADMIN_MENU_ITEMS } from '@/types/menuSettings';
 import { 
   Home, 
   MessageSquare, 
@@ -12,14 +14,12 @@ import {
   BarChart3, 
   Settings,
   Target,
-  TrendingUp,
   Link as LinkIcon,
   ChevronDown,
   ChevronRight,
   Scale,
   Bot,
   Megaphone,
-  Menu,
   Users,
   User
 } from 'lucide-react';
@@ -29,14 +29,48 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+// Map navigation hrefs to setting keys
+const hrefToSettingKey: Record<string, keyof AdminMenuVisibilitySettings> = {
+  '/admin': 'admin_menu_dashboard',
+  '/admin/qa-management': 'admin_menu_qa_management',
+  '/admin/knowledge-base': 'admin_menu_knowledge_base',
+  '/admin/feasibility-reports': 'admin_menu_feasibility_reports',
+  '/admin/support-programs': 'admin_menu_support_programs',
+  '/admin/announcements': 'admin_menu_announcements',
+  '/admin/legislation': 'admin_menu_legislation',
+  '/admin/glossary-management': 'admin_menu_glossary',
+  '/profile': 'admin_menu_profile',
+  '/admin/user-management': 'admin_menu_user_management',
+  '/admin/email-management': 'admin_menu_email_management',
+  '/admin/tzyotl': 'admin_menu_supply_chain',
+  '/admin/settings': 'admin_menu_settings',
+  '/admin/analytics': 'admin_menu_analytics',
+};
+
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+  const [menuSettings, setMenuSettings] = useState<AdminMenuVisibilitySettings | null>(null);
 
-  const navigation = [
+  const isAdmin = profile?.role === 'admin';
+  const isRegistered = !!profile;
+
+  useEffect(() => {
+    const loadMenuSettings = async () => {
+      try {
+        const settings = await menuVisibilityService.getAdminMenuVisibilitySettings();
+        setMenuSettings(settings);
+      } catch (error) {
+        console.error('Error loading admin menu settings:', error);
+      }
+    };
+    loadMenuSettings();
+  }, []);
+
+  const allNavigation = [
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Soru & Cevap', href: '/admin/qa-management', icon: MessageSquare },
     { name: 'AI Chatbot Bilgi Bankası', href: '/admin/knowledge-base', icon: Bot },
@@ -70,6 +104,25 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   ];
+
+  // Filter navigation based on visibility settings
+  const shouldShowMenuItem = (href: string): boolean => {
+    if (!menuSettings) return true; // Show all if settings not loaded yet
+    
+    const settingKey = hrefToSettingKey[href];
+    if (!settingKey) return true; // Show if no setting key found
+    
+    const visibility = menuSettings[settingKey];
+    if (!visibility) return true;
+    
+    if (isAdmin && visibility.admin) return true;
+    if (isRegistered && visibility.registered) return true;
+    if (!isRegistered && visibility.anonymous) return true;
+    
+    return false;
+  };
+
+  const navigation = allNavigation.filter(item => shouldShowMenuItem(item.href));
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
