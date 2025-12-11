@@ -41,7 +41,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Soru & Cevap', href: '/admin/qa-management', icon: MessageSquare },
     { name: 'AI Chatbot Bilgi Bankası', href: '/admin/knowledge-base', icon: Bot },
     { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
-    { name: 'Fizibilite İstatistikleri', href: '/admin/feasibility-statistics', icon: TrendingUp },
     { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },
     { name: 'Duyuru Yönetimi', href: '/admin/announcements', icon: Megaphone },
     { name: 'Mevzuat Yönetimi', href: '/admin/legislation', icon: Scale },

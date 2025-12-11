@@ -23,7 +23,6 @@ import AdminSupportPrograms from "./pages/AdminSupportPrograms";
 import AdminAnnouncements from "./pages/AdminAnnouncements";
 import AnnouncementDetail from "./pages/AnnouncementDetail";
 import AdminFeasibilityReports from "./pages/AdminFeasibilityReports";
-import FeasibilityStatistics from "./pages/FeasibilityStatistics";
 import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
@@ -164,7 +163,7 @@ const App = () => {
               } />
               <Route path="/admin/feasibility-statistics" element={
                 <ProtectedAdminRoute>
-                  <FeasibilityStatistics />
+                  <AdminAnalytics />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/analytics" element={
