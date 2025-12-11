@@ -5,6 +5,7 @@ import { AdminTopbar } from './AdminTopbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { menuVisibilityService } from '@/services/menuVisibilityService';
 import { AdminMenuVisibilitySettings, ADMIN_MENU_ITEMS } from '@/types/menuSettings';
+import { Separator } from '@/components/ui/separator';
 import { 
   Home, 
   MessageSquare, 
@@ -47,6 +48,46 @@ const hrefToSettingKey: Record<string, keyof AdminMenuVisibilitySettings> = {
   '/admin/analytics': 'admin_menu_analytics',
 };
 
+// Main navigation items
+const mainNavigation = [
+  { name: 'Dashboard', href: '/admin', icon: Home },
+  { name: 'Soru & Cevap', href: '/admin/qa-management', icon: MessageSquare },
+  { name: 'AI Chatbot Bilgi Bankası', href: '/admin/knowledge-base', icon: Bot },
+  { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
+  { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },
+  { name: 'Duyuru Yönetimi', href: '/admin/announcements', icon: Megaphone },
+  { name: 'Mevzuat Yönetimi', href: '/admin/legislation', icon: Scale },
+  { name: 'Yatırımcı Sözlüğü', href: '/admin/glossary-management', icon: Book },
+  { name: 'Kullanıcı ve Rol Yönetimi', href: '/admin/user-management', icon: Users },
+  { name: 'E-posta Yönetimi', href: '/admin/email-management', icon: Mail },
+  { 
+    name: 'Tedarik Zinciri', 
+    href: '/admin/tzyotl', 
+    icon: LinkIcon,
+    subItems: [
+      { name: 'Ön Talep Listesi', href: '/admin/tzyotl' },
+      { name: 'Ürün Talep Listesi', href: '/admin/tzyutl' },
+      { name: 'Tedarikçi Başvuru Listesi', href: '/admin/tzy-supplier-applications' },
+      { name: 'E-posta Logları', href: '/admin/tzy-email-logs' }
+    ]
+  },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+];
+
+// Bottom navigation items (below separator)
+const bottomNavigation = [
+  {
+    name: 'Ayarlar',
+    href: '/admin/settings',
+    icon: Settings,
+    subItems: [
+      { name: 'Teşvik Hesaplama Ayarları', href: '/admin/settings/incentive-calculation' },
+      { name: 'Menü Görünürlük Ayarları', href: '/admin/settings/menu-visibility' },
+    ]
+  },
+  { name: 'Profilim', href: '/profile', icon: User },
+];
+
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,59 +111,21 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     loadMenuSettings();
   }, []);
 
-  const allNavigation = [
-    { name: 'Dashboard', href: '/admin', icon: Home },
-    { name: 'Soru & Cevap', href: '/admin/qa-management', icon: MessageSquare },
-    { name: 'AI Chatbot Bilgi Bankası', href: '/admin/knowledge-base', icon: Bot },
-    { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
-    { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },
-    { name: 'Duyuru Yönetimi', href: '/admin/announcements', icon: Megaphone },
-    { name: 'Mevzuat Yönetimi', href: '/admin/legislation', icon: Scale },
-    { name: 'Yatırımcı Sözlüğü', href: '/admin/glossary-management', icon: Book },
-    { name: 'Profilim', href: '/profile', icon: User },
-    { name: 'Kullanıcı ve Rol Yönetimi', href: '/admin/user-management', icon: Users },
-    { name: 'E-posta Yönetimi', href: '/admin/email-management', icon: Mail },
-    { 
-      name: 'Tedarik Zinciri', 
-      href: '/admin/tzyotl', 
-      icon: LinkIcon,
-      subItems: [
-        { name: 'Ön Talep Listesi', href: '/admin/tzyotl' },
-        { name: 'Ürün Talep Listesi', href: '/admin/tzyutl' },
-        { name: 'Tedarikçi Başvuru Listesi', href: '/admin/tzy-supplier-applications' },
-        { name: 'E-posta Logları', href: '/admin/tzy-email-logs' }
-      ]
-    },
-    {
-      name: 'Ayarlar',
-      href: '/admin/settings',
-      icon: Settings,
-      subItems: [
-        { name: 'Teşvik Hesaplama Ayarları', href: '/admin/settings/incentive-calculation' },
-        { name: 'Menü Görünürlük Ayarları', href: '/admin/settings/menu-visibility' },
-      ]
-    },
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-  ];
-
   // Filter navigation based on visibility settings
   const shouldShowMenuItem = (href: string): boolean => {
-    if (!menuSettings) return true; // Show all if settings not loaded yet
-    
+    if (!menuSettings) return true;
     const settingKey = hrefToSettingKey[href];
-    if (!settingKey) return true; // Show if no setting key found
-    
+    if (!settingKey) return true;
     const visibility = menuSettings[settingKey];
     if (!visibility) return true;
-    
     if (isAdmin && visibility.admin) return true;
     if (isRegistered && visibility.registered) return true;
     if (!isRegistered && visibility.anonymous) return true;
-    
     return false;
   };
 
-  const navigation = allNavigation.filter(item => shouldShowMenuItem(item.href));
+  const filteredMainNav = mainNavigation.filter(item => shouldShowMenuItem(item.href));
+  const filteredBottomNav = bottomNavigation.filter(item => shouldShowMenuItem(item.href));
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -134,6 +137,88 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       navigate('/admin/login');
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  };
+
+  const renderNavItem = (item: typeof mainNavigation[0]) => {
+    if (item.subItems) {
+      const isExpanded = expandedMenu === item.name;
+      const hasActiveSubItem = item.subItems.some(subItem => location.pathname === subItem.href);
+      const isActive = hasActiveSubItem || location.pathname === item.href;
+      
+      return (
+        <div key={item.name}>
+          <button
+            onClick={() => setExpandedMenu(isExpanded ? null : item.name)}
+            className={cn(
+              isActive
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-gray-700 hover:bg-primary/5 hover:text-primary',
+              'group flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200'
+            )}
+          >
+            <div className="flex items-center">
+              <item.icon
+                className={cn(
+                  isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary',
+                  'mr-3 flex-shrink-0 h-5 w-5'
+                )}
+              />
+              {item.name}
+            </div>
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+            ) : (
+              <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+            )}
+          </button>
+          {isExpanded && (
+            <div className="ml-8 mt-2 space-y-1 animate-slide-up">
+              {item.subItems.map((subItem) => {
+                const isSubActive = location.pathname === subItem.href;
+                return (
+                  <Link
+                    key={subItem.name}
+                    to={subItem.href}
+                    className={cn(
+                      isSubActive
+                        ? 'bg-primary/10 text-primary border-l-2 border-primary'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-2 border-transparent',
+                      'block px-3 py-2 text-sm rounded-r-md transition-all duration-200'
+                    )}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {subItem.name}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      const isActive = location.pathname === item.href;
+      return (
+        <Link
+          key={item.name}
+          to={item.href}
+          className={cn(
+            isActive
+              ? 'bg-primary text-white shadow-sm'
+              : 'text-gray-700 hover:bg-primary/5 hover:text-primary',
+            'group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200'
+          )}
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <item.icon
+            className={cn(
+              isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary',
+              'mr-3 flex-shrink-0 h-5 w-5'
+            )}
+          />
+          {item.name}
+        </Link>
+      );
     }
   };
 
@@ -160,90 +245,21 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <h2 className="text-xl font-bold text-gray-900">Admin Panel</h2>
               </div>
             </div>
-            <div className="flex-grow flex flex-col">
-              <nav className="flex-1 px-4 pb-6 space-y-2">
-                {navigation.map((item) => {
-                  if (item.subItems) {
-                    const isExpanded = expandedMenu === item.name;
-                    const hasActiveSubItem = item.subItems.some(subItem => location.pathname === subItem.href);
-                    const isActive = hasActiveSubItem || location.pathname === item.href;
-                    
-                    return (
-                      <div key={item.name}>
-                        <button
-                          onClick={() => setExpandedMenu(isExpanded ? null : item.name)}
-                          className={cn(
-                            isActive
-                              ? 'bg-primary text-white shadow-sm'
-                              : 'text-gray-700 hover:bg-primary/5 hover:text-primary',
-                            'group flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200'
-                          )}
-                        >
-                          <div className="flex items-center">
-                            <item.icon
-                              className={cn(
-                                isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary',
-                                'mr-3 flex-shrink-0 h-5 w-5'
-                              )}
-                            />
-                            {item.name}
-                          </div>
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 transition-transform duration-200" />
-                          )}
-                        </button>
-                        {isExpanded && (
-                          <div className="ml-8 mt-2 space-y-1 animate-slide-up">
-                            {item.subItems.map((subItem) => {
-                              const isSubActive = location.pathname === subItem.href;
-                              return (
-                                <Link
-                                  key={subItem.name}
-                                  to={subItem.href}
-                                  className={cn(
-                                    isSubActive
-                                      ? 'bg-primary/10 text-primary border-l-2 border-primary'
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-2 border-transparent',
-                                    'block px-3 py-2 text-sm rounded-r-md transition-all duration-200'
-                                  )}
-                                  onClick={() => setIsMobileMenuOpen(false)}
-                                >
-                                  {subItem.name}
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  } else {
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className={cn(
-                          isActive
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'text-gray-700 hover:bg-primary/5 hover:text-primary',
-                          'group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200'
-                        )}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <item.icon
-                          className={cn(
-                            isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary',
-                            'mr-3 flex-shrink-0 h-5 w-5'
-                          )}
-                        />
-                        {item.name}
-                      </Link>
-                    );
-                  }
-                })}
+            <div className="flex-grow flex flex-col justify-between">
+              {/* Main Navigation */}
+              <nav className="flex-1 px-4 space-y-2">
+                {filteredMainNav.map(renderNavItem)}
               </nav>
+              
+              {/* Bottom Navigation with Separator */}
+              {filteredBottomNav.length > 0 && (
+                <div className="px-4 pb-6">
+                  <Separator className="my-4" />
+                  <nav className="space-y-2">
+                    {filteredBottomNav.map(renderNavItem)}
+                  </nav>
+                </div>
+              )}
             </div>
           </div>
         </div>
