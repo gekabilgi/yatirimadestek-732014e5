@@ -22,14 +22,13 @@ export function ChatbotStatisticsCard() {
   useEffect(() => {
     fetchStats();
     
-    // Subscribe to realtime updates
+    // Subscribe to realtime updates on chatbot_statistics table
     const channel = supabase
       .channel('chatbot-stats')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'app_statistics',
-        filter: 'stat_name=in.(chat_page_messages,floating_widget_messages,chat_page_sessions,floating_widget_sessions)'
+        table: 'chatbot_statistics'
       }, () => {
         fetchStats();
       })
@@ -42,33 +41,32 @@ export function ChatbotStatisticsCard() {
 
   const fetchStats = async () => {
     try {
-      // Fetch from app_statistics
-      const { data: appStats, error: appStatsError } = await supabase
-        .from('app_statistics')
-        .select('stat_name, stat_value')
-        .in('stat_name', ['chat_page_messages', 'floating_widget_messages', 'chat_page_sessions', 'floating_widget_sessions']);
-
-      if (appStatsError) throw appStatsError;
-
-      // Fetch today's stats from chatbot_statistics
-      const today = new Date().toISOString().split('T')[0];
-      const { data: todayData, error: todayError } = await supabase
+      // Fetch ALL stats from chatbot_statistics table (not app_statistics which is unreliable)
+      const { data: allData, error: allError } = await supabase
         .from('chatbot_statistics')
-        .select('*')
-        .eq('date', today);
+        .select('*');
 
-      if (todayError) throw todayError;
+      if (allError) throw allError;
 
-      const statMap = new Map(appStats?.map(s => [s.stat_name, s.stat_value]) || []);
-      
-      const chatPageToday = todayData?.find(d => d.source === 'chat_page');
-      const widgetToday = todayData?.find(d => d.source === 'floating_widget');
+      // Calculate totals from chatbot_statistics
+      const chatPageStats = allData?.filter(d => d.source === 'chat_page') || [];
+      const widgetStats = allData?.filter(d => d.source === 'floating_widget') || [];
+
+      const chatPageTotalMessages = chatPageStats.reduce((sum, d) => sum + (d.messages_count || 0), 0);
+      const chatPageTotalSessions = chatPageStats.reduce((sum, d) => sum + (d.sessions_count || 0), 0);
+      const widgetTotalMessages = widgetStats.reduce((sum, d) => sum + (d.messages_count || 0), 0);
+      const widgetTotalSessions = widgetStats.reduce((sum, d) => sum + (d.sessions_count || 0), 0);
+
+      // Get today's stats
+      const today = new Date().toISOString().split('T')[0];
+      const chatPageToday = chatPageStats.find(d => d.date === today);
+      const widgetToday = widgetStats.find(d => d.date === today);
 
       setStats({
-        chatPageMessages: Number(statMap.get('chat_page_messages') || 0),
-        floatingWidgetMessages: Number(statMap.get('floating_widget_messages') || 0),
-        chatPageSessions: Number(statMap.get('chat_page_sessions') || 0),
-        floatingWidgetSessions: Number(statMap.get('floating_widget_sessions') || 0),
+        chatPageMessages: chatPageTotalMessages,
+        floatingWidgetMessages: widgetTotalMessages,
+        chatPageSessions: chatPageTotalSessions,
+        floatingWidgetSessions: widgetTotalSessions,
         todayStats: {
           chatPage: {
             messages: chatPageToday?.messages_count || 0,
