@@ -257,6 +257,7 @@ const AdminUserManagement = () => {
       <AdminPageHeader
         title="Kullanıcı ve Rol Yönetimi"
         description="Tüm kullanıcıları görüntüleyin ve rol atamalarını yönetin"
+        icon={Users}
       />
 
       <Tabs defaultValue="all" className="space-y-4">
