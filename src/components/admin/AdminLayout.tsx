@@ -230,14 +230,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         onLogout={handleLogout}
       />
       
-      <div className="flex pt-16">
-        {/* Sidebar */}
+      <div className="flex">
+        {/* Sidebar - Fixed to viewport height */}
         <div className={cn(
-          "md:flex md:w-72 md:flex-col",
-          isMobileMenuOpen ? "block" : "hidden"
+          "md:flex md:w-72 md:flex-col md:fixed md:top-16 md:bottom-0 md:left-0",
+          isMobileMenuOpen ? "fixed inset-0 top-16 z-40 bg-white" : "hidden"
         )}>
-          <div className="flex flex-col flex-grow pt-6 bg-white border-r border-border overflow-y-auto shadow-sm min-h-screen">
-            <div className="flex items-center flex-shrink-0 px-6 pb-4">
+          <div className="flex flex-col h-full bg-white border-r border-border shadow-sm">
+            {/* Header */}
+            <div className="flex items-center flex-shrink-0 px-6 py-4 border-b border-border/50">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
                   <Settings className="h-4 w-4 text-primary-foreground" />
@@ -245,30 +246,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <h2 className="text-xl font-bold text-gray-900">Admin Panel</h2>
               </div>
             </div>
-            <div className="flex-grow flex flex-col justify-between">
-              {/* Main Navigation */}
-              <nav className="flex-1 px-4 space-y-2">
-                {filteredMainNav.map(renderNavItem)}
-              </nav>
-              
-              {/* Bottom Navigation with Separator */}
-              {filteredBottomNav.length > 0 && (
-                <div className="px-4 pb-6">
-                  <Separator className="my-4" />
-                  <nav className="space-y-2">
-                    {filteredBottomNav.map(renderNavItem)}
-                  </nav>
-                </div>
-              )}
-            </div>
+            
+            {/* Scrollable Main Navigation */}
+            <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent">
+              {filteredMainNav.map(renderNavItem)}
+            </nav>
+            
+            {/* Fixed Bottom Navigation */}
+            {filteredBottomNav.length > 0 && (
+              <div className="flex-shrink-0 border-t border-border/50 bg-white">
+                <nav className="px-4 py-4 space-y-2">
+                  {filteredBottomNav.map(renderNavItem)}
+                </nav>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Main content */}
-        <div className="flex flex-col flex-1">
+        {/* Main content - with left margin for fixed sidebar */}
+        <div className="flex flex-col flex-1 md:ml-72 pt-16">
           <main className="flex-1 p-6 lg:p-8 bg-gray-50 min-h-screen">
             <div className="max-w-7xl mx-auto">
-            {children}
+              {children}
             </div>
           </main>
         </div>
