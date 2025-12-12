@@ -692,6 +692,142 @@ export type Database = {
           },
         ]
       }
+      form_fields: {
+        Row: {
+          conditional_logic: Json | null
+          created_at: string | null
+          display_order: number | null
+          field_type: string
+          form_id: string
+          help_text: string | null
+          id: string
+          is_required: boolean | null
+          label: string
+          name: string
+          options: Json | null
+          placeholder: string | null
+          updated_at: string | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          conditional_logic?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          field_type: string
+          form_id: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label: string
+          name: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          conditional_logic?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          field_type?: string
+          form_id?: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label?: string
+          name?: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          created_at: string | null
+          data: Json
+          form_id: string
+          id: string
+          status: string | null
+          submitter_email: string | null
+          submitter_ip: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json
+          form_id: string
+          id?: string
+          status?: string | null
+          submitter_email?: string | null
+          submitter_ip?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          form_id?: string
+          id?: string
+          status?: string | null
+          submitter_email?: string | null
+          submitter_ip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_public: boolean | null
+          name: string
+          settings: Json | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          name: string
+          settings?: Json | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          name?: string
+          settings?: Json | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       glossary_terms: {
         Row: {
           created_at: string
