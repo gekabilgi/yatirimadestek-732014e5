@@ -57,6 +57,10 @@ import TZYSupplierApplications from "./pages/admin/TZYSupplierApplications";
 import Legislation from "./pages/Legislation";
 import AdminLegislation from "./pages/AdminLegislation";
 import AdminKnowledgeBase from "./pages/AdminKnowledgeBase";
+import AdminFormBuilder from "./pages/AdminFormBuilder";
+import AdminFormBuilderEdit from "./pages/AdminFormBuilderEdit";
+import AdminFormBuilderSubmissions from "./pages/AdminFormBuilderSubmissions";
+import PublicForm from "./pages/PublicForm";
 import Chat from "./pages/Chat";
 import UserProfile from "./pages/UserProfile";
 import { AIChatbot } from "./components/AIChatbot";
@@ -247,6 +251,27 @@ const App = () => {
                   <AdminKnowledgeBase />
                 </ProtectedAdminRoute>
               } />
+              <Route path="/admin/form-builder" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilder />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/form-builder/new" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilderEdit />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/form-builder/:id" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilderEdit />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/form-builder/:id/submissions" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilderSubmissions />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/form/:slug" element={<PublicForm />} />
               <Route path="/program/:id" element={<ProgramDetails />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
