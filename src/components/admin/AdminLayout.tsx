@@ -22,7 +22,8 @@ import {
   Bot,
   Megaphone,
   Users,
-  User
+  User,
+  FileEdit
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +54,7 @@ const mainNavigation = [
   { name: 'Dashboard', href: '/admin', icon: Home },
   { name: 'Soru & Cevap', href: '/admin/qa-management', icon: MessageSquare },
   { name: 'AI Chatbot Bilgi Bankası', href: '/admin/knowledge-base', icon: Bot },
+  { name: 'Form Builder', href: '/admin/form-builder', icon: FileEdit },
   { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
   { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },
   { name: 'Duyuru Yönetimi', href: '/admin/announcements', icon: Megaphone },
