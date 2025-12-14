@@ -453,12 +453,13 @@ const FormBuilderEditor: React.FC = () => {
 
       {/* Settings Sheet */}
       <Sheet open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
-          <SheetHeader>
+        <SheetContent className="flex flex-col sm:max-w-lg h-full p-0">
+          <SheetHeader className="px-6 py-4 border-b shrink-0">
             <SheetTitle>Form Ayarları</SheetTitle>
           </SheetHeader>
-          <Tabs defaultValue="general" className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
+          
+          <Tabs defaultValue="general" className="flex-1 flex flex-col min-h-0">
+            <TabsList className="grid w-full grid-cols-2 mx-6 w-[calc(100%-3rem)] mt-4 shrink-0">
               <TabsTrigger value="general" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Genel
@@ -469,11 +470,11 @@ const FormBuilderEditor: React.FC = () => {
               </TabsTrigger>
             </TabsList>
             
-            <ScrollArea className="flex-1 -mx-6 px-6">
+            <ScrollArea className="flex-1 h-0">
               {/* General Settings Tab */}
-              <TabsContent value="general" className="mt-0">
-                <div className="space-y-6 py-6">
-                  <div className="space-y-2">
+              <TabsContent value="general" className="mt-0 px-6">
+                <div className="space-y-4 py-4">
+                  <div className="space-y-1.5">
                     <Label htmlFor="formName">Form Adı</Label>
                     <Input
                       id="formName"
@@ -482,19 +483,19 @@ const FormBuilderEditor: React.FC = () => {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="formDescription">Açıklama</Label>
                     <Textarea
                       id="formDescription"
                       value={formDescription}
                       onChange={(e) => setFormDescription(e.target.value)}
-                      rows={3}
+                      rows={2}
                     />
                   </div>
 
                   <Separator />
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="submitButtonText">Gönder Butonu Metni</Label>
                     <Input
                       id="submitButtonText"
@@ -503,7 +504,7 @@ const FormBuilderEditor: React.FC = () => {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="successMessage">Başarı Mesajı</Label>
                     <Textarea
                       id="successMessage"
@@ -515,12 +516,10 @@ const FormBuilderEditor: React.FC = () => {
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between py-1">
                     <div>
                       <Label>Form Durumu</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {form.is_active ? 'Aktif' : 'Pasif'}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{form.is_active ? 'Aktif' : 'Pasif'}</p>
                     </div>
                     <Switch
                       checked={form.is_active}
@@ -536,12 +535,10 @@ const FormBuilderEditor: React.FC = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between py-1">
                     <div>
                       <Label>Herkese Açık</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Giriş yapmadan form doldurulabilir
-                      </p>
+                      <p className="text-xs text-muted-foreground">Giriş yapmadan doldurulabilir</p>
                     </div>
                     <Switch
                       checked={form.is_public}
@@ -559,11 +556,8 @@ const FormBuilderEditor: React.FC = () => {
 
                   <Separator />
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <Label>Yayın Şekli</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Formun web sayfasında nasıl görüneceğini seçin
-                    </p>
                     <RadioGroup 
                       value={displayMode} 
                       onValueChange={async (v) => {
@@ -577,27 +571,20 @@ const FormBuilderEditor: React.FC = () => {
                           toast.error('Yayın şekli güncellenirken hata oluştu');
                         }
                       }}
+                      className="space-y-2"
                     >
-                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                      <div className="flex items-start space-x-3 p-2.5 rounded-lg border hover:border-primary/50 transition-colors">
                         <RadioGroupItem value="standalone" id="standalone" className="mt-0.5" />
                         <div className="flex-1">
-                          <Label htmlFor="standalone" className="font-medium cursor-pointer">
-                            Minimal (Yalın)
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Sadece form görünür, menü ve alt bilgi olmadan
-                          </p>
+                          <Label htmlFor="standalone" className="font-medium cursor-pointer text-sm">Minimal</Label>
+                          <p className="text-xs text-muted-foreground">Menü olmadan sadece form</p>
                         </div>
                       </div>
-                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                      <div className="flex items-start space-x-3 p-2.5 rounded-lg border hover:border-primary/50 transition-colors">
                         <RadioGroupItem value="integrated" id="integrated" className="mt-0.5" />
                         <div className="flex-1">
-                          <Label htmlFor="integrated" className="font-medium cursor-pointer">
-                            Entegre (Site Şablonu)
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Üst menü, hero bölümü ve alt bilgi ile tam sayfa görünümü
-                          </p>
+                          <Label htmlFor="integrated" className="font-medium cursor-pointer text-sm">Entegre</Label>
+                          <p className="text-xs text-muted-foreground">Site şablonu ile tam sayfa</p>
                         </div>
                       </div>
                     </RadioGroup>
@@ -606,17 +593,15 @@ const FormBuilderEditor: React.FC = () => {
               </TabsContent>
 
               {/* Appearance/Branding Tab */}
-              <TabsContent value="appearance" className="mt-0">
-                <div className="space-y-6 py-6">
+              <TabsContent value="appearance" className="mt-0 px-6">
+                <div className="space-y-4 py-4">
                   {displayMode === 'standalone' ? (
                     <>
                       {/* Show Header Toggle */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between py-1">
                         <div>
                           <Label>Özel Başlık Göster</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Formun üstünde özel başlık alanı göster
-                          </p>
+                          <p className="text-xs text-muted-foreground">Formun üstünde özel başlık</p>
                         </div>
                         <Switch
                           checked={branding.show_header}
@@ -628,8 +613,7 @@ const FormBuilderEditor: React.FC = () => {
                         <>
                           <Separator />
 
-                          {/* Header Title */}
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <Label htmlFor="headerTitle">Başlık Metni</Label>
                             <Input
                               id="headerTitle"
@@ -638,11 +622,9 @@ const FormBuilderEditor: React.FC = () => {
                               onBlur={() => handleUpdateBranding({ header_title: branding.header_title })}
                               placeholder={formName}
                             />
-                            <p className="text-xs text-muted-foreground">Boş bırakılırsa form adı kullanılır</p>
                           </div>
 
-                          {/* Header Subtitle */}
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <Label htmlFor="headerSubtitle">Alt Başlık</Label>
                             <Input
                               id="headerSubtitle"
@@ -655,14 +637,13 @@ const FormBuilderEditor: React.FC = () => {
 
                           <Separator />
 
-                          {/* Header Layout */}
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <Label>Başlık Düzeni</Label>
                             <Select
                               value={branding.header_layout || 'centered'}
                               onValueChange={(v) => handleUpdateBranding({ header_layout: v as HeaderLayout })}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="h-9">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -675,8 +656,7 @@ const FormBuilderEditor: React.FC = () => {
 
                           <Separator />
 
-                          {/* Accent Color */}
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <Label htmlFor="accentColor">Vurgu Rengi</Label>
                             <div className="flex gap-2">
                               <Input
@@ -684,22 +664,22 @@ const FormBuilderEditor: React.FC = () => {
                                 type="color"
                                 value={branding.accent_color || '#14b8a6'}
                                 onChange={(e) => handleUpdateBranding({ accent_color: e.target.value })}
-                                className="w-14 h-10 p-1 cursor-pointer"
+                                className="w-12 h-9 p-1 cursor-pointer"
                               />
                               <Input
                                 value={branding.accent_color || '#14b8a6'}
                                 onChange={(e) => setBranding({ ...branding, accent_color: e.target.value })}
                                 onBlur={() => handleUpdateBranding({ accent_color: branding.accent_color })}
                                 placeholder="#14b8a6"
-                                className="flex-1"
+                                className="flex-1 h-9"
                               />
                             </div>
-                            <div className="flex gap-2 mt-2">
+                            <div className="flex gap-1.5 mt-1.5">
                               {['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981'].map((color) => (
                                 <button
                                   key={color}
                                   onClick={() => handleUpdateBranding({ accent_color: color })}
-                                  className="w-8 h-8 rounded-full border-2 border-transparent hover:border-foreground/30 transition-colors"
+                                  className="w-6 h-6 rounded-full border-2 border-transparent hover:border-foreground/30 transition-colors"
                                   style={{ backgroundColor: color }}
                                   title={color}
                                 />
@@ -707,31 +687,29 @@ const FormBuilderEditor: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Background Color */}
-                          <div className="space-y-2">
-                            <Label htmlFor="bgColor">Sayfa Arka Plan Rengi</Label>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="bgColor">Arka Plan Rengi</Label>
                             <div className="flex gap-2">
                               <Input
                                 id="bgColor"
                                 type="color"
                                 value={branding.background_color || '#f8fafc'}
                                 onChange={(e) => handleUpdateBranding({ background_color: e.target.value })}
-                                className="w-14 h-10 p-1 cursor-pointer"
+                                className="w-12 h-9 p-1 cursor-pointer"
                               />
                               <Input
                                 value={branding.background_color || '#f8fafc'}
                                 onChange={(e) => setBranding({ ...branding, background_color: e.target.value })}
                                 onBlur={() => handleUpdateBranding({ background_color: branding.background_color })}
                                 placeholder="#f8fafc"
-                                className="flex-1"
+                                className="flex-1 h-9"
                               />
                             </div>
                           </div>
 
                           <Separator />
 
-                          {/* Logo URL */}
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <Label htmlFor="logoUrl">Logo URL</Label>
                             <Input
                               id="logoUrl"
@@ -739,35 +717,36 @@ const FormBuilderEditor: React.FC = () => {
                               onChange={(e) => setBranding({ ...branding, logo_url: e.target.value })}
                               onBlur={() => handleUpdateBranding({ logo_url: branding.logo_url })}
                               placeholder="https://example.com/logo.png"
+                              className="h-9"
                             />
                             {branding.logo_url && (
-                              <div className="mt-2 p-2 bg-muted rounded-lg">
+                              <div className="mt-1.5 p-2 bg-muted rounded-lg">
                                 <img 
                                   src={branding.logo_url} 
-                                  alt="Logo preview" 
-                                  className="h-12 w-auto object-contain"
+                                  alt="Logo" 
+                                  className="h-10 w-auto object-contain"
                                   onError={(e) => (e.currentTarget.style.display = 'none')}
                                 />
                               </div>
                             )}
                           </div>
 
-                          {/* Header Image URL */}
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <Label htmlFor="headerImageUrl">Başlık Görseli URL</Label>
                             <Input
                               id="headerImageUrl"
                               value={branding.header_image_url || ''}
                               onChange={(e) => setBranding({ ...branding, header_image_url: e.target.value })}
                               onBlur={() => handleUpdateBranding({ header_image_url: branding.header_image_url })}
-                              placeholder="https://example.com/header-image.jpg"
+                              placeholder="https://example.com/image.jpg"
+                              className="h-9"
                             />
                             {branding.header_image_url && (
-                              <div className="mt-2 p-2 bg-muted rounded-lg">
+                              <div className="mt-1.5 p-2 bg-muted rounded-lg">
                                 <img 
                                   src={branding.header_image_url} 
-                                  alt="Header preview" 
-                                  className="w-full max-h-32 object-cover rounded"
+                                  alt="Header" 
+                                  className="w-full max-h-24 object-cover rounded"
                                   onError={(e) => (e.currentTarget.style.display = 'none')}
                                 />
                               </div>
@@ -777,13 +756,10 @@ const FormBuilderEditor: React.FC = () => {
                       )}
                     </>
                   ) : (
-                    <div className="text-center py-8">
-                      <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">
-                        Görünüm ayarları sadece "Minimal (Yalın)" yayın şekli için geçerlidir.
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        "Entegre" modunda site şablonu kullanılır.
+                    <div className="text-center py-6">
+                      <Image className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">
+                        Görünüm ayarları sadece "Minimal" yayın şekli için geçerlidir.
                       </p>
                     </div>
                   )}
@@ -792,7 +768,7 @@ const FormBuilderEditor: React.FC = () => {
             </ScrollArea>
           </Tabs>
           
-          <div className="border-t pt-4 mt-auto">
+          <div className="border-t p-4 shrink-0">
             <Button onClick={handleSaveForm} disabled={saving} className="w-full">
               <Save className="h-4 w-4 mr-2" />
               {saving ? 'Kaydediliyor...' : 'Kaydet'}
