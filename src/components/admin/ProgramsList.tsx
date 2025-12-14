@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Eye, Plus, Copy } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Edit, Trash2, Eye, Plus, Copy, Upload, ArrowUpDown, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { SupportProgram } from '@/types/support';
 import { deleteFileFromStorage } from '@/utils/fileUpload';
+import * as XLSX from 'xlsx';
 
 interface ProgramsListProps {
   onEdit: (program: SupportProgram) => void;
@@ -15,17 +17,22 @@ interface ProgramsListProps {
   onClone: (program: SupportProgram) => void;
 }
 
+type SortOrder = 'newest' | 'oldest' | 'title-asc' | 'title-desc';
+
 export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps) => {
   const [programs, setPrograms] = useState<SupportProgram[]>([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchPrograms();
-  }, []);
+  }, [sortOrder]);
 
   const fetchPrograms = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('support_programs')
         .select(`
           *,
@@ -34,8 +41,20 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             tag:tags(id, name, category_id, created_at)
           ),
           files:file_attachments(*)
-        `)
-        .order('created_at', { ascending: false });
+        `);
+
+      // Apply sorting
+      if (sortOrder === 'newest') {
+        query = query.order('created_at', { ascending: false });
+      } else if (sortOrder === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      } else if (sortOrder === 'title-asc') {
+        query = query.order('title', { ascending: true });
+      } else if (sortOrder === 'title-desc') {
+        query = query.order('title', { ascending: false });
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -55,26 +74,128 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
+
+    if (!validTypes.includes(file.type) && !file.name.endsWith('.csv') && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error('Lütfen Excel (.xlsx, .xls) veya CSV dosyası yükleyin');
+      return;
+    }
+
+    setImporting(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        toast.error('Dosya boş veya geçersiz format');
+        return;
+      }
+
+      // Fetch institutions for mapping
+      const { data: institutions } = await supabase.from('institutions').select('id, name');
+      const institutionMap = new Map(institutions?.map(i => [i.name.toLowerCase(), i.id]) || []);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const row of jsonData as any[]) {
+        try {
+          // Map Excel columns to database fields
+          const title = row['Program Adı'] || row['title'] || row['Başlık'];
+          const description = row['Açıklama'] || row['description'] || row['Detay'] || '';
+          const institutionName = row['Kurum'] || row['institution'] || row['Kurum Adı'];
+          const deadline = row['Son Başvuru'] || row['deadline'] || row['application_deadline'];
+          const eligibility = row['Uygunluk Kriterleri'] || row['eligibility_criteria'] || '';
+          const contact = row['İletişim'] || row['contact_info'] || '';
+
+          if (!title) {
+            errorCount++;
+            continue;
+          }
+
+          // Find institution ID
+          let institutionId = null;
+          if (institutionName) {
+            institutionId = institutionMap.get(institutionName.toLowerCase()) || null;
+          }
+
+          // Parse deadline date
+          let applicationDeadline = null;
+          if (deadline) {
+            const parsed = new Date(deadline);
+            if (!isNaN(parsed.getTime())) {
+              applicationDeadline = parsed.toISOString().split('T')[0];
+            }
+          }
+
+          const { error } = await supabase.from('support_programs').insert({
+            title,
+            description,
+            institution_id: institutionId,
+            application_deadline: applicationDeadline,
+            eligibility_criteria: eligibility,
+            contact_info: contact
+          });
+
+          if (error) {
+            console.error('Insert error:', error);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (err) {
+          console.error('Row processing error:', err);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} program başarıyla içe aktarıldı`);
+        fetchPrograms();
+      }
+      if (errorCount > 0) {
+        toast.warning(`${errorCount} satır içe aktarılamadı`);
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Dosya işlenirken hata oluştu');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleDelete = async (programId: string, programTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${programTitle}"?`)) {
+    if (!confirm(`"${programTitle}" programını silmek istediğinize emin misiniz?`)) {
       return;
     }
 
     try {
-      // Get files to delete from storage
       const { data: files } = await supabase
         .from('file_attachments')
         .select('file_url')
         .eq('support_program_id', programId);
 
-      // Delete files from storage
       if (files && files.length > 0) {
         for (const file of files) {
           await deleteFileFromStorage(file.file_url);
         }
       }
 
-      // Delete support program tags first
       const { error: tagsError } = await supabase
         .from('support_program_tags')
         .delete()
@@ -82,7 +203,6 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
 
       if (tagsError) throw tagsError;
 
-      // Delete file attachments
       const { error: filesError } = await supabase
         .from('file_attachments')
         .delete()
@@ -90,7 +210,6 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
 
       if (filesError) throw filesError;
 
-      // Delete the program
       const { error: programError } = await supabase
         .from('support_programs')
         .delete()
@@ -98,11 +217,11 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
 
       if (programError) throw programError;
 
-      toast.success('Program deleted successfully');
-      fetchPrograms(); // Refresh the list
+      toast.success('Program silindi');
+      fetchPrograms();
     } catch (error) {
       console.error('Error deleting program:', error);
-      toast.error('Failed to delete program');
+      toast.error('Program silinirken hata oluştu');
     }
   };
 
@@ -117,6 +236,24 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
     return today <= deadlineDate;
   };
 
+  const downloadTemplate = () => {
+    const template = [
+      {
+        'Program Adı': 'Örnek Destek Programı',
+        'Açıklama': 'Program açıklaması buraya yazılır',
+        'Kurum': 'KOSGEB',
+        'Son Başvuru': '2025-12-31',
+        'Uygunluk Kriterleri': 'KOBİ niteliğinde olmak',
+        'İletişim': 'info@example.com'
+      }
+    ];
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Şablon');
+    XLSX.writeFile(wb, 'destek_programlari_sablon.xlsx');
+    toast.success('Şablon indirildi');
+  };
+
   if (loading) {
     return (
       <Card className="space-y-6 mt-16">
@@ -124,7 +261,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           <CardTitle>Destek Programları</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">Loading programs...</div>
+          <div className="text-center py-8">Yükleniyor...</div>
         </CardContent>
       </Card>
     );
@@ -133,21 +270,63 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Destek Programları ({programs.length})</CardTitle>
-          <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Yeni Destek Ekle
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Sort Select */}
+            <Select value={sortOrder} onValueChange={(value: SortOrder) => setSortOrder(value)}>
+              <SelectTrigger className="w-[160px]">
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Sırala" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">En Yeni</SelectItem>
+                <SelectItem value="oldest">En Eski</SelectItem>
+                <SelectItem value="title-asc">A-Z</SelectItem>
+                <SelectItem value="title-desc">Z-A</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Bulk Import */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={downloadTemplate}
+              className="gap-2"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Şablon
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+              className="gap-2"
+            >
+              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              İçe Aktar
+            </Button>
+
+            <Button onClick={onCreateNew} className="bg-primary hover:bg-primary/90 gap-2">
+              <Plus className="w-4 h-4" />
+              Yeni Ekle
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         {programs.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             <p>Destek programı bulunamadı.</p>
             <Button onClick={onCreateNew} variant="outline" className="mt-4">
               <Plus className="w-4 h-4 mr-2" />
-             Destek Programını Oluştur
+              Destek Programı Oluştur
             </Button>
           </div>
         ) : (
@@ -178,8 +357,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${isOpen ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                          <span className={`text-sm ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
+                          <div className={`w-3 h-3 rounded-full ${isOpen ? 'bg-green-500' : 'bg-primary/60'}`}></div>
+                          <span className={`text-sm ${isOpen ? 'text-green-600' : 'text-primary/80'}`}>
                             {isOpen ? 'Açık' : 'Kapalı'}
                           </span>
                         </div>
@@ -187,7 +366,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
                       <TableCell>
                         {program.application_deadline 
                           ? formatDate(program.application_deadline)
-                          : 'No deadline'
+                          : 'Süresiz'
                         }
                       </TableCell>
                       <TableCell>{formatDate(program.created_at)}</TableCell>
@@ -211,7 +390,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
                             variant="outline"
                             size="sm"
                             onClick={() => onClone(program)}
-                            className="text-blue-600 hover:text-blue-700"
+                            className="text-primary hover:text-primary/80"
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
@@ -219,7 +398,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(program.id, program.title)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-destructive hover:text-destructive/80"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
