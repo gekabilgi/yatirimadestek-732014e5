@@ -103,9 +103,16 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
         return;
       }
 
-      // Fetch institutions for mapping
+      // Fetch institutions, categories, and tags for mapping
       const { data: institutions } = await supabase.from('institutions').select('id, name');
-      const institutionMap = new Map(institutions?.map(i => [i.name.toLowerCase(), i.id]) || []);
+      const { data: categories } = await supabase.from('tag_categories').select('id, name');
+      const { data: tags } = await supabase.from('tags').select('id, name, category_id');
+      
+      const institutionMap = new Map(institutions?.map(i => [i.name.toLowerCase().trim(), i.id]) || []);
+      const tagMap = new Map(tags?.map(t => [t.name.toLowerCase().trim(), { id: t.id, category_id: t.category_id }]) || []);
+      
+      // Category name to ID mapping
+      const categoryNameToId = new Map(categories?.map(c => [c.name.toLowerCase().trim(), c.id]) || []);
 
       let successCount = 0;
       let errorCount = 0;
@@ -120,6 +127,16 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           const eligibility = row['Uygunluk Kriterleri'] || row['eligibility_criteria'] || '';
           const contact = row['İletişim'] || row['contact_info'] || '';
 
+          // Tag columns (comma-separated values)
+          const basvuruSahibiTuru = row['Başvuru Sahibi Türü'] || '';
+          const destekTuru = row['Destek Türü'] || '';
+          const destekUnsuru = row['Destek Unsuru'] || '';
+          const sektor = row['Sektör'] || '';
+          const il = row['İl'] || '';
+          
+          // File URLs (comma-separated)
+          const fileUrls = row['Dosya URL\'leri'] || row['Dosya URLleri'] || '';
+
           if (!title) {
             errorCount++;
             continue;
@@ -128,7 +145,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           // Find institution ID
           let institutionId = null;
           if (institutionName) {
-            institutionId = institutionMap.get(institutionName.toLowerCase()) || null;
+            institutionId = institutionMap.get(institutionName.toLowerCase().trim()) || null;
           }
 
           // Parse deadline date
@@ -140,21 +157,87 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             }
           }
 
-          const { error } = await supabase.from('support_programs').insert({
-            title,
-            description,
-            institution_id: institutionId,
-            application_deadline: applicationDeadline,
-            eligibility_criteria: eligibility,
-            contact_info: contact
-          });
+          // Insert the program
+          const { data: insertedProgram, error: programError } = await supabase
+            .from('support_programs')
+            .insert({
+              title,
+              description,
+              institution_id: institutionId,
+              application_deadline: applicationDeadline,
+              eligibility_criteria: eligibility,
+              contact_info: contact
+            })
+            .select('id')
+            .single();
 
-          if (error) {
-            console.error('Insert error:', error);
+          if (programError || !insertedProgram) {
+            console.error('Insert error:', programError);
             errorCount++;
-          } else {
-            successCount++;
+            continue;
           }
+
+          const programId = insertedProgram.id;
+
+          // Parse and insert tags
+          const allTagStrings = [
+            basvuruSahibiTuru,
+            destekTuru,
+            destekUnsuru,
+            sektor,
+            il
+          ].filter(Boolean);
+
+          const tagIds: number[] = [];
+          
+          for (const tagString of allTagStrings) {
+            const tagNames = tagString.split(',').map((t: string) => t.trim()).filter(Boolean);
+            for (const tagName of tagNames) {
+              const tagInfo = tagMap.get(tagName.toLowerCase().trim());
+              if (tagInfo) {
+                tagIds.push(tagInfo.id);
+              }
+            }
+          }
+
+          // Insert tag associations
+          if (tagIds.length > 0) {
+            const tagInserts = tagIds.map(tagId => ({
+              support_program_id: programId,
+              tag_id: tagId
+            }));
+            
+            const { error: tagError } = await supabase
+              .from('support_program_tags')
+              .insert(tagInserts);
+              
+            if (tagError) {
+              console.error('Tag insert error:', tagError);
+            }
+          }
+
+          // Parse and insert file attachments
+          if (fileUrls) {
+            const urls = fileUrls.split(',').map((u: string) => u.trim()).filter(Boolean);
+            if (urls.length > 0) {
+              const fileInserts = urls.map((url: string, index: number) => ({
+                support_program_id: programId,
+                file_url: url,
+                filename: url.split('/').pop() || `file_${index + 1}`,
+                display_order: index + 1
+              }));
+              
+              const { error: fileError } = await supabase
+                .from('file_attachments')
+                .insert(fileInserts);
+                
+              if (fileError) {
+                console.error('File insert error:', fileError);
+              }
+            }
+          }
+
+          successCount++;
         } catch (err) {
           console.error('Row processing error:', err);
           errorCount++;
@@ -162,7 +245,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
       }
 
       if (successCount > 0) {
-        toast.success(`${successCount} program başarıyla içe aktarıldı`);
+        toast.success(`${successCount} program başarıyla içe aktarıldı (etiketler ve dosyalar dahil)`);
         fetchPrograms();
       }
       if (errorCount > 0) {
@@ -236,22 +319,86 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
     return today <= deadlineDate;
   };
 
-  const downloadTemplate = () => {
-    const template = [
-      {
-        'Program Adı': 'Örnek Destek Programı',
-        'Açıklama': 'Program açıklaması buraya yazılır',
-        'Kurum': 'KOSGEB',
-        'Son Başvuru': '2025-12-31',
-        'Uygunluk Kriterleri': 'KOBİ niteliğinde olmak',
-        'İletişim': 'info@example.com'
-      }
-    ];
-    const ws = XLSX.utils.json_to_sheet(template);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Şablon');
-    XLSX.writeFile(wb, 'destek_programlari_sablon.xlsx');
-    toast.success('Şablon indirildi');
+  const downloadTemplate = async () => {
+    try {
+      // Fetch all tag categories and tags
+      const { data: categories } = await supabase
+        .from('tag_categories')
+        .select('id, name')
+        .order('id');
+      
+      const { data: tags } = await supabase
+        .from('tags')
+        .select('id, name, category_id')
+        .order('name');
+
+      const { data: institutions } = await supabase
+        .from('institutions')
+        .select('name')
+        .order('name');
+
+      // Create program template with all columns
+      const template = [
+        {
+          'Program Adı': 'Örnek Destek Programı',
+          'Açıklama': 'Program açıklaması buraya yazılır',
+          'Kurum': institutions?.[0]?.name || 'KOSGEB',
+          'Son Başvuru': '2025-12-31',
+          'Uygunluk Kriterleri': 'KOBİ niteliğinde olmak',
+          'İletişim': 'info@example.com',
+          'Başvuru Sahibi Türü': 'KOBİ, Girişimci',
+          'Destek Türü': 'Hibe, Kredi',
+          'Destek Unsuru': 'Makine Teçhizat, Yazılım',
+          'Sektör': 'İmalat, Teknoloji',
+          'İl': 'İstanbul, Ankara',
+          'Dosya URL\'leri': 'https://example.com/file1.pdf, https://example.com/file2.pdf'
+        }
+      ];
+
+      // Create programs sheet
+      const wsPrograms = XLSX.utils.json_to_sheet(template);
+      
+      // Set column widths
+      wsPrograms['!cols'] = [
+        { wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 15 },
+        { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 25 },
+        { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 50 }
+      ];
+
+      // Create tag reference sheet
+      const tagRefData: { Kategori: string; 'Etiket Adı': string }[] = [];
+      
+      categories?.forEach(category => {
+        const categoryTags = tags?.filter(t => t.category_id === category.id) || [];
+        categoryTags.forEach(tag => {
+          tagRefData.push({
+            'Kategori': category.name,
+            'Etiket Adı': tag.name
+          });
+        });
+      });
+
+      // Add institution list to reference
+      const instRefData = institutions?.map(i => ({ 'Kurum Adı': i.name })) || [];
+
+      const wsTagRef = XLSX.utils.json_to_sheet(tagRefData);
+      wsTagRef['!cols'] = [{ wch: 25 }, { wch: 40 }];
+
+      const wsInstRef = XLSX.utils.json_to_sheet(instRefData);
+      wsInstRef['!cols'] = [{ wch: 40 }];
+
+      // Create workbook with multiple sheets
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, wsPrograms, 'Programlar');
+      XLSX.utils.book_append_sheet(wb, wsTagRef, 'Etiket Listesi');
+      XLSX.utils.book_append_sheet(wb, wsInstRef, 'Kurum Listesi');
+      
+      XLSX.writeFile(wb, 'destek_programlari_sablon.xlsx');
+      toast.success('Şablon indirildi (3 sayfa: Programlar, Etiketler, Kurumlar)');
+    } catch (error) {
+      console.error('Template download error:', error);
+      toast.error('Şablon oluşturulurken hata oluştu');
+    }
   };
 
   if (loading) {
