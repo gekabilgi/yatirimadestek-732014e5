@@ -105,6 +105,7 @@ export const menuVisibilityService = {
         admin_menu_dashboard: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_qa_management: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_knowledge_base: { ...DEFAULT_ADMIN_VISIBILITY },
+        admin_menu_form_builder: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_feasibility_reports: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_support_programs: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_announcements: { ...DEFAULT_ADMIN_VISIBILITY },
@@ -114,8 +115,8 @@ export const menuVisibilityService = {
         admin_menu_user_management: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_email_management: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_supply_chain: { ...DEFAULT_ADMIN_VISIBILITY },
-        admin_menu_settings: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_analytics: { ...DEFAULT_ADMIN_VISIBILITY },
+        // NOTE: admin_menu_settings removed - Settings menu is always visible
       };
 
       data?.forEach((row) => {
@@ -137,6 +138,7 @@ export const menuVisibilityService = {
         admin_menu_dashboard: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_qa_management: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_knowledge_base: { ...DEFAULT_ADMIN_VISIBILITY },
+        admin_menu_form_builder: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_feasibility_reports: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_support_programs: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_announcements: { ...DEFAULT_ADMIN_VISIBILITY },
@@ -146,8 +148,8 @@ export const menuVisibilityService = {
         admin_menu_user_management: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_email_management: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_supply_chain: { ...DEFAULT_ADMIN_VISIBILITY },
-        admin_menu_settings: { ...DEFAULT_ADMIN_VISIBILITY },
         admin_menu_analytics: { ...DEFAULT_ADMIN_VISIBILITY },
+        // NOTE: admin_menu_settings removed - Settings menu is always visible
       };
     }
   },
