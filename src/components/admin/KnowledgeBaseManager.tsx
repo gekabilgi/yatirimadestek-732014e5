@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { GeminiStoreManager } from './GeminiStoreManager';
 import { CustomRagStoreManager } from './CustomRagStoreManager';
 import { VertexRagStoreManager } from './VertexRagStoreManager';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { adminSettingsService } from '@/services/adminSettingsService';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles, Database, Cloud, Eye, EyeOff } from 'lucide-react';
 
 export function KnowledgeBaseManager() {
   const [ragMode, setRagMode] = useState<'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'>('gemini_file_search');
@@ -81,89 +81,104 @@ export function KnowledgeBaseManager() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* RAG Mode Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle>RAG Sistemi Seçimi</CardTitle>
-          <CardDescription>
-            Chatbot'un hangi bilgi tabanı sistemini kullanacağını seçin
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup value={ragMode} onValueChange={handleModeChange}>
-            <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
-              <RadioGroupItem value="gemini_file_search" id="gemini" />
-              <div className="space-y-1 leading-none">
-                <Label htmlFor="gemini" className="font-medium cursor-pointer">
-                  Gemini File Search API
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Google'ın yerleşik RAG sistemi • Maksimum 5 chunk/sorgu • Otomatik yönetim
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
-              <RadioGroupItem value="custom_rag" id="custom" />
-              <div className="space-y-1 leading-none">
-                <Label htmlFor="custom" className="font-medium cursor-pointer">
-                  Custom RAG (PostgreSQL + pgvector)
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Kendi sistemimiz • Sınırsız chunk • Tam kontrol • Model seçimi • Veri sahipliği
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
-              <RadioGroupItem value="vertex_rag_corpora" id="vertex" />
-              <div className="space-y-1 leading-none">
-                <Label htmlFor="vertex" className="font-medium cursor-pointer">
-                  Vertex AI RAG Corpora
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Google Cloud RAG Engine • Mevcut corpus • Kurumsal seviye • GCP entegrasyonu
-                </p>
-              </div>
-            </div>
-          </RadioGroup>
-        </CardContent>
-      </Card>
+  const ragSystems = [
+    { 
+      id: 'gemini_file_search', 
+      label: 'Gemini', 
+      icon: Sparkles,
+      description: 'Google File Search API'
+    },
+    { 
+      id: 'custom_rag', 
+      label: 'Custom RAG', 
+      icon: Database,
+      description: 'PostgreSQL + pgvector'
+    },
+    { 
+      id: 'vertex_rag_corpora', 
+      label: 'Vertex AI', 
+      icon: Cloud,
+      description: 'GCP RAG Engine'
+    },
+  ];
 
-      {/* Display Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Chatbot Görünüm Ayarları</CardTitle>
-          <CardDescription>
-            Chatbot arayüzü ile ilgili görsel ayarlar
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5 pr-4">
-              <Label className="text-base font-medium">Kaynak Referanslarını Göster</Label>
-              <p className="text-sm text-muted-foreground">
-                Etkinleştirildiğinde, chatbot yanıtlarında [1], [2] referansları ve kullanılan belgeler gösterilir.
-              </p>
-            </div>
+  return (
+    <div className="space-y-4">
+      {/* Header with inline settings */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-lg border bg-card">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Database className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm">RAG Sistemi</h3>
+            <p className="text-xs text-muted-foreground">Chatbot bilgi kaynağını yönetin</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+            {showSources ? (
+              <Eye className="h-4 w-4 text-primary" />
+            ) : (
+              <EyeOff className="h-4 w-4 text-muted-foreground" />
+            )}
+            <Label htmlFor="show-sources" className="text-xs font-medium cursor-pointer">
+              Kaynakları Göster
+            </Label>
             <Switch
+              id="show-sources"
               checked={showSources}
               onCheckedChange={handleShowSourcesChange}
+              className="scale-90"
             />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Conditional Store Manager */}
-      {ragMode === 'gemini_file_search' ? (
-        <GeminiStoreManager />
-      ) : ragMode === 'custom_rag' ? (
-        <CustomRagStoreManager />
-      ) : (
-        <VertexRagStoreManager />
-      )}
+      {/* Tab-based RAG System Selection */}
+      <Tabs value={ragMode} onValueChange={handleModeChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
+          {ragSystems.map((system) => {
+            const Icon = system.icon;
+            const isActive = ragMode === system.id;
+            return (
+              <TabsTrigger
+                key={system.id}
+                value={system.id}
+                className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className="font-medium text-sm">{system.label}</span>
+                  {isActive && (
+                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4">
+                      Aktif
+                    </Badge>
+                  )}
+                </div>
+                <span className="text-[10px] text-muted-foreground hidden sm:block">
+                  {system.description}
+                </span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        <div className="mt-4">
+          <TabsContent value="gemini_file_search" className="m-0">
+            <GeminiStoreManager />
+          </TabsContent>
+
+          <TabsContent value="custom_rag" className="m-0">
+            <CustomRagStoreManager />
+          </TabsContent>
+
+          <TabsContent value="vertex_rag_corpora" className="m-0">
+            <VertexRagStoreManager />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }
