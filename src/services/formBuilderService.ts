@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { FormTemplate, FormField, FormSubmission, FormSettings, FormBranding } from "@/types/formBuilder";
 import type { FormTemplatePreset } from "@/data/formTemplatePresets";
+import type { Json } from "@/integrations/supabase/types";
 
 // Helper to generate slug from name
 const generateSlug = (name: string): string => {
@@ -29,7 +30,7 @@ export const createFormFromTemplate = async (preset: FormTemplatePreset, formNam
       is_active: false,
       is_public: true,
       display_mode: 'standalone',
-      branding: preset.branding as unknown as Record<string, unknown>,
+      branding: preset.branding as Json,
     }])
     .select()
     .single();
@@ -47,8 +48,8 @@ export const createFormFromTemplate = async (preset: FormTemplatePreset, formNam
       display_order: field.display_order,
       placeholder: field.placeholder || null,
       help_text: field.help_text || null,
-      options: field.options || [],
-      validation_rules: field.validation_rules || {},
+      options: (field.options || []) as unknown as Json,
+      validation_rules: (field.validation_rules || {}) as unknown as Json,
     }]);
   }
 
