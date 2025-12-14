@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { IncentiveProgressBadge } from "./IncentiveProgressBadge";
 import { MessageBubble } from "./MessageBubble";
 import { supabase } from "@/integrations/supabase/client";
+import { useChatbotSettings } from "@/hooks/useChatbotSettings";
 
 interface ChatMessageAreaProps {
   messages: ChatMessage[];
@@ -34,10 +35,19 @@ export function ChatMessageArea({
   activeSessionId,
   onRegenerateMessage,
 }: ChatMessageAreaProps) {
+  const { showSources } = useChatbotSettings();
   const [incentiveProgress, setIncentiveProgress] = useState<any>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Helper to strip citation markers from content
+  const cleanCitations = (text: string): string => {
+    return text
+      .replace(/\[(\d+(?:,\s*\d+)*)\]/g, '') // Remove [1], [2, 3] etc.
+      .replace(/\s{2,}/g, ' ') // Clean up extra spaces
+      .trim();
+  };
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -177,13 +187,17 @@ export function ChatMessageArea({
             // 3. Öncelik sırası: Mesajın kendi source'u > Çıkarılan source
             const finalSources = message.sources && message.sources.length > 0 ? message.sources : extractedSources;
 
+            // 4. If showSources is disabled, clean citations from content and don't pass sources
+            const displayContent = showSources ? cleanContent : cleanCitations(cleanContent);
+            const displaySources = showSources ? finalSources : [];
+
             return (
               <MessageBubble
                 key={`msg-${index}-${message.timestamp || ""}`}
                 role={message.role}
-                content={cleanContent} // Temiz metin (JSON yok)
+                content={displayContent}
                 timestamp={message.timestamp}
-                sources={finalSources} // Kaynak dizisi
+                sources={displaySources}
                 onRegenerate={
                   message.role === "assistant" && index === messages.length - 1
                     ? () => onRegenerateMessage?.(index)

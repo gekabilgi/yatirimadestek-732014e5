@@ -5,25 +5,31 @@ import { VertexRagStoreManager } from './VertexRagStoreManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { adminSettingsService } from '@/services/adminSettingsService';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export function KnowledgeBaseManager() {
   const [ragMode, setRagMode] = useState<'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'>('gemini_file_search');
+  const [showSources, setShowSources] = useState(true);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadRagMode();
+    loadSettings();
   }, []);
 
-  async function loadRagMode() {
+  async function loadSettings() {
     try {
-      const mode = await adminSettingsService.getChatbotRagMode();
+      const [mode, sources] = await Promise.all([
+        adminSettingsService.getChatbotRagMode(),
+        adminSettingsService.getChatbotShowSources()
+      ]);
       setRagMode(mode);
+      setShowSources(sources);
     } catch (error) {
-      console.error('Error loading RAG mode:', error);
+      console.error('Error loading settings:', error);
     } finally {
       setLoading(false);
     }
@@ -44,6 +50,24 @@ export function KnowledgeBaseManager() {
       toast({
         title: 'Hata',
         description: 'RAG sistemi değiştirilemedi',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleShowSourcesChange(checked: boolean) {
+    try {
+      await adminSettingsService.setChatbotShowSources(checked);
+      setShowSources(checked);
+      
+      toast({
+        title: 'Başarılı',
+        description: checked ? 'Kaynak referansları gösterilecek' : 'Kaynak referansları gizlenecek',
+      });
+    } catch (error) {
+      toast({
+        title: 'Hata',
+        description: 'Ayar kaydedilemedi',
         variant: 'destructive',
       });
     }
@@ -105,6 +129,30 @@ export function KnowledgeBaseManager() {
               </div>
             </div>
           </RadioGroup>
+        </CardContent>
+      </Card>
+
+      {/* Display Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Chatbot Görünüm Ayarları</CardTitle>
+          <CardDescription>
+            Chatbot arayüzü ile ilgili görsel ayarlar
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5 pr-4">
+              <Label className="text-base font-medium">Kaynak Referanslarını Göster</Label>
+              <p className="text-sm text-muted-foreground">
+                Etkinleştirildiğinde, chatbot yanıtlarında [1], [2] referansları ve kullanılan belgeler gösterilir.
+              </p>
+            </div>
+            <Switch
+              checked={showSources}
+              onCheckedChange={handleShowSourcesChange}
+            />
+          </div>
         </CardContent>
       </Card>
 

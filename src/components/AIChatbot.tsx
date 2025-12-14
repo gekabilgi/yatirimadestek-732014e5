@@ -32,6 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getActiveStore, generateExampleQuestions } from "@/services/geminiRagService";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useChatbotStats } from "@/hooks/useChatbotStats";
+import { useChatbotSettings } from "@/hooks/useChatbotSettings";
 
 interface Message {
   role: "user" | "assistant";
@@ -142,15 +143,25 @@ const markdownComponents = {
   ),
 };
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message, showSources }: { message: Message; showSources: boolean }) {
   const isUser = message.role === "user";
   const { speak, stop, isSpeaking, isSupported } = useSpeechSynthesis({ lang: 'tr-TR', rate: 0.9 });
+
+  // Clean citations from content if showSources is disabled
+  const cleanCitations = (text: string): string => {
+    return text
+      .replace(/\[(\d+(?:,\s*\d+)*)\]/g, '') // Remove [1], [2, 3] etc.
+      .replace(/\s{2,}/g, ' ') // Clean up extra spaces
+      .trim();
+  };
+
+  const displayContent = showSources ? message.content : cleanCitations(message.content);
 
   const handleSpeak = () => {
     if (isSpeaking) {
       stop();
     } else {
-      const cleanText = message.content
+      const cleanText = displayContent
         .replace(/\[badge:[^\]]+\]/gi, '')
         .replace(/\[(\d+)\]/g, '')
         .replace(/[#*_`]/g, '')
@@ -169,10 +180,10 @@ function MessageBubble({ message }: { message: Message }) {
       >
         <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
           {isUser ? (
-            <span className="whitespace-pre-wrap">{message.content}</span>
+            <span className="whitespace-pre-wrap">{displayContent}</span>
           ) : (
             <ReactMarkdown components={markdownComponents}>
-              {message.content}
+              {displayContent}
             </ReactMarkdown>
           )}
         </div>
@@ -230,6 +241,7 @@ export function AIChatbot() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { trackUserMessage, trackAssistantMessage, trackNewSession, trackUniqueSession } = useChatbotStats();
+  const { showSources } = useChatbotSettings();
 
   // Track widget open and unique session
   useEffect(() => {
@@ -839,7 +851,7 @@ export function AIChatbot() {
             <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={scrollRef} onScroll={handleScroll}>
               <div className="space-y-4 p-3 sm:p-4">
                 {messages.map((message) => (
-                  <MessageBubble key={message.id} message={message} />
+                  <MessageBubble key={message.id} message={message} showSources={showSources} />
                 ))}
 
                 {isLoading && !isStreaming && (
