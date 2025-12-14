@@ -76,11 +76,14 @@ export const createFormTemplate = async (
 
 export const updateFormTemplate = async (
   id: string,
-  updates: Partial<Pick<FormTemplate, 'name' | 'description' | 'is_active' | 'is_public' | 'settings' | 'display_mode'>>
+  updates: Partial<Pick<FormTemplate, 'name' | 'description' | 'is_active' | 'is_public' | 'settings' | 'display_mode' | 'branding'>>
 ): Promise<FormTemplate> => {
   const dbUpdates: Record<string, any> = { ...updates };
   if (updates.settings) {
     dbUpdates.settings = updates.settings as any;
+  }
+  if (updates.branding) {
+    dbUpdates.branding = updates.branding as any;
   }
   
   const { data, error } = await supabase

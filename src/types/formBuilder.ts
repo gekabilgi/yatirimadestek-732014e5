@@ -55,6 +55,24 @@ export interface FormField {
 
 export type DisplayMode = 'standalone' | 'integrated';
 
+export type HeaderLayout = 'centered' | 'left-image' | 'right-image';
+
+export interface FormBranding {
+  show_header: boolean;
+  header_title?: string;
+  header_subtitle?: string;
+  header_image_url?: string;
+  logo_url?: string;
+  accent_color?: string;
+  background_color?: string;
+  header_layout: HeaderLayout;
+}
+
+export const DEFAULT_BRANDING: FormBranding = {
+  show_header: false,
+  header_layout: 'centered',
+};
+
 export interface FormSettings {
   theme: 'default' | 'minimal' | 'bordered';
   success_message: string;
@@ -76,6 +94,7 @@ export interface FormTemplate {
   is_public: boolean;
   display_mode: DisplayMode;
   settings: FormSettings;
+  branding: FormBranding;
   created_by?: string;
   created_at: string;
   updated_at: string;
