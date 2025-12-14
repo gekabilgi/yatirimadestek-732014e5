@@ -20,7 +20,9 @@ import {
   Upload,
   Heading,
   FileText,
-  Minus
+  Minus,
+  Palette,
+  Image
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +47,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
   fetchFormTemplate,
@@ -55,7 +70,7 @@ import {
   deleteFormField,
   reorderFormFields,
 } from '@/services/formBuilderService';
-import type { FormTemplate, FormField, FieldType, DisplayMode } from '@/types/formBuilder';
+import type { FormTemplate, FormField, FieldType, DisplayMode, FormBranding, HeaderLayout, DEFAULT_BRANDING } from '@/types/formBuilder';
 import FormFieldConfigurator from './FormFieldConfigurator';
 
 const FIELD_ICONS: Record<FieldType, React.ComponentType<{ className?: string }>> = {
@@ -110,6 +125,12 @@ const FormBuilderEditor: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [submitButtonText, setSubmitButtonText] = useState('');
   const [displayMode, setDisplayMode] = useState<DisplayMode>('standalone');
+  
+  // Branding state
+  const [branding, setBranding] = useState<FormBranding>({
+    show_header: false,
+    header_layout: 'centered',
+  });
 
   useEffect(() => {
     if (id) {
@@ -132,6 +153,7 @@ const FormBuilderEditor: React.FC = () => {
         setSuccessMessage(formData.settings?.success_message || 'Form başarıyla gönderildi!');
         setSubmitButtonText(formData.settings?.submit_button_text || 'Gönder');
         setDisplayMode(formData.display_mode || 'standalone');
+        setBranding(formData.branding || { show_header: false, header_layout: 'centered' });
       }
       setFields(fieldsData);
     } catch (error) {
@@ -139,6 +161,19 @@ const FormBuilderEditor: React.FC = () => {
       toast.error('Form yüklenirken hata oluştu');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateBranding = async (updates: Partial<FormBranding>) => {
+    if (!form) return;
+    const newBranding = { ...branding, ...updates };
+    setBranding(newBranding);
+    try {
+      await updateFormTemplate(form.id, { branding: newBranding });
+      setForm({ ...form, branding: newBranding });
+      toast.success('Görünüm ayarları güncellendi');
+    } catch (error) {
+      toast.error('Görünüm ayarları güncellenirken hata oluştu');
     }
   };
 
@@ -418,143 +453,344 @@ const FormBuilderEditor: React.FC = () => {
 
       {/* Settings Sheet */}
       <Sheet open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <SheetContent className="flex flex-col">
+        <SheetContent className="flex flex-col sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>Form Ayarları</SheetTitle>
           </SheetHeader>
-          <ScrollArea className="flex-1 -mx-6 px-6">
-            <div className="space-y-6 py-6">
-              <div className="space-y-2">
-                <Label htmlFor="formName">Form Adı</Label>
-                <Input
-                  id="formName"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                />
-              </div>
+          <Tabs defaultValue="general" className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Genel
+              </TabsTrigger>
+              <TabsTrigger value="appearance" className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Görünüm
+              </TabsTrigger>
+            </TabsList>
+            
+            <ScrollArea className="flex-1 -mx-6 px-6">
+              {/* General Settings Tab */}
+              <TabsContent value="general" className="mt-0">
+                <div className="space-y-6 py-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="formName">Form Adı</Label>
+                    <Input
+                      id="formName"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="formDescription">Açıklama</Label>
-                <Textarea
-                  id="formDescription"
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  rows={3}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="formDescription">Açıklama</Label>
+                    <Textarea
+                      id="formDescription"
+                      value={formDescription}
+                      onChange={(e) => setFormDescription(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
 
-              <Separator />
+                  <Separator />
 
-              <div className="space-y-2">
-                <Label htmlFor="submitButtonText">Gönder Butonu Metni</Label>
-                <Input
-                  id="submitButtonText"
-                  value={submitButtonText}
-                  onChange={(e) => setSubmitButtonText(e.target.value)}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="submitButtonText">Gönder Butonu Metni</Label>
+                    <Input
+                      id="submitButtonText"
+                      value={submitButtonText}
+                      onChange={(e) => setSubmitButtonText(e.target.value)}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="successMessage">Başarı Mesajı</Label>
-                <Textarea
-                  id="successMessage"
-                  value={successMessage}
-                  onChange={(e) => setSuccessMessage(e.target.value)}
-                  rows={2}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="successMessage">Başarı Mesajı</Label>
+                    <Textarea
+                      id="successMessage"
+                      value={successMessage}
+                      onChange={(e) => setSuccessMessage(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
 
-              <Separator />
+                  <Separator />
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Form Durumu</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {form.is_active ? 'Aktif' : 'Pasif'}
-                  </p>
-                </div>
-                <Switch
-                  checked={form.is_active}
-                  onCheckedChange={async (checked) => {
-                    try {
-                      await updateFormTemplate(form.id, { is_active: checked });
-                      setForm({ ...form, is_active: checked });
-                      toast.success(checked ? 'Form aktif edildi' : 'Form pasif yapıldı');
-                    } catch (error) {
-                      toast.error('Durum güncellenirken hata oluştu');
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Herkese Açık</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Giriş yapmadan form doldurulabilir
-                  </p>
-                </div>
-                <Switch
-                  checked={form.is_public}
-                  onCheckedChange={async (checked) => {
-                    try {
-                      await updateFormTemplate(form.id, { is_public: checked });
-                      setForm({ ...form, is_public: checked });
-                      toast.success('Ayar güncellendi');
-                    } catch (error) {
-                      toast.error('Ayar güncellenirken hata oluştu');
-                    }
-                  }}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <Label>Yayın Şekli</Label>
-                <p className="text-sm text-muted-foreground">
-                  Formun web sayfasında nasıl görüneceğini seçin
-                </p>
-                <RadioGroup 
-                  value={displayMode} 
-                  onValueChange={async (v) => {
-                    const newMode = v as DisplayMode;
-                    setDisplayMode(newMode);
-                    try {
-                      await updateFormTemplate(form.id, { display_mode: newMode });
-                      setForm({ ...form, display_mode: newMode });
-                      toast.success('Yayın şekli güncellendi');
-                    } catch (error) {
-                      toast.error('Yayın şekli güncellenirken hata oluştu');
-                    }
-                  }}
-                >
-                  <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
-                    <RadioGroupItem value="standalone" id="standalone" className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor="standalone" className="font-medium cursor-pointer">
-                        Minimal (Yalın)
-                      </Label>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Form Durumu</Label>
                       <p className="text-sm text-muted-foreground">
-                        Sadece form görünür, menü ve alt bilgi olmadan
+                        {form.is_active ? 'Aktif' : 'Pasif'}
                       </p>
                     </div>
+                    <Switch
+                      checked={form.is_active}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          await updateFormTemplate(form.id, { is_active: checked });
+                          setForm({ ...form, is_active: checked });
+                          toast.success(checked ? 'Form aktif edildi' : 'Form pasif yapıldı');
+                        } catch (error) {
+                          toast.error('Durum güncellenirken hata oluştu');
+                        }
+                      }}
+                    />
                   </div>
-                  <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
-                    <RadioGroupItem value="integrated" id="integrated" className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor="integrated" className="font-medium cursor-pointer">
-                        Entegre (Site Şablonu)
-                      </Label>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Herkese Açık</Label>
                       <p className="text-sm text-muted-foreground">
-                        Üst menü, hero bölümü ve alt bilgi ile tam sayfa görünümü
+                        Giriş yapmadan form doldurulabilir
                       </p>
                     </div>
+                    <Switch
+                      checked={form.is_public}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          await updateFormTemplate(form.id, { is_public: checked });
+                          setForm({ ...form, is_public: checked });
+                          toast.success('Ayar güncellendi');
+                        } catch (error) {
+                          toast.error('Ayar güncellenirken hata oluştu');
+                        }
+                      }}
+                    />
                   </div>
-                </RadioGroup>
-              </div>
-            </div>
-          </ScrollArea>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <Label>Yayın Şekli</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Formun web sayfasında nasıl görüneceğini seçin
+                    </p>
+                    <RadioGroup 
+                      value={displayMode} 
+                      onValueChange={async (v) => {
+                        const newMode = v as DisplayMode;
+                        setDisplayMode(newMode);
+                        try {
+                          await updateFormTemplate(form.id, { display_mode: newMode });
+                          setForm({ ...form, display_mode: newMode });
+                          toast.success('Yayın şekli güncellendi');
+                        } catch (error) {
+                          toast.error('Yayın şekli güncellenirken hata oluştu');
+                        }
+                      }}
+                    >
+                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                        <RadioGroupItem value="standalone" id="standalone" className="mt-0.5" />
+                        <div className="flex-1">
+                          <Label htmlFor="standalone" className="font-medium cursor-pointer">
+                            Minimal (Yalın)
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Sadece form görünür, menü ve alt bilgi olmadan
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                        <RadioGroupItem value="integrated" id="integrated" className="mt-0.5" />
+                        <div className="flex-1">
+                          <Label htmlFor="integrated" className="font-medium cursor-pointer">
+                            Entegre (Site Şablonu)
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Üst menü, hero bölümü ve alt bilgi ile tam sayfa görünümü
+                          </p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Appearance/Branding Tab */}
+              <TabsContent value="appearance" className="mt-0">
+                <div className="space-y-6 py-6">
+                  {displayMode === 'standalone' ? (
+                    <>
+                      {/* Show Header Toggle */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Özel Başlık Göster</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Formun üstünde özel başlık alanı göster
+                          </p>
+                        </div>
+                        <Switch
+                          checked={branding.show_header}
+                          onCheckedChange={(checked) => handleUpdateBranding({ show_header: checked })}
+                        />
+                      </div>
+
+                      {branding.show_header && (
+                        <>
+                          <Separator />
+
+                          {/* Header Title */}
+                          <div className="space-y-2">
+                            <Label htmlFor="headerTitle">Başlık Metni</Label>
+                            <Input
+                              id="headerTitle"
+                              value={branding.header_title || ''}
+                              onChange={(e) => setBranding({ ...branding, header_title: e.target.value })}
+                              onBlur={() => handleUpdateBranding({ header_title: branding.header_title })}
+                              placeholder={formName}
+                            />
+                            <p className="text-xs text-muted-foreground">Boş bırakılırsa form adı kullanılır</p>
+                          </div>
+
+                          {/* Header Subtitle */}
+                          <div className="space-y-2">
+                            <Label htmlFor="headerSubtitle">Alt Başlık</Label>
+                            <Input
+                              id="headerSubtitle"
+                              value={branding.header_subtitle || ''}
+                              onChange={(e) => setBranding({ ...branding, header_subtitle: e.target.value })}
+                              onBlur={() => handleUpdateBranding({ header_subtitle: branding.header_subtitle })}
+                              placeholder="Opsiyonel alt başlık"
+                            />
+                          </div>
+
+                          <Separator />
+
+                          {/* Header Layout */}
+                          <div className="space-y-2">
+                            <Label>Başlık Düzeni</Label>
+                            <Select
+                              value={branding.header_layout || 'centered'}
+                              onValueChange={(v) => handleUpdateBranding({ header_layout: v as HeaderLayout })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="centered">Ortalanmış</SelectItem>
+                                <SelectItem value="left-image">Görsel Solda</SelectItem>
+                                <SelectItem value="right-image">Görsel Sağda</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <Separator />
+
+                          {/* Accent Color */}
+                          <div className="space-y-2">
+                            <Label htmlFor="accentColor">Vurgu Rengi</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="accentColor"
+                                type="color"
+                                value={branding.accent_color || '#14b8a6'}
+                                onChange={(e) => handleUpdateBranding({ accent_color: e.target.value })}
+                                className="w-14 h-10 p-1 cursor-pointer"
+                              />
+                              <Input
+                                value={branding.accent_color || '#14b8a6'}
+                                onChange={(e) => setBranding({ ...branding, accent_color: e.target.value })}
+                                onBlur={() => handleUpdateBranding({ accent_color: branding.accent_color })}
+                                placeholder="#14b8a6"
+                                className="flex-1"
+                              />
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              {['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981'].map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => handleUpdateBranding({ accent_color: color })}
+                                  className="w-8 h-8 rounded-full border-2 border-transparent hover:border-foreground/30 transition-colors"
+                                  style={{ backgroundColor: color }}
+                                  title={color}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Background Color */}
+                          <div className="space-y-2">
+                            <Label htmlFor="bgColor">Sayfa Arka Plan Rengi</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="bgColor"
+                                type="color"
+                                value={branding.background_color || '#f8fafc'}
+                                onChange={(e) => handleUpdateBranding({ background_color: e.target.value })}
+                                className="w-14 h-10 p-1 cursor-pointer"
+                              />
+                              <Input
+                                value={branding.background_color || '#f8fafc'}
+                                onChange={(e) => setBranding({ ...branding, background_color: e.target.value })}
+                                onBlur={() => handleUpdateBranding({ background_color: branding.background_color })}
+                                placeholder="#f8fafc"
+                                className="flex-1"
+                              />
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Logo URL */}
+                          <div className="space-y-2">
+                            <Label htmlFor="logoUrl">Logo URL</Label>
+                            <Input
+                              id="logoUrl"
+                              value={branding.logo_url || ''}
+                              onChange={(e) => setBranding({ ...branding, logo_url: e.target.value })}
+                              onBlur={() => handleUpdateBranding({ logo_url: branding.logo_url })}
+                              placeholder="https://example.com/logo.png"
+                            />
+                            {branding.logo_url && (
+                              <div className="mt-2 p-2 bg-muted rounded-lg">
+                                <img 
+                                  src={branding.logo_url} 
+                                  alt="Logo preview" 
+                                  className="h-12 w-auto object-contain"
+                                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Header Image URL */}
+                          <div className="space-y-2">
+                            <Label htmlFor="headerImageUrl">Başlık Görseli URL</Label>
+                            <Input
+                              id="headerImageUrl"
+                              value={branding.header_image_url || ''}
+                              onChange={(e) => setBranding({ ...branding, header_image_url: e.target.value })}
+                              onBlur={() => handleUpdateBranding({ header_image_url: branding.header_image_url })}
+                              placeholder="https://example.com/header-image.jpg"
+                            />
+                            {branding.header_image_url && (
+                              <div className="mt-2 p-2 bg-muted rounded-lg">
+                                <img 
+                                  src={branding.header_image_url} 
+                                  alt="Header preview" 
+                                  className="w-full max-h-32 object-cover rounded"
+                                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">
+                        Görünüm ayarları sadece "Minimal (Yalın)" yayın şekli için geçerlidir.
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        "Entegre" modunda site şablonu kullanılır.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
           
           <div className="border-t pt-4 mt-auto">
             <Button onClick={handleSaveForm} disabled={saving} className="w-full">

@@ -791,6 +791,7 @@ export type Database = {
       }
       form_templates: {
         Row: {
+          branding: Json | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -804,6 +805,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          branding?: Json | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -817,6 +819,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          branding?: Json | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null

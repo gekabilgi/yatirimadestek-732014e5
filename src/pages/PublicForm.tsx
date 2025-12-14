@@ -24,6 +24,7 @@ import {
 } from '@/services/formBuilderService';
 import type { FormTemplate, FormField } from '@/types/formBuilder';
 import IntegratedFormLayout from '@/components/IntegratedFormLayout';
+import StandaloneFormLayout from '@/components/StandaloneFormLayout';
 
 const PublicForm: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -463,7 +464,18 @@ const PublicForm: React.FC = () => {
     );
   }
 
-  // Standalone mode (default)
+  // Standalone mode with branding
+  const hasBranding = form.branding?.show_header && form.display_mode === 'standalone';
+  
+  if (hasBranding) {
+    return (
+      <StandaloneFormLayout branding={form.branding} formName={form.name}>
+        {submitted ? successContent : formContent}
+      </StandaloneFormLayout>
+    );
+  }
+
+  // Standalone mode without branding (default)
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
