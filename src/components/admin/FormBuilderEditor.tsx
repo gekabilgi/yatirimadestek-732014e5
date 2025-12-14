@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
   SheetContent,
@@ -417,130 +418,145 @@ const FormBuilderEditor: React.FC = () => {
 
       {/* Settings Sheet */}
       <Sheet open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <SheetContent>
+        <SheetContent className="flex flex-col">
           <SheetHeader>
             <SheetTitle>Form Ayarları</SheetTitle>
           </SheetHeader>
-          <div className="space-y-6 py-6">
-            <div className="space-y-2">
-              <Label htmlFor="formName">Form Adı</Label>
-              <Input
-                id="formName"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="formDescription">Açıklama</Label>
-              <Textarea
-                id="formDescription"
-                value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <Label htmlFor="submitButtonText">Gönder Butonu Metni</Label>
-              <Input
-                id="submitButtonText"
-                value={submitButtonText}
-                onChange={(e) => setSubmitButtonText(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="successMessage">Başarı Mesajı</Label>
-              <Textarea
-                id="successMessage"
-                value={successMessage}
-                onChange={(e) => setSuccessMessage(e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Form Durumu</Label>
-                <p className="text-sm text-muted-foreground">
-                  {form.is_active ? 'Aktif' : 'Pasif'}
-                </p>
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="space-y-6 py-6">
+              <div className="space-y-2">
+                <Label htmlFor="formName">Form Adı</Label>
+                <Input
+                  id="formName"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </div>
-              <Switch
-                checked={form.is_active}
-                onCheckedChange={async (checked) => {
-                  try {
-                    await updateFormTemplate(form.id, { is_active: checked });
-                    setForm({ ...form, is_active: checked });
-                    toast.success(checked ? 'Form aktif edildi' : 'Form pasif yapıldı');
-                  } catch (error) {
-                    toast.error('Durum güncellenirken hata oluştu');
-                  }
-                }}
-              />
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Herkese Açık</Label>
-                <p className="text-sm text-muted-foreground">
-                  Giriş yapmadan form doldurulabilir
-                </p>
+              <div className="space-y-2">
+                <Label htmlFor="formDescription">Açıklama</Label>
+                <Textarea
+                  id="formDescription"
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  rows={3}
+                />
               </div>
-              <Switch
-                checked={form.is_public}
-                onCheckedChange={async (checked) => {
-                  try {
-                    await updateFormTemplate(form.id, { is_public: checked });
-                    setForm({ ...form, is_public: checked });
-                    toast.success('Ayar güncellendi');
-                  } catch (error) {
-                    toast.error('Ayar güncellenirken hata oluştu');
-                  }
-                }}
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="space-y-3">
-              <Label>Yayın Şekli</Label>
-              <p className="text-sm text-muted-foreground">
-                Formun web sayfasında nasıl görüneceğini seçin
-              </p>
-              <RadioGroup value={displayMode} onValueChange={(v) => setDisplayMode(v as DisplayMode)}>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
-                  <RadioGroupItem value="standalone" id="standalone" className="mt-0.5" />
-                  <div className="flex-1">
-                    <Label htmlFor="standalone" className="font-medium cursor-pointer">
-                      Minimal (Yalın)
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Sadece form görünür, menü ve alt bilgi olmadan
-                    </p>
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="submitButtonText">Gönder Butonu Metni</Label>
+                <Input
+                  id="submitButtonText"
+                  value={submitButtonText}
+                  onChange={(e) => setSubmitButtonText(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="successMessage">Başarı Mesajı</Label>
+                <Textarea
+                  id="successMessage"
+                  value={successMessage}
+                  onChange={(e) => setSuccessMessage(e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Form Durumu</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {form.is_active ? 'Aktif' : 'Pasif'}
+                  </p>
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
-                  <RadioGroupItem value="integrated" id="integrated" className="mt-0.5" />
-                  <div className="flex-1">
-                    <Label htmlFor="integrated" className="font-medium cursor-pointer">
-                      Entegre (Site Şablonu)
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Üst menü, hero bölümü ve alt bilgi ile tam sayfa görünümü
-                    </p>
-                  </div>
+                <Switch
+                  checked={form.is_active}
+                  onCheckedChange={async (checked) => {
+                    try {
+                      await updateFormTemplate(form.id, { is_active: checked });
+                      setForm({ ...form, is_active: checked });
+                      toast.success(checked ? 'Form aktif edildi' : 'Form pasif yapıldı');
+                    } catch (error) {
+                      toast.error('Durum güncellenirken hata oluştu');
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Herkese Açık</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Giriş yapmadan form doldurulabilir
+                  </p>
                 </div>
-              </RadioGroup>
+                <Switch
+                  checked={form.is_public}
+                  onCheckedChange={async (checked) => {
+                    try {
+                      await updateFormTemplate(form.id, { is_public: checked });
+                      setForm({ ...form, is_public: checked });
+                      toast.success('Ayar güncellendi');
+                    } catch (error) {
+                      toast.error('Ayar güncellenirken hata oluştu');
+                    }
+                  }}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <Label>Yayın Şekli</Label>
+                <p className="text-sm text-muted-foreground">
+                  Formun web sayfasında nasıl görüneceğini seçin
+                </p>
+                <RadioGroup 
+                  value={displayMode} 
+                  onValueChange={async (v) => {
+                    const newMode = v as DisplayMode;
+                    setDisplayMode(newMode);
+                    try {
+                      await updateFormTemplate(form.id, { display_mode: newMode });
+                      setForm({ ...form, display_mode: newMode });
+                      toast.success('Yayın şekli güncellendi');
+                    } catch (error) {
+                      toast.error('Yayın şekli güncellenirken hata oluştu');
+                    }
+                  }}
+                >
+                  <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                    <RadioGroupItem value="standalone" id="standalone" className="mt-0.5" />
+                    <div className="flex-1">
+                      <Label htmlFor="standalone" className="font-medium cursor-pointer">
+                        Minimal (Yalın)
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Sadece form görünür, menü ve alt bilgi olmadan
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                    <RadioGroupItem value="integrated" id="integrated" className="mt-0.5" />
+                    <div className="flex-1">
+                      <Label htmlFor="integrated" className="font-medium cursor-pointer">
+                        Entegre (Site Şablonu)
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Üst menü, hero bölümü ve alt bilgi ile tam sayfa görünümü
+                      </p>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
             </div>
-
-            <Separator />
-
+          </ScrollArea>
+          
+          <div className="border-t pt-4 mt-auto">
             <Button onClick={handleSaveForm} disabled={saving} className="w-full">
               <Save className="h-4 w-4 mr-2" />
               {saving ? 'Kaydediliyor...' : 'Kaydet'}
