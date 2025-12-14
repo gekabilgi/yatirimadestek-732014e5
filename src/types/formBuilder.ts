@@ -53,6 +53,8 @@ export interface FormField {
   updated_at: string;
 }
 
+export type DisplayMode = 'standalone' | 'integrated';
+
 export interface FormSettings {
   theme: 'default' | 'minimal' | 'bordered';
   success_message: string;
@@ -72,6 +74,7 @@ export interface FormTemplate {
   description?: string;
   is_active: boolean;
   is_public: boolean;
+  display_mode: DisplayMode;
   settings: FormSettings;
   created_by?: string;
   created_at: string;

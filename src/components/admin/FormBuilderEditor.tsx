@@ -36,6 +36,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Dialog,
   DialogContent,
@@ -53,7 +54,7 @@ import {
   deleteFormField,
   reorderFormFields,
 } from '@/services/formBuilderService';
-import type { FormTemplate, FormField, FieldType, FIELD_TYPE_INFO } from '@/types/formBuilder';
+import type { FormTemplate, FormField, FieldType, DisplayMode } from '@/types/formBuilder';
 import FormFieldConfigurator from './FormFieldConfigurator';
 
 const FIELD_ICONS: Record<FieldType, React.ComponentType<{ className?: string }>> = {
@@ -107,6 +108,7 @@ const FormBuilderEditor: React.FC = () => {
   const [formDescription, setFormDescription] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [submitButtonText, setSubmitButtonText] = useState('');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('standalone');
 
   useEffect(() => {
     if (id) {
@@ -128,6 +130,7 @@ const FormBuilderEditor: React.FC = () => {
         setFormDescription(formData.description || '');
         setSuccessMessage(formData.settings?.success_message || 'Form başarıyla gönderildi!');
         setSubmitButtonText(formData.settings?.submit_button_text || 'Gönder');
+        setDisplayMode(formData.display_mode || 'standalone');
       }
       setFields(fieldsData);
     } catch (error) {
@@ -146,6 +149,7 @@ const FormBuilderEditor: React.FC = () => {
       await updateFormTemplate(form.id, {
         name: formName,
         description: formDescription || undefined,
+        display_mode: displayMode,
         settings: {
           ...form.settings,
           success_message: successMessage,
@@ -500,6 +504,39 @@ const FormBuilderEditor: React.FC = () => {
                   }
                 }}
               />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label>Yayın Şekli</Label>
+              <p className="text-sm text-muted-foreground">
+                Formun web sayfasında nasıl görüneceğini seçin
+              </p>
+              <RadioGroup value={displayMode} onValueChange={(v) => setDisplayMode(v as DisplayMode)}>
+                <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                  <RadioGroupItem value="standalone" id="standalone" className="mt-0.5" />
+                  <div className="flex-1">
+                    <Label htmlFor="standalone" className="font-medium cursor-pointer">
+                      Minimal (Yalın)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Sadece form görünür, menü ve alt bilgi olmadan
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary/50 transition-colors">
+                  <RadioGroupItem value="integrated" id="integrated" className="mt-0.5" />
+                  <div className="flex-1">
+                    <Label htmlFor="integrated" className="font-medium cursor-pointer">
+                      Entegre (Site Şablonu)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Üst menü, hero bölümü ve alt bilgi ile tam sayfa görünümü
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
             </div>
 
             <Separator />

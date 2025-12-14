@@ -794,6 +794,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          display_mode: string | null
           id: string
           is_active: boolean | null
           is_public: boolean | null
@@ -806,6 +807,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          display_mode?: string | null
           id?: string
           is_active?: boolean | null
           is_public?: boolean | null
@@ -818,6 +820,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          display_mode?: string | null
           id?: string
           is_active?: boolean | null
           is_public?: boolean | null
