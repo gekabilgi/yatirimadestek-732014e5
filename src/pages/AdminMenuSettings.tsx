@@ -138,6 +138,11 @@ const AdminMenuSettings = () => {
     );
   }
 
+  // Filter out Settings from admin menu items - it's always visible and not configurable
+  const configurableAdminMenuItems = ADMIN_MENU_ITEMS.filter(
+    item => item.settingKey !== 'admin_menu_settings'
+  );
+
   const renderMenuTable = (
     items: typeof MENU_ITEMS | typeof ADMIN_MENU_ITEMS,
     settings: MenuVisibilitySettings | AdminMenuVisibilitySettings,
@@ -243,10 +248,13 @@ const AdminMenuSettings = () => {
                 <CardTitle>Admin Menü Görünürlüğü</CardTitle>
                 <CardDescription>
                   Admin panelindeki menü öğelerinin hangi kullanıcı türlerine görüneceğini ayarlayın.
+                  <span className="block mt-2 text-sm text-primary font-medium">
+                    Not: "Ayarlar" menüsü kilitlenme önlemi için her zaman görünürdür.
+                  </span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {renderMenuTable(ADMIN_MENU_ITEMS, adminSettings, handleAdminToggleChange, "admin")}
+                {renderMenuTable(configurableAdminMenuItems, adminSettings, handleAdminToggleChange, "admin")}
               </CardContent>
             </Card>
           </TabsContent>

@@ -19,6 +19,7 @@ export interface AdminMenuVisibilitySettings {
   admin_menu_dashboard: MenuItemVisibility;
   admin_menu_qa_management: MenuItemVisibility;
   admin_menu_knowledge_base: MenuItemVisibility;
+  admin_menu_form_builder: MenuItemVisibility;
   admin_menu_feasibility_reports: MenuItemVisibility;
   admin_menu_support_programs: MenuItemVisibility;
   admin_menu_announcements: MenuItemVisibility;
@@ -28,8 +29,8 @@ export interface AdminMenuVisibilitySettings {
   admin_menu_user_management: MenuItemVisibility;
   admin_menu_email_management: MenuItemVisibility;
   admin_menu_supply_chain: MenuItemVisibility;
-  admin_menu_settings: MenuItemVisibility;
   admin_menu_analytics: MenuItemVisibility;
+  // NOTE: admin_menu_settings removed - Settings menu is always visible to prevent lockout
 }
 
 export const DEFAULT_VISIBILITY: MenuItemVisibility = {
@@ -129,6 +130,12 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     description: 'Chatbot bilgi tabanı yönetimi',
   },
   {
+    title: 'Form Builder',
+    href: '/admin/form-builder',
+    settingKey: 'admin_menu_form_builder',
+    description: 'Özel form oluşturma ve yönetimi',
+  },
+  {
     title: 'Fizibilite Raporları',
     href: '/admin/feasibility-reports',
     settingKey: 'admin_menu_feasibility_reports',
@@ -183,15 +190,10 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     description: 'Tedarik zinciri yönetimi',
   },
   {
-    title: 'Ayarlar',
-    href: '/admin/settings',
-    settingKey: 'admin_menu_settings',
-    description: 'Sistem ayarları',
-  },
-  {
     title: 'Analytics',
     href: '/admin/analytics',
     settingKey: 'admin_menu_analytics',
     description: 'İstatistik ve analiz',
   },
+  // NOTE: Settings menu is NOT in this list - it's always visible to prevent lockout
 ];
