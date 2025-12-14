@@ -10,7 +10,8 @@ import {
   FileText, 
   ExternalLink,
   MoreVertical,
-  Inbox
+  Inbox,
+  LayoutTemplate
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -46,12 +48,15 @@ import { toast } from 'sonner';
 import { 
   fetchFormTemplates, 
   createFormTemplate, 
+  createFormFromTemplate,
   deleteFormTemplate, 
   duplicateFormTemplate,
   updateFormTemplate,
   getFormStats
 } from '@/services/formBuilderService';
+import FormTemplateGallery from './FormTemplateGallery';
 import type { FormTemplate } from '@/types/formBuilder';
+import type { FormTemplatePreset } from '@/data/formTemplatePresets';
 
 const FormBuilderManager: React.FC = () => {
   const navigate = useNavigate();
@@ -62,6 +67,8 @@ const FormBuilderManager: React.FC = () => {
   const [newFormName, setNewFormName] = useState('');
   const [newFormDescription, setNewFormDescription] = useState('');
   const [formStats, setFormStats] = useState<Record<string, { total: number; new: number }>>({});
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplatePreset | null>(null);
+  const [createTab, setCreateTab] = useState<'blank' | 'template'>('blank');
 
   useEffect(() => {
     loadForms();
@@ -93,17 +100,29 @@ const FormBuilderManager: React.FC = () => {
   };
 
   const handleCreateForm = async () => {
-    if (!newFormName.trim()) {
+    const formName = createTab === 'template' && selectedTemplate 
+      ? (newFormName.trim() || selectedTemplate.name)
+      : newFormName.trim();
+      
+    if (!formName) {
       toast.error('Form adı gereklidir');
       return;
     }
 
     try {
-      const newForm = await createFormTemplate(newFormName, newFormDescription);
-      toast.success('Form oluşturuldu');
+      let newForm;
+      if (createTab === 'template' && selectedTemplate) {
+        newForm = await createFormFromTemplate(selectedTemplate, formName);
+        toast.success('Form şablondan oluşturuldu');
+      } else {
+        newForm = await createFormTemplate(formName, newFormDescription);
+        toast.success('Form oluşturuldu');
+      }
       setIsCreateDialogOpen(false);
       setNewFormName('');
       setNewFormDescription('');
+      setSelectedTemplate(null);
+      setCreateTab('blank');
       navigate(`/admin/form-builder/${newForm.id}`);
     } catch (error) {
       console.error('Error creating form:', error);
@@ -275,37 +294,73 @@ const FormBuilderManager: React.FC = () => {
 
       {/* Create Form Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Yeni Form Oluştur</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="formName">Form Adı *</Label>
-              <Input
-                id="formName"
-                value={newFormName}
-                onChange={(e) => setNewFormName(e.target.value)}
-                placeholder="örn: İletişim Formu"
+          
+          <Tabs value={createTab} onValueChange={(v) => setCreateTab(v as 'blank' | 'template')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="blank" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Boş Form
+              </TabsTrigger>
+              <TabsTrigger value="template" className="flex items-center gap-2">
+                <LayoutTemplate className="h-4 w-4" />
+                Şablondan Başla
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="blank" className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="formName">Form Adı *</Label>
+                <Input
+                  id="formName"
+                  value={newFormName}
+                  onChange={(e) => setNewFormName(e.target.value)}
+                  placeholder="örn: İletişim Formu"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="formDescription">Açıklama (Opsiyonel)</Label>
+                <Textarea
+                  id="formDescription"
+                  value={newFormDescription}
+                  onChange={(e) => setNewFormDescription(e.target.value)}
+                  placeholder="Form hakkında kısa açıklama"
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="template" className="py-4">
+              <FormTemplateGallery 
+                onSelectTemplate={setSelectedTemplate}
+                selectedTemplateId={selectedTemplate?.id}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="formDescription">Açıklama (Opsiyonel)</Label>
-              <Textarea
-                id="formDescription"
-                value={newFormDescription}
-                onChange={(e) => setNewFormDescription(e.target.value)}
-                placeholder="Form hakkında kısa açıklama"
-                rows={3}
-              />
-            </div>
-          </div>
+              {selectedTemplate && (
+                <div className="mt-4 space-y-2">
+                  <Label htmlFor="templateFormName">Form Adı (opsiyonel)</Label>
+                  <Input
+                    id="templateFormName"
+                    value={newFormName}
+                    onChange={(e) => setNewFormName(e.target.value)}
+                    placeholder={selectedTemplate.name}
+                  />
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               İptal
             </Button>
-            <Button onClick={handleCreateForm}>
-              Oluştur
+            <Button 
+              onClick={handleCreateForm}
+              disabled={createTab === 'template' && !selectedTemplate}
+            >
+              {createTab === 'template' ? 'Şablondan Oluştur' : 'Oluştur'}
             </Button>
           </DialogFooter>
         </DialogContent>
