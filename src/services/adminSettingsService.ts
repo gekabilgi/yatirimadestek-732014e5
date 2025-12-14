@@ -367,4 +367,36 @@ export const adminSettingsService = {
       }
     }
   },
+
+  async getChatbotShowSources(): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value')
+      .eq('setting_key', 'chatbot_show_sources')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching chatbot show sources:', error);
+      return true; // default to showing sources
+    }
+
+    return data?.setting_value === 1;
+  },
+
+  async setChatbotShowSources(show: boolean): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'chatbot_show_sources',
+        category: 'chatbot',
+        setting_value: show ? 1 : 0,
+        setting_value_text: null,
+        description: 'Show source citations in chatbot responses'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting chatbot show sources:', error);
+      throw error;
+    }
+  },
 };
