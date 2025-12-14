@@ -76,7 +76,7 @@ export const createFormTemplate = async (
 
 export const updateFormTemplate = async (
   id: string,
-  updates: Partial<Pick<FormTemplate, 'name' | 'description' | 'is_active' | 'is_public' | 'settings'>>
+  updates: Partial<Pick<FormTemplate, 'name' | 'description' | 'is_active' | 'is_public' | 'settings' | 'display_mode'>>
 ): Promise<FormTemplate> => {
   const dbUpdates: Record<string, any> = { ...updates };
   if (updates.settings) {
