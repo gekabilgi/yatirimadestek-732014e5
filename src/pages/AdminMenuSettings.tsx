@@ -138,10 +138,8 @@ const AdminMenuSettings = () => {
     );
   }
 
-  // Filter out Settings from admin menu items - it's always visible and not configurable
-  const configurableAdminMenuItems = ADMIN_MENU_ITEMS.filter(
-    item => item.settingKey !== 'admin_menu_settings'
-  );
+  // Settings menu is always visible and not configurable - no filtering needed since
+  // admin_menu_settings is already removed from ADMIN_MENU_ITEMS
 
   const renderMenuTable = (
     items: typeof MENU_ITEMS | typeof ADMIN_MENU_ITEMS,
@@ -254,7 +252,7 @@ const AdminMenuSettings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {renderMenuTable(configurableAdminMenuItems, adminSettings, handleAdminToggleChange, "admin")}
+                {renderMenuTable(ADMIN_MENU_ITEMS, adminSettings, handleAdminToggleChange, "admin")}
               </CardContent>
             </Card>
           </TabsContent>
