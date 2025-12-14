@@ -188,17 +188,39 @@ const FormBuilderManager: React.FC = () => {
       </div>
 
       {forms.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">Henüz form yok</h3>
-            <p className="text-muted-foreground mb-4">İlk formunuzu oluşturmaya başlayın</p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Form Oluştur
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Empty state card */}
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Henüz form yok</h3>
+              <p className="text-muted-foreground mb-4">İlk formunuzu oluşturmaya başlayın</p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Boş Form Oluştur
+              </Button>
+            </CardContent>
+          </Card>
+          
+          {/* Template gallery quick access */}
+          <Card 
+            className="border-dashed hover:border-primary/50 cursor-pointer transition-all hover:shadow-md group"
+            onClick={() => {
+              setCreateTab('template');
+              setIsCreateDialogOpen(true);
+            }}
+          >
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="p-3 rounded-full bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
+                <LayoutTemplate className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-2">Şablondan Oluştur</h3>
+              <p className="text-muted-foreground text-center text-sm">
+                Hazır şablonlarla hızlıca başlayın
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {forms.map((form) => (
