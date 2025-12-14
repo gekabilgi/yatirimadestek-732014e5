@@ -32,10 +32,12 @@ interface AdminLayoutProps {
 }
 
 // Map navigation hrefs to setting keys
+// NOTE: /admin/settings is NOT mapped - Settings menu is always visible to prevent lockout
 const hrefToSettingKey: Record<string, keyof AdminMenuVisibilitySettings> = {
   '/admin': 'admin_menu_dashboard',
   '/admin/qa-management': 'admin_menu_qa_management',
   '/admin/knowledge-base': 'admin_menu_knowledge_base',
+  '/admin/form-builder': 'admin_menu_form_builder',
   '/admin/feasibility-reports': 'admin_menu_feasibility_reports',
   '/admin/support-programs': 'admin_menu_support_programs',
   '/admin/announcements': 'admin_menu_announcements',
@@ -45,7 +47,6 @@ const hrefToSettingKey: Record<string, keyof AdminMenuVisibilitySettings> = {
   '/admin/user-management': 'admin_menu_user_management',
   '/admin/email-management': 'admin_menu_email_management',
   '/admin/tzyotl': 'admin_menu_supply_chain',
-  '/admin/settings': 'admin_menu_settings',
   '/admin/analytics': 'admin_menu_analytics',
 };
 
@@ -114,7 +115,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }, []);
 
   // Filter navigation based on visibility settings
+  // Settings menu (/admin/settings) is always visible to prevent lockout
   const shouldShowMenuItem = (href: string): boolean => {
+    // Settings menu is always visible to admins to prevent lockout
+    if (href === '/admin/settings') return true;
+    
     if (!menuSettings) return true;
     const settingKey = hrefToSettingKey[href];
     if (!settingKey) return true;
