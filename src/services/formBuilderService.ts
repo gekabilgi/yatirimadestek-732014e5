@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { FormTemplate, FormField, FormSubmission, FormSettings } from "@/types/formBuilder";
+import type { FormTemplate, FormField, FormSubmission, FormSettings, FormBranding } from "@/types/formBuilder";
+import type { FormTemplatePreset } from "@/data/formTemplatePresets";
 
 // Helper to generate slug from name
 const generateSlug = (name: string): string => {
@@ -13,6 +14,45 @@ const generateSlug = (name: string): string => {
     .replace(/ç/g, 'c')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+};
+
+// Create form from preset template
+export const createFormFromTemplate = async (preset: FormTemplatePreset, formName: string): Promise<FormTemplate> => {
+  const slug = generateSlug(formName) + '-' + Date.now();
+  
+  const { data: formData, error: formError } = await supabase
+    .from('form_templates')
+    .insert([{
+      name: formName,
+      description: preset.description,
+      slug,
+      is_active: false,
+      is_public: true,
+      display_mode: 'standalone',
+      branding: preset.branding as unknown as Record<string, unknown>,
+    }])
+    .select()
+    .single();
+
+  if (formError) throw formError;
+  
+  // Create fields from preset
+  for (const field of preset.fields) {
+    await supabase.from('form_fields').insert([{
+      form_id: formData.id,
+      name: field.name,
+      label: field.label,
+      field_type: field.field_type,
+      is_required: field.is_required,
+      display_order: field.display_order,
+      placeholder: field.placeholder || null,
+      help_text: field.help_text || null,
+      options: field.options || [],
+      validation_rules: field.validation_rules || {},
+    }]);
+  }
+
+  return formData as unknown as FormTemplate;
 };
 
 // Form Templates

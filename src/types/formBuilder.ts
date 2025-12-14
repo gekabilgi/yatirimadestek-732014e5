@@ -65,12 +65,23 @@ export interface FormBranding {
   logo_url?: string;
   accent_color?: string;
   background_color?: string;
-  header_layout: HeaderLayout;
+  header_layout?: HeaderLayout;
+  // Enhanced options
+  show_corner_decorations?: boolean;
+  show_date_badge?: boolean;
+  company_name?: string;
 }
 
 export const DEFAULT_BRANDING: FormBranding = {
-  show_header: false,
+  show_header: true,
+  header_title: '',
+  header_subtitle: 'TEMPLATE',
+  accent_color: '#0d9488',
+  background_color: '#f3f4f6',
   header_layout: 'centered',
+  show_corner_decorations: true,
+  show_date_badge: true,
+  company_name: '',
 };
 
 export interface FormSettings {
