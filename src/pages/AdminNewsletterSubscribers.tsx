@@ -100,19 +100,18 @@ const AdminNewsletterSubscribers = () => {
     }
   });
 
-  const filteredSubscribers = subscribers.filter(sub =>
-    sub.ad.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sub.soyad.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sub.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sub.il.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSubscribers = subscribers.filter(sub => {
+    const fullName = `${sub.ad} ${sub.soyad}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase()) ||
+      sub.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.il.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const handleExport = () => {
     const csvContent = [
-      ['Ad', 'Soyad', 'E-posta', 'Telefon', 'İl', 'Tercih Edilen Kurumlar', 'Durum', 'Kayıt Tarihi'].join(','),
+      ['Ad Soyad', 'E-posta', 'Telefon', 'İl', 'Tercih Edilen Kurumlar', 'Durum', 'Kayıt Tarihi'].join(','),
       ...filteredSubscribers.map(sub => [
-        sub.ad,
-        sub.soyad,
+        `${sub.ad} ${sub.soyad}`,
         sub.email,
         sub.telefon || '',
         sub.il,
