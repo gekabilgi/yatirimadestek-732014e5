@@ -139,6 +139,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           const deadline = row['Son Başvuru'] || row['deadline'] || row['application_deadline'];
           const eligibility = row['Uygunluk Kriterleri'] || row['eligibility_criteria'] || '';
           const contact = row['İletişim'] || row['contact_info'] || '';
+          const createdAtRaw = row['Oluşturma Tarihi'] || row['created_at'] || '';
 
           // Tag columns (comma-separated values)
           const basvuruSahibiTuru = row['Başvuru Sahibi Türü'] || '';
@@ -170,6 +171,15 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             }
           }
 
+          // Parse created_at date
+          let createdAt = null;
+          if (createdAtRaw) {
+            const parsed = new Date(createdAtRaw);
+            if (!isNaN(parsed.getTime())) {
+              createdAt = parsed.toISOString();
+            }
+          }
+
           // Get current user
           const { data: { user } } = await supabase.auth.getUser();
 
@@ -183,7 +193,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
               application_deadline: applicationDeadline,
               eligibility_criteria: eligibility,
               contact_info: contact,
-              created_by: user?.id || null
+              created_by: user?.id || null,
+              ...(createdAt && { created_at: createdAt })
             })
             .select('id')
             .single();
@@ -363,6 +374,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           'Son Başvuru': '2025-12-31',
           'Uygunluk Kriterleri': 'KOBİ niteliğinde olmak',
           'İletişim': 'info@example.com',
+          'Oluşturma Tarihi': '2024-01-15',
           'Başvuru Sahibi Türü': 'KOBİ, Girişimci',
           'Destek Türü': 'Hibe, Kredi',
           'Destek Unsuru': 'Makine Teçhizat, Yazılım',
@@ -379,7 +391,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
       // Set column widths
       wsPrograms['!cols'] = [
         { wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 15 },
-        { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 25 },
+        { wch: 30 }, { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 25 },
         { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 50 }, { wch: 30 }
       ];
 
