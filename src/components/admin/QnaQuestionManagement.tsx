@@ -19,6 +19,7 @@ import * as XLSX from 'xlsx';
 
 const QnaQuestionManagement = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -61,8 +62,18 @@ const QnaQuestionManagement = () => {
   ];
 
   useEffect(() => {
+    fetchTotalCount();
     fetchQuestions();
   }, [filterStatus]);
+
+  const fetchTotalCount = async () => {
+    const { count, error } = await supabase
+      .from('soru_cevap')
+      .select('*', { count: 'exact', head: true });
+    if (!error && count !== null) {
+      setTotalCount(count);
+    }
+  };
 
   const fetchQuestions = async () => {
     try {
@@ -93,7 +104,8 @@ const QnaQuestionManagement = () => {
       let query = supabase
         .from('soru_cevap')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, 50000);
 
       // Apply status filter if not 'all'
       if (filterStatus !== 'all') {
@@ -687,7 +699,7 @@ const QnaQuestionManagement = () => {
                     Soru & Cevap Yönetimi
                   </CardTitle>
                   <Badge variant="secondary" className="hidden sm:inline-flex">
-                    {questions.length} Soru
+                    {totalCount.toLocaleString('tr-TR')} Soru
                   </Badge>
                 </div>
               </div>
