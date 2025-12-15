@@ -2174,6 +2174,7 @@ export type Database = {
           application_deadline: string | null
           contact_info: string | null
           created_at: string | null
+          created_by: string | null
           description: string
           eligibility_criteria: string | null
           id: string
@@ -2185,6 +2186,7 @@ export type Database = {
           application_deadline?: string | null
           contact_info?: string | null
           created_at?: string | null
+          created_by?: string | null
           description: string
           eligibility_criteria?: string | null
           id?: string
@@ -2196,6 +2198,7 @@ export type Database = {
           application_deadline?: string | null
           contact_info?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string
           eligibility_criteria?: string | null
           id?: string
