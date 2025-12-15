@@ -54,7 +54,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             tag:tags(id, name, category_id, created_at)
           ),
           files:file_attachments(*),
-          creator:profiles!support_programs_created_by_fkey(id, email, full_name)
+          creator:profiles!created_by(id, email, full_name)
         `);
 
       // Apply sorting
