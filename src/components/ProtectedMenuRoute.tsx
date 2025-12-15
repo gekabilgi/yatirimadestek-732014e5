@@ -24,17 +24,8 @@ const ProtectedMenuRoute: React.FC<ProtectedMenuRouteProps> = ({ children, setti
       if (authLoading || isAdminLoading) return;
 
       try {
-        const [settings, fullAccessDomains] = await Promise.all([
-          menuVisibilityService.getMenuVisibilitySettings(),
-          menuVisibilityService.getFullAccessDomains(),
-        ]);
-        
-        // If domain has full access, allow access
-        if (menuVisibilityService.isFullAccessDomain(fullAccessDomains)) {
-          setHasAccess(true);
-          setLoading(false);
-          return;
-        }
+        // Get effective settings for current domain (domain-specific or global)
+        const { settings } = await menuVisibilityService.getEffectiveMenuSettings('frontend');
         
         const visibility = settings[settingKey as keyof typeof settings];
         

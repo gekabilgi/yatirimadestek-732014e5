@@ -715,6 +715,33 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_menu_settings: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          menu_type: string
+          settings: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id?: string
+          menu_type: string
+          settings?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          menu_type?: string
+          settings?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           created_at: string
