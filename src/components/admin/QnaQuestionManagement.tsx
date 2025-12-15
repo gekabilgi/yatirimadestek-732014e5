@@ -621,25 +621,37 @@ const QnaQuestionManagement = () => {
     setDeleting(true);
     
     try {
-      // First delete related audit trail entries
+      // First delete related audit trail entries (MUST succeed before deleting questions)
       const { error: auditError } = await supabase
         .from('qna_audit_trail')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .gte('created_at', '1900-01-01'); // Delete all records
 
       if (auditError) {
         console.error('Audit trail delete error:', auditError);
+        throw new Error(`Audit kayıtları silinemedi: ${auditError.message}`);
       }
 
-      // Then delete all questions
+      // Then delete related email logs
+      const { error: emailLogsError } = await supabase
+        .from('qna_email_logs')
+        .delete()
+        .gte('created_at', '1900-01-01'); // Delete all records
+
+      if (emailLogsError) {
+        console.error('Email logs delete error:', emailLogsError);
+        // Non-critical, continue with deletion
+      }
+
+      // Finally delete all questions
       const { error } = await supabase
         .from('soru_cevap')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .gte('created_at', '1900-01-01'); // Delete all records
 
       if (error) throw error;
 
-      toast.success('Tüm sorular silindi');
+      toast.success('Tüm sorular ve ilgili kayıtlar silindi');
       fetchQuestions();
     } catch (error) {
       console.error('Delete all error:', error);
