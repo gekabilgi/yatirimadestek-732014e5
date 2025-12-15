@@ -4,7 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Announcement } from '@/types/announcement';
-import { Edit, Trash2, Plus, Search } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Mail, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
@@ -35,6 +37,29 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+
+  const handleSendEmail = async (announcementId: string) => {
+    setSendingEmailId(announcementId);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-announcement-email', {
+        body: { announcementId }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success(data.message || `${data.sent} üyeye e-posta gönderildi`);
+      } else {
+        toast.warning(data.message || 'E-posta gönderilemedi');
+      }
+    } catch (error: any) {
+      console.error('Email send error:', error);
+      toast.error('E-posta gönderilirken hata oluştu');
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
 
   const filteredAnnouncements = announcements.filter(a =>
     a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,6 +134,19 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleSendEmail(announcement.id)}
+                        disabled={isLoading || sendingEmailId === announcement.id}
+                        title="Üyelere E-posta Gönder"
+                      >
+                        {sendingEmailId === announcement.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mail className="h-4 w-4 text-primary" />
+                        )}
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

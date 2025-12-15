@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import Autoplay from 'embla-carousel-autoplay';
+import { NewsletterSubscribeForm } from '@/components/NewsletterSubscribeForm';
 
 const AnnouncementCarousel = () => {
   const navigate = useNavigate();
@@ -103,9 +104,12 @@ const AnnouncementCarousel = () => {
 
   return (
     <div className="w-full py-12 animate-fade-in">
-      <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
-        Güncel Destek Duyuruları
-      </h2>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+        <h2 className="text-3xl font-bold text-center text-slate-900">
+          Güncel Destek Duyuruları
+        </h2>
+        <NewsletterSubscribeForm />
+      </div>
       
       <div className="relative">
         <Carousel

@@ -59,6 +59,7 @@ const mainNavigation = [
   { name: 'Fizibilite Raporları', href: '/admin/feasibility-reports', icon: FileText },
   { name: 'Destek Programları', href: '/admin/support-programs', icon: Target },
   { name: 'Duyuru Yönetimi', href: '/admin/announcements', icon: Megaphone },
+  { name: 'Bülten Üyeleri', href: '/admin/newsletter-subscribers', icon: Mail },
   { name: 'Mevzuat Yönetimi', href: '/admin/legislation', icon: Scale },
   { name: 'Yatırımcı Sözlüğü', href: '/admin/glossary-management', icon: Book },
   { name: 'Kullanıcı ve Rol Yönetimi', href: '/admin/user-management', icon: Users },
