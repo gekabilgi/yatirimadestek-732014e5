@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, MessageSquare, Calendar, User, MapPin, CheckCircle, XCircle, ArrowLeft, Send, Search } from 'lucide-react';
+import { Eye, Edit, MessageSquare, Calendar, User, MapPin, CheckCircle, XCircle, ArrowLeft, Send, Search, Upload, Download, FileSpreadsheet, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Question } from '@/types/qna';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import * as XLSX from 'xlsx';
 
 const QnaQuestionManagement = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -26,6 +29,10 @@ const QnaQuestionManagement = () => {
   const [returnReason, setReturnReason] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categoryOptions = [
     { label: 'Ar-Ge ve Tasarım', value: 'ar-ge-ve-tasarim' },
@@ -392,6 +399,256 @@ const QnaQuestionManagement = () => {
     setIsReturnDialogOpen(true);
   };
 
+  // Parse Excel date (serial number or string)
+  const parseExcelDate = (value: any): string | null => {
+    if (!value) return null;
+    
+    // If it's a number (Excel serial date)
+    if (typeof value === 'number') {
+      const date = new Date((value - 25569) * 86400 * 1000);
+      return date.toISOString();
+    }
+    
+    // If it's already a Date object
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+    
+    // If it's a string, try various formats
+    if (typeof value === 'string') {
+      // Try DD.MM.YYYY format
+      const ddmmyyyy = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+      if (ddmmyyyy) {
+        const [, day, month, year] = ddmmyyyy;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString();
+      }
+      
+      // Try YYYY-MM-DD format
+      const yyyymmdd = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (yyyymmdd) {
+        return new Date(value).toISOString();
+      }
+      
+      // Try Date constructor as fallback
+      const parsed = new Date(value);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+    
+    return null;
+  };
+
+  // Download template Excel
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        'Soru No': '',
+        'Ad Soyad': 'Örnek: Ahmet Yılmaz',
+        'E-posta': 'ornek@email.com',
+        'Telefon': '05551234567',
+        'İl': 'Ankara',
+        'Kategori': 'yatirim-tesvik-sistemi,sanayi',
+        'Soru': 'Örnek soru metni buraya yazılır...',
+        'Cevap': 'Opsiyonel cevap metni...',
+        'Durum': 'unanswered',
+        'Oluşturma Tarihi': '01.01.2025'
+      }
+    ];
+
+    // Category reference sheet
+    const categoryData = categoryOptions.map(cat => ({
+      'Kategori Kodu': cat.value,
+      'Kategori Adı': cat.label
+    }));
+
+    // Status reference
+    const statusData = [
+      { 'Durum Kodu': 'unanswered', 'Açıklama': 'Cevaplanmadı' },
+      { 'Durum Kodu': 'answered', 'Açıklama': 'Cevaplandı' },
+      { 'Durum Kodu': 'returned', 'Açıklama': 'İade Edildi' },
+      { 'Durum Kodu': 'approved', 'Açıklama': 'Onaylandı' }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    
+    const ws1 = XLSX.utils.json_to_sheet(templateData);
+    ws1['!cols'] = [
+      { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 15 },
+      { wch: 15 }, { wch: 30 }, { wch: 50 }, { wch: 50 },
+      { wch: 15 }, { wch: 15 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Sorular');
+    
+    const ws2 = XLSX.utils.json_to_sheet(categoryData);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Kategori Listesi');
+    
+    const ws3 = XLSX.utils.json_to_sheet(statusData);
+    XLSX.utils.book_append_sheet(wb, ws3, 'Durum Listesi');
+
+    XLSX.writeFile(wb, 'soru_cevap_sablonu.xlsx');
+    toast.success('Şablon indirildi');
+  };
+
+  // Handle file upload for bulk import
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        toast.error('Dosyada veri bulunamadı');
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const row of jsonData as any[]) {
+        const fullName = row['Ad Soyad']?.toString().trim();
+        const email = row['E-posta']?.toString().trim();
+        const province = row['İl']?.toString().trim();
+        const question = row['Soru']?.toString().trim();
+
+        // Validate required fields
+        if (!fullName || !email || !province || !question) {
+          errorCount++;
+          continue;
+        }
+
+        const insertData: any = {
+          full_name: fullName,
+          email: email,
+          province: province,
+          question: question,
+          phone: row['Telefon']?.toString().trim() || null,
+          category: row['Kategori']?.toString().trim() || null,
+          answer: row['Cevap']?.toString().trim() || null,
+          answer_status: row['Durum']?.toString().trim() || 'unanswered',
+          answered: !!row['Cevap']
+        };
+
+        // Parse dates if provided
+        const createdAt = parseExcelDate(row['Oluşturma Tarihi']);
+        if (createdAt) {
+          insertData.created_at = createdAt;
+        }
+
+        const { error } = await supabase
+          .from('soru_cevap')
+          .insert(insertData);
+
+        if (error) {
+          console.error('Insert error:', error);
+          errorCount++;
+        } else {
+          successCount++;
+        }
+      }
+
+      toast.success(`${successCount} soru başarıyla eklendi${errorCount > 0 ? `, ${errorCount} hata` : ''}`);
+      fetchQuestions();
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast.error('Dosya işlenirken hata oluştu');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Export to Excel
+  const exportToExcel = async () => {
+    setExporting(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('soru_cevap')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const exportData = (data || []).map(q => ({
+        'Soru No': q.question_number || '',
+        'Ad Soyad': q.full_name,
+        'E-posta': q.email,
+        'Telefon': q.phone || '',
+        'İl': q.province,
+        'Kategori': q.category || '',
+        'Soru': q.question,
+        'Cevap': q.answer || '',
+        'Durum': q.answer_status || 'unanswered',
+        'İade Sebebi': q.return_reason || '',
+        'Oluşturma Tarihi': q.created_at ? new Date(q.created_at).toLocaleDateString('tr-TR') : '',
+        'Cevap Tarihi': q.answer_date ? new Date(q.answer_date).toLocaleDateString('tr-TR') : '',
+        'İade Tarihi': q.return_date ? new Date(q.return_date).toLocaleDateString('tr-TR') : '',
+        'Cevaplayayan': q.answered_by_full_name || ''
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      ws['!cols'] = [
+        { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 15 },
+        { wch: 15 }, { wch: 30 }, { wch: 50 }, { wch: 50 },
+        { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 15 },
+        { wch: 15 }, { wch: 20 }
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Sorular');
+
+      const timestamp = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `soru_cevap_export_${timestamp}.xlsx`);
+      toast.success(`${exportData.length} soru dışa aktarıldı`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Dışa aktarma sırasında hata oluştu');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Delete all questions
+  const handleDeleteAllQuestions = async () => {
+    setDeleting(true);
+    
+    try {
+      // First delete related audit trail entries
+      const { error: auditError } = await supabase
+        .from('qna_audit_trail')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (auditError) {
+        console.error('Audit trail delete error:', auditError);
+      }
+
+      // Then delete all questions
+      const { error } = await supabase
+        .from('soru_cevap')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (error) throw error;
+
+      toast.success('Tüm sorular silindi');
+      fetchQuestions();
+    } catch (error) {
+      console.error('Delete all error:', error);
+      toast.error('Silme işlemi sırasında hata oluştu');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -405,30 +662,155 @@ const QnaQuestionManagement = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <Card className="border-0 shadow-none bg-transparent">
-        <CardHeader className="pb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
-                <MessageSquare className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl font-bold text-slate-800">
-                  Soru & Cevap Yönetimi
-                </CardTitle>
-                <p className="text-slate-600 mt-1">Soruları yönetin ve cevapları onaylayın</p>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col gap-4">
+            {/* Row 1: Title + Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
+                  <MessageSquare className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-xl font-bold text-slate-800">
+                    Soru & Cevap Yönetimi
+                  </CardTitle>
+                  <Badge variant="secondary" className="hidden sm:inline-flex">
+                    {questions.length} Soru
+                  </Badge>
+                </div>
               </div>
             </div>
-            
+
+            {/* Row 2: Bulk Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+              />
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={downloadTemplate}
+                      className="gap-2 h-9"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span className="hidden sm:inline">Şablon</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Şablon İndir</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={importing}
+                      className="gap-2 h-9"
+                    >
+                      {importing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      <span className="hidden sm:inline">İçe Aktar</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Excel'den İçe Aktar</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={exportToExcel}
+                      disabled={exporting}
+                      className="gap-2 h-9"
+                    >
+                      {exporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      <span className="hidden sm:inline">Dışa Aktar</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Excel'e Dışa Aktar</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <AlertDialog>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={deleting || questions.length === 0}
+                          className="gap-2 h-9 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        >
+                          {deleting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                          <span className="hidden sm:inline">Tümünü Sil</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Tüm Soruları Sil</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                      Tüm Soruları Sil
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Bu işlem <strong>{questions.length}</strong> soruyu kalıcı olarak silecektir. 
+                      Bu işlem geri alınamaz. Devam etmek istediğinizden emin misiniz?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>İptal</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAllQuestions}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Evet, Tümünü Sil
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            {/* Row 3: Search + Filter */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Soru ara..."
-                  className="pl-10 h-11 w-full sm:w-64 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  className="pl-10 h-10 w-full bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
                 />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="h-11 w-full sm:w-40 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                <SelectTrigger className="h-10 w-full sm:w-44 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
                   <SelectValue placeholder="Durum Filtrele" />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
