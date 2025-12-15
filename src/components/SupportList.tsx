@@ -33,7 +33,7 @@ export const SupportList = ({ programs, isLoading }: SupportListProps) => {
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-600 mb-4">
-        {programs.length} {programs.length === 1 ? "program" : "programs"} bulundu.
+        {programs.length} {programs.length === 1 ? "program" : "program"} bulundu.
       </div>
       {programs.map((program) => (
         <SupportCard key={program.id} program={program} />
