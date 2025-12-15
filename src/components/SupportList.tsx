@@ -1,6 +1,5 @@
-
-import { SupportProgram } from '@/types/support';
-import { SupportCard } from './SupportCard';
+import { SupportProgram } from "@/types/support";
+import { SupportCard } from "./SupportCard";
 
 interface SupportListProps {
   programs: SupportProgram[];
@@ -25,8 +24,8 @@ export const SupportList = ({ programs, isLoading }: SupportListProps) => {
   if (programs.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-500 text-lg mb-2">No support programs found</div>
-        <div className="text-gray-400">Try adjusting your search criteria</div>
+        <div className="text-gray-500 text-lg mb-2">Destek Programı bulunamadı.</div>
+        <div className="text-gray-400">Farklı terimleri aratarak yeniden deneyin.</div>
       </div>
     );
   }
@@ -34,7 +33,7 @@ export const SupportList = ({ programs, isLoading }: SupportListProps) => {
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-600 mb-4">
-        {programs.length} {programs.length === 1 ? 'program' : 'programs'} found
+        {programs.length} {programs.length === 1 ? "program" : "programs"} bulundu.
       </div>
       {programs.map((program) => (
         <SupportCard key={program.id} program={program} />
