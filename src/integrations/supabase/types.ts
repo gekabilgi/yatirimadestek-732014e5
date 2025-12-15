@@ -175,47 +175,7 @@ export type Database = {
             referencedRelation: "institutions"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "bulten_uye_kurum_tercihleri_uye_id_fkey"
-            columns: ["uye_id"]
-            isOneToOne: false
-            referencedRelation: "bulten_uyeler"
-            referencedColumns: ["id"]
-          },
         ]
-      }
-      bulten_uyeler: {
-        Row: {
-          ad_soyad: string
-          created_at: string
-          email: string
-          id: string
-          il: string
-          is_active: boolean | null
-          telefon: string | null
-          updated_at: string
-        }
-        Insert: {
-          ad_soyad: string
-          created_at?: string
-          email: string
-          id?: string
-          il: string
-          is_active?: boolean | null
-          telefon?: string | null
-          updated_at?: string
-        }
-        Update: {
-          ad_soyad?: string
-          created_at?: string
-          email?: string
-          id?: string
-          il?: string
-          is_active?: boolean | null
-          telefon?: string | null
-          updated_at?: string
-        }
-        Relationships: []
       }
       cb_knowledge_base: {
         Row: {
