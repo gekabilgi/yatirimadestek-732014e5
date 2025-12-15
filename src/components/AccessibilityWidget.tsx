@@ -91,7 +91,7 @@ const AccessibilityWidget = () => {
 
       {/* Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-[95]" onClick={() => setIsOpen(false)} aria-hidden="true" />
+        <div className="fixed inset-0 bg-black/50 z-[195]" onClick={() => setIsOpen(false)} aria-hidden="true" />
       )}
 
       {/* Panel */}
@@ -102,7 +102,7 @@ const AccessibilityWidget = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="accessibility-title"
-          className="fixed bottom-4 right-4 z-[100] w-80 max-h-[80vh] overflow-y-auto bg-background border border-border rounded-xl shadow-2xl animate-scale-in"
+          className="fixed bottom-4 right-4 z-[2000] w-80 max-h-[80vh] overflow-y-auto bg-background border border-border rounded-xl shadow-2xl animate-scale-in"
         >
           {/* Header */}
           <div className="sticky top-0 bg-background border-b border-border p-4 flex items-center justify-between">
