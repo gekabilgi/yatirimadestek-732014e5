@@ -25,7 +25,7 @@ const PROVINCES = [
 export const NewsletterSubscribeForm = () => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [institutions, setInstitutions] = useState<{ value: string; label: string }[]>([]);
+  const [institutions, setInstitutions] = useState<{ value: string; label: string; description?: string }[]>([]);
   const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     ad: '',
@@ -44,14 +44,55 @@ export const NewsletterSubscribeForm = () => {
         .order('name');
       
       if (!error && data) {
-        setInstitutions(data.map(inst => ({
+        const options: { value: string; label: string; description?: string }[] = data.map(inst => ({
           value: inst.id.toString(),
           label: inst.name
-        })));
+        }));
+        // Add "Hepsi" option at the end
+        options.push({
+          value: 'all',
+          label: 'Hepsi (Tüm Kurumlar)',
+          description: 'Tüm kurumların duyurularından haberdar ol'
+        });
+        setInstitutions(options);
       }
     };
     fetchInstitutions();
   }, []);
+
+  // Handle "Hepsi" selection logic
+  const handleInstitutionChange = (values: string[]) => {
+    const hasAll = values.includes('all');
+    const hadAll = selectedInstitutions.includes('all');
+    
+    if (hasAll && !hadAll) {
+      // "Hepsi" just selected - select all institutions
+      const allIds = institutions.filter(i => i.value !== 'all').map(i => i.value);
+      setSelectedInstitutions([...allIds, 'all']);
+    } else if (!hasAll && hadAll) {
+      // "Hepsi" just deselected - deselect all
+      setSelectedInstitutions([]);
+    } else if (hasAll) {
+      // Check if all individual items are still selected
+      const allIds = institutions.filter(i => i.value !== 'all').map(i => i.value);
+      const selectedWithoutAll = values.filter(v => v !== 'all');
+      if (selectedWithoutAll.length < allIds.length) {
+        // Some individual item was deselected, remove "all"
+        setSelectedInstitutions(selectedWithoutAll);
+      } else {
+        setSelectedInstitutions(values);
+      }
+    } else {
+      // Check if all individual items are now selected
+      const allIds = institutions.filter(i => i.value !== 'all').map(i => i.value);
+      if (values.length === allIds.length && allIds.every(id => values.includes(id))) {
+        // All items selected, add "all"
+        setSelectedInstitutions([...values, 'all']);
+      } else {
+        setSelectedInstitutions(values);
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,13 +102,27 @@ export const NewsletterSubscribeForm = () => {
       return;
     }
 
-    if (selectedInstitutions.length === 0) {
+    const actualSelections = selectedInstitutions.filter(v => v !== 'all');
+    if (actualSelections.length === 0) {
       toast.error('Lütfen en az bir kurum seçin');
       return;
     }
 
     setIsLoading(true);
     try {
+      // Check if email already exists
+      const { data: existingSubscriber } = await supabase
+        .from('bulten_uyeler')
+        .select('id')
+        .eq('email', formData.email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (existingSubscriber) {
+        toast.error('Bu e-posta adresi zaten kayıtlı. Farklı bir e-posta kullanın.');
+        setIsLoading(false);
+        return;
+      }
+
       // Insert subscriber
       const { data: subscriber, error } = await supabase
         .from('bulten_uyeler')
@@ -75,7 +130,7 @@ export const NewsletterSubscribeForm = () => {
           ad: formData.ad,
           soyad: formData.soyad,
           telefon: formData.telefon || null,
-          email: formData.email,
+          email: formData.email.toLowerCase().trim(),
           il: formData.il
         })
         .select('id')
@@ -90,8 +145,8 @@ export const NewsletterSubscribeForm = () => {
         return;
       }
 
-      // Insert institution preferences
-      const preferences = selectedInstitutions.map(instId => ({
+      // Insert institution preferences (exclude "all" value)
+      const preferences = actualSelections.map(instId => ({
         uye_id: subscriber.id,
         institution_id: parseInt(instId)
       }));
@@ -201,7 +256,7 @@ export const NewsletterSubscribeForm = () => {
             <MultiSelect
               options={institutions}
               selected={selectedInstitutions}
-              onChange={setSelectedInstitutions}
+              onChange={handleInstitutionChange}
               placeholder="Kurum seçiniz (birden fazla seçebilirsiniz)"
               maxDisplay={3}
             />
