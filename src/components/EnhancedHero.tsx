@@ -52,8 +52,15 @@ const EnhancedHero = () => {
         const { menuVisibilityService } = await import('@/services/menuVisibilityService');
         const { MENU_ITEMS } = await import('@/types/menuSettings');
         const settings = await menuVisibilityService.getMenuVisibilitySettings();
+        const fullAccessDomains = await menuVisibilityService.getFullAccessDomains();
+        
+        // Check if current domain has full access
+        const hasFullAccess = menuVisibilityService.isFullAccessDomain(fullAccessDomains);
         
         const visibleItems = MENU_ITEMS.filter(item => {
+          // If domain has full access, show all items
+          if (hasFullAccess) return true;
+          
           const mode = settings[item.settingKey];
           return shouldShowMenuItem(mode, !!user, isAdmin);
         }).map(item => ({

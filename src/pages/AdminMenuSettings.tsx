@@ -5,8 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, Globe, Settings } from "lucide-react";
+import { Menu, Globe, Settings, X, Plus, Loader2, Link } from "lucide-react";
 import { menuVisibilityService } from "@/services/menuVisibilityService";
 import {
   MenuVisibilitySettings,
@@ -19,7 +22,10 @@ import {
 const AdminMenuSettings = () => {
   const [frontendSettings, setFrontendSettings] = useState<MenuVisibilitySettings | null>(null);
   const [adminSettings, setAdminSettings] = useState<AdminMenuVisibilitySettings | null>(null);
+  const [fullAccessDomains, setFullAccessDomains] = useState<string[]>([]);
+  const [newDomain, setNewDomain] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingDomains, setIsSavingDomains] = useState(false);
   const [savingStates, setSavingStates] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
@@ -27,12 +33,14 @@ const AdminMenuSettings = () => {
     const loadSettings = async () => {
       try {
         setIsLoading(true);
-        const [frontendData, adminData] = await Promise.all([
+        const [frontendData, adminData, domainsData] = await Promise.all([
           menuVisibilityService.getMenuVisibilitySettings(),
           menuVisibilityService.getAdminMenuVisibilitySettings(),
+          menuVisibilityService.getFullAccessDomains(),
         ]);
         setFrontendSettings(frontendData);
         setAdminSettings(adminData);
+        setFullAccessDomains(domainsData);
       } catch (error) {
         console.error("Error loading menu visibility settings:", error);
         toast({
@@ -46,6 +54,63 @@ const AdminMenuSettings = () => {
     };
     loadSettings();
   }, [toast]);
+
+  const handleAddDomain = async () => {
+    const domain = newDomain.trim().toLowerCase();
+    if (!domain) return;
+    
+    if (fullAccessDomains.includes(domain)) {
+      toast({
+        title: "Uyarı",
+        description: "Bu domain zaten listede mevcut.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updatedDomains = [...fullAccessDomains, domain];
+    setIsSavingDomains(true);
+    try {
+      await menuVisibilityService.updateFullAccessDomains(updatedDomains);
+      setFullAccessDomains(updatedDomains);
+      setNewDomain("");
+      toast({
+        title: "Başarılı",
+        description: `${domain} tam erişim listesine eklendi.`,
+      });
+    } catch (error) {
+      console.error("Error adding domain:", error);
+      toast({
+        title: "Hata",
+        description: "Domain eklenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingDomains(false);
+    }
+  };
+
+  const handleRemoveDomain = async (domainToRemove: string) => {
+    const updatedDomains = fullAccessDomains.filter(d => d !== domainToRemove);
+    setIsSavingDomains(true);
+    try {
+      await menuVisibilityService.updateFullAccessDomains(updatedDomains);
+      setFullAccessDomains(updatedDomains);
+      toast({
+        title: "Başarılı",
+        description: `${domainToRemove} listeden kaldırıldı.`,
+      });
+    } catch (error) {
+      console.error("Error removing domain:", error);
+      toast({
+        title: "Hata",
+        description: "Domain kaldırılırken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingDomains(false);
+    }
+  };
 
   const handleFrontendToggleChange = async (
     menuItemKey: keyof MenuVisibilitySettings,
@@ -215,14 +280,21 @@ const AdminMenuSettings = () => {
       />
       <div className="p-2 sm:p-4">
         <Tabs defaultValue="frontend" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="frontend" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              Frontend Menü
+              <span className="hidden sm:inline">Frontend Menü</span>
+              <span className="sm:hidden">Frontend</span>
             </TabsTrigger>
             <TabsTrigger value="admin" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
-              Admin Menü
+              <span className="hidden sm:inline">Admin Menü</span>
+              <span className="sm:hidden">Admin</span>
+            </TabsTrigger>
+            <TabsTrigger value="domains" className="flex items-center gap-2">
+              <Link className="h-4 w-4" />
+              <span className="hidden sm:inline">Tam Erişim Domainleri</span>
+              <span className="sm:hidden">Domainler</span>
             </TabsTrigger>
           </TabsList>
 
@@ -253,6 +325,80 @@ const AdminMenuSettings = () => {
               </CardHeader>
               <CardContent>
                 {renderMenuTable(ADMIN_MENU_ITEMS, adminSettings, handleAdminToggleChange, "admin")}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="domains">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tam Erişim Domainleri</CardTitle>
+                <CardDescription>
+                  Bu listedeki domainlerde tüm menü öğeleri görünür olacaktır (menü görünürlük ayarları devre dışı kalır).
+                  <span className="block mt-2 text-sm text-muted-foreground">
+                    Örn: test.yatirimadestek.gov.tr, staging.example.com
+                  </span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Domain adı girin (örn: test.yatirimadestek.gov.tr)"
+                    value={newDomain}
+                    onChange={(e) => setNewDomain(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
+                    disabled={isSavingDomains}
+                  />
+                  <Button 
+                    onClick={handleAddDomain} 
+                    disabled={isSavingDomains || !newDomain.trim()}
+                  >
+                    {isSavingDomains ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline ml-2">Ekle</span>
+                  </Button>
+                </div>
+
+                {fullAccessDomains.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Henüz tam erişim domaini eklenmemiş.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {fullAccessDomains.map((domain) => (
+                      <Badge 
+                        key={domain} 
+                        variant="secondary" 
+                        className="text-sm py-1.5 px-3 flex items-center gap-2"
+                      >
+                        <Globe className="h-3 w-3" />
+                        {domain}
+                        <button
+                          onClick={() => handleRemoveDomain(domain)}
+                          disabled={isSavingDomains}
+                          className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Mevcut domain:</strong>{" "}
+                    <code className="bg-background px-2 py-1 rounded text-foreground">
+                      {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}
+                    </code>
+                    {menuVisibilityService.isFullAccessDomain(fullAccessDomains) && (
+                      <Badge variant="default" className="ml-2">Tam Erişim Aktif</Badge>
+                    )}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -168,4 +168,57 @@ export const menuVisibilityService = {
 
     if (error) throw error;
   },
+
+  // Full access domains - domains where all menu items are visible
+  async getFullAccessDomains(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('setting_value_text')
+        .eq('category', 'menu_visibility')
+        .eq('setting_key', 'full_access_domains')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data?.setting_value_text) {
+        try {
+          return JSON.parse(data.setting_value_text);
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching full access domains:', error);
+      return [];
+    }
+  },
+
+  async updateFullAccessDomains(domains: string[]): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        category: 'menu_visibility',
+        setting_key: 'full_access_domains',
+        setting_value: 0,
+        setting_value_text: JSON.stringify(domains),
+      }, {
+        onConflict: 'category,setting_key',
+      });
+
+    if (error) throw error;
+  },
+
+  // Check if current domain has full access
+  isFullAccessDomain(domains: string[]): boolean {
+    const currentDomain = window.location.hostname;
+    return domains.some(domain => {
+      const normalizedDomain = domain.toLowerCase().trim();
+      const normalizedCurrent = currentDomain.toLowerCase();
+      // Exact match or subdomain match
+      return normalizedCurrent === normalizedDomain || 
+             normalizedCurrent.endsWith('.' + normalizedDomain);
+    });
+  },
 };
