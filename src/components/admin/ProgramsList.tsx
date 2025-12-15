@@ -662,10 +662,6 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
               </AlertDialogContent>
             </AlertDialog>
 
-            <Button onClick={onCreateNew} className="bg-primary hover:bg-primary/90 gap-2">
-              <Plus className="w-4 h-4" />
-              Yeni Ekle
-            </Button>
           </div>
         </div>
       </CardHeader>
