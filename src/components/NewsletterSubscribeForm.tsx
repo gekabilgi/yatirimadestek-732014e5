@@ -28,8 +28,7 @@ export const NewsletterSubscribeForm = () => {
   const [institutions, setInstitutions] = useState<{ value: string; label: string; description?: string }[]>([]);
   const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
-    ad: '',
-    soyad: '',
+    adSoyad: '',
     telefon: '',
     email: '',
     il: ''
@@ -97,7 +96,7 @@ export const NewsletterSubscribeForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.ad || !formData.soyad || !formData.email || !formData.il) {
+    if (!formData.adSoyad || !formData.email || !formData.il) {
       toast.error('Lütfen zorunlu alanları doldurun');
       return;
     }
@@ -123,12 +122,17 @@ export const NewsletterSubscribeForm = () => {
         return;
       }
 
+      // Split ad_soyad into ad and soyad
+      const nameParts = formData.adSoyad.trim().split(' ');
+      const soyad = nameParts.length > 1 ? nameParts.pop() || '' : '';
+      const ad = nameParts.join(' ') || formData.adSoyad.trim();
+
       // Insert subscriber
       const { data: subscriber, error } = await supabase
         .from('bulten_uyeler')
         .insert({
-          ad: formData.ad,
-          soyad: formData.soyad,
+          ad,
+          soyad,
           telefon: formData.telefon || null,
           email: formData.email.toLowerCase().trim(),
           il: formData.il
@@ -160,7 +164,7 @@ export const NewsletterSubscribeForm = () => {
       }
 
       toast.success('Bülten kaydınız başarıyla oluşturuldu!');
-      setFormData({ ad: '', soyad: '', telefon: '', email: '', il: '' });
+      setFormData({ adSoyad: '', telefon: '', email: '', il: '' });
       setSelectedInstitutions([]);
       setOpen(false);
     } catch (error) {
@@ -187,27 +191,15 @@ export const NewsletterSubscribeForm = () => {
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="ad">Adı *</Label>
-              <Input
-                id="ad"
-                value={formData.ad}
-                onChange={(e) => setFormData(prev => ({ ...prev, ad: e.target.value }))}
-                placeholder="Adınız"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="soyad">Soyadı *</Label>
-              <Input
-                id="soyad"
-                value={formData.soyad}
-                onChange={(e) => setFormData(prev => ({ ...prev, soyad: e.target.value }))}
-                placeholder="Soyadınız"
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="adSoyad">Ad Soyad *</Label>
+            <Input
+              id="adSoyad"
+              value={formData.adSoyad}
+              onChange={(e) => setFormData(prev => ({ ...prev, adSoyad: e.target.value }))}
+              placeholder="Adınız Soyadınız"
+              required
+            />
           </div>
           
           <div className="space-y-2">
