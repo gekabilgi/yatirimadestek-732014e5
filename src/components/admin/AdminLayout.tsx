@@ -94,21 +94,24 @@ const bottomNavigation = [
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, isAdmin, isAdminLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const [menuSettings, setMenuSettings] = useState<AdminMenuVisibilitySettings | null>(null);
+  const [isMenuSettingsLoading, setIsMenuSettingsLoading] = useState(true);
 
-  const isAdmin = profile?.role === 'admin';
   const isRegistered = !!profile;
 
   useEffect(() => {
     const loadMenuSettings = async () => {
+      setIsMenuSettingsLoading(true);
       try {
         const settings = await menuVisibilityService.getAdminMenuVisibilitySettings();
         setMenuSettings(settings);
       } catch (error) {
         console.error('Error loading admin menu settings:', error);
+      } finally {
+        setIsMenuSettingsLoading(false);
       }
     };
     loadMenuSettings();
@@ -116,9 +119,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   // Filter navigation based on visibility settings
   // Settings menu (/admin/settings) is always visible to prevent lockout
+  // While loading, show all items to prevent sidebar flash/disappearing
   const shouldShowMenuItem = (href: string): boolean => {
     // Settings menu is always visible to admins to prevent lockout
     if (href === '/admin/settings') return true;
+    
+    // While loading menu settings or admin status, show all items
+    if (isMenuSettingsLoading || isAdminLoading) return true;
     
     if (!menuSettings) return true;
     const settingKey = hrefToSettingKey[href];
