@@ -33,6 +33,16 @@ export interface AdminMenuVisibilitySettings {
   // NOTE: admin_menu_settings removed - Settings menu is always visible to prevent lockout
 }
 
+// Domain-specific menu settings
+export interface DomainMenuSettings {
+  id: string;
+  domain: string;
+  menu_type: 'frontend' | 'admin';
+  settings: MenuVisibilitySettings | AdminMenuVisibilitySettings;
+  created_at: string;
+  updated_at: string;
+}
+
 export const DEFAULT_VISIBILITY: MenuItemVisibility = {
   admin: true,
   registered: false,

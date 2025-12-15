@@ -32,18 +32,13 @@ const MainNavbar = () => {
       try {
         const { menuVisibilityService } = await import('@/services/menuVisibilityService');
         const { MENU_ITEMS } = await import('@/types/menuSettings');
-        const settings = await menuVisibilityService.getMenuVisibilitySettings();
-        const fullAccessDomains = await menuVisibilityService.getFullAccessDomains();
         
-        // Check if current domain has full access
-        const hasFullAccess = menuVisibilityService.isFullAccessDomain(fullAccessDomains);
+        // Get effective settings for current domain (domain-specific or global)
+        const { settings } = await menuVisibilityService.getEffectiveMenuSettings('frontend');
         
         // Filter menu items based on visibility settings and user state
         const visibleItems = MENU_ITEMS.filter(item => {
-          // If domain has full access, show all items
-          if (hasFullAccess) return true;
-          
-          const mode = settings[item.settingKey];
+          const mode = (settings as any)[item.settingKey];
           return shouldShowMenuItem(mode, !!user, isAdmin);
         }).map(item => ({
           name: item.title,
@@ -53,7 +48,6 @@ const MainNavbar = () => {
         setVisibleNavItems(visibleItems);
       } catch (error) {
         console.error('Error loading menu settings:', error);
-        // Fallback to default if error
         setVisibleNavItems([{ name: 'Destek Arama', href: '/searchsupport' }]);
       }
     };

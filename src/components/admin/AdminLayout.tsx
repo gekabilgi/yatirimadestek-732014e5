@@ -100,7 +100,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const [menuSettings, setMenuSettings] = useState<AdminMenuVisibilitySettings | null>(null);
   const [isMenuSettingsLoading, setIsMenuSettingsLoading] = useState(true);
-  const [hasFullAccess, setHasFullAccess] = useState(false);
 
   const isRegistered = !!profile;
 
@@ -108,12 +107,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     const loadMenuSettings = async () => {
       setIsMenuSettingsLoading(true);
       try {
-        const [settings, fullAccessDomains] = await Promise.all([
-          menuVisibilityService.getAdminMenuVisibilitySettings(),
-          menuVisibilityService.getFullAccessDomains(),
-        ]);
-        setMenuSettings(settings);
-        setHasFullAccess(menuVisibilityService.isFullAccessDomain(fullAccessDomains));
+        // Get effective settings for current domain (domain-specific or global)
+        const { settings } = await menuVisibilityService.getEffectiveMenuSettings('admin');
+        setMenuSettings(settings as AdminMenuVisibilitySettings);
       } catch (error) {
         console.error('Error loading admin menu settings:', error);
       } finally {
@@ -129,9 +125,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const shouldShowMenuItem = (href: string): boolean => {
     // Settings menu is always visible to admins to prevent lockout
     if (href === '/admin/settings') return true;
-    
-    // If domain has full access, show all items
-    if (hasFullAccess) return true;
     
     // While loading menu settings or admin status, show all items
     if (isMenuSettingsLoading || isAdminLoading) return true;
