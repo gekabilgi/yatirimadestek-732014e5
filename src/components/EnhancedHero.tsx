@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ArrowRight, FileDown, TrendingUp, Home, Menu, X, User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { ArrowRight, FileDown, TrendingUp, Home, Menu, X, User, LogOut, Settings, ChevronDown, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate, Link } from 'react-router-dom';
@@ -315,7 +315,7 @@ const EnhancedHero = () => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="animate-slide-up-delay-2 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
+            <div className="animate-slide-up-delay-2 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6 flex-wrap">
               <Button 
                 onClick={handleGetStarted}
                 size="lg" 
@@ -333,6 +333,18 @@ const EnhancedHero = () => {
               >
                 <FileDown className="mr-2 h-5 w-5" />
                 Mevzuat İncele
+              </Button>
+
+              <Button 
+                asChild
+                size="lg" 
+                variant="outline" 
+                className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold bg-white/10 hover:bg-white/20 border-2 border-white text-white backdrop-blur-sm transition-all duration-300"
+              >
+                <a href="https://yerelkalkinmahamlesi.sanayi.gov.tr/" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-5 w-5" />
+                  Yerel Kalkınma Hamlesi
+                </a>
               </Button>
             </div>
 
