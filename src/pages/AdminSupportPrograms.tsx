@@ -20,7 +20,7 @@ const AdminSupportPrograms = () => {
         description="Destek programlarını yönetin ve düzenleyin"
         icon={Target}
       >
-        <Button onClick={handleCreateNew} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleCreateNew}>
           <Plus className="h-4 w-4 mr-2" />
           Yeni Program Ekle
         </Button>
