@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Bell, Settings, Search, Menu, X, Home, User } from 'lucide-react';
+import { LogOut, Bell, Settings, Menu, X, Home, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
@@ -96,10 +96,6 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
           <Home className="h-4 w-4" />
         </Button>
 
-        {/* Search button - hidden on small screens */}
-        <Button variant="ghost" size="sm" className="hidden md:flex p-2 hover:bg-primary/5">
-          <Search className="h-4 w-4" />
-        </Button>
 
         {/* Notifications */}
         <NotificationDropdown />
