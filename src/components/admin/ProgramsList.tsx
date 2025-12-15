@@ -162,22 +162,54 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             institutionId = institutionMap.get(institutionName.toLowerCase().trim()) || null;
           }
 
+          // Helper function to parse Excel dates (handles both serial numbers and date strings)
+          const parseExcelDate = (value: any): Date | null => {
+            if (!value) return null;
+            
+            // If it's a number (Excel serial date)
+            if (typeof value === 'number') {
+              // Excel serial date: days since 1900-01-01 (with Excel's leap year bug)
+              const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+              const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+              return date;
+            }
+            
+            // If it's a string, try to parse it
+            if (typeof value === 'string') {
+              // Try DD.MM.YYYY format first (common in Turkish Excel)
+              const ddmmyyyy = value.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+              if (ddmmyyyy) {
+                return new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+              }
+              
+              // Try YYYY-MM-DD format
+              const yyyymmdd = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+              if (yyyymmdd) {
+                return new Date(parseInt(yyyymmdd[1]), parseInt(yyyymmdd[2]) - 1, parseInt(yyyymmdd[3]));
+              }
+              
+              // Fallback to Date constructor
+              const parsed = new Date(value);
+              if (!isNaN(parsed.getTime())) {
+                return parsed;
+              }
+            }
+            
+            return null;
+          };
+
           // Parse deadline date
           let applicationDeadline = null;
-          if (deadline) {
-            const parsed = new Date(deadline);
-            if (!isNaN(parsed.getTime())) {
-              applicationDeadline = parsed.toISOString().split('T')[0];
-            }
+          const deadlineParsed = parseExcelDate(deadline);
+          if (deadlineParsed) {
+            applicationDeadline = deadlineParsed.toISOString().split('T')[0];
           }
 
           // Parse created_at date
           let createdAt = null;
-          if (createdAtRaw) {
-            const parsed = new Date(createdAtRaw);
-            if (!isNaN(parsed.getTime())) {
-              createdAt = parsed.toISOString();
-            }
+          const createdAtParsed = parseExcelDate(createdAtRaw);
+          if (createdAtParsed) {
+            createdAt = createdAtParsed.toISOString();
           }
 
           // Get current user
