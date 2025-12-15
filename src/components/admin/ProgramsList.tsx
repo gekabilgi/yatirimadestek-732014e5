@@ -53,8 +53,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           support_program_tags(
             tag:tags(id, name, category_id, created_at)
           ),
-          files:file_attachments(*),
-          creator:profiles!created_by(id, email, full_name)
+          files:file_attachments(*)
         `);
 
       // Apply sorting
@@ -76,8 +75,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
         ...program,
         institution: program.institution || undefined,
         tags: program.support_program_tags?.map(spt => spt.tag).filter(Boolean) || [],
-        files: (program.files || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)),
-        creator: program.creator || undefined
+        files: (program.files || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
       }));
 
       setPrograms(transformedPrograms);
