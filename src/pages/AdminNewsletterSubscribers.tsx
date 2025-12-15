@@ -21,8 +21,7 @@ interface Institution {
 
 interface Subscriber {
   id: string;
-  ad: string;
-  soyad: string;
+  ad_soyad: string;
   telefon: string | null;
   email: string;
   il: string;
@@ -100,18 +99,17 @@ const AdminNewsletterSubscribers = () => {
     }
   });
 
-  const filteredSubscribers = subscribers.filter(sub => {
-    const fullName = `${sub.ad} ${sub.soyad}`.toLowerCase();
-    return fullName.includes(searchTerm.toLowerCase()) ||
-      sub.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.il.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredSubscribers = subscribers.filter(sub =>
+    sub.ad_soyad.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sub.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sub.il.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleExport = () => {
     const csvContent = [
       ['Ad Soyad', 'E-posta', 'Telefon', 'İl', 'Tercih Edilen Kurumlar', 'Durum', 'Kayıt Tarihi'].join(','),
       ...filteredSubscribers.map(sub => [
-        `${sub.ad} ${sub.soyad}`,
+        sub.ad_soyad,
         sub.email,
         sub.telefon || '',
         sub.il,
@@ -188,9 +186,7 @@ const AdminNewsletterSubscribers = () => {
                   <TableBody>
                     {filteredSubscribers.map((sub) => (
                       <TableRow key={sub.id}>
-                        <TableCell className="font-medium">
-                          {sub.ad} {sub.soyad}
-                        </TableCell>
+                        <TableCell className="font-medium">{sub.ad_soyad}</TableCell>
                         <TableCell>{sub.email}</TableCell>
                         <TableCell>{sub.telefon || '-'}</TableCell>
                         <TableCell>{sub.il}</TableCell>

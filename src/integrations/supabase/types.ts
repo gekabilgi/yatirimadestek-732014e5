@@ -186,35 +186,32 @@ export type Database = {
       }
       bulten_uyeler: {
         Row: {
-          ad: string
+          ad_soyad: string
           created_at: string
           email: string
           id: string
           il: string
           is_active: boolean | null
-          soyad: string
           telefon: string | null
           updated_at: string
         }
         Insert: {
-          ad: string
+          ad_soyad: string
           created_at?: string
           email: string
           id?: string
           il: string
           is_active?: boolean | null
-          soyad: string
           telefon?: string | null
           updated_at?: string
         }
         Update: {
-          ad?: string
+          ad_soyad?: string
           created_at?: string
           email?: string
           id?: string
           il?: string
           is_active?: boolean | null
-          soyad?: string
           telefon?: string | null
           updated_at?: string
         }
