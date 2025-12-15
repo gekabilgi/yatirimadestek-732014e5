@@ -53,7 +53,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           support_program_tags(
             tag:tags(id, name, category_id, created_at)
           ),
-          files:file_attachments(*)
+          files:file_attachments(*),
+          creator:profiles!support_programs_created_by_fkey(id, email, full_name)
         `);
 
       // Apply sorting
@@ -75,7 +76,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
         ...program,
         institution: program.institution || undefined,
         tags: program.support_program_tags?.map(spt => spt.tag).filter(Boolean) || [],
-        files: (program.files || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+        files: (program.files || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)),
+        creator: program.creator || undefined
       }));
 
       setPrograms(transformedPrograms);
@@ -170,6 +172,9 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             }
           }
 
+          // Get current user
+          const { data: { user } } = await supabase.auth.getUser();
+
           // Insert the program
           const { data: insertedProgram, error: programError } = await supabase
             .from('support_programs')
@@ -179,7 +184,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
               institution_id: institutionId,
               application_deadline: applicationDeadline,
               eligibility_criteria: eligibility,
-              contact_info: contact
+              contact_info: contact,
+              created_by: user?.id || null
             })
             .select('id')
             .single();
@@ -364,7 +370,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           'Destek Unsuru': 'Makine Teçhizat, Yazılım',
           'Sektör': 'İmalat, Teknoloji',
           'İl': 'İstanbul, Ankara',
-          'Dosya URL\'leri': 'https://example.com/file1.pdf, https://example.com/file2.pdf'
+          'Dosya URL\'leri': 'https://example.com/file1.pdf, https://example.com/file2.pdf',
+          'Oluşturan': '(Otomatik doldurulur - giriş yapan admin)'
         }
       ];
 
@@ -375,7 +382,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
       wsPrograms['!cols'] = [
         { wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 15 },
         { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 25 },
-        { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 50 }
+        { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 50 }, { wch: 30 }
       ];
 
       // Create tag reference sheet
@@ -461,7 +468,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
           'Destek Unsuru': (tagsByCategory['Destek Unsuru'] || []).join(', '),
           'Sektör': (tagsByCategory['Sektör'] || []).join(', '),
           'İl': (tagsByCategory['İl'] || []).join(', '),
-          'Dosya URL\'leri': program.files.map(f => f.file_url).join(', ')
+          'Dosya URL\'leri': program.files.map(f => f.file_url).join(', '),
+          'Oluşturan': (program as any).creator?.full_name || (program as any).creator?.email || ''
         };
       });
 
@@ -489,7 +497,7 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
       wsPrograms['!cols'] = [
         { wch: 40 }, { wch: 60 }, { wch: 25 }, { wch: 15 },
         { wch: 40 }, { wch: 30 }, { wch: 35 }, { wch: 25 },
-        { wch: 35 }, { wch: 30 }, { wch: 40 }, { wch: 60 }
+        { wch: 35 }, { wch: 30 }, { wch: 40 }, { wch: 60 }, { wch: 30 }
       ];
 
       const wsTags = XLSX.utils.json_to_sheet(tagsData);
