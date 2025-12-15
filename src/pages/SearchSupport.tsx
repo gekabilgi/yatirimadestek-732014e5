@@ -34,9 +34,9 @@ const SearchSupport = () => {
         return bIsOpen ? 1 : -1;
       }
       
-      // Then sort by updated_at (most recent first)
-      const aDate = new Date(a.updated_at);
-      const bDate = new Date(b.updated_at);
+      // Then sort by created_at (most recent first)
+      const aDate = new Date(a.created_at);
+      const bDate = new Date(b.created_at);
       return bDate.getTime() - aDate.getTime();
     });
   };
