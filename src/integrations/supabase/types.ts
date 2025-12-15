@@ -177,6 +177,39 @@ export type Database = {
           },
         ]
       }
+      bulten_uyeler: {
+        Row: {
+          ad_soyad: string
+          created_at: string
+          email: string
+          id: string
+          il: string
+          is_active: boolean | null
+          telefon: string | null
+          updated_at: string
+        }
+        Insert: {
+          ad_soyad: string
+          created_at?: string
+          email: string
+          id?: string
+          il: string
+          is_active?: boolean | null
+          telefon?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ad_soyad?: string
+          created_at?: string
+          email?: string
+          id?: string
+          il?: string
+          is_active?: boolean | null
+          telefon?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cb_knowledge_base: {
         Row: {
           answer: string
