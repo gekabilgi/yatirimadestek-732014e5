@@ -47,6 +47,41 @@ export type Database = {
         }
         Relationships: []
       }
+      announcement_email_logs: {
+        Row: {
+          announcement_id: string | null
+          id: string
+          recipient_count: number | null
+          sent_at: string
+          sent_by: string | null
+          status: string | null
+        }
+        Insert: {
+          announcement_id?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          announcement_id?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_email_logs_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           announcement_date: string
@@ -109,6 +144,42 @@ export type Database = {
           id?: string
           stat_name?: string
           stat_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bulten_uyeler: {
+        Row: {
+          ad: string
+          created_at: string
+          email: string
+          id: string
+          il: string
+          is_active: boolean | null
+          soyad: string
+          telefon: string | null
+          updated_at: string
+        }
+        Insert: {
+          ad: string
+          created_at?: string
+          email: string
+          id?: string
+          il: string
+          is_active?: boolean | null
+          soyad: string
+          telefon?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ad?: string
+          created_at?: string
+          email?: string
+          id?: string
+          il?: string
+          is_active?: boolean | null
+          soyad?: string
+          telefon?: string | null
           updated_at?: string
         }
         Relationships: []

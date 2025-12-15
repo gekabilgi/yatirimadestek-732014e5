@@ -21,6 +21,7 @@ import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import Admin from "./pages/Admin";
 import AdminSupportPrograms from "./pages/AdminSupportPrograms";
 import AdminAnnouncements from "./pages/AdminAnnouncements";
+import AdminNewsletterSubscribers from "./pages/AdminNewsletterSubscribers";
 import AnnouncementDetail from "./pages/AnnouncementDetail";
 import AdminFeasibilityReports from "./pages/AdminFeasibilityReports";
 import AdminLogin from "./pages/AdminLogin";
@@ -158,6 +159,11 @@ const App = () => {
               <Route path="/admin/announcements" element={
                 <ProtectedAdminRoute>
                   <AdminAnnouncements />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/newsletter-subscribers" element={
+                <ProtectedAdminRoute>
+                  <AdminNewsletterSubscribers />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/feasibility-reports" element={
