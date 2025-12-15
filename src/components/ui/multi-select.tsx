@@ -130,13 +130,10 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             align="start"
           >
             <Command className="rounded-lg">
-              <div className="flex items-center border-b border-border/50 px-3">
-                <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                <CommandInput 
-                  placeholder={searchPlaceholder} 
-                  className="h-10 border-0 focus:ring-0 placeholder:text-muted-foreground/60"
-                />
-              </div>
+              <CommandInput 
+                placeholder={searchPlaceholder} 
+                className="h-10 border-0 ring-0 outline-none focus:ring-0 focus:outline-none placeholder:text-muted-foreground/60"
+              />
               <CommandList>
                 <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
                   {emptyText}
