@@ -1,30 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Accessibility, 
-  X, 
-  Plus, 
-  Minus, 
-  Eye, 
-  Link2, 
-  Pause, 
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Accessibility,
+  X,
+  Plus,
+  Minus,
+  Eye,
+  Link2,
+  Pause,
   AlignJustify,
   MousePointer2,
   RotateCcw,
   BookOpen,
   Space,
-  ScanLine
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useAccessibility } from '@/contexts/AccessibilityContext';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ScanLine,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const AccessibilityWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,21 +29,21 @@ const AccessibilityWidget = () => {
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         setIsOpen(false);
         buttonRef.current?.focus();
       }
     };
-    
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
 
   // Focus trap
   useEffect(() => {
     if (isOpen && panelRef.current) {
       const focusableElements = panelRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       const firstElement = focusableElements[0] as HTMLElement;
       firstElement?.focus();
@@ -59,25 +53,25 @@ const AccessibilityWidget = () => {
   // Keyboard shortcut Alt+0
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === '0') {
+      if (e.altKey && e.key === "0") {
         e.preventDefault();
-        setIsOpen(prev => !prev);
+        setIsOpen((prev) => !prev);
       }
     };
-    
-    document.addEventListener('keydown', handleKeyboard);
-    return () => document.removeEventListener('keydown', handleKeyboard);
+
+    document.addEventListener("keydown", handleKeyboard);
+    return () => document.removeEventListener("keydown", handleKeyboard);
   }, []);
 
   const increaseFontSize = () => {
     if (settings.fontSize < 150) {
-      updateSetting('fontSize', Math.min(150, settings.fontSize + 25) as 100 | 125 | 150);
+      updateSetting("fontSize", Math.min(150, settings.fontSize + 25) as 100 | 125 | 150);
     }
   };
 
   const decreaseFontSize = () => {
     if (settings.fontSize > 100) {
-      updateSetting('fontSize', Math.max(100, settings.fontSize - 25) as 100 | 125 | 150);
+      updateSetting("fontSize", Math.max(100, settings.fontSize - 25) as 100 | 125 | 150);
     }
   };
 
@@ -87,7 +81,7 @@ const AccessibilityWidget = () => {
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-4 z-[90] w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        className="fixed bottom-24 right-4 z-[190] w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         aria-label="Erişilebilirlik ayarlarını aç (Alt+0)"
         aria-expanded={isOpen}
         aria-controls="accessibility-panel"
@@ -97,11 +91,7 @@ const AccessibilityWidget = () => {
 
       {/* Overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-[95]" 
-          onClick={() => setIsOpen(false)}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 bg-black/50 z-[95]" onClick={() => setIsOpen(false)} aria-hidden="true" />
       )}
 
       {/* Panel */}
@@ -149,10 +139,7 @@ const AccessibilityWidget = () => {
                 >
                   <Minus className="w-4 h-4" aria-hidden="true" />
                 </Button>
-                <span 
-                  className="flex-1 text-center font-medium tabular-nums"
-                  aria-live="polite"
-                >
+                <span className="flex-1 text-center font-medium tabular-nums" aria-live="polite">
                   {settings.fontSize}%
                 </span>
                 <Button
@@ -176,7 +163,7 @@ const AccessibilityWidget = () => {
               <Switch
                 id="high-contrast"
                 checked={settings.highContrast}
-                onCheckedChange={(checked) => updateSetting('highContrast', checked)}
+                onCheckedChange={(checked) => updateSetting("highContrast", checked)}
                 aria-describedby="high-contrast-desc"
               />
             </div>
@@ -193,7 +180,7 @@ const AccessibilityWidget = () => {
               <Switch
                 id="highlight-links"
                 checked={settings.highlightLinks}
-                onCheckedChange={(checked) => updateSetting('highlightLinks', checked)}
+                onCheckedChange={(checked) => updateSetting("highlightLinks", checked)}
               />
             </div>
 
@@ -206,7 +193,7 @@ const AccessibilityWidget = () => {
               <Switch
                 id="reduce-motion"
                 checked={settings.reduceMotion}
-                onCheckedChange={(checked) => updateSetting('reduceMotion', checked)}
+                onCheckedChange={(checked) => updateSetting("reduceMotion", checked)}
               />
             </div>
 
@@ -218,7 +205,7 @@ const AccessibilityWidget = () => {
               </Label>
               <Select
                 value={settings.lineSpacing}
-                onValueChange={(value: 'normal' | 'wide' | 'wider') => updateSetting('lineSpacing', value)}
+                onValueChange={(value: "normal" | "wide" | "wider") => updateSetting("lineSpacing", value)}
               >
                 <SelectTrigger id="line-spacing" className="w-full">
                   <SelectValue />
@@ -239,7 +226,7 @@ const AccessibilityWidget = () => {
               </Label>
               <Select
                 value={settings.wordSpacing}
-                onValueChange={(value: 'normal' | 'wide' | 'wider') => updateSetting('wordSpacing', value)}
+                onValueChange={(value: "normal" | "wide" | "wider") => updateSetting("wordSpacing", value)}
               >
                 <SelectTrigger id="word-spacing" className="w-full">
                   <SelectValue />
@@ -261,7 +248,7 @@ const AccessibilityWidget = () => {
               <Switch
                 id="large-cursor"
                 checked={settings.largeCursor}
-                onCheckedChange={(checked) => updateSetting('largeCursor', checked)}
+                onCheckedChange={(checked) => updateSetting("largeCursor", checked)}
               />
             </div>
 
@@ -274,7 +261,7 @@ const AccessibilityWidget = () => {
               <Switch
                 id="reading-guide"
                 checked={settings.readingGuide}
-                onCheckedChange={(checked) => updateSetting('readingGuide', checked)}
+                onCheckedChange={(checked) => updateSetting("readingGuide", checked)}
                 aria-describedby="reading-guide-desc"
               />
             </div>
