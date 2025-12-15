@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Bell, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,6 +25,8 @@ const PROVINCES = [
 export const NewsletterSubscribeForm = () => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [institutions, setInstitutions] = useState<{ value: string; label: string }[]>([]);
+  const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     ad: '',
     soyad: '',
@@ -31,6 +34,24 @@ export const NewsletterSubscribeForm = () => {
     email: '',
     il: ''
   });
+
+  // Fetch institutions on mount
+  useEffect(() => {
+    const fetchInstitutions = async () => {
+      const { data, error } = await supabase
+        .from('institutions')
+        .select('id, name')
+        .order('name');
+      
+      if (!error && data) {
+        setInstitutions(data.map(inst => ({
+          value: inst.id.toString(),
+          label: inst.name
+        })));
+      }
+    };
+    fetchInstitutions();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +61,15 @@ export const NewsletterSubscribeForm = () => {
       return;
     }
 
+    if (selectedInstitutions.length === 0) {
+      toast.error('Lütfen en az bir kurum seçin');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      // Insert subscriber
+      const { data: subscriber, error } = await supabase
         .from('bulten_uyeler')
         .insert({
           ad: formData.ad,
@@ -50,7 +77,9 @@ export const NewsletterSubscribeForm = () => {
           telefon: formData.telefon || null,
           email: formData.email,
           il: formData.il
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) {
         if (error.code === '23505') {
@@ -61,8 +90,23 @@ export const NewsletterSubscribeForm = () => {
         return;
       }
 
+      // Insert institution preferences
+      const preferences = selectedInstitutions.map(instId => ({
+        uye_id: subscriber.id,
+        institution_id: parseInt(instId)
+      }));
+
+      const { error: prefError } = await supabase
+        .from('bulten_uye_kurum_tercihleri')
+        .insert(preferences);
+
+      if (prefError) {
+        console.error('Preference insert error:', prefError);
+      }
+
       toast.success('Bülten kaydınız başarıyla oluşturuldu!');
       setFormData({ ad: '', soyad: '', telefon: '', email: '', il: '' });
+      setSelectedInstitutions([]);
       setOpen(false);
     } catch (error) {
       console.error('Subscription error:', error);
@@ -150,6 +194,20 @@ export const NewsletterSubscribeForm = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Hangi kurumların desteklerinden haberdar olmak istersiniz? *</Label>
+            <MultiSelect
+              options={institutions}
+              selected={selectedInstitutions}
+              onChange={setSelectedInstitutions}
+              placeholder="Kurum seçiniz (birden fazla seçebilirsiniz)"
+              maxDisplay={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Sadece seçtiğiniz kurumların duyuruları size gönderilecektir.
+            </p>
           </div>
           
           <Button type="submit" className="w-full" disabled={isLoading}>

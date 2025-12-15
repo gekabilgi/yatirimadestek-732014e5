@@ -14,6 +14,11 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
+interface Institution {
+  id: number;
+  name: string;
+}
+
 interface Subscriber {
   id: string;
   ad: string;
@@ -23,6 +28,7 @@ interface Subscriber {
   il: string;
   is_active: boolean;
   created_at: string;
+  institutions: Institution[];
 }
 
 const AdminNewsletterSubscribers = () => {
@@ -33,13 +39,29 @@ const AdminNewsletterSubscribers = () => {
   const { data: subscribers = [], isLoading } = useQuery({
     queryKey: ['newsletter-subscribers'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch subscribers with their institution preferences
+      const { data: subs, error } = await supabase
         .from('bulten_uyeler')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Subscriber[];
+
+      // Fetch institution preferences for all subscribers
+      const { data: preferences } = await supabase
+        .from('bulten_uye_kurum_tercihleri')
+        .select('uye_id, institution_id, institutions(id, name)');
+
+      // Map preferences to subscribers
+      const subsWithInstitutions = (subs || []).map(sub => {
+        const subPrefs = (preferences || []).filter(p => p.uye_id === sub.id);
+        return {
+          ...sub,
+          institutions: subPrefs.map(p => p.institutions).filter(Boolean) as Institution[]
+        };
+      });
+
+      return subsWithInstitutions as Subscriber[];
     }
   });
 
@@ -87,13 +109,14 @@ const AdminNewsletterSubscribers = () => {
 
   const handleExport = () => {
     const csvContent = [
-      ['Ad', 'Soyad', 'E-posta', 'Telefon', 'İl', 'Durum', 'Kayıt Tarihi'].join(','),
+      ['Ad', 'Soyad', 'E-posta', 'Telefon', 'İl', 'Tercih Edilen Kurumlar', 'Durum', 'Kayıt Tarihi'].join(','),
       ...filteredSubscribers.map(sub => [
         sub.ad,
         sub.soyad,
         sub.email,
         sub.telefon || '',
         sub.il,
+        `"${sub.institutions.map(i => i.name).join(', ')}"`,
         sub.is_active ? 'Aktif' : 'Pasif',
         format(new Date(sub.created_at), 'dd.MM.yyyy', { locale: tr })
       ].join(','))
@@ -157,6 +180,7 @@ const AdminNewsletterSubscribers = () => {
                       <TableHead>E-posta</TableHead>
                       <TableHead>Telefon</TableHead>
                       <TableHead>İl</TableHead>
+                      <TableHead>Tercih Edilen Kurumlar</TableHead>
                       <TableHead>Durum</TableHead>
                       <TableHead>Kayıt Tarihi</TableHead>
                       <TableHead className="text-right">İşlemler</TableHead>
@@ -171,6 +195,24 @@ const AdminNewsletterSubscribers = () => {
                         <TableCell>{sub.email}</TableCell>
                         <TableCell>{sub.telefon || '-'}</TableCell>
                         <TableCell>{sub.il}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {sub.institutions.length === 0 ? (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            ) : (
+                              sub.institutions.slice(0, 3).map((inst) => (
+                                <Badge key={inst.id} variant="outline" className="text-xs">
+                                  {inst.name}
+                                </Badge>
+                              ))
+                            )}
+                            {sub.institutions.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{sub.institutions.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge
                             variant={sub.is_active ? 'default' : 'secondary'}
