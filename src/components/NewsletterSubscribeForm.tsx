@@ -122,17 +122,11 @@ export const NewsletterSubscribeForm = () => {
         return;
       }
 
-      // Split ad_soyad into ad and soyad
-      const nameParts = formData.adSoyad.trim().split(' ');
-      const soyad = nameParts.length > 1 ? nameParts.pop() || '' : '';
-      const ad = nameParts.join(' ') || formData.adSoyad.trim();
-
       // Insert subscriber
       const { data: subscriber, error } = await supabase
         .from('bulten_uyeler')
         .insert({
-          ad,
-          soyad,
+          ad_soyad: formData.adSoyad.trim(),
           telefon: formData.telefon || null,
           email: formData.email.toLowerCase().trim(),
           il: formData.il
