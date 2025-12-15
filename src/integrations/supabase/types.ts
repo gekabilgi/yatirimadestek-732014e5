@@ -148,6 +148,42 @@ export type Database = {
         }
         Relationships: []
       }
+      bulten_uye_kurum_tercihleri: {
+        Row: {
+          created_at: string | null
+          id: string
+          institution_id: number
+          uye_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          institution_id: number
+          uye_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          institution_id?: number
+          uye_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulten_uye_kurum_tercihleri_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulten_uye_kurum_tercihleri_uye_id_fkey"
+            columns: ["uye_id"]
+            isOneToOne: false
+            referencedRelation: "bulten_uyeler"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulten_uyeler: {
         Row: {
           ad: string

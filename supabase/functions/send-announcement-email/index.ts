@@ -41,11 +41,45 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Announcement not found");
     }
 
-    // Fetch active subscribers
+    console.log(`[send-announcement-email] Announcement: ${announcement.title}, Institution: ${announcement.institution_name}`);
+
+    // Find institution ID by name
+    const { data: institution } = await supabase
+      .from("institutions")
+      .select("id")
+      .eq("name", announcement.institution_name)
+      .single();
+
+    if (!institution) {
+      console.log(`[send-announcement-email] Institution not found: ${announcement.institution_name}`);
+      return new Response(
+        JSON.stringify({ success: true, message: "Kurum bulunamadı - e-posta gönderilmedi", sent: 0 }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Get subscribers who have selected this institution
+    const { data: preferences } = await supabase
+      .from("bulten_uye_kurum_tercihleri")
+      .select("uye_id")
+      .eq("institution_id", institution.id);
+
+    const subscriberIds = (preferences || []).map(p => p.uye_id);
+    
+    if (subscriberIds.length === 0) {
+      console.log("[send-announcement-email] No subscribers for this institution");
+      return new Response(
+        JSON.stringify({ success: true, message: "Bu kurumu tercih eden üye yok", sent: 0 }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Fetch active subscribers who prefer this institution
     const { data: subscribers, error: subscribersError } = await supabase
       .from("bulten_uyeler")
-      .select("email, ad, soyad")
-      .eq("is_active", true);
+      .select("id, email, ad, soyad")
+      .eq("is_active", true)
+      .in("id", subscriberIds);
 
     if (subscribersError) {
       throw new Error("Failed to fetch subscribers");
@@ -53,12 +87,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!subscribers || subscribers.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, message: "No active subscribers found" }),
+        JSON.stringify({ success: false, message: "Bu kurumu tercih eden aktif üye bulunamadı", sent: 0 }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log(`Sending announcement to ${subscribers.length} subscribers`);
+    console.log(`[send-announcement-email] Sending to ${subscribers.length} subscribers who prefer ${announcement.institution_name}`);
 
     // Send emails to all subscribers
     const emailPromises = subscribers.map(async (subscriber) => {
@@ -98,8 +132,8 @@ const handler = async (req: Request): Promise<Response> => {
                   ` : ''}
                   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                   <p style="color: #999; font-size: 12px; text-align: center;">
-                    Bu e-postayı Teşvik Platformu bültenine abone olduğunuz için aldınız.
-                  </p>
+101:                     Bu e-postayı ${announcement.institution_name} duyurularını takip ettiğiniz için aldınız.
+102:                   </p>
                 </div>
               </div>
             </body>
