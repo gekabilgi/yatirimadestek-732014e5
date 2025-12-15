@@ -4,7 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2, Eye, Plus, Copy, Upload, ArrowUpDown, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Eye, Plus, Copy, Upload, ArrowUpDown, FileSpreadsheet, Loader2, Download, AlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { SupportProgram } from '@/types/support';
@@ -23,6 +34,8 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
   const [programs, setPrograms] = useState<SupportProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -401,6 +414,143 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
     }
   };
 
+  // Export current data to Excel
+  const exportToExcel = async () => {
+    setExporting(true);
+    try {
+      // Fetch all data with relations
+      const { data: categories } = await supabase
+        .from('tag_categories')
+        .select('id, name')
+        .order('id');
+      
+      const { data: allTags } = await supabase
+        .from('tags')
+        .select('id, name, category_id')
+        .order('name');
+
+      const { data: institutions } = await supabase
+        .from('institutions')
+        .select('id, name')
+        .order('name');
+
+      // Build category ID to name map
+      const categoryMap = new Map(categories?.map(c => [c.id, c.name]) || []);
+
+      // Build programs export data
+      const programsData = programs.map(program => {
+        // Group tags by category
+        const tagsByCategory: Record<string, string[]> = {};
+        program.tags.forEach(tag => {
+          const categoryName = categoryMap.get(tag.category_id) || 'Diğer';
+          if (!tagsByCategory[categoryName]) {
+            tagsByCategory[categoryName] = [];
+          }
+          tagsByCategory[categoryName].push(tag.name);
+        });
+
+        return {
+          'Program Adı': program.title,
+          'Açıklama': program.description,
+          'Kurum': program.institution?.name || '',
+          'Son Başvuru': program.application_deadline || '',
+          'Uygunluk Kriterleri': program.eligibility_criteria || '',
+          'İletişim': program.contact_info || '',
+          'Başvuru Sahibi Türü': (tagsByCategory['Başvuru Sahibi Türü'] || []).join(', '),
+          'Destek Türü': (tagsByCategory['Destek Türü'] || []).join(', '),
+          'Destek Unsuru': (tagsByCategory['Destek Unsuru'] || []).join(', '),
+          'Sektör': (tagsByCategory['Sektör'] || []).join(', '),
+          'İl': (tagsByCategory['İl'] || []).join(', '),
+          'Dosya URL\'leri': program.files.map(f => f.file_url).join(', ')
+        };
+      });
+
+      // Build tags export data
+      const tagsData: { Kategori: string; 'Etiket Adı': string; 'Etiket ID': number }[] = [];
+      categories?.forEach(category => {
+        const categoryTags = allTags?.filter(t => t.category_id === category.id) || [];
+        categoryTags.forEach(tag => {
+          tagsData.push({
+            'Kategori': category.name,
+            'Etiket Adı': tag.name,
+            'Etiket ID': tag.id
+          });
+        });
+      });
+
+      // Build institutions export data
+      const institutionsData = institutions?.map(i => ({ 
+        'Kurum Adı': i.name, 
+        'Kurum ID': i.id 
+      })) || [];
+
+      // Create workbook
+      const wsPrograms = XLSX.utils.json_to_sheet(programsData);
+      wsPrograms['!cols'] = [
+        { wch: 40 }, { wch: 60 }, { wch: 25 }, { wch: 15 },
+        { wch: 40 }, { wch: 30 }, { wch: 35 }, { wch: 25 },
+        { wch: 35 }, { wch: 30 }, { wch: 40 }, { wch: 60 }
+      ];
+
+      const wsTags = XLSX.utils.json_to_sheet(tagsData);
+      wsTags['!cols'] = [{ wch: 25 }, { wch: 40 }, { wch: 12 }];
+
+      const wsInst = XLSX.utils.json_to_sheet(institutionsData);
+      wsInst['!cols'] = [{ wch: 50 }, { wch: 12 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, wsPrograms, 'Programlar');
+      XLSX.utils.book_append_sheet(wb, wsTags, 'Etiketler');
+      XLSX.utils.book_append_sheet(wb, wsInst, 'Kurumlar');
+
+      const timestamp = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `destek_programlari_export_${timestamp}.xlsx`);
+      
+      toast.success(`${programs.length} program, ${tagsData.length} etiket, ${institutionsData.length} kurum dışa aktarıldı`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Dışa aktarma hatası');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Delete all programs (keeps tags and institutions)
+  const handleDeleteAllPrograms = async () => {
+    setDeleting(true);
+    try {
+      // Delete in order: tags → files → programs
+      const { error: tagsError } = await supabase
+        .from('support_program_tags')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (tagsError) throw tagsError;
+
+      const { error: filesError } = await supabase
+        .from('file_attachments')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (filesError) throw filesError;
+
+      const { error: programsError } = await supabase
+        .from('support_programs')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (programsError) throw programsError;
+
+      toast.success('Tüm programlar silindi. Etiketler ve kurumlar korundu.');
+      fetchPrograms();
+    } catch (error) {
+      console.error('Delete all error:', error);
+      toast.error('Silme işlemi sırasında hata oluştu');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card className="space-y-6 mt-16">
@@ -452,6 +602,15 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
             </Button>
             <Button
               variant="outline"
+              onClick={exportToExcel}
+              disabled={exporting || programs.length === 0}
+              className="gap-2"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Dışa Aktar
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
               className="gap-2"
@@ -459,6 +618,43 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               İçe Aktar
             </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={programs.length === 0 || deleting}
+                  className="gap-2 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+                >
+                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Tümünü Sil
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                    Tüm Programları Sil
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    <strong>{programs.length} program</strong> silinecek. Bu işlem geri alınamaz!
+                    <br /><br />
+                    <span className="text-muted-foreground">
+                      Not: Etiketler ve kurumlar silinmeyecek, sadece programlar ve ilişkili dosyalar temizlenecek.
+                    </span>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>İptal</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAllPrograms}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    Evet, Tümünü Sil
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <Button onClick={onCreateNew} className="bg-primary hover:bg-primary/90 gap-2">
               <Plus className="w-4 h-4" />
