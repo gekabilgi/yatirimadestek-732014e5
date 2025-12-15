@@ -35,21 +35,36 @@ const AdminNewsletterSubscribers = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  // Separate count query to get actual total
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ['newsletter-subscribers-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('bulten_uyeler')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
   const { data: subscribers = [], isLoading } = useQuery({
     queryKey: ['newsletter-subscribers'],
     queryFn: async () => {
-      // Fetch subscribers with their institution preferences
+      // Fetch ALL subscribers (remove default 1000 limit)
       const { data: subs, error } = await supabase
         .from('bulten_uyeler')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, 50000); // Explicitly set large range
       
       if (error) throw error;
 
       // Fetch institution preferences for all subscribers
       const { data: preferences } = await supabase
         .from('bulten_uye_kurum_tercihleri')
-        .select('uye_id, institution_id, institutions(id, name)');
+        .select('uye_id, institution_id, institutions(id, name)')
+        .range(0, 500000);
 
       // Map preferences to subscribers
       const subsWithInstitutions = (subs || []).map(sub => {
@@ -140,7 +155,7 @@ const AdminNewsletterSubscribers = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <CardTitle className="flex items-center gap-2">
                 <Mail className="w-5 h-5" />
-                Kayıtlı Üyeler ({subscribers.length})
+                Kayıtlı Üyeler ({totalCount.toLocaleString('tr-TR')})
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative">
