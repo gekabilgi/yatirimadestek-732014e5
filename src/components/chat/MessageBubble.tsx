@@ -297,9 +297,33 @@ const markdownComponentsBase = {
       </li>
     );
   },
-  strong: ({ node, ...props }: any) => (
-    <strong className="font-semibold text-foreground" {...props} />
-  ),
+  strong: ({ node, children, ...props }: any) => {
+    // Extract text content from children
+    const getText = (child: any): string => {
+      if (typeof child === 'string') return child;
+      if (Array.isArray(child)) return child.map(getText).join('');
+      if (child?.props?.children) return getText(child.props.children);
+      return '';
+    };
+    
+    const text = getText(children);
+    
+    // If content has colon, only bold the label part (before colon)
+    if (text.includes(':')) {
+      const colonIndex = text.indexOf(':');
+      const label = text.substring(0, colonIndex + 1);
+      const rest = text.substring(colonIndex + 1);
+      
+      return (
+        <>
+          <strong className="font-semibold text-foreground">{label}</strong>
+          <span className="font-normal">{rest}</span>
+        </>
+      );
+    }
+    
+    return <strong className="font-semibold text-foreground" {...props} />;
+  },
 };
 
 function processTextWithCitations(children: any, citationMap: Map<string, JSX.Element[]>): any {
