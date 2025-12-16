@@ -33,11 +33,13 @@ import { getActiveStore, generateExampleQuestions } from "@/services/geminiRagSe
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useChatbotStats } from "@/hooks/useChatbotStats";
 import { useChatbotSettings } from "@/hooks/useChatbotSettings";
+import { SupportProgramCard, type SupportProgramCardData } from "@/components/chat/SupportProgramCard";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   id: string;
+  supportCards?: SupportProgramCardData[];
 }
 
 interface ChatSession {
@@ -173,31 +175,40 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[85%] rounded-lg p-3 ${
-          isUser ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white" : "bg-muted"
-        }`}
-      >
-        <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
-          {isUser ? (
-            <span className="whitespace-pre-wrap">{displayContent}</span>
-          ) : (
-            <ReactMarkdown components={markdownComponents}>
-              {displayContent}
-            </ReactMarkdown>
+      <div className="max-w-[85%]">
+        <div
+          className={`rounded-lg p-3 ${
+            isUser ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white" : "bg-muted"
+          }`}
+        >
+          <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+            {isUser ? (
+              <span className="whitespace-pre-wrap">{displayContent}</span>
+            ) : (
+              <ReactMarkdown components={markdownComponents}>{displayContent}</ReactMarkdown>
+            )}
+          </div>
+
+          {!isUser && isSupported && (
+            <div className="mt-2 pt-1.5 border-t border-border/30 flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-6 px-2 text-xs gap-1 ${isSpeaking ? "text-primary" : "text-muted-foreground"}`}
+                onClick={handleSpeak}
+              >
+                {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                {isSpeaking ? "Durdur" : "Sesli Oku"}
+              </Button>
+            </div>
           )}
         </div>
-        {!isUser && isSupported && (
-          <div className="mt-2 pt-1.5 border-t border-border/30 flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-6 px-2 text-xs gap-1 ${isSpeaking ? 'text-primary' : 'text-muted-foreground'}`}
-              onClick={handleSpeak}
-            >
-              {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-              {isSpeaking ? "Durdur" : "Sesli Oku"}
-            </Button>
+
+        {!isUser && message.supportCards && message.supportCards.length > 0 && (
+          <div className="grid gap-3 mt-2">
+            {message.supportCards.map((card) => (
+              <SupportProgramCard key={card.id} data={card} />
+            ))}
           </div>
         )}
       </div>
@@ -561,22 +572,34 @@ export function AIChatbot() {
       const words = fullResponse.split(" ");
       let currentText = "";
 
-      // Add empty message first
-      setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
+      // Add empty message first (preserve support cards while streaming)
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: "", supportCards: data.supportCards || [] },
+      ]);
 
       // Stream words
       for (let i = 0; i < words.length; i++) {
         if (abortControllerRef.current?.signal.aborted) break;
 
         currentText += (i > 0 ? " " : "") + words[i];
-        setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? { ...msg, content: currentText } : msg)));
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantId ? { ...msg, content: currentText } : msg,
+          ),
+        );
 
         // Variable delay for natural cadence
         await new Promise((resolve) => setTimeout(resolve, 30 + Math.random() * 20));
       }
 
       // Ensure full response is shown
-      const finalAssistantMsg: Message = { id: assistantId, role: "assistant", content: fullResponse };
+      const finalAssistantMsg: Message = {
+        id: assistantId,
+        role: "assistant",
+        content: fullResponse,
+        supportCards: data.supportCards || [],
+      };
       setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? finalAssistantMsg : msg)));
 
       // Save assistant message to database
