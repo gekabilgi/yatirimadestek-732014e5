@@ -245,6 +245,7 @@ export type Database = {
           role: string
           session_id: string
           source: string | null
+          support_cards: Json | null
         }
         Insert: {
           content: string
@@ -253,6 +254,7 @@ export type Database = {
           role: string
           session_id: string
           source?: string | null
+          support_cards?: Json | null
         }
         Update: {
           content?: string
@@ -261,6 +263,7 @@ export type Database = {
           role?: string
           session_id?: string
           source?: string | null
+          support_cards?: Json | null
         }
         Relationships: []
       }
@@ -304,6 +307,7 @@ export type Database = {
           session_id: string
           source: string | null
           sources: string[] | null
+          support_cards: Json | null
         }
         Insert: {
           content: string
@@ -314,6 +318,7 @@ export type Database = {
           session_id: string
           source?: string | null
           sources?: string[] | null
+          support_cards?: Json | null
         }
         Update: {
           content?: string
@@ -324,6 +329,7 @@ export type Database = {
           session_id?: string
           source?: string | null
           sources?: string[] | null
+          support_cards?: Json | null
         }
         Relationships: []
       }
