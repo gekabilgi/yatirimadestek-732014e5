@@ -32,6 +32,36 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding;
 }
 
+async function processProgram(program: any, supabase: any): Promise<{ success: boolean; id: string }> {
+  try {
+    const textToEmbed = [
+      program.title,
+      program.description,
+      program.eligibility_criteria,
+      (program.institutions as any)?.name,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    console.log(`Generating embedding for: ${program.title}`);
+    const embedding = await generateEmbedding(textToEmbed);
+
+    const { error: updateError } = await supabase
+      .from("support_programs")
+      .update({ embedding: `[${embedding.join(",")}]` })
+      .eq("id", program.id);
+
+    if (updateError) {
+      console.error(`Error updating ${program.id}:`, updateError);
+      return { success: false, id: program.id };
+    }
+    return { success: true, id: program.id };
+  } catch (err) {
+    console.error(`Error processing ${program.id}:`, err);
+    return { success: false, id: program.id };
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -57,50 +87,45 @@ serve(async (req) => {
           title,
           description,
           eligibility_criteria,
-          institutions!inner(name)
+          institutions(name)
         `)
-        .is("embedding", null);
+        .is("embedding", null)
+        .limit(50); // Process max 50 at a time to avoid timeout
 
       if (fetchError) throw fetchError;
 
       console.log(`Found ${programs?.length || 0} programs without embeddings`);
 
+      if (!programs || programs.length === 0) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "No programs need embeddings",
+            updated: 0,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Process in batches of 5 for parallel execution
+      const BATCH_SIZE = 5;
       let successCount = 0;
       let errorCount = 0;
 
-      for (const program of programs || []) {
-        try {
-          // Combine relevant fields for embedding
-          const textToEmbed = [
-            program.title,
-            program.description,
-            program.eligibility_criteria,
-            (program.institutions as any)?.name,
-          ]
-            .filter(Boolean)
-            .join(" | ");
+      for (let i = 0; i < programs.length; i += BATCH_SIZE) {
+        const batch = programs.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+          batch.map((program) => processProgram(program, supabase))
+        );
 
-          console.log(`Generating embedding for: ${program.title}`);
-          const embedding = await generateEmbedding(textToEmbed);
+        results.forEach((result) => {
+          if (result.success) successCount++;
+          else errorCount++;
+        });
 
-          // Update the program with embedding
-          const { error: updateError } = await supabase
-            .from("support_programs")
-            .update({ embedding: `[${embedding.join(",")}]` })
-            .eq("id", program.id);
-
-          if (updateError) {
-            console.error(`Error updating ${program.id}:`, updateError);
-            errorCount++;
-          } else {
-            successCount++;
-          }
-
-          // Rate limiting - wait 200ms between requests
-          await new Promise((resolve) => setTimeout(resolve, 200));
-        } catch (err) {
-          console.error(`Error processing ${program.id}:`, err);
-          errorCount++;
+        // Small delay between batches to avoid rate limits
+        if (i + BATCH_SIZE < programs.length) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
 
@@ -108,9 +133,9 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           message: `Generated embeddings for ${successCount} programs, ${errorCount} errors`,
-          total: programs?.length || 0,
-          successCount,
-          errorCount,
+          total: programs.length,
+          updated: successCount,
+          errors: errorCount,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -125,7 +150,7 @@ serve(async (req) => {
           title,
           description,
           eligibility_criteria,
-          institutions!inner(name)
+          institutions(name)
         `)
         .eq("id", programId)
         .single();
@@ -155,6 +180,7 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           message: `Generated embedding for: ${program.title}`,
+          updated: 1,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
