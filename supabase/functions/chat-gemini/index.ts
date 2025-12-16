@@ -513,6 +513,47 @@ serve(async (req) => {
       }
     }
 
+    // Site içi destekler modu - sadece support_programs tablosunu kullan
+    if (ragMode === "site_ici_destekler") {
+      console.log("🔍 Using Site İçi Destekler mode");
+      
+      const lastUserMessage = messages
+        .slice()
+        .reverse()
+        .find((m: any) => m.role === "user");
+      
+      if (!lastUserMessage) {
+        throw new Error("No user message found");
+      }
+
+      // Support programs araması yap
+      const supportCards = await searchSupportPrograms(lastUserMessage.content, supabase);
+      console.log(`📋 Found ${supportCards.length} support programs`);
+
+      if (supportCards.length > 0) {
+        return new Response(
+          JSON.stringify({
+            text: "İlgili destek programlarını aşağıda listeliyorum.",
+            supportCards,
+            supportOnly: true,
+            sources: [],
+            groundingChunks: [],
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({
+            text: "Aradığınız kriterlere uygun destek programı bulunamadı. Lütfen farklı anahtar kelimelerle tekrar deneyin.",
+            supportCards: [],
+            sources: [],
+            groundingChunks: [],
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // If Vertex RAG mode, delegate to vertex-rag-query function
     if (ragMode === "vertex_rag_corpora") {
       const { data: vertexCorpusData } = await supabase

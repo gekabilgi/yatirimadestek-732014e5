@@ -317,6 +317,7 @@ export function useChatSession() {
         timestamp: Date.now(),
         sources: wasAborted ? null : data.sources,
         groundingChunks: wasAborted ? null : data.groundingChunks,
+        supportCards: wasAborted ? null : data.supportCards,
       };
 
       // Save assistant message to database
