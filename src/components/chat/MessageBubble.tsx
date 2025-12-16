@@ -3,6 +3,7 @@ import { MessageActions } from "./MessageActions";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { SupportProgramCard, SupportProgramCardData } from "./SupportProgramCard";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -17,9 +18,10 @@ interface MessageBubbleProps {
     text?: string;
     index?: number;
   }>;
+  supportCards?: SupportProgramCardData[];
 }
 
-export function MessageBubble({ role, content, timestamp, onRegenerate, children, sources }: MessageBubbleProps) {
+export function MessageBubble({ role, content, timestamp, onRegenerate, children, sources, supportCards }: MessageBubbleProps) {
   const isUser = role === "user";
   if (role === "assistant") {
     console.log("SOURCES FOR MESSAGE:", { content: content.slice(0, 60), sources });
@@ -223,6 +225,15 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
             <MessageActions content={content} isAssistant={!isUser} onRegenerate={onRegenerate} />
           </div>
         </div>
+
+        {/* Support Program Cards - dışarıda göster */}
+        {!isUser && supportCards && supportCards.length > 0 && (
+          <div className="grid gap-3 mt-2 w-full">
+            {supportCards.map((card) => (
+              <SupportProgramCard key={card.id} data={card} />
+            ))}
+          </div>
+        )}
       </div>
 
       {isUser && (

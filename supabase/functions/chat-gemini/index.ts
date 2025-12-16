@@ -97,6 +97,119 @@ async function generateEmbedding(text: string, model: string, dimensions: number
   }
 }
 
+// Support Programs Search Functions
+function isSupportProgramQuery(message: string): boolean {
+  const lowerMsg = message.toLowerCase();
+  const keywords = [
+    "destek programı", "destek programları", "destekler", "hibeler", "hibe",
+    "çağrı", "çağrılar", "açık çağrı", "başvuru", "fon", "finansman",
+    "tübitak", "tubitak", "kosgeb", "kalkınma ajansı", "tkdk",
+    "kobi desteği", "ar-ge desteği", "ihracat desteği", "güncel destekler",
+    "hangi destekler", "ne tür destekler", "destek var mı",
+    "başvurabileceğim", "yararlanabileceğim", "destek programlarını"
+  ];
+  return keywords.some(kw => lowerMsg.includes(kw));
+}
+
+async function searchSupportPrograms(query: string, supabase: any): Promise<any[]> {
+  try {
+    // Generate embedding for query using OpenAI
+    const openaiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openaiKey) {
+      console.log("⚠️ No OpenAI API key for support program search");
+      return [];
+    }
+
+    const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openaiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: query,
+        dimensions: 1536,
+      }),
+    });
+
+    if (!embeddingResponse.ok) {
+      console.error("Failed to generate embedding for support search");
+      return [];
+    }
+
+    const embeddingData = await embeddingResponse.json();
+    const queryEmbedding = embeddingData.data[0].embedding;
+
+    // Search support programs
+    const { data: programs, error } = await supabase.rpc("match_support_programs", {
+      query_embedding: `[${queryEmbedding.join(",")}]`,
+      match_threshold: 0.4,
+      match_count: 5,
+    });
+
+    if (error) {
+      console.error("Error searching support programs:", error);
+      return [];
+    }
+
+    if (!programs || programs.length === 0) {
+      console.log("No matching support programs found");
+      return [];
+    }
+
+    console.log(`Found ${programs.length} matching support programs`);
+
+    // Enrich with related data
+    const enrichedPrograms = await Promise.all(
+      programs.map(async (p: any) => {
+        // Get institution
+        const { data: institution } = await supabase
+          .from("institutions")
+          .select("id, name")
+          .eq("id", p.institution_id)
+          .single();
+
+        // Get tags
+        const { data: tagLinks } = await supabase
+          .from("support_program_tags")
+          .select("tag_id, tags(id, name, category_id, tag_categories(id, name))")
+          .eq("support_program_id", p.id);
+
+        // Get files
+        const { data: files } = await supabase
+          .from("file_attachments")
+          .select("id, filename, file_url")
+          .eq("support_program_id", p.id);
+
+        const tags = tagLinks?.map((t: any) => ({
+          id: t.tags?.id,
+          name: t.tags?.name,
+          category: t.tags?.tag_categories,
+        })).filter((t: any) => t.id) || [];
+
+        return {
+          id: p.id,
+          title: p.title,
+          kurum: institution?.name || "Bilinmiyor",
+          son_tarih: p.application_deadline,
+          ozet: p.description?.substring(0, 300) + (p.description?.length > 300 ? "..." : ""),
+          uygunluk: p.eligibility_criteria?.substring(0, 200) + (p.eligibility_criteria?.length > 200 ? "..." : ""),
+          iletisim: p.contact_info,
+          belgeler: files || [],
+          tags: tags,
+          detay_link: `/program/${p.id}`,
+        };
+      })
+    );
+
+    return enrichedPrograms;
+  } catch (err) {
+    console.error("Error in searchSupportPrograms:", err);
+    return [];
+  }
+}
+
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -436,6 +549,14 @@ serve(async (req) => {
       .find((m: any) => m.role === "user");
     if (!lastUserMessage) {
       throw new Error("No user message found");
+    }
+
+    // Search support programs if query matches
+    let supportCards: any[] = [];
+    if (isSupportProgramQuery(lastUserMessage.content)) {
+      console.log("🔍 Detected support program query, searching...");
+      supportCards = await searchSupportPrograms(lastUserMessage.content, supabase);
+      console.log(`📋 Found ${supportCards.length} support programs`);
     }
 
     const lowerContent = lastUserMessage.content.toLowerCase();
@@ -924,6 +1045,7 @@ BAŞLA! 🔍
         // Flag ekle ki frontend bilsin
         const finalWithFeedback = await enrichAndReturn(textOut, groundingChunks, storeName, GEMINI_API_KEY || "", {
           enhancedViaFeedbackLoop: true,
+          supportCards,
         });
         return finalWithFeedback;
       }
@@ -950,7 +1072,7 @@ BAŞLA! 🔍
     let finalText = textOut;
 
     // Normal flow için de enrichment yap
-    return await enrichAndReturn(finalText, groundingChunks, storeName, GEMINI_API_KEY || "");
+    return await enrichAndReturn(finalText, groundingChunks, storeName, GEMINI_API_KEY || "", { supportCards });
   } catch (error) {
     console.error("❌ Error in chat-gemini:", error);
     return new Response(

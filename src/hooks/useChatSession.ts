@@ -2,6 +2,20 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateUUID } from '@/lib/uuid';
 
+export interface SupportProgramCardData {
+  id: string;
+  title: string;
+  kurum: string;
+  kurum_logo?: string;
+  son_tarih?: string;
+  ozet: string;
+  uygunluk?: string;
+  iletisim?: string;
+  belgeler: Array<{ id: string; filename: string; file_url: string }>;
+  tags: Array<{ id: number; name: string; category?: { id: number; name: string } }>;
+  detay_link: string;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -23,6 +37,7 @@ export interface ChatMessage {
     web?: { uri: string; title: string }; // Keep for backward compatibility
     enrichedFileName?: string | null;
   }>;
+  supportCards?: SupportProgramCardData[];
 }
 
 export interface ChatSession {
@@ -263,6 +278,7 @@ export function useChatSession() {
         timestamp: Date.now(),
         sources: data.sources,
         groundingChunks: data.groundingChunks,
+        supportCards: data.supportCards,
       };
       
       let streamingMessages = [...updatedMessages, emptyAssistantMessage];

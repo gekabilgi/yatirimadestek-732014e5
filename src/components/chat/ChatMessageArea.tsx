@@ -198,6 +198,7 @@ export function ChatMessageArea({
                 content={displayContent}
                 timestamp={message.timestamp}
                 sources={displaySources}
+                supportCards={message.supportCards}
                 onRegenerate={
                   message.role === "assistant" && index === messages.length - 1
                     ? () => onRegenerateMessage?.(index)
