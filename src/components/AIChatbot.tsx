@@ -754,7 +754,7 @@ export function AIChatbot() {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="fixed bottom-6 right-6 h-24 w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-[100]"
+          className="fixed bottom-6 right-6 h-22 w-22 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-[100]"
           aria-label="AI Asistan'ı Aç"
         >
           <Bot className="h-6 w-6" />
