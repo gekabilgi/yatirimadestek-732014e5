@@ -100,15 +100,41 @@ async function generateEmbedding(text: string, model: string, dimensions: number
 // Support Programs Search Functions
 function isSupportProgramQuery(message: string): boolean {
   const lowerMsg = message.toLowerCase();
+
+  // Program kodları (örn. "1507 desteği") açıkça destek programlarını işaret eder
+  const programCodeMatch = /\b(1501|1507|1509|1602|4006)\b/.test(lowerMsg);
+  if (programCodeMatch) return true;
+
   const keywords = [
-    "destek programı", "destek programları", "destekler", "hibeler", "hibe",
-    "çağrı", "çağrılar", "açık çağrı", "başvuru", "fon", "finansman",
-    "tübitak", "tubitak", "kosgeb", "kalkınma ajansı", "tkdk",
-    "kobi desteği", "ar-ge desteği", "ihracat desteği", "güncel destekler",
-    "hangi destekler", "ne tür destekler", "destek var mı",
-    "başvurabileceğim", "yararlanabileceğim", "destek programlarını"
+    "destek programı",
+    "destek programları",
+    "destekler",
+    "hibeler",
+    "hibe",
+    "çağrı",
+    "çağrılar",
+    "açık çağrı",
+    "başvuru",
+    "fon",
+    "finansman",
+    "tübitak",
+    "tubitak",
+    "kosgeb",
+    "kalkınma ajansı",
+    "tkdk",
+    "kobi desteği",
+    "ar-ge desteği",
+    "ihracat desteği",
+    "güncel destekler",
+    "hangi destekler",
+    "ne tür destekler",
+    "destek var mı",
+    "başvurabileceğim",
+    "yararlanabileceğim",
+    "destek programlarını",
   ];
-  return keywords.some(kw => lowerMsg.includes(kw));
+
+  return keywords.some((kw) => lowerMsg.includes(kw));
 }
 
 async function searchSupportPrograms(query: string, supabase: any): Promise<any[]> {
@@ -552,26 +578,42 @@ serve(async (req) => {
     }
 
     // Search support programs if query matches
+    const isSupportQuery = isSupportProgramQuery(lastUserMessage.content);
+
     let supportCards: any[] = [];
-    if (isSupportProgramQuery(lastUserMessage.content)) {
+    if (isSupportQuery) {
       console.log("🔍 Detected support program query, searching...");
       supportCards = await searchSupportPrograms(lastUserMessage.content, supabase);
       console.log(`📋 Found ${supportCards.length} support programs`);
     }
 
     const lowerContent = lastUserMessage.content.toLowerCase();
+
+    // Eğer kullanıcı doğrudan program kodu soruyorsa, LLM yerine kartları gösterelim.
+    const programCodeInQuery = /\b(1501|1507|1509|1602|4006)\b/.test(lowerContent);
+    if (programCodeInQuery && supportCards.length > 0) {
+      return await enrichAndReturn(
+        "İlgili destek programlarını aşağıda listeliyorum.",
+        [],
+        storeName,
+        GEMINI_API_KEY || "",
+        { supportCards, supportOnly: true },
+      );
+    }
+
     const isIncentiveRelated =
-      lowerContent.includes("teşvik") ||
-      lowerContent.includes("tesvik") ||
-      lowerContent.includes("hesapla") ||
-      lowerContent.includes("yatırım") ||
-      lowerContent.includes("yatirim") ||
-      lowerContent.includes("destek") ||
-      lowerContent.includes("sektör") ||
-      lowerContent.includes("sektor") ||
-      lowerContent.includes("üretim") ||
-      lowerContent.includes("uretim") ||
-      lowerContent.includes("imalat");
+      (lowerContent.includes("teşvik") ||
+        lowerContent.includes("tesvik") ||
+        lowerContent.includes("hesapla") ||
+        lowerContent.includes("yatırım") ||
+        lowerContent.includes("yatirim") ||
+        lowerContent.includes("destek") ||
+        lowerContent.includes("sektör") ||
+        lowerContent.includes("sektor") ||
+        lowerContent.includes("üretim") ||
+        lowerContent.includes("uretim") ||
+        lowerContent.includes("imalat")) &&
+      !isSupportQuery;
 
     console.log("isIncentiveRelated:", isIncentiveRelated);
 
