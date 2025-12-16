@@ -11,7 +11,27 @@ export interface ParsedContent {
  * AI mesajındaki takip sorusunu tespit edip ayırır
  */
 export function extractFollowUpQuestion(content: string): ParsedContent {
-  // Takip sorusu pattern'leri - son satırdaki soru cümlesini yakala
+  // Öncelik 1: API'den gelen özel format - "### 💬 Devam Etmek İçin" başlığı
+  const specialFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*\n?\**([^*\n]+)\**\s*$/i;
+  const specialMatch = content.match(specialFormatPattern);
+  if (specialMatch) {
+    const question = specialMatch[1].trim();
+    const formattedQuestion = question.endsWith('?') ? question : question + '?';
+    const mainContent = content.replace(specialFormatPattern, '').trim();
+    return { mainContent, followUpQuestion: formattedQuestion };
+  }
+
+  // Öncelik 2: Inline format - "### 💬 Devam Etmek İçin Bu yatırımı..." (satır sonu olmadan)
+  const inlineFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*(.+?)\??\s*$/i;
+  const inlineMatch = content.match(inlineFormatPattern);
+  if (inlineMatch) {
+    const question = inlineMatch[1].trim();
+    const formattedQuestion = question.endsWith('?') ? question : question + '?';
+    const mainContent = content.replace(inlineFormatPattern, '').trim();
+    return { mainContent, followUpQuestion: formattedQuestion };
+  }
+
+  // Öncelik 3: Standart takip sorusu pattern'leri
   const patterns = [
     // "...planlıyorsunuz?" tarzı sorular
     /\n\n([^.!?\n]*(?:planlıyorsunuz|belirtir misiniz|ister misiniz|paylaşır mısınız|söyler misiniz|bildirir misiniz|bildirmeniz|paylaşmanız)\??)\s*$/i,
@@ -29,7 +49,6 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
     const match = content.match(pattern);
     if (match) {
       const question = match[1].trim();
-      // Soru işareti yoksa ekle
       const formattedQuestion = question.endsWith('?') ? question : question + '?';
       const mainContent = content.replace(pattern, '').trim();
       return { mainContent, followUpQuestion: formattedQuestion };
