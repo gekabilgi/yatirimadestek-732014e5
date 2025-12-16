@@ -554,8 +554,43 @@ serve(async (req) => {
       }
     }
 
-    // If Vertex RAG mode, delegate to vertex-rag-query function
+    // If Vertex RAG mode, delegate to vertex-rag-query function (HYBRID: check support programs first)
     if (ragMode === "vertex_rag_corpora") {
+      const lastUserMessage = messages
+        .slice()
+        .reverse()
+        .find((m: any) => m.role === "user");
+      
+      if (!lastUserMessage) {
+        throw new Error("No user message found");
+      }
+
+      // HYBRID: First check if this is a support program query
+      const isSupportQuery = isSupportProgramQuery(lastUserMessage.content);
+      
+      if (isSupportQuery) {
+        console.log("🔍 [Vertex Hybrid] Detected support program query, searching...");
+        const supportCards = await searchSupportPrograms(lastUserMessage.content, supabase);
+        console.log(`📋 [Vertex Hybrid] Found ${supportCards.length} support programs`);
+
+        if (supportCards.length > 0) {
+          return new Response(
+            JSON.stringify({
+              text: "İlgili destek programlarını aşağıda listeliyorum.",
+              supportCards,
+              supportOnly: true,
+              sources: [],
+              groundingChunks: [],
+              vertexRag: true,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // If no support cards found, fall through to Vertex RAG
+        console.log("📋 [Vertex Hybrid] No support programs found, falling back to Vertex RAG");
+      }
+
+      // Normal Vertex RAG flow
       const { data: vertexCorpusData } = await supabase
         .from("admin_settings")
         .select("setting_value_text")
