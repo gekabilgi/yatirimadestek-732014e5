@@ -812,7 +812,7 @@ export function AIChatbot() {
           className="fixed bottom-4 right-4 md:bottom-6 md:right-6 h-16 w-16 md:h-24 md:w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-[100] animate-chatbot-pulse"
           aria-label="AI Asistan'ı Aç"
         >
-          <Bot className="h-8 w-8 md:h-12 md:w-12" />
+          <Bot className="h-10 w-10 md:h-14 md:w-14" />
         </Button>
       )}
 
