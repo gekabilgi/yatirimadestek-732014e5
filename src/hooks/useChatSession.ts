@@ -80,6 +80,7 @@ export function useChatSession() {
             timestamp: new Date(msg.created_at).getTime(),
             sources: msg.sources,
             groundingChunks: msg.grounding_chunks,
+            supportCards: msg.support_cards,
           }));
 
           // Generate title from first message
@@ -333,6 +334,10 @@ export function useChatSession() {
       
       if (!wasAborted && data.groundingChunks) {
         insertData.grounding_chunks = data.groundingChunks;
+      }
+      
+      if (!wasAborted && data.supportCards && data.supportCards.length > 0) {
+        insertData.support_cards = data.supportCards;
       }
       
       await supabase

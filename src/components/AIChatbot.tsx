@@ -404,10 +404,11 @@ export function AIChatbot() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const loadedMessages: Message[] = data.map((msg) => ({
+        const loadedMessages: Message[] = data.map((msg: any) => ({
           id: msg.id,
           role: msg.role as "user" | "assistant",
           content: msg.content,
+          supportCards: msg.support_cards,
         }));
         setMessages(loadedMessages);
         setCurrentSessionId(sessionId);
@@ -450,12 +451,18 @@ export function AIChatbot() {
       // Ensure session exists before saving message
       await createSessionIfNeeded(sessionId);
 
-      await supabase.from("cb_messages").insert({
+      const insertData: any = {
         id: message.id,
         session_id: sessionId,
         role: message.role,
         content: message.content,
-      });
+      };
+      
+      if (message.supportCards && message.supportCards.length > 0) {
+        insertData.support_cards = message.supportCards;
+      }
+
+      await supabase.from("cb_messages").insert(insertData);
     } catch (error) {
       console.error("Error saving message:", error);
     }
