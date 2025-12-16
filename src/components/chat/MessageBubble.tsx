@@ -4,7 +4,8 @@ import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { SupportProgramCard, SupportProgramCardData } from "./SupportProgramCard";
-
+import { FollowUpQuestionCard } from "./FollowUpQuestionCard";
+import { extractFollowUpQuestion } from "@/utils/followUpQuestionParser";
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
@@ -23,10 +24,13 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ role, content, timestamp, onRegenerate, children, sources, supportCards }: MessageBubbleProps) {
   const isUser = role === "user";
+  
+  // Takip sorusunu ana içerikten ayır
+  const { mainContent, followUpQuestion } = isUser ? { mainContent: content, followUpQuestion: null } : extractFollowUpQuestion(content);
+  
   if (role === "assistant") {
     console.log("SOURCES FOR MESSAGE:", { content: content.slice(0, 60), sources });
   }
-
   const formatTime = (date: string | number) => {
     const ts = typeof date === "number" ? date : date;
     return new Date(ts).toLocaleTimeString("tr-TR", {
@@ -38,7 +42,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
   // --- İçerik + Atıf Baloncukları ---
   const renderContentWithCitations = () => {
     if (!sources || sources.length === 0 || isUser) {
-      return <ReactMarkdown components={markdownComponentsBase}>{content}</ReactMarkdown>;
+      return <ReactMarkdown components={markdownComponentsBase}>{mainContent}</ReactMarkdown>;
     }
 
     const citationMap = new Map<string, JSX.Element[]>();
@@ -112,7 +116,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
       },
     };
 
-    return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
+    return <ReactMarkdown components={components}>{mainContent}</ReactMarkdown>;
   };
 
   // --- Alt kısım: Kullanılan Kaynaklar (chip'ler) ---
@@ -216,6 +220,11 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
 
           {/* Ek içerik (progress, ekstra info vs.) */}
           {children}
+
+          {/* Takip Sorusu Kartı */}
+          {!isUser && followUpQuestion && (
+            <FollowUpQuestionCard question={followUpQuestion} />
+          )}
 
           {/* Kullanılan Kaynaklar chip'leri */}
           {renderSourceSummary()}
