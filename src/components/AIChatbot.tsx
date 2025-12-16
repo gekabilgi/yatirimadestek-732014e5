@@ -137,20 +137,20 @@ const markdownComponents = {
   strong: ({ children, ...props }: any) => {
     // Extract text content from children
     const getText = (child: any): string => {
-      if (typeof child === 'string') return child;
-      if (Array.isArray(child)) return child.map(getText).join('');
+      if (typeof child === "string") return child;
+      if (Array.isArray(child)) return child.map(getText).join("");
       if (child?.props?.children) return getText(child.props.children);
-      return '';
+      return "";
     };
-    
+
     const text = getText(children);
-    
+
     // If content has colon, only bold the label part (before colon)
-    if (text.includes(':')) {
-      const colonIndex = text.indexOf(':');
+    if (text.includes(":")) {
+      const colonIndex = text.indexOf(":");
       const label = text.substring(0, colonIndex + 1);
       const rest = text.substring(colonIndex + 1);
-      
+
       return (
         <>
           <strong className="font-semibold text-primary">{label}</strong>
@@ -158,8 +158,12 @@ const markdownComponents = {
         </>
       );
     }
-    
-    return <strong className="font-semibold text-primary" {...props}>{children}</strong>;
+
+    return (
+      <strong className="font-semibold text-primary" {...props}>
+        {children}
+      </strong>
+    );
   },
   a: ({ href, children, ...props }: any) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" {...props}>
@@ -201,10 +205,10 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
   };
 
   const rawContent = showSources ? message.content : cleanCitations(message.content);
-  
+
   // Takip sorusunu ayır (sadece asistan mesajları için)
-  const { mainContent, followUpQuestion } = isUser 
-    ? { mainContent: rawContent, followUpQuestion: null } 
+  const { mainContent, followUpQuestion } = isUser
+    ? { mainContent: rawContent, followUpQuestion: null }
     : extractFollowUpQuestion(rawContent);
 
   const handleSpeak = () => {
@@ -224,20 +228,20 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
   // Takip Sorusu Kartı (floating widget için)
   const FollowUpCard = ({ question }: { question: string }) => (
     <div className="mt-3 pt-3 border-t border-border/40">
-      <div className="rounded-lg bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 
-                      border-2 border-primary/40 p-3 shadow-sm">
+      <div
+        className="rounded-lg bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 
+                      border-2 border-primary/40 p-3 shadow-sm"
+      >
         <div className="flex items-start gap-2">
-          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 
-                          flex items-center justify-center ring-2 ring-primary/30">
+          <div
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 
+                          flex items-center justify-center ring-2 ring-primary/30"
+          >
             <MessageSquare className="h-3.5 w-3.5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1">
-              Devam Etmek İçin
-            </p>
-            <p className="text-sm font-medium text-foreground leading-relaxed">
-              {question}
-            </p>
+            <p className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1">Devam Etmek İçin</p>
+            <p className="text-sm font-medium text-foreground leading-relaxed">{question}</p>
           </div>
         </div>
       </div>
@@ -512,7 +516,7 @@ export function AIChatbot() {
         role: message.role,
         content: message.content,
       };
-      
+
       if (message.supportCards && message.supportCards.length > 0) {
         insertData.support_cards = message.supportCards;
       }
@@ -809,10 +813,10 @@ export function AIChatbot() {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 h-16 w-16 md:h-24 md:w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-[100] animate-chatbot-pulse"
+          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 h-16 w-16 md:h-18 md:w-18 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-[100] animate-chatbot-pulse"
           aria-label="AI Asistan'ı Aç"
         >
-          <Bot className="h-10 w-10 md:h-14 md:w-14" />
+          <Bot className="h-12 w-12 md:h-18 md:w-18" />
         </Button>
       )}
 
