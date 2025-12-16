@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { GeminiStoreManager } from './GeminiStoreManager';
 import { CustomRagStoreManager } from './CustomRagStoreManager';
 import { VertexRagStoreManager } from './VertexRagStoreManager';
+import { SupportProgramsEmbeddingManager } from './SupportProgramsEmbeddingManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { adminSettingsService } from '@/services/adminSettingsService';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Database, Cloud, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Sparkles, Database, Cloud, Eye, EyeOff, Building2 } from 'lucide-react';
 
 export function KnowledgeBaseManager() {
   const [ragMode, setRagMode] = useState<'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'>('gemini_file_search');
@@ -138,7 +139,7 @@ export function KnowledgeBaseManager() {
 
       {/* Tab-based RAG System Selection */}
       <Tabs value={ragMode} onValueChange={handleModeChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
           {ragSystems.map((system) => {
             const Icon = system.icon;
             const isActive = ragMode === system.id;
@@ -163,6 +164,18 @@ export function KnowledgeBaseManager() {
               </TabsTrigger>
             );
           })}
+          <TabsTrigger
+            value="site_ici_destekler"
+            className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">Site İçi</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground hidden sm:block">
+              Destek Programları
+            </span>
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-4">
@@ -176,6 +189,10 @@ export function KnowledgeBaseManager() {
 
           <TabsContent value="vertex_rag_corpora" className="m-0">
             <VertexRagStoreManager />
+          </TabsContent>
+
+          <TabsContent value="site_ici_destekler" className="m-0">
+            <SupportProgramsEmbeddingManager />
           </TabsContent>
         </div>
       </Tabs>
