@@ -2301,6 +2301,7 @@ export type Database = {
           created_by: string | null
           description: string
           eligibility_criteria: string | null
+          embedding: string | null
           id: string
           institution_id: number | null
           title: string
@@ -2313,6 +2314,7 @@ export type Database = {
           created_by?: string | null
           description: string
           eligibility_criteria?: string | null
+          embedding?: string | null
           id?: string
           institution_id?: number | null
           title: string
@@ -2325,6 +2327,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           eligibility_criteria?: string | null
+          embedding?: string | null
           id?: string
           institution_id?: number | null
           title?: string
@@ -2905,6 +2908,23 @@ export type Database = {
           similarity: number
           source_document: string
           variants: string[]
+        }[]
+      }
+      match_support_programs: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          application_deadline: string
+          contact_info: string
+          description: string
+          eligibility_criteria: string
+          id: string
+          institution_id: number
+          similarity: number
+          title: string
         }[]
       }
       record_submission: {
