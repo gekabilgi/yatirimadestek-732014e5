@@ -28,31 +28,46 @@ serve(async (req) => {
 
     const ai = getAiClient();
 
-    const prompt = `Sana yatırım teşvikleri, destek programları ve ilgili mevzuatlarla ilgili dökümanlar verildi. 
-Bu dökümanları analiz ederek, kullanıcıların sıkça sorabileceği 6 pratik ve somut örnek soru üret.
+    const prompt = `Sen bir yatırım teşvik uzmanısın. Store'daki TÜM dökümanları (9903 Karar, Tebliğ, YKH listesi, HIT30, YTAK vb.) baştan sona tarayarak, yatırımcıların gerçek hayatta sorabileceği 12 FARKLI soru üret.
 
-Kurallar:
-- Sorular Türkçe olmalı
-- Her soru maksimum 15 kelime olsun
-- Spesifik ve pratik sorular ol (örn: "9903 sayılı kararda hangi destekler var?", "Stratejik yatırım için başvuru şartları nedir?")
-- Genel sorulardan kaçın (örn: "Teşvik nedir?" gibi)
-- Sadece JSON array formatında dön, başka açıklama ekleme
+⚠️ KRİTİK KURALLAR:
 
-⚠️ ÖNEMLİ: Oluşturduğun sorular:
-- PDF'teki cümlelerle BİREBİR AYNI olmamalı
-- Günlük konuşma diline yakın olmalı
-- Örnek: "KDV istisnası hangi yatırım harcamaları için geçerlidir?" yerine
-  → "Hangi harcamalarım KDV'den muaf olur?"
-  → "Hangi giderlerimde KDV ödemem?"
-  → "Makine alımında KDV öder miyim?"
+1. **FARKLI KATEGORİLERDEN SORULAR OLSUN:**
+   - 2 soru: İl/bölge bazlı (örn: "Kütahya'da hangi sektörler destekleniyor?")
+   - 2 soru: Sektör/ürün bazlı (örn: "Seramik üretimi için teşvik alabilir miyim?")
+   - 2 soru: Destek türleri (örn: "Vergi indirimi ne kadar sürer?")
+   - 2 soru: Başvuru/süreç (örn: "E-TUYS'a nasıl başvururum?")
+   - 2 soru: Mali konular (örn: "KDV istisnasından nasıl yararlanırım?")
+   - 2 soru: Özel programlar/belgeler (örn: "HIT 30 programına kimler başvurabilir?")
 
-Örnek format:
-["Soru 1", "Soru 2", "Soru 3", "Soru 4", "Soru 5", "Soru 6"]`;
+2. **HALK DİLİYLE YAZ - RESMİ DİL KULLANMA:**
+   ❌ YANLIŞ: "Yatırım teşvik belgesi kapsamında KDV istisnası hangi kalemlere uygulanır?"
+   ✅ DOĞRU: "Makine alırken KDV öder miyim?"
+   
+   ❌ YANLIŞ: "Stratejik yatırım teşvik belgesi için asgari yatırım tutarı nedir?"
+   ✅ DOĞRU: "Stratejik yatırım için en az ne kadar yatırım lazım?"
+   
+   ❌ YANLIŞ: "Bölgesel teşvik uygulamalarından hangi iller faydalanabilir?"
+   ✅ DOĞRU: "Hangi illerde daha çok teşvik var?"
+   
+   ❌ YANLIŞ: "SGK işveren hissesi desteğinin süresi ne kadardır?"
+   ✅ DOĞRU: "SGK desteği kaç yıl sürüyor?"
+
+3. **KISA VE NET OLSUN:** Maksimum 12 kelime
+
+4. **SOMUT OLSUN:** Genel değil, spesifik sorular (il adı, sektör adı, belge adı içersin)
+
+5. **ÇEŞİTLİ OLSUN:** Hiçbir soru birbirine benzemesin, farklı konulara değinsin
+
+6. **DÖKÜMANLARDAN İLHAM AL:** YKH listesindeki farklı ürünler, farklı iller, farklı destek türleri hakkında sor
+
+JSON array formatında dön: ["soru1", "soru2", ..., "soru12"]`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
+        temperature: 0.9, // High temperature for more creative/varied questions
         tools: [
           {
             fileSearch: {
@@ -66,22 +81,48 @@ Kurallar:
     let jsonText = response.text.trim();
     console.log("Raw AI response:", jsonText);
 
-    // Extract JSON from markdown code blocks
+    let questions: string[] = [];
+
+    // Try to extract JSON from markdown code blocks
     const jsonMatch = jsonText.match(/```json\n([\s\S]*?)\n```/);
     if (jsonMatch && jsonMatch[1]) {
       jsonText = jsonMatch[1];
       console.log("Extracted from code block");
-    } else {
-      // Fallback: extract array directly
-      const firstBracket = jsonText.indexOf("[");
-      const lastBracket = jsonText.lastIndexOf("]");
-      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-        jsonText = jsonText.substring(firstBracket, lastBracket + 1);
-        console.log("Extracted array directly");
+      try {
+        questions = JSON.parse(jsonText);
+      } catch (e) {
+        console.log("Failed to parse code block JSON:", e);
       }
     }
 
-    const questions = JSON.parse(jsonText);
+    // Fallback: extract array directly
+    if (questions.length === 0) {
+      const firstBracket = jsonText.indexOf("[");
+      const lastBracket = jsonText.lastIndexOf("]");
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        const arrayText = jsonText.substring(firstBracket, lastBracket + 1);
+        console.log("Trying to extract array directly");
+        try {
+          questions = JSON.parse(arrayText);
+        } catch (e) {
+          console.log("Failed to parse array JSON:", e);
+        }
+      }
+    }
+
+    // Fallback: extract numbered list
+    if (questions.length === 0) {
+      console.log("Trying numbered list extraction");
+      const numberedListRegex = /^\d+\.\s*(.+)$/gm;
+      let match;
+      while ((match = numberedListRegex.exec(jsonText)) !== null) {
+        const question = match[1].trim();
+        if (question && question.length > 5) {
+          questions.push(question);
+        }
+      }
+      console.log(`Extracted ${questions.length} questions from numbered list`);
+    }
 
     if (!Array.isArray(questions) || questions.length === 0) {
       console.warn("No questions generated, returning empty array");

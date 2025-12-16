@@ -209,4 +209,194 @@ export const adminSettingsService = {
       throw new Error(`Failed to set active Gemini store: ${error.message}`);
     }
   },
+
+  async getActiveTheme(): Promise<string> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'active_app_theme')
+      .single();
+
+    if (error || !data || !data.setting_value_text) {
+      return 'corporate-blue'; // fallback default
+    }
+
+    return data.setting_value_text;
+  },
+
+  async setActiveTheme(themeId: string): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'active_app_theme',
+        category: 'appearance',
+        setting_value_text: themeId,
+        description: 'Active theme ID for the application',
+        setting_value: 0,
+      }, {
+        onConflict: 'setting_key'
+      });
+
+    if (error) {
+      throw new Error(`Failed to set active theme: ${error.message}`);
+    }
+  },
+
+  async getChatbotRagMode(): Promise<'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'chatbot_rag_mode')
+      .single();
+
+    if (error) {
+      console.error('Error fetching chatbot RAG mode:', error);
+      return 'gemini_file_search';
+    }
+
+    return (data?.setting_value_text as any) || 'gemini_file_search';
+  },
+
+  async setChatbotRagMode(mode: 'gemini_file_search' | 'custom_rag' | 'vertex_rag_corpora'): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'chatbot_rag_mode',
+        category: 'chatbot',
+        setting_value: 0,
+        setting_value_text: mode,
+        description: 'Chatbot RAG mode: gemini_file_search, custom_rag, or vertex_rag_corpora'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting chatbot RAG mode:', error);
+      throw error;
+    }
+  },
+
+  async getActiveCustomRagStore(): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'active_custom_rag_store')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching active custom RAG store:', error);
+      return null;
+    }
+
+    return data?.setting_value_text || null;
+  },
+
+  async setActiveCustomRagStore(storeId: string | null): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'active_custom_rag_store',
+        category: 'chatbot',
+        setting_value: 0,
+        setting_value_text: storeId,
+        description: 'Active Custom RAG store ID'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting active custom RAG store:', error);
+      throw error;
+    }
+  },
+
+  async getActiveVertexCorpus(): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'active_vertex_corpus')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching active Vertex corpus:', error);
+      return null;
+    }
+
+    return data?.setting_value_text || null;
+  },
+
+  async setActiveVertexCorpus(corpusName: string | null): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'active_vertex_corpus',
+        category: 'chatbot',
+        setting_value: 0,
+        setting_value_text: corpusName,
+        description: 'Active Vertex AI RAG Corpus resource name'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting active Vertex corpus:', error);
+      throw error;
+    }
+  },
+
+  async setVertexRagSettings(settings: { topK: number; vectorDistanceThreshold: number }): Promise<void> {
+    const updates = [
+      {
+        setting_key: 'vertex_rag_top_k',
+        category: 'chatbot',
+        setting_value: settings.topK,
+        setting_value_text: null,
+        description: 'Vertex RAG top K similarity count'
+      },
+      {
+        setting_key: 'vertex_rag_threshold',
+        category: 'chatbot',
+        setting_value: settings.vectorDistanceThreshold,
+        setting_value_text: null,
+        description: 'Vertex RAG similarity threshold (0.0-1.0, higher = more strict matching)'
+      }
+    ];
+
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('admin_settings')
+        .upsert(update, { onConflict: 'setting_key' });
+
+      if (error) {
+        console.error(`Error setting ${update.setting_key}:`, error);
+        throw error;
+      }
+    }
+  },
+
+  async getChatbotShowSources(): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value')
+      .eq('setting_key', 'chatbot_show_sources')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching chatbot show sources:', error);
+      return true; // default to showing sources
+    }
+
+    return data?.setting_value === 1;
+  },
+
+  async setChatbotShowSources(show: boolean): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'chatbot_show_sources',
+        category: 'chatbot',
+        setting_value: show ? 1 : 0,
+        setting_value_text: null,
+        description: 'Show source citations in chatbot responses'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting chatbot show sources:', error);
+      throw error;
+    }
+  },
 };

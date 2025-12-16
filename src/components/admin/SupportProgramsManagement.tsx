@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdminSupportForm } from './AdminSupportForm';
 import { ProgramsList } from './ProgramsList';
 import { AdminPageHeader } from './AdminPageHeader';
@@ -11,10 +11,21 @@ import { Target } from 'lucide-react';
 
 type AdminView = 'list' | 'create' | 'edit' | 'clone';
 
-export const SupportProgramsManagement = () => {
+interface SupportProgramsManagementProps {
+  triggerCreate?: number;
+}
+
+export const SupportProgramsManagement = ({ triggerCreate }: SupportProgramsManagementProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentView, setCurrentView] = useState<AdminView>('list');
   const [editingProgram, setEditingProgram] = useState<SupportProgram | null>(null);
+
+  // Watch for triggerCreate changes to open create form
+  useEffect(() => {
+    if (triggerCreate && triggerCreate > 0) {
+      handleCreateNew();
+    }
+  }, [triggerCreate]);
 
   const handleSubmit = async (data: any) => {
     setIsLoading(true);

@@ -67,3 +67,12 @@ verify_jwt = true
 
 [functions.generate-example-questions]
 verify_jwt = false
+
+[functions.custom-rag-operations]
+verify_jwt = true
+
+[functions.vertex-rag-query]
+verify_jwt = false
+
+[functions.send-announcement-email]
+verify_jwt = true

@@ -5,9 +5,21 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { BarChart3, Users, FileText, TrendingUp, MessageSquare, Building, Calendar, Globe } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart3, Users, FileText, TrendingUp, MessageSquare, Building, Calendar, Globe, Target, DollarSign } from 'lucide-react';
 import GoogleAnalyticsCharts from '@/components/admin/GoogleAnalyticsCharts';
+
+interface FeasibilityReport {
+  id: string;
+  yatirim_konusu: string;
+  ust_sektor_tanim_tag: string | null;
+  il_tag: string | null;
+  yatirim_boyutu_tag: string | null;
+  sabit_yatirim_tutari: number | null;
+  istihdam: number | null;
+  geri_odeme_suresi: number | null;
+  created_at: string;
+}
 
 const AdminAnalytics = () => {
   const { data: qnaStats } = useQuery({
@@ -79,6 +91,20 @@ const AdminAnalytics = () => {
     },
   });
 
+  // Detailed feasibility stats for the new tab
+  const { data: detailedFeasibilityStats, isLoading: isFeasibilityLoading } = useQuery({
+    queryKey: ['detailed-feasibility-statistics'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('investment_feasibility_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as FeasibilityReport[];
+    },
+  });
+
   const { data: supportProgramStats } = useQuery({
     queryKey: ['analytics-support-programs-stats'],
     queryFn: async () => {
@@ -97,7 +123,80 @@ const AdminAnalytics = () => {
     },
   });
 
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
+  // Feasibility calculations
+  const totalReports = detailedFeasibilityStats?.length || 0;
+  const totalInvestmentDetailed = detailedFeasibilityStats?.reduce((sum, report) => sum + (report.sabit_yatirim_tutari || 0), 0) || 0;
+  const totalEmploymentDetailed = detailedFeasibilityStats?.reduce((sum, report) => sum + (report.istihdam || 0), 0) || 0;
+  const averagePayback = detailedFeasibilityStats?.length ? 
+    detailedFeasibilityStats.reduce((sum, report) => sum + (report.geri_odeme_suresi || 0), 0) / detailedFeasibilityStats.filter(r => r.geri_odeme_suresi).length : 0;
+
+  // Sector breakdown - grouped into 5 main categories
+  const mapToMainSector = (sector: string | null): string => {
+    if (!sector) return 'Diğer';
+    const s = sector.toLowerCase();
+    if (s.includes('tarım') || s.includes('hayvancılık') || s.includes('balıkçılık') || s.includes('ormancılık')) return 'Tarım';
+    if (s.includes('sanayi') || s.includes('imalat') || s.includes('üretim') || s.includes('tekstil') || s.includes('gıda') || s.includes('kimya') || s.includes('makine') || s.includes('otomotiv') || s.includes('elektronik') || s.includes('metal')) return 'Sanayi';
+    if (s.includes('maden') || s.includes('madencilik') || s.includes('taş ocağı')) return 'Madencilik';
+    if (s.includes('enerji') || s.includes('elektrik') || s.includes('doğalgaz') || s.includes('güneş') || s.includes('rüzgar')) return 'Enerji';
+    if (s.includes('hizmet') || s.includes('turizm') || s.includes('sağlık') || s.includes('eğitim') || s.includes('finans') || s.includes('lojistik') || s.includes('ulaşım') || s.includes('ticaret') || s.includes('perakende')) return 'Hizmetler';
+    return 'Diğer';
+  };
+
+  const sectorData = detailedFeasibilityStats?.reduce((acc, report) => {
+    const mainSector = mapToMainSector(report.ust_sektor_tanim_tag);
+    acc[mainSector] = (acc[mainSector] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Filter out "Diğer" if it has 0 value and sort by value
+  const sectorChartData = Object.entries(sectorData || {})
+    .filter(([name, value]) => value > 0)
+    .sort(([,a], [,b]) => b - a)
+    .map(([name, value]) => ({ name, value }));
+
+  // Investment scope breakdown
+  const scopeData = detailedFeasibilityStats?.reduce((acc, report) => {
+    const scope = report.yatirim_boyutu_tag || 'Belirtilmemiş';
+    acc[scope] = (acc[scope] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const scopeChartData = Object.entries(scopeData || {}).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  // Province breakdown (top 10)
+  const provinceDataFeasibility = detailedFeasibilityStats?.reduce((acc, report) => {
+    const province = report.il_tag || 'Belirtilmemiş';
+    acc[province] = (acc[province] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const provinceChartDataFeasibility = Object.entries(provinceDataFeasibility || {})
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10)
+    .map(([name, value]) => ({
+      name,
+      value,
+    }));
+
+  // Monthly trend for feasibility
+  const monthlyDataFeasibility = detailedFeasibilityStats?.reduce((acc, report) => {
+    const month = new Date(report.created_at).toLocaleString('tr-TR', { year: 'numeric', month: 'long' });
+    acc[month] = (acc[month] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const monthlyChartDataFeasibility = Object.entries(monthlyDataFeasibility || {})
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 12)
+    .map(([name, value]) => ({
+      name,
+      value,
+    }));
+
+  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1', '#d084d0', '#ffb347', '#87ceeb'];
 
   const answerStatusData = [
     { name: 'Cevaplanmış', value: qnaStats?.answered || 0, color: '#82ca9d' },
@@ -115,33 +214,47 @@ const AdminAnalytics = () => {
       <div className="p-6 space-y-6">
 
         <Tabs defaultValue="google-analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-auto p-2 bg-gradient-to-r from-slate-50 to-purple-50/30 border-2 border-slate-200/50 rounded-2xl shadow-lg backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-3 h-auto p-2 bg-gradient-to-r from-slate-50 to-purple-50/30 border-2 border-slate-200/50 rounded-2xl shadow-lg backdrop-blur-sm">
             <TabsTrigger 
               value="google-analytics" 
-              className="relative flex items-center justify-center gap-3 px-6 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-blue-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-blue-600 data-[state=inactive]:hover:bg-white/50 group"
+              className="relative flex items-center justify-center gap-3 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-blue-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-blue-600 data-[state=inactive]:hover:bg-white/50 group"
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md group-data-[state=active]:from-blue-600 group-data-[state=active]:to-blue-700 group-data-[state=active]:shadow-lg transition-all duration-300">
-                <Globe className="h-6 w-6" />
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md group-data-[state=active]:from-blue-600 group-data-[state=active]:to-blue-700 group-data-[state=active]:shadow-lg transition-all duration-300">
+                <Globe className="h-5 w-5" />
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-sm font-bold">Google Analytics</span>
-                <span className="text-xs opacity-75">Web Analitikleri</span>
+                <span className="text-xs opacity-75 hidden sm:block">Web Analitikleri</span>
               </div>
               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
             </TabsTrigger>
             
             <TabsTrigger 
               value="system-analytics" 
-              className="relative flex items-center justify-center gap-3 px-6 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-green-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/50 group"
+              className="relative flex items-center justify-center gap-3 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-green-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/50 group"
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md group-data-[state=active]:from-green-600 group-data-[state=active]:to-green-700 group-data-[state=active]:shadow-lg transition-all duration-300">
-                <BarChart3 className="h-6 w-6" />
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md group-data-[state=active]:from-green-600 group-data-[state=active]:to-green-700 group-data-[state=active]:shadow-lg transition-all duration-300">
+                <BarChart3 className="h-5 w-5" />
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-sm font-bold">Sistem Analitikleri</span>
-                <span className="text-xs opacity-75">Uygulama Verileri</span>
+                <span className="text-xs opacity-75 hidden sm:block">Uygulama Verileri</span>
               </div>
               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500/10 to-blue-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
+            </TabsTrigger>
+
+            <TabsTrigger 
+              value="feasibility-analytics" 
+              className="relative flex items-center justify-center gap-3 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-orange-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-orange-600 data-[state=inactive]:hover:bg-white/50 group"
+            >
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md group-data-[state=active]:from-orange-600 group-data-[state=active]:to-orange-700 group-data-[state=active]:shadow-lg transition-all duration-300">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-bold">Fizibilite İstatistikleri</span>
+                <span className="text-xs opacity-75 hidden sm:block">Yatırım Verileri</span>
+              </div>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/10 to-yellow-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
             </TabsTrigger>
           </TabsList>
 
@@ -240,18 +353,27 @@ const AdminAnalytics = () => {
                       <Pie
                         data={answerStatusData}
                         cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                        outerRadius={80}
+                        cy="45%"
+                        innerRadius={50}
+                        outerRadius={90}
                         fill="#8884d8"
                         dataKey="value"
+                        paddingAngle={2}
                       >
                         {answerStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value, name) => [`${value} soru`, name]} />
+                      <Legend 
+                        layout="horizontal" 
+                        align="center" 
+                        verticalAlign="bottom"
+                        formatter={(value, entry: any) => {
+                          const percent = entry.payload?.percent ? `(${(entry.payload.percent * 100).toFixed(0)}%)` : '';
+                          return `${value} ${percent}`;
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -361,6 +483,175 @@ const AdminAnalytics = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="feasibility-analytics" className="space-y-6">
+            {isFeasibilityLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Toplam Rapor Sayısı</CardTitle>
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{totalReports}</div>
+                      <p className="text-xs text-muted-foreground">Aktif fizibilite raporu</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Toplam Yatırım Tutarı</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {totalInvestmentDetailed.toLocaleString('tr-TR')} TL
+                      </div>
+                      <p className="text-xs text-muted-foreground">Toplam sabit yatırım</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Toplam İstihdam</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{totalEmploymentDetailed}</div>
+                      <p className="text-xs text-muted-foreground">Kişi istihdam</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Ortalama Geri Ödeme</CardTitle>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{averagePayback.toFixed(1)} ay</div>
+                      <p className="text-xs text-muted-foreground">Ortalama süre</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Sektör Dağılımı</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <PieChart>
+                          <Pie
+                            data={sectorChartData}
+                            cx="50%"
+                            cy="45%"
+                            innerRadius={50}
+                            outerRadius={90}
+                            fill="#8884d8"
+                            dataKey="value"
+                            paddingAngle={2}
+                          >
+                            {sectorChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value, name) => [`${value} rapor`, name]} />
+                          <Legend 
+                            layout="horizontal" 
+                            align="center" 
+                            verticalAlign="bottom"
+                            wrapperStyle={{ paddingTop: '20px' }}
+                            formatter={(value, entry: any) => {
+                              const percent = entry.payload?.percent ? `(${(entry.payload.percent * 100).toFixed(0)}%)` : '';
+                              return `${value} ${percent}`;
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Yatırım Kapsamı</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <PieChart>
+                          <Pie
+                            data={scopeChartData}
+                            cx="50%"
+                            cy="45%"
+                            innerRadius={50}
+                            outerRadius={90}
+                            fill="#82ca9d"
+                            dataKey="value"
+                            paddingAngle={2}
+                          >
+                            {scopeChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value, name) => [`${value} rapor`, name]} />
+                          <Legend 
+                            layout="horizontal" 
+                            align="center" 
+                            verticalAlign="bottom"
+                            wrapperStyle={{ paddingTop: '20px' }}
+                            formatter={(value, entry: any) => {
+                              const percent = entry.payload?.percent ? `(${(entry.payload.percent * 100).toFixed(0)}%)` : '';
+                              return `${value} ${percent}`;
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>En Çok Rapor Olan İller (Top 10)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={provinceChartDataFeasibility}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="value" fill="#f97316" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Aylık Rapor Trendi</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={monthlyChartDataFeasibility}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="value" fill="#fb923c" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </div>

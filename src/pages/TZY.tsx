@@ -64,7 +64,6 @@ const TZY = () => {
           text: "Dijital Eşleştirme Platformu",
           icon: LinkIcon
         }}
-        gradient="blue"
       />
 
       {/* Modern Flow Diagram */}

@@ -1,5 +1,20 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { generateUUID } from '@/lib/uuid';
+
+export interface SupportProgramCardData {
+  id: string;
+  title: string;
+  kurum: string;
+  kurum_logo?: string;
+  son_tarih?: string;
+  ozet: string;
+  uygunluk?: string;
+  iletisim?: string;
+  belgeler: Array<{ id: string; filename: string; file_url: string }>;
+  tags: Array<{ id: number; name: string; category?: { id: number; name: string } }>;
+  detay_link: string;
+}
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -9,6 +24,8 @@ export interface ChatMessage {
     title: string;
     uri: string;
     snippet?: string;
+    text?: string;
+    index?: number; // [1], [2] referansları için
   }>;
   groundingChunks?: Array<{
     retrievedContext?: {
@@ -18,7 +35,9 @@ export interface ChatMessage {
       customMetadata?: Array<{ key: string; stringValue?: string; value?: string }>;
     };
     web?: { uri: string; title: string }; // Keep for backward compatibility
+    enrichedFileName?: string | null;
   }>;
+  supportCards?: SupportProgramCardData[];
 }
 
 export interface ChatSession {
@@ -33,6 +52,7 @@ export function useChatSession() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Load sessions from database
   const loadSessions = useCallback(async () => {
@@ -60,6 +80,7 @@ export function useChatSession() {
             timestamp: new Date(msg.created_at).getTime(),
             sources: msg.sources,
             groundingChunks: msg.grounding_chunks,
+            supportCards: msg.support_cards,
           }));
 
           // Generate title from first message
@@ -93,7 +114,7 @@ export function useChatSession() {
 
   const createSession = useCallback(async (title: string = 'New Chat') => {
     try {
-      const sessionId = crypto.randomUUID();
+      const sessionId = generateUUID();
       
       const { error } = await supabase
         .from('chat_sessions')
@@ -161,6 +182,9 @@ export function useChatSession() {
     storeName: string
   ) => {
     setIsLoading(true);
+    
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       // Find session or create a temporary one if not found (race condition fix)
@@ -193,6 +217,9 @@ export function useChatSession() {
 
       const updatedMessages = [...session.messages, userMessage];
       updateSession(sessionId, { messages: updatedMessages });
+
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
 
       const { data, error } = await supabase.functions.invoke('chat-gemini', {
         body: {
@@ -245,13 +272,14 @@ export function useChatSession() {
       const words = fullResponse.split(' ');
       
       // Add empty assistant message for streaming
-      const assistantId = crypto.randomUUID();
+      const assistantId = generateUUID();
       const emptyAssistantMessage: ChatMessage = {
         role: 'assistant',
         content: '',
         timestamp: Date.now(),
         sources: data.sources,
         groundingChunks: data.groundingChunks,
+        supportCards: data.supportCards,
       };
       
       let streamingMessages = [...updatedMessages, emptyAssistantMessage];
@@ -259,7 +287,16 @@ export function useChatSession() {
 
       // Stream words with typewriter effect
       let currentText = '';
+      let wasAborted = false;
+      
       for (let i = 0; i < words.length; i++) {
+        // Check if aborted before processing each word
+        if (abortControllerRef.current?.signal.aborted) {
+          wasAborted = true;
+          currentText += ' [yanıt durduruldu]';
+          break;
+        }
+        
         currentText += (i > 0 ? ' ' : '') + words[i];
         
         const updatedAssistantMessage: ChatMessage = {
@@ -274,28 +311,44 @@ export function useChatSession() {
         await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 20));
       }
 
-      // Final assistant message with full content
+      // Final assistant message
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: fullResponse,
+        content: wasAborted ? currentText : fullResponse,
         timestamp: Date.now(),
-        sources: data.sources,
-        groundingChunks: data.groundingChunks,
+        sources: wasAborted ? null : data.sources,
+        groundingChunks: wasAborted ? null : data.groundingChunks,
+        supportCards: wasAborted ? null : data.supportCards,
       };
 
       // Save assistant message to database
+      const insertData: any = {
+        session_id: sessionId,
+        role: 'assistant',
+        content: assistantMessage.content,
+      };
+      
+      if (!wasAborted && data.sources) {
+        insertData.sources = data.sources;
+      }
+      
+      if (!wasAborted && data.groundingChunks) {
+        insertData.grounding_chunks = data.groundingChunks;
+      }
+      
+      if (!wasAborted && data.supportCards && data.supportCards.length > 0) {
+        insertData.support_cards = data.supportCards;
+      }
+      
       await supabase
         .from('chat_messages')
-        .insert({
-          session_id: sessionId,
-          role: 'assistant',
-          content: fullResponse,
-          sources: data.sources,
-          grounding_chunks: data.groundingChunks,
-        });
+        .insert(insertData);
 
-      const finalMessages = [...updatedMessages, assistantMessage];
-      updateSession(sessionId, { messages: finalMessages });
+      updateSession(sessionId, { messages: [...updatedMessages, assistantMessage] });
+
+      if (wasAborted) {
+        return { success: false, interrupted: true };
+      }
 
       // Auto-generate title from first user message
       if (session.messages.length === 0 && message.length > 0) {
@@ -304,13 +357,31 @@ export function useChatSession() {
       }
 
       return { success: true, data };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle abort error gracefully
+      if (error.name === 'AbortError') {
+        console.log('Request was aborted');
+        return { success: false, aborted: true };
+      }
       console.error('Error sending message:', error);
       return { success: false, error };
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   }, [sessions, updateSession]);
+
+  const stopGeneration = useCallback(() => {
+    console.log('stopGeneration called');
+    
+    // Abort the controller
+    if (abortControllerRef.current) {
+      console.log('Aborting controller');
+      abortControllerRef.current.abort();
+    }
+    
+    setIsLoading(false);
+  }, []);
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || null;
 
@@ -325,5 +396,6 @@ export function useChatSession() {
     deleteSession,
     sendMessage,
     setActiveSessionId,
+    stopGeneration,
   };
 }

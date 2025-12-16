@@ -32,11 +32,13 @@ const MainNavbar = () => {
       try {
         const { menuVisibilityService } = await import('@/services/menuVisibilityService');
         const { MENU_ITEMS } = await import('@/types/menuSettings');
-        const settings = await menuVisibilityService.getMenuVisibilitySettings();
+        
+        // Get effective settings for current domain (domain-specific or global)
+        const { settings } = await menuVisibilityService.getEffectiveMenuSettings('frontend');
         
         // Filter menu items based on visibility settings and user state
         const visibleItems = MENU_ITEMS.filter(item => {
-          const mode = settings[item.settingKey];
+          const mode = (settings as any)[item.settingKey];
           return shouldShowMenuItem(mode, !!user, isAdmin);
         }).map(item => ({
           name: item.title,
@@ -46,7 +48,6 @@ const MainNavbar = () => {
         setVisibleNavItems(visibleItems);
       } catch (error) {
         console.error('Error loading menu settings:', error);
-        // Fallback to default if error
         setVisibleNavItems([{ name: 'Destek Arama', href: '/searchsupport' }]);
       }
     };
@@ -55,7 +56,12 @@ const MainNavbar = () => {
   }, [user, isAdmin]);
 
   return (
-    <nav className="nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm">
+    <nav 
+      id="main-navigation"
+      className="nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm"
+      role="navigation"
+      aria-label="Ana menü"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}

@@ -144,32 +144,43 @@ serve(async (req) => {
         const fileBuffer = await (file as File).arrayBuffer();
         const fileName = (file as File).name;
         const mimeType = (file as File).type || "application/octet-stream";
-        const finalDisplayName = displayName || fileName;
+        // Boş string'i de falsy olarak ele al
+        const finalDisplayName = (displayName && displayName.trim()) || fileName;
 
-        // Prepare metadata including fileName and custom metadata
-        const metadata: { key: string; stringValue: string }[] = [
-          { key: "fileName", stringValue: finalDisplayName },
-          { key: "uploadDate", stringValue: new Date().toISOString() },
-        ];
-
-        // Add custom metadata if provided
+        // Parse custom metadata and filter out "Dosya" key (we'll add our own)
+        let customMeta: { key: string; stringValue: string }[] = [];
         if (customMetadataStr) {
           try {
-            const customMeta = JSON.parse(customMetadataStr);
-            if (Array.isArray(customMeta)) {
-              const filteredMeta = customMeta.filter(m => m.key && m.key.trim());
-              metadata.push(...filteredMeta);
+            const parsed = JSON.parse(customMetadataStr);
+            if (Array.isArray(parsed)) {
+              // Filter out any "Dosya" key from user's metadata to prevent duplicates
+              // Also filter out empty stringValues
+              customMeta = parsed.filter(m => 
+                m.key && 
+                m.key.trim() && 
+                m.key !== "Dosya" && // ✨ Skip "Dosya" from user input
+                m.stringValue && m.stringValue.trim() !== "" // ✨ Skip empty values
+              );
             }
           } catch (e) {
             console.warn("Failed to parse customMetadata:", e);
           }
         }
 
+        // Prepare metadata with automatic "Dosya" key (double fallback for safety)
+        const metadata: { key: string; stringValue: string }[] = [
+          { key: "fileName", stringValue: finalDisplayName },
+          { key: "uploadDate", stringValue: new Date().toISOString() },
+          { key: "Dosya", stringValue: finalDisplayName || fileName }, // ✨ Double fallback
+          ...customMeta // Add other user metadata (excluding "Dosya")
+        ];
+
         console.log("🔵 STEP 1: Prepared metadata:", JSON.stringify(metadata, null, 2));
         console.log("🔵 File name:", fileName);
         console.log("🔵 Display name:", finalDisplayName);
 
-        // Filter custom metadata (exclude internal metadata like fileName, uploadDate)
+        // Filter out internal-only metadata (fileName, uploadDate)
+        // Keep "Dosya" and other custom metadata for Gemini
         const customOnlyMetadata = metadata.filter(m => 
           m.key !== 'fileName' && m.key !== 'uploadDate'
         );
@@ -193,6 +204,12 @@ serve(async (req) => {
           config: {
             displayName: finalDisplayName,
             customMetadata: geminiMetadata,
+            chunkingConfig: {
+              whiteSpaceConfig: {
+                maxTokensPerChunk: 150,      // Small chunks = 1-2 province entries per chunk
+                maxOverlapTokens: 30         // 20% overlap ensures no split entries
+              }
+            }
           },
         });
 

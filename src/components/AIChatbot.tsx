@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import { generateUUID } from "@/lib/uuid";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,17 +20,26 @@ import {
   PlusCircle,
   History,
   Search,
+  Volume2,
+  VolumeX,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getActiveStore, generateExampleQuestions } from "@/services/geminiRagService";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { useChatbotStats } from "@/hooks/useChatbotStats";
+import { useChatbotSettings } from "@/hooks/useChatbotSettings";
+import { SupportProgramCard, type SupportProgramCardData } from "@/components/chat/SupportProgramCard";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   id: string;
+  supportCards?: SupportProgramCardData[];
 }
 
 interface ChatSession {
@@ -99,19 +110,126 @@ function renderContentWithBadges(content: string) {
   return nodes;
 }
 
-function MessageBubble({ message }: { message: Message }) {
+// Markdown bileşenleri - asistan mesajları için formatlama
+const markdownComponents = {
+  p: ({ children, ...props }: any) => (
+    <p className="mb-2 last:mb-0" {...props}>
+      {children}
+    </p>
+  ),
+  ul: ({ children, ...props }: any) => (
+    <ul className="list-disc list-inside mb-2 space-y-1 pl-2" {...props}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children, ...props }: any) => (
+    <ol className="list-decimal list-inside mb-2 space-y-1 pl-2" {...props}>
+      {children}
+    </ol>
+  ),
+  li: ({ children, ...props }: any) => (
+    <li className="text-sm leading-relaxed" {...props}>
+      {children}
+    </li>
+  ),
+  strong: ({ children, ...props }: any) => (
+    <strong className="font-semibold text-primary" {...props}>
+      {children}
+    </strong>
+  ),
+  a: ({ href, children, ...props }: any) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" {...props}>
+      {children}
+    </a>
+  ),
+  code: ({ children, ...props }: any) => (
+    <code className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono" {...props}>
+      {children}
+    </code>
+  ),
+  h1: ({ children, ...props }: any) => (
+    <h1 className="text-base font-bold mb-2" {...props}>
+      {children}
+    </h1>
+  ),
+  h2: ({ children, ...props }: any) => (
+    <h2 className="text-sm font-bold mb-2" {...props}>
+      {children}
+    </h2>
+  ),
+  h3: ({ children, ...props }: any) => (
+    <h3 className="text-sm font-semibold mb-1" {...props}>
+      {children}
+    </h3>
+  ),
+};
+
+function MessageBubble({ message, showSources }: { message: Message; showSources: boolean }) {
   const isUser = message.role === "user";
+  const { speak, stop, isSpeaking, isSupported } = useSpeechSynthesis({ lang: "tr-TR", rate: 0.9 });
+
+  // Clean citations from content if showSources is disabled
+  const cleanCitations = (text: string): string => {
+    return text
+      .replace(/\[(\d+(?:,\s*\d+)*)\]/g, "") // Remove [1], [2, 3] etc.
+      .replace(/\s{2,}/g, " ") // Clean up extra spaces
+      .trim();
+  };
+
+  const displayContent = showSources ? message.content : cleanCitations(message.content);
+
+  const handleSpeak = () => {
+    if (isSpeaking) {
+      stop();
+    } else {
+      const cleanText = displayContent
+        .replace(/\[badge:[^\]]+\]/gi, "")
+        .replace(/\[(\d+)\]/g, "")
+        .replace(/[#*_`]/g, "")
+        .replace(/\n+/g, ". ")
+        .trim();
+      speak(cleanText);
+    }
+  };
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[85%] rounded-lg p-3 ${
-          isUser ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white" : "bg-muted"
-        }`}
-      >
-        <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
-          {renderContentWithBadges(message.content)}
+      <div className="max-w-[85%]">
+        <div
+          className={`rounded-lg p-3 ${
+            isUser ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white" : "bg-muted"
+          }`}
+        >
+          <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+            {isUser ? (
+              <span className="whitespace-pre-wrap">{displayContent}</span>
+            ) : (
+              <ReactMarkdown components={markdownComponents}>{displayContent}</ReactMarkdown>
+            )}
+          </div>
+
+          {!isUser && isSupported && (
+            <div className="mt-2 pt-1.5 border-t border-border/30 flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-6 px-2 text-xs gap-1 ${isSpeaking ? "text-primary" : "text-muted-foreground"}`}
+                onClick={handleSpeak}
+              >
+                {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                {isSpeaking ? "Durdur" : "Sesli Oku"}
+              </Button>
+            </div>
+          )}
         </div>
+
+        {!isUser && message.supportCards && message.supportCards.length > 0 && (
+          <div className="grid gap-3 mt-2">
+            {message.supportCards.map((card) => (
+              <SupportProgramCard key={card.id} data={card} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -119,15 +237,15 @@ function MessageBubble({ message }: { message: Message }) {
 
 export function AIChatbot() {
   const location = useLocation();
-  
+
   // Hide chatbot on the /chat page
-  if (location.pathname === '/chat') {
+  if (location.pathname === "/chat") {
     return null;
   }
 
   const [isOpen, setIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => generateUUID());
   const [activeStoreCache, setActiveStoreCache] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -145,13 +263,67 @@ export function AIChatbot() {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
-  const [currentSuggestion, setCurrentSuggestion] = useState('');
+  const [currentSuggestion, setCurrentSuggestion] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { trackUserMessage, trackAssistantMessage, trackNewSession, trackUniqueSession } = useChatbotStats();
+  const { showSources } = useChatbotSettings();
 
-  // Load active store on mount
+  // Track widget open and unique session
+  useEffect(() => {
+    if (isOpen) {
+      trackUniqueSession("floating_widget");
+    }
+  }, [isOpen, trackUniqueSession]);
+
+  // Voice input handler
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast({
+        variant: "destructive",
+        title: "Desteklenmiyor",
+        description: "Tarayıcınız sesli giriş özelliğini desteklemiyor.",
+      });
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = "tr-TR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onend = () => setIsRecording(false);
+    recognition.onerror = (event: any) => {
+      setIsRecording(false);
+      if (event.error === "not-allowed") {
+        toast({
+          variant: "destructive",
+          title: "Mikrofon Erişimi Reddedildi",
+          description: "Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.",
+        });
+      }
+    };
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => prev + (prev ? " " : "") + transcript);
+    };
+
+    recognition.start();
+  };
   useEffect(() => {
     getActiveStore().then(setActiveStoreCache);
   }, []);
@@ -169,7 +341,7 @@ export function AIChatbot() {
         const questions = await generateExampleQuestions(activeStoreCache);
         setExampleQuestions(questions);
       } catch (error) {
-        console.error('Failed to load example questions:', error);
+        console.error("Failed to load example questions:", error);
         setExampleQuestions([]);
       } finally {
         setIsGeneratingQuestions(false);
@@ -182,13 +354,13 @@ export function AIChatbot() {
   // Rotate through example questions
   useEffect(() => {
     if (exampleQuestions.length === 0) {
-      setCurrentSuggestion('');
+      setCurrentSuggestion("");
       return;
     }
 
     setCurrentSuggestion(exampleQuestions[0]);
     let suggestionIndex = 0;
-    
+
     const intervalId = setInterval(() => {
       suggestionIndex = (suggestionIndex + 1) % exampleQuestions.length;
       setCurrentSuggestion(exampleQuestions[suggestionIndex]);
@@ -232,10 +404,11 @@ export function AIChatbot() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const loadedMessages: Message[] = data.map((msg) => ({
+        const loadedMessages: Message[] = data.map((msg: any) => ({
           id: msg.id,
           role: msg.role as "user" | "assistant",
           content: msg.content,
+          supportCards: msg.support_cards,
         }));
         setMessages(loadedMessages);
         setCurrentSessionId(sessionId);
@@ -277,13 +450,19 @@ export function AIChatbot() {
     try {
       // Ensure session exists before saving message
       await createSessionIfNeeded(sessionId);
-      
-      await supabase.from("cb_messages").insert({
+
+      const insertData: any = {
         id: message.id,
         session_id: sessionId,
         role: message.role,
         content: message.content,
-      });
+      };
+      
+      if (message.supportCards && message.supportCards.length > 0) {
+        insertData.support_cards = message.supportCards;
+      }
+
+      await supabase.from("cb_messages").insert(insertData);
     } catch (error) {
       console.error("Error saving message:", error);
     }
@@ -306,12 +485,15 @@ export function AIChatbot() {
     setInput("");
 
     // Add user message
-    const userMsgId = crypto.randomUUID();
+    const userMsgId = generateUUID();
     const newUserMsg: Message = { id: userMsgId, role: "user", content: userMessage };
     setMessages((prev) => [...prev, newUserMsg]);
 
     // Save user message to database
     await saveMessage(newUserMsg, currentSessionId);
+
+    // Track user message for statistics
+    trackUserMessage("floating_widget");
 
     setIsLoading(true);
     setShouldAutoScroll(true);
@@ -329,6 +511,7 @@ export function AIChatbot() {
         body: {
           storeName: activeStoreCache,
           messages: [...messages, { role: "user", content: userMessage }],
+          sessionId: currentSessionId,
         },
       });
 
@@ -349,7 +532,7 @@ export function AIChatbot() {
           variant: "default",
         });
 
-        const assistantId = crypto.randomUUID();
+        const assistantId = generateUUID();
         const blockedMsg: Message = {
           id: assistantId,
           role: "assistant",
@@ -364,13 +547,52 @@ export function AIChatbot() {
         return;
       }
 
-      if (!data || !data.text) {
-        console.error("Invalid response data:", data);
-        throw new Error("Geçersiz yanıt formatı");
+      if (!data || !data.text || data.text.trim().length === 0) {
+        console.error("Invalid or empty response data:", data);
+
+        let fallbackMessage = "Yanıt alınamadı. Lütfen tekrar deneyin.";
+
+        if (data?.emptyResponse) {
+          fallbackMessage =
+            "Üzgünüm, belgelerimde bu konuyla ilgili bilgi bulamadım. Sorunuzu farklı kelimelerle ifade ederek tekrar deneyin.";
+        } else if (data?.retriedWithDynamicSearch) {
+          fallbackMessage =
+            "Kapsamlı arama yapıldı ancak sonuç bulunamadı. İlgili Yatırım Destek Ofisi ile iletişime geçmenizi öneririz.";
+        }
+
+        const errorMsg: Message = {
+          id: generateUUID(),
+          role: "assistant",
+          content: fallbackMessage,
+        };
+
+        setMessages((prev) => [...prev, errorMsg]);
+        await saveMessage(errorMsg, currentSessionId);
+        loadChatSessions();
+
+        toast({
+          title: "Arama Tamamlandı",
+          description: data?.retriedWithDynamicSearch
+            ? "Detaylı arama yapıldı, ancak sonuç bulunamadı."
+            : "Sonuç bulunamadı.",
+          variant: "default",
+        });
+
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.enhancedViaFeedbackLoop) {
+        console.log("✅ Response enhanced via feedback loop");
+        toast({
+          title: "Genişletilmiş Arama",
+          description: "Daha kapsamlı sonuçlar için ek arama yapıldı.",
+          variant: "default",
+        });
       }
 
       // Add assistant response
-      const assistantId = crypto.randomUUID();
+      const assistantId = generateUUID();
 
       // Simulate typing effect
       setIsStreaming(true);
@@ -378,8 +600,11 @@ export function AIChatbot() {
       const words = fullResponse.split(" ");
       let currentText = "";
 
-      // Add empty message first
-      setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
+      // Add empty message first (preserve support cards while streaming)
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: "", supportCards: data.supportCards || [] },
+      ]);
 
       // Stream words
       for (let i = 0; i < words.length; i++) {
@@ -393,11 +618,19 @@ export function AIChatbot() {
       }
 
       // Ensure full response is shown
-      const finalAssistantMsg: Message = { id: assistantId, role: "assistant", content: fullResponse };
+      const finalAssistantMsg: Message = {
+        id: assistantId,
+        role: "assistant",
+        content: fullResponse,
+        supportCards: data.supportCards || [],
+      };
       setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? finalAssistantMsg : msg)));
 
       // Save assistant message to database
       await saveMessage(finalAssistantMsg, currentSessionId);
+
+      // Track assistant message for statistics
+      trackAssistantMessage("floating_widget");
 
       // Reload sessions to update list
       loadChatSessions();
@@ -461,17 +694,19 @@ export function AIChatbot() {
   };
 
   const handleNewChat = () => {
-    const newSessionId = crypto.randomUUID();
+    const newSessionId = generateUUID();
     setCurrentSessionId(newSessionId);
     setMessages([
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: "assistant",
         content: "Merhaba! Size nasıl yardımcı olabilirim? Sorularınızı yanıtlamak için buradayım.",
       },
     ]);
     setInput("");
     setShowHistory(false);
+    // Track new session
+    trackNewSession("floating_widget");
   };
 
   const handleClear = () => {
@@ -519,7 +754,7 @@ export function AIChatbot() {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-50"
+          className="fixed bottom-6 right-6 h-24 w-24 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 z-[100]"
           aria-label="AI Asistan'ı Aç"
         >
           <Bot className="h-6 w-6" />
@@ -529,11 +764,11 @@ export function AIChatbot() {
       {/* Chat Modal */}
       {isOpen && (
         <Card
-          className={`fixed ${isMobile ? "top-16 left-0 right-0 bottom-0" : "bottom-6 right-6 w-[480px] h-[680px]"} shadow-2xl z-50 flex ${showHistory ? "flex-row" : "flex-col"} border-2 animate-in slide-in-from-bottom-5 duration-300`}
+          className={`fixed ${isMobile ? "top-16 left-0 right-0 bottom-0" : "bottom-6 right-6 w-[480px] max-h-[90vh] h-[768px]"} shadow-2xl z-[100] flex ${showHistory ? "flex-row" : "flex-col"} border-2 animate-in slide-in-from-bottom-5 duration-300`}
         >
           {/* Chat History Sidebar */}
           {showHistory && (
-            <div className={`${isMobile ? "absolute inset-0 bg-background z-10" : "w-64"} border-r flex flex-col`}>
+            <div className={`${isMobile ? "absolute inset-0 bg-background z-[110]" : "w-64"} border-r flex flex-col`}>
               <div className="p-3 border-b">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-sm flex items-center gap-2">
@@ -663,7 +898,7 @@ export function AIChatbot() {
             <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={scrollRef} onScroll={handleScroll}>
               <div className="space-y-4 p-3 sm:p-4">
                 {messages.map((message) => (
-                  <MessageBubble key={message.id} message={message} />
+                  <MessageBubble key={message.id} message={message} showSources={showSources} />
                 ))}
 
                 {isLoading && !isStreaming && (
@@ -709,9 +944,7 @@ export function AIChatbot() {
             )}
 
             {/* Example Questions Section - Single Rotating Question */}
-            {!isLoading && 
-             messages.length <= 2 && 
-             currentSuggestion && (
+            {!isLoading && messages.length <= 2 && currentSuggestion && (
               <div className="px-3 sm:px-4 py-2 border-t border-b bg-muted/20">
                 <button
                   onClick={() => handleQuestionClick(currentSuggestion)}
@@ -729,12 +962,8 @@ export function AIChatbot() {
                       →
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground font-medium mb-1">
-                        Örnek soru:
-                      </p>
-                      <p className="text-sm text-foreground line-clamp-2">
-                        {currentSuggestion}
-                      </p>
+                      <p className="text-xs text-muted-foreground font-medium mb-1">Örnek soru:</p>
+                      <p className="text-sm text-foreground line-clamp-2">{currentSuggestion}</p>
                     </div>
                   </div>
                 </button>
@@ -754,19 +983,31 @@ export function AIChatbot() {
                   disabled={isLoading}
                   aria-label="Soru girin"
                 />
-                <Button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  size="icon"
-                  className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto min-w-[44px]"
-                  aria-label="Gönder"
-                >
-                  {isLoading && !isStreaming ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
+                <div className="flex flex-col gap-1">
+                  <Button
+                    onClick={handleVoiceInput}
+                    disabled={isLoading}
+                    size="icon"
+                    variant={isRecording ? "destructive" : "outline"}
+                    className={`h-[22px] min-w-[44px] ${isRecording ? "animate-pulse" : ""}`}
+                    aria-label={isRecording ? "Kaydı durdur" : "Sesli giriş"}
+                  >
+                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 flex-1 min-w-[44px]"
+                    aria-label="Gönder"
+                  >
+                    {isLoading && !isStreaming ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

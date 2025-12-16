@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useChatbotStats } from '@/hooks/useChatbotStats';
 
 export default function Chat() {
   const {
@@ -22,6 +23,7 @@ export default function Chat() {
     sendMessage,
     setActiveSessionId,
     updateSession,
+    stopGeneration,
   } = useChatSession();
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
@@ -32,6 +34,12 @@ export default function Chat() {
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { trackUserMessage, trackAssistantMessage, trackNewSession, trackUniqueSession } = useChatbotStats();
+
+  // Track page visit and unique session
+  useEffect(() => {
+    trackUniqueSession('chat_page');
+  }, [trackUniqueSession]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -43,6 +51,7 @@ export default function Chat() {
       // Create first session if none exists after loading
       if (loadedSessions.length === 0) {
         await createSession();
+        trackNewSession('chat_page');
       }
     };
     initialize();
@@ -106,16 +115,24 @@ export default function Chat() {
       return;
     }
 
+    // Track user message
+    trackUserMessage('chat_page');
+
     if (!activeSessionId) {
       const newSession = await createSession();
+      trackNewSession('chat_page');
       await sendMessage(newSession.id, message, activeStore);
     } else {
       await sendMessage(activeSessionId, message, activeStore);
     }
+    
+    // Track assistant message (will be tracked after response)
+    trackAssistantMessage('chat_page');
   };
 
   const handleCreateSession = async () => {
     await createSession();
+    trackNewSession('chat_page');
     setIsSidebarOpen(false);
   };
 
@@ -187,12 +204,12 @@ export default function Chat() {
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block w-80">
+      <aside className="hidden lg:block w-80" role="complementary" aria-label="Sohbet geçmişi">
         {SidebarContent}
-      </div>
+      </aside>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <main id="main-content" className="flex-1 flex flex-col" role="main" aria-label="Sohbet alanı">
         {/* Mobile Sidebar */}
         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
           <div className="lg:hidden border-b p-2">
@@ -230,10 +247,18 @@ export default function Chat() {
         <ChatInput
           onSendMessage={handleSendMessage}
           disabled={isLoading || !activeStore}
+          isGenerating={isLoading}
           value={inputValue}
           onValueChange={setInputValue}
+          onStop={() => {
+            stopGeneration();
+            toast({
+              title: 'Durduruldu',
+              description: 'Yanıt oluşturma işlemi durduruldu.',
+            });
+          }}
         />
-      </div>
+      </main>
     </div>
   );
 }

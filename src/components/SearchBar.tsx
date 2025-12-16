@@ -27,6 +27,19 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
     fetchTags();
   }, []);
 
+  // Auto-search with debouncing when keyword changes
+  useEffect(() => {
+    if (keyword.length >= 3) {
+      const debounceTimer = setTimeout(() => {
+        handleSearch();
+      }, 400);
+      
+      return () => clearTimeout(debounceTimer);
+    } else if (keyword.length === 0) {
+      handleSearch();
+    }
+  }, [keyword]);
+
   const fetchTags = async () => {
     try {
       const { data, error } = await supabase

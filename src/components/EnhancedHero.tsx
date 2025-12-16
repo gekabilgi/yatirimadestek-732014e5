@@ -1,21 +1,77 @@
-import React, { useEffect } from 'react';
-import { ArrowRight, FileDown, TrendingUp } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { ArrowRight, FileDown, TrendingUp, Home, Menu, X, User, LogOut, Settings, ChevronDown, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
-import { RealtimeStatsCard } from '@/components/RealtimeStatsCard';
+import { useNavigate, Link } from 'react-router-dom';
+import { useTodayActivity } from '@/hooks/useTodayActivity';
+import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
+import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import AnnouncementCarousel from '@/components/AnnouncementCarousel';
 import AgencyLogosSection from '@/components/AgencyLogosSection';
+import { useAuth } from '@/contexts/AuthContext';
+import { shouldShowMenuItem } from '@/utils/menuVisibility';
+import { useCanvasAnimation } from '@/hooks/useCanvasAnimation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const EnhancedHero = () => {
   const navigate = useNavigate();
-  const { trackPageView, trackSearch } = useActivityTracking();
+  const { trackPageView } = useActivityTracking();
+  const { user, isAdmin, signOut } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [visibleNavItems, setVisibleNavItems] = useState([
+    { name: 'Destek Arama', href: '/searchsupport' },
+  ]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
+  
+  // Initialize canvas animation
+  useCanvasAnimation(canvasRef, heroSectionRef);
+  
+  // Stats hooks
+  const { stats, isLoading: isLoadingStats } = useTodayActivity();
+  const { globalCount: totalCalculations, isLoading: isLoadingCalcTotal } = useRealtimeCounters('calculation_clicks');
+  const { globalCount: totalSearches, isLoading: isLoadingSearchTotal } = useRealtimeCounters('search_clicks');
+
+  const formatNumber = (num: number) => num.toLocaleString('tr-TR');
 
   useEffect(() => {
-    // Track homepage visit
     trackPageView('/');
   }, [trackPageView]);
+
+  useEffect(() => {
+    const loadMenuSettings = async () => {
+      try {
+        const { menuVisibilityService } = await import('@/services/menuVisibilityService');
+        const { MENU_ITEMS } = await import('@/types/menuSettings');
+        
+        // Get effective settings for current domain (domain-specific or global)
+        const { settings } = await menuVisibilityService.getEffectiveMenuSettings('frontend');
+        
+        const visibleItems = MENU_ITEMS.filter(item => {
+          const mode = (settings as any)[item.settingKey];
+          return shouldShowMenuItem(mode, !!user, isAdmin);
+        }).map(item => ({
+          name: item.title,
+          href: item.url,
+        }));
+        
+        setVisibleNavItems(visibleItems);
+      } catch (error) {
+        console.error('Error loading menu settings:', error);
+        setVisibleNavItems([{ name: 'Destek Arama', href: '/searchsupport' }]);
+      }
+    };
+
+    loadMenuSettings();
+  }, [user, isAdmin]);
 
   const handleGetStarted = () => {
     navigate('/start');
@@ -25,113 +81,343 @@ const EnhancedHero = () => {
     navigate('/mevzuat');
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   const staticStats = [
     { label: "Aktif Destek Çağrısı", value: "150+" },
     { label: "Desteklenen Sektör", value: "1.000+" }
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-16 sm:py-22">
-      {/* Background Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]"></div>
-      </div>
-      
-      <div className="container relative mx-auto px-4">
-        <div className="mx-auto max-w-6xl text-center">
-          {/* Badge */}
-          <div className="mb-8 animate-fade-in">
-            <span className="inline-flex items-center rounded-full bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-primary border border-white/20 shadow-sm">
-              <TrendingUp className="mr-3 h-4 w-4" />
-              <span className="mr-3 h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-              Türkiye'nin En Kapsamlı Teşvik Platformu
-            </span>
-          </div>
+    <>
+      {/* Full-Screen Hero Section with Blue Gradient */}
+      <section ref={heroSectionRef} className="relative overflow-hidden bg-gradient-to-br from-primary/80 via-primary to-primary/90 min-h-[65vh] flex flex-col">
+        {/* Canvas Particle Animation */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full"
+          style={{ willChange: 'transform' }}
+        />
 
-          {/* Main Heading */}
-          <div className="mb-8 animate-slide-up-delay-1">
-            <h1 className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl">
-              Yatırım Teşvikleri ve 
-              <span className="bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent">
-                {" "}Destek Programları
-              </span>
-            </h1>
-          </div>
+        {/* Background Elements - Reduced Opacity */}
+        <div className="absolute inset-0 opacity-20">
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
+        </div>
 
-          {/* Description */}
-          <div className="mb-12 animate-slide-up-delay-2">
-            <p className="mx-auto max-w-3xl text-lg leading-8 text-slate-600 sm:text-xl">
-              İşletmeniz için en uygun teşvik ve destek programlarını keşfedin. 
-              Akıllı hesaplama araçlarımız ile potansiyel faydalarınızı öğrenin ve 
-              başvuru sürecinizi hızlandırın.
-            </p>
-          </div>
+        {/* Integrated Header */}
+        <header className="relative z-10 border-b border-white/20 bg-white/95 px-4 sm:px-8 py-4 backdrop-blur-sm">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex items-center justify-between">
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-3">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-primary">
+                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+                </div>
+                <div className="hidden sm:block text-gray-900">
+                  <div className="text-base font-bold leading-tight">Yatırıma Destek</div>
+                  <div className="text-xs text-gray-600">Teşvik Sistemi</div>
+                </div>
+              </Link>
 
-          {/* CTA Buttons */}
-          <div className="mb-16 flex flex-col items-center justify-center gap-4 animate-slide-up-delay-3 sm:flex-row sm:gap-6">
-            <Button 
-              onClick={handleGetStarted}
-              size="lg" 
-              className="btn-primary h-14 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
-            >
-              Hemen Başla
-              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Button>
-            
-            <Button 
-              onClick={handleMevzuatIncele}
-              size="lg" 
-              variant="outline" 
-              className="btn-outline h-14 px-8 text-lg font-semibold hover:bg-primary/5 border-2"
-            >
-              <FileDown className="mr-2 h-5 w-5" />
-              Mevzuat İncele
-            </Button>
-          </div>
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center gap-4">
+                {visibleNavItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="relative px-2 py-2 text-xs xl:text-sm font-medium text-gray-700 hover:text-primary transition-all duration-200 rounded-lg hover:bg-primary/5 whitespace-nowrap group"
+                  >
+                    {item.name}
+                    <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200 rounded-full"></span>
+                  </Link>
+                ))}
+              </nav>
 
-          {/* Live Stats Grid */}
-          <div className="mb-8 animate-slide-up-delay-4">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-6">
-              <RealtimeStatsCard 
-                label="Bugünkü Hesaplama"
-                statName="calculation_clicks"
-                className="hover:scale-105 transition-transform duration-200"
-                showTotalBadge={true}
-              />
-              <RealtimeStatsCard 
-                label="Bugünkü Arama"
-                statName="search_clicks"
-                className="hover:scale-105 transition-transform duration-200"
-                showTotalBadge={true}
-              />
-              {staticStats.map((stat, index) => (
-                <Card key={index} className="card-elevated bg-white/80 backdrop-blur-sm border-0 hover:bg-white/90 transition-all duration-300 hover:scale-105">
-                  <CardContent className="p-4 sm:p-6 md:p-8 text-center">
-                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-1">
+              {/* Desktop Auth */}
+              <div className="hidden lg:flex items-center gap-2">
+                {user && isAdmin ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
+                        <User className="h-4 w-4" />
+                        <span>Admin</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Admin Paneli</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/profile')}>
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profilim</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Çıkış Yap</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
+                        <User className="h-4 w-4" />
+                        <span>Hesabım</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem onClick={() => navigate('/profile')}>
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profilim</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Çıkış Yap</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/admin/login')}
+                    className="h-9 px-3 gap-2 text-sm"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Giriş Yap</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="lg:hidden p-2 text-gray-700 hover:text-primary"
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+
+            {/* Mobile Menu */}
+            {isMenuOpen && (
+              <div className="lg:hidden mt-4 pb-4 space-y-2 border-t pt-4">
+                {visibleNavItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg relative group"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                    <span className="absolute inset-x-3 bottom-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200 rounded-full"></span>
+                  </Link>
+                ))}
+                <div className="pt-2 border-t mt-2">
+                  {user && isAdmin ? (
+                    <>
+                      <Link
+                        to="/admin"
+                        className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Settings className="inline-block mr-2 h-4 w-4" />
+                        Admin Paneli
+                      </Link>
+                      <Link
+                        to="/profile"
+                        className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User className="inline-block mr-2 h-4 w-4" />
+                        Profilim
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm font-medium text-red-600 hover:bg-gray-50 rounded-lg"
+                      >
+                        <LogOut className="inline-block mr-2 h-4 w-4" />
+                        Çıkış Yap
+                      </button>
+                    </>
+                  ) : user ? (
+                    <>
+                      <Link
+                        to="/profile"
+                        className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User className="inline-block mr-2 h-4 w-4" />
+                        Profilim
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm font-medium text-red-600 hover:bg-gray-50 rounded-lg"
+                      >
+                        <LogOut className="inline-block mr-2 h-4 w-4" />
+                        Çıkış Yap
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      to="/admin/login"
+                      className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <User className="inline-block mr-2 h-4 w-4" />
+                      Giriş Yap
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Hero Content */}
+        <div className="relative z-10 flex-1 px-4 sm:px-8 py-8 sm:py-12 flex items-center">
+          <div className="mx-auto max-w-5xl w-full text-center space-y-8">
+            {/* Platform Badge */}
+            <div className="animate-fade-in">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                <Home className="h-4 w-4" />
+                <span>Türkiye'nin En Kapsamlı Teşvik Platformu</span>
+              </div>
+            </div>
+
+            {/* Main Heading */}
+            <div className="animate-fade-in">
+              <h1 className="text-balance text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white">
+                Yatırım Teşvikleri ve{" "}
+                <span className="text-blue-200">Destek Programları</span>
+              </h1>
+            </div>
+
+            {/* Description */}
+            <div className="animate-slide-up-delay-1">
+              <p className="mx-auto max-w-3xl text-balance text-base sm:text-lg leading-relaxed text-white/90">
+                İşletmeniz için en uygun teşvik ve destek programlarını keşfedin. 
+                Akıllı hesaplama araçlarımız ile potansiyel faydalarınızı öğrenin ve 
+                başvuru sürecinizi hızlandırın.
+              </p>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="animate-slide-up-delay-2 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6 flex-wrap">
+              <Button 
+                onClick={handleGetStarted}
+                size="lg" 
+                className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group bg-white/20 hover:bg-white/30 text-white border-2 border-white backdrop-blur-sm"
+              >
+                Hemen Başla
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
+              
+              <Button 
+                onClick={handleMevzuatIncele}
+                size="lg" 
+                variant="outline" 
+                className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold bg-white/10 hover:bg-white/20 border-2 border-white text-white backdrop-blur-sm transition-all duration-300"
+              >
+                <FileDown className="mr-2 h-5 w-5" />
+                Mevzuat İncele
+              </Button>
+
+              <Button 
+                asChild
+                size="lg" 
+                variant="outline" 
+                className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold bg-white/10 hover:bg-white/20 border-2 border-white text-white backdrop-blur-sm transition-all duration-300"
+              >
+                <a href="https://yerelkalkinmahamlesi.sanayi.gov.tr/" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-5 w-5" />
+                  Yerel Kalkınma Hamlesi
+                </a>
+              </Button>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="animate-slide-up-delay-3 mt-12 sm:mt-16">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-8">
+                {/* Today's Calculations */}
+                <div className="space-y-2">
+                  <div className="text-4xl sm:text-5xl font-bold text-white">
+                    {isLoadingStats ? (
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                    ) : (
+                      formatNumber(stats.todayCalculations)
+                    )}
+                  </div>
+                  <div className="text-xs sm:text-sm font-medium text-white/80">
+                    Bugünkü Hesaplama
+                  </div>
+                  <Badge className="bg-transparent border-0 text-xs text-blue-200 hover:bg-transparent">
+                    {isLoadingCalcTotal ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      `Toplam: ${formatNumber(totalCalculations)}`
+                    )}
+                  </Badge>
+                </div>
+
+                {/* Today's Searches */}
+                <div className="space-y-2">
+                  <div className="text-4xl sm:text-5xl font-bold text-white">
+                    {isLoadingStats ? (
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                    ) : (
+                      formatNumber(stats.todaySearches)
+                    )}
+                  </div>
+                  <div className="text-xs sm:text-sm font-medium text-white/80">
+                    Bugünkü Arama
+                  </div>
+                  <Badge className="bg-transparent border-0 text-xs text-blue-200 hover:bg-transparent">
+                    {isLoadingSearchTotal ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      `Toplam: ${formatNumber(totalSearches)}`
+                    )}
+                  </Badge>
+                </div>
+
+                {/* Static Stats */}
+                {staticStats.map((stat, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="text-4xl sm:text-5xl font-bold text-white">
                       {stat.value}
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-600 font-medium">
+                    <div className="text-xs sm:text-sm font-medium text-white/80">
                       {stat.label}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* Announcement Carousel */}
-          <div className="animate-slide-up-delay-5">
-            <AnnouncementCarousel />
-          </div>
-
-          {/* Agency Logos Section */}
-          <div className="mt-8 animate-slide-up-delay-6">
-            <AgencyLogosSection />
-          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Announcements Section - Separate White Section */}
+      <section className="bg-white">
+        <AnnouncementCarousel />
+      </section>
+
+      {/* Agency Logos Section - Keep As Is */}
+      <AgencyLogosSection />
+    </>
   );
 };
 

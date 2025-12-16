@@ -47,6 +47,41 @@ export type Database = {
         }
         Relationships: []
       }
+      announcement_email_logs: {
+        Row: {
+          announcement_id: string | null
+          id: string
+          recipient_count: number | null
+          sent_at: string
+          sent_by: string | null
+          status: string | null
+        }
+        Insert: {
+          announcement_id?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          announcement_id?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_email_logs_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           announcement_date: string
@@ -113,6 +148,68 @@ export type Database = {
         }
         Relationships: []
       }
+      bulten_uye_kurum_tercihleri: {
+        Row: {
+          created_at: string | null
+          id: string
+          institution_id: number
+          uye_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          institution_id: number
+          uye_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          institution_id?: number
+          uye_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulten_uye_kurum_tercihleri_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bulten_uyeler: {
+        Row: {
+          ad_soyad: string
+          created_at: string
+          email: string
+          id: string
+          il: string
+          is_active: boolean | null
+          telefon: string | null
+          updated_at: string
+        }
+        Insert: {
+          ad_soyad: string
+          created_at?: string
+          email: string
+          id?: string
+          il: string
+          is_active?: boolean | null
+          telefon?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ad_soyad?: string
+          created_at?: string
+          email?: string
+          id?: string
+          il?: string
+          is_active?: boolean | null
+          telefon?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cb_knowledge_base: {
         Row: {
           answer: string
@@ -147,6 +244,8 @@ export type Database = {
           id: string
           role: string
           session_id: string
+          source: string | null
+          support_cards: Json | null
         }
         Insert: {
           content: string
@@ -154,6 +253,8 @@ export type Database = {
           id?: string
           role: string
           session_id: string
+          source?: string | null
+          support_cards?: Json | null
         }
         Update: {
           content?: string
@@ -161,6 +262,8 @@ export type Database = {
           id?: string
           role?: string
           session_id?: string
+          source?: string | null
+          support_cards?: Json | null
         }
         Relationships: []
       }
@@ -202,7 +305,9 @@ export type Database = {
           id: string
           role: string
           session_id: string
+          source: string | null
           sources: string[] | null
+          support_cards: Json | null
         }
         Insert: {
           content: string
@@ -211,7 +316,9 @@ export type Database = {
           id?: string
           role: string
           session_id: string
+          source?: string | null
           sources?: string[] | null
+          support_cards?: Json | null
         }
         Update: {
           content?: string
@@ -220,7 +327,9 @@ export type Database = {
           id?: string
           role?: string
           session_id?: string
+          source?: string | null
           sources?: string[] | null
+          support_cards?: Json | null
         }
         Relationships: []
       }
@@ -292,6 +401,191 @@ export type Database = {
           embedding?: string | null
           id?: string
           question?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      chatbot_statistics: {
+        Row: {
+          assistant_messages: number | null
+          created_at: string | null
+          date: string
+          id: string
+          messages_count: number | null
+          sessions_count: number | null
+          source: string
+          unique_sessions: number | null
+          updated_at: string | null
+          user_messages: number | null
+        }
+        Insert: {
+          assistant_messages?: number | null
+          created_at?: string | null
+          date: string
+          id?: string
+          messages_count?: number | null
+          sessions_count?: number | null
+          source: string
+          unique_sessions?: number | null
+          updated_at?: string | null
+          user_messages?: number | null
+        }
+        Update: {
+          assistant_messages?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          messages_count?: number | null
+          sessions_count?: number | null
+          source?: string
+          unique_sessions?: number | null
+          updated_at?: string | null
+          user_messages?: number | null
+        }
+        Relationships: []
+      }
+      custom_rag_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string | null
+          document_id: string | null
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          store_id: string | null
+          token_count: number | null
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          store_id?: string | null
+          token_count?: number | null
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          store_id?: string | null
+          token_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_rag_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "custom_rag_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_rag_chunks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "custom_rag_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_rag_documents: {
+        Row: {
+          chunks_count: number | null
+          created_at: string | null
+          custom_metadata: Json | null
+          display_name: string
+          error_message: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          name: string
+          original_content: string | null
+          status: string | null
+          store_id: string | null
+        }
+        Insert: {
+          chunks_count?: number | null
+          created_at?: string | null
+          custom_metadata?: Json | null
+          display_name: string
+          error_message?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          name: string
+          original_content?: string | null
+          status?: string | null
+          store_id?: string | null
+        }
+        Update: {
+          chunks_count?: number | null
+          created_at?: string | null
+          custom_metadata?: Json | null
+          display_name?: string
+          error_message?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          name?: string
+          original_content?: string | null
+          status?: string | null
+          store_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_rag_documents_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "custom_rag_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_rag_stores: {
+        Row: {
+          chunk_overlap: number | null
+          chunk_size: number | null
+          created_at: string | null
+          created_by: string | null
+          display_name: string
+          embedding_dimensions: number
+          embedding_model: string
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          chunk_overlap?: number | null
+          chunk_size?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          display_name: string
+          embedding_dimensions?: number
+          embedding_model?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          chunk_overlap?: number | null
+          chunk_size?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          display_name?: string
+          embedding_dimensions?: number
+          embedding_model?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -427,6 +721,33 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_menu_settings: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          menu_type: string
+          settings: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id?: string
+          menu_type: string
+          settings?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          menu_type?: string
+          settings?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           created_at: string
@@ -500,6 +821,148 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      form_fields: {
+        Row: {
+          conditional_logic: Json | null
+          created_at: string | null
+          display_order: number | null
+          field_type: string
+          form_id: string
+          help_text: string | null
+          id: string
+          is_required: boolean | null
+          label: string
+          name: string
+          options: Json | null
+          placeholder: string | null
+          updated_at: string | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          conditional_logic?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          field_type: string
+          form_id: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label: string
+          name: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          conditional_logic?: Json | null
+          created_at?: string | null
+          display_order?: number | null
+          field_type?: string
+          form_id?: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label?: string
+          name?: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          created_at: string | null
+          data: Json
+          form_id: string
+          id: string
+          status: string | null
+          submitter_email: string | null
+          submitter_ip: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json
+          form_id: string
+          id?: string
+          status?: string | null
+          submitter_email?: string | null
+          submitter_ip?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          form_id?: string
+          id?: string
+          status?: string | null
+          submitter_email?: string | null
+          submitter_ip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          branding: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          display_mode: string | null
+          id: string
+          is_active: boolean | null
+          is_public: boolean | null
+          name: string
+          settings: Json | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          branding?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_mode?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          name: string
+          settings?: Json | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          branding?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          display_mode?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          name?: string
+          settings?: Json | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       glossary_terms: {
         Row: {
@@ -1841,8 +2304,10 @@ export type Database = {
           application_deadline: string | null
           contact_info: string | null
           created_at: string | null
+          created_by: string | null
           description: string
           eligibility_criteria: string | null
+          embedding: string | null
           id: string
           institution_id: number | null
           title: string
@@ -1852,8 +2317,10 @@ export type Database = {
           application_deadline?: string | null
           contact_info?: string | null
           created_at?: string | null
+          created_by?: string | null
           description: string
           eligibility_criteria?: string | null
+          embedding?: string | null
           id?: string
           institution_id?: number | null
           title: string
@@ -1863,8 +2330,10 @@ export type Database = {
           application_deadline?: string | null
           contact_info?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string
           eligibility_criteria?: string | null
+          embedding?: string | null
           id?: string
           institution_id?: number | null
           title?: string
@@ -2035,6 +2504,66 @@ export type Database = {
           session_id?: string
           updated_at?: string
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      vertex_configs: {
+        Row: {
+          config_key: string
+          created_at: string | null
+          id: number
+          internal_api_key: string | null
+          max_output_tokens: number | null
+          model_name: string
+          rag_corpus: string | null
+          similarity_top_k: number | null
+          staging_bucket: string | null
+          system_instruction: string | null
+          temperature: number | null
+          top_p: number | null
+          updated_at: string | null
+          vector_distance_threshold: number | null
+          vertex_client_email: string | null
+          vertex_private_key: string | null
+          vertex_project_id: string | null
+        }
+        Insert: {
+          config_key?: string
+          created_at?: string | null
+          id?: number
+          internal_api_key?: string | null
+          max_output_tokens?: number | null
+          model_name: string
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          staging_bucket?: string | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vector_distance_threshold?: number | null
+          vertex_client_email?: string | null
+          vertex_private_key?: string | null
+          vertex_project_id?: string | null
+        }
+        Update: {
+          config_key?: string
+          created_at?: string | null
+          id?: number
+          internal_api_key?: string | null
+          max_output_tokens?: number | null
+          model_name?: string
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          staging_bucket?: string | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vector_distance_threshold?: number | null
+          vertex_client_email?: string | null
+          vertex_private_key?: string | null
+          vertex_project_id?: string | null
         }
         Relationships: []
       }
@@ -2222,6 +2751,10 @@ export type Database = {
           variants: string[]
         }[]
       }
+      increment_chatbot_stat: {
+        Args: { p_source: string; p_stat_type: string }
+        Returns: undefined
+      }
       increment_stat: { Args: { stat_name_param: string }; Returns: undefined }
       is_admin: { Args: { user_id?: string }; Returns: boolean }
       log_qna_audit: {
@@ -2276,17 +2809,6 @@ export type Database = {
           }
       match_chatbot_knowledge:
         | {
-            Args: { p_limit?: number; query_embedding: string }
-            Returns: {
-              answer: string
-              created_at: string
-              embedding: string
-              id: string
-              question: string
-              updated_at: string
-            }[]
-          }
-        | {
             Args: {
               match_count?: number
               match_threshold?: number
@@ -2299,6 +2821,33 @@ export type Database = {
               similarity: number
             }[]
           }
+        | {
+            Args: { p_limit?: number; query_embedding: string }
+            Returns: {
+              answer: string
+              created_at: string
+              embedding: string
+              id: string
+              question: string
+              updated_at: string
+            }[]
+          }
+      match_custom_rag_chunks: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_store_id: string
+          query_embedding: string
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          document_id: string
+          document_name: string
+          id: string
+          similarity: number
+        }[]
+      }
       match_document_chunks: {
         Args: {
           match_count?: number
@@ -2367,6 +2916,23 @@ export type Database = {
           variants: string[]
         }[]
       }
+      match_support_programs: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          application_deadline: string
+          contact_info: string
+          description: string
+          eligibility_criteria: string
+          id: string
+          institution_id: number
+          similarity: number
+          title: string
+        }[]
+      }
       record_submission: {
         Args: { p_identifier: string; p_submission_type: string }
         Returns: undefined
@@ -2380,16 +2946,6 @@ export type Database = {
         Returns: undefined
       }
       update_chatbot_embedding:
-        | { Args: { payload: Json }; Returns: undefined }
-        | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }
-        | {
-            Args: {
-              match_count: number
-              match_threshold: number
-              query_embedding: string
-            }
-            Returns: undefined
-          }
         | {
             Args: {
               match_count: number
@@ -2398,6 +2954,16 @@ export type Database = {
             }
             Returns: undefined
           }
+        | {
+            Args: {
+              match_count: number
+              match_threshold: number
+              query_embedding: string
+            }
+            Returns: undefined
+          }
+        | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }
+        | { Args: { payload: Json }; Returns: undefined }
       update_chatbot_embedding_768:
         | { Args: { p_row_id: string; p_vals: number }; Returns: undefined }
         | { Args: { p_row_id: string; p_vals: number[] }; Returns: undefined }

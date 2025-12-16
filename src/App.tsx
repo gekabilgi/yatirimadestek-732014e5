@@ -7,8 +7,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import ProtectedMenuRoute from "@/components/ProtectedMenuRoute";
+import { ScrollToTop } from "@/components/ScrollToTop";
+import SkipLinks from "@/components/SkipLinks";
+import AccessibilityWidget from "@/components/AccessibilityWidget";
+import ReadingGuide from "@/components/ReadingGuide";
 import Index from "./pages/Index";
 import Start from "./pages/Start";
 import IncentiveTools from "./pages/IncentiveTools";
@@ -16,9 +21,9 @@ import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import Admin from "./pages/Admin";
 import AdminSupportPrograms from "./pages/AdminSupportPrograms";
 import AdminAnnouncements from "./pages/AdminAnnouncements";
+import AdminNewsletterSubscribers from "./pages/AdminNewsletterSubscribers";
 import AnnouncementDetail from "./pages/AnnouncementDetail";
 import AdminFeasibilityReports from "./pages/AdminFeasibilityReports";
-import FeasibilityStatistics from "./pages/FeasibilityStatistics";
 import AdminLogin from "./pages/AdminLogin";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import QAManagement from "./pages/QAManagement";
@@ -53,6 +58,10 @@ import TZYSupplierApplications from "./pages/admin/TZYSupplierApplications";
 import Legislation from "./pages/Legislation";
 import AdminLegislation from "./pages/AdminLegislation";
 import AdminKnowledgeBase from "./pages/AdminKnowledgeBase";
+import AdminFormBuilder from "./pages/AdminFormBuilder";
+import AdminFormBuilderEdit from "./pages/AdminFormBuilderEdit";
+import AdminFormBuilderSubmissions from "./pages/AdminFormBuilderSubmissions";
+import PublicForm from "./pages/PublicForm";
 import Chat from "./pages/Chat";
 import UserProfile from "./pages/UserProfile";
 import { AIChatbot } from "./components/AIChatbot";
@@ -71,12 +80,17 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AIChatbot />
+        <AccessibilityProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <SkipLinks />
+                <ScrollToTop />
+                <AccessibilityWidget />
+                <ReadingGuide />
+                <AIChatbot />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/start" element={<Start />} />
@@ -147,6 +161,11 @@ const App = () => {
                   <AdminAnnouncements />
                 </ProtectedAdminRoute>
               } />
+              <Route path="/admin/newsletter-subscribers" element={
+                <ProtectedAdminRoute>
+                  <AdminNewsletterSubscribers />
+                </ProtectedAdminRoute>
+              } />
               <Route path="/admin/feasibility-reports" element={
                 <ProtectedAdminRoute>
                   <AdminFeasibilityReports />
@@ -154,7 +173,7 @@ const App = () => {
               } />
               <Route path="/admin/feasibility-statistics" element={
                 <ProtectedAdminRoute>
-                  <FeasibilityStatistics />
+                  <AdminAnalytics />
                 </ProtectedAdminRoute>
               } />
               <Route path="/admin/analytics" element={
@@ -238,13 +257,35 @@ const App = () => {
                   <AdminKnowledgeBase />
                 </ProtectedAdminRoute>
               } />
+              <Route path="/admin/form-builder" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilder />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/form-builder/new" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilderEdit />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/form-builder/:id" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilderEdit />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/admin/form-builder/:id/submissions" element={
+                <ProtectedAdminRoute>
+                  <AdminFormBuilderSubmissions />
+                </ProtectedAdminRoute>
+              } />
+              <Route path="/form/:slug" element={<PublicForm />} />
               <Route path="/program/:id" element={<ProgramDetails />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </AccessibilityProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

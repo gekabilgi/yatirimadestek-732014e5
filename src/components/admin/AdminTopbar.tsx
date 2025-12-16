@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Bell, Settings, Search, Menu, X, Home, User } from 'lucide-react';
+import { LogOut, Bell, Settings, Menu, X, Home, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
@@ -36,6 +36,19 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
     if (path === '/admin/email-management') return 'E-posta Yönetimi';
     if (path === '/admin/glossary-management') return 'Sözlük Yönetimi';
     if (path === '/admin/feasibility-reports') return 'Fizibilite Raporları';
+    if (path === '/admin/announcements') return 'Duyuru Yönetimi';
+    if (path === '/admin/incentive-settings') return 'Teşvik Hesaplayıcı Ayarları';
+    if (path === '/admin/knowledge-base') return 'Chatbot Bilgi Bankası';
+    if (path === '/admin/legislation') return 'Mevzuat Yönetimi';
+    if (path === '/admin/user-management') return 'Kullanıcı ve Rol Yönetimi';
+    if (path === '/admin/settings/menu-visibility') return 'Menü Görünürlük Ayarları';
+    if (path === '/profile') return 'Profilim';
+    if (path === '/admin/tzy-products') return 'TZY Ürün Listesi';
+    if (path === '/admin/tzy-product-add') return 'TZY Ürün Ekle';
+    if (path === '/admin/tzy-pre-requests') return 'TZY Ön Talepler';
+    if (path === '/admin/tzy-supplier-applications') return 'TZY Tedarikçi Başvuruları';
+    if (path === '/admin/tzy-email-logs') return 'TZY E-posta Logları';
+    if (path.startsWith('/admin/tzy-company-edit')) return 'TZY Firma Düzenle';
     return 'Admin Panel';
   };
 
@@ -83,10 +96,6 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
           <Home className="h-4 w-4" />
         </Button>
 
-        {/* Search button - hidden on small screens */}
-        <Button variant="ghost" size="sm" className="hidden md:flex p-2 hover:bg-primary/5">
-          <Search className="h-4 w-4" />
-        </Button>
 
         {/* Notifications */}
         <NotificationDropdown />

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ExternalLink, ArrowDown, Bot } from "lucide-react";
+import { ArrowDown, Bot } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChatSession";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { IncentiveProgressBadge } from "./IncentiveProgressBadge";
 import { MessageBubble } from "./MessageBubble";
 import { supabase } from "@/integrations/supabase/client";
+import { useChatbotSettings } from "@/hooks/useChatbotSettings";
 
 interface ChatMessageAreaProps {
   messages: ChatMessage[];
@@ -36,18 +35,18 @@ export function ChatMessageArea({
   activeSessionId,
   onRegenerateMessage,
 }: ChatMessageAreaProps) {
-  const [modalContent, setModalContent] = useState<string | null>(null);
+  const { showSources } = useChatbotSettings();
   const [incentiveProgress, setIncentiveProgress] = useState<any>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const handleSourceClick = (text: string) => {
-    setModalContent(text);
-  };
-
-  const closeModal = () => {
-    setModalContent(null);
+  // Helper to strip citation markers from content
+  const cleanCitations = (text: string): string => {
+    return text
+      .replace(/\[(\d+(?:,\s*\d+)*)\]/g, '') // Remove [1], [2, 3] etc.
+      .replace(/\s{2,}/g, ' ') // Clean up extra spaces
+      .trim();
   };
 
   const scrollToBottom = () => {
@@ -66,7 +65,7 @@ export function ChatMessageArea({
     };
 
     container.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => container.removeEventListener("scroll", handleScroll);
   }, [messages]);
@@ -81,44 +80,33 @@ export function ChatMessageArea({
     const loadProgress = async () => {
       try {
         const { data, error } = await supabase
-          .from('incentive_queries')
-          .select('*')
-          .eq('session_id', activeSessionId)
-          .eq('status', 'collecting')
+          .from("incentive_queries")
+          .select("*")
+          .eq("session_id", activeSessionId)
+          .eq("status", "collecting")
           .single();
 
-        if (error) {
-          setIncentiveProgress(null);
-          return;
-        }
-
-        setIncentiveProgress(data);
+        if (!error) setIncentiveProgress(data);
+        else setIncentiveProgress(null);
       } catch (error) {
-        console.error('Error loading incentive progress:', error);
-        setIncentiveProgress(null);
+        console.error("Error loading incentive progress:", error);
       }
     };
 
     loadProgress();
 
-    // Subscribe to changes
     const channel = supabase
       .channel(`incentive-progress-${activeSessionId}`)
       .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'incentive_queries',
-          filter: `session_id=eq.${activeSessionId}`,
-        },
+        "postgres_changes",
+        { event: "*", schema: "public", table: "incentive_queries", filter: `session_id=eq.${activeSessionId}` },
         (payload) => {
-          if (payload.new && (payload.new as any).status === 'collecting') {
+          if (payload.new && (payload.new as any).status === "collecting") {
             setIncentiveProgress(payload.new);
-          } else if (payload.eventType === 'DELETE') {
+          } else if (payload.eventType === "DELETE") {
             setIncentiveProgress(null);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -128,21 +116,24 @@ export function ChatMessageArea({
   }, [activeSessionId]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div 
+      ref={containerRef} 
+      className="relative"
+      role="log"
+      aria-live="polite"
+      aria-label="Sohbet mesajları"
+    >
       <div className="p-4 pb-8">
         <div className="max-w-3xl mx-auto space-y-6">
-        {/* Show incentive progress if active */}
-        {incentiveProgress && (
-          <IncentiveProgressBadge progress={incentiveProgress} />
-        )}
+          {/* Show incentive progress if active */}
+          {incentiveProgress && <IncentiveProgressBadge progress={incentiveProgress} />}
+
           {messages.length === 0 && (
             <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
               <div className="max-w-2xl w-full text-center space-y-8">
                 <div className="space-y-3">
-                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
+                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
+                    <Bot className="w-8 h-8 text-primary" />
                   </div>
                   <h2 className="text-3xl font-bold">Nasıl yardımcı olabilirim?</h2>
                   <p className="text-muted-foreground text-lg">
@@ -150,193 +141,102 @@ export function ChatMessageArea({
                   </p>
                 </div>
 
-              {/* Rotating Suggestion */}
-              <div className="min-h-[4rem] flex items-center justify-center">
-                {isGeneratingQuestions ? (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    <span className="text-sm">Örnek sorular hazırlanıyor...</span>
-                  </div>
-                ) : currentSuggestion && !isLoading ? (
-                  <button
-                    onClick={() => onSuggestionClick?.(currentSuggestion)}
-                    className="group relative px-6 py-3 rounded-full border border-primary/20 
-                               bg-primary/5 hover:bg-primary/10 hover:border-primary/40
-                               transition-all duration-200 shadow-sm hover:shadow-md
-                               max-w-xl w-full"
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-xs text-muted-foreground font-medium">Örnek soru:</span>
-                      <span className="text-sm font-medium text-foreground">"{currentSuggestion}"</span>
+                {/* Rotating Suggestion */}
+                <div className="min-h-[4rem] flex items-center justify-center">
+                  {isGeneratingQuestions ? (
+                    <div className="flex items-center gap-2 text-muted-foreground" role="status" aria-live="polite">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" aria-hidden="true" />
+                      <span className="text-sm">Örnek sorular hazırlanıyor...</span>
                     </div>
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {messages.map((message, index) => (
-          <MessageBubble
-            key={`msg-${index}-${message.timestamp || ''}`}
-            role={message.role}
-            content={message.content}
-            timestamp={message.timestamp}
-            onRegenerate={
-              message.role === "assistant" && index === messages.length - 1
-                ? () => onRegenerateMessage?.(index)
-                : undefined
-            }
-          >
-            {/* Display sources for assistant messages */}
-            {message.role === "assistant" && message.sources && message.sources.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-                <div className="text-xs font-medium text-muted-foreground">Kaynaklar:</div>
-                 <div className="flex flex-wrap gap-1.5 md:gap-2">
-                   {message.sources.map((source: any, idx) => {
-                     const isObject = typeof source === "object" && source !== null;
-                     const href = isObject ? source.uri || source.url : undefined;
-                     const label = isObject ? source.title || source.uri || source.url : String(source);
-
-                     return href ? (
-                       <a
-                         key={idx}
-                         href={href}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-primary/10 
-                                  hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
-                                  hover:border-primary/40 transition-all"
-                       >
-                         <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
-                         <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
-                       </a>
-                     ) : (
-                       <div key={idx} className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full 
-                                                bg-muted text-[10px] md:text-xs text-muted-foreground border border-border">
-                         <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
-                         <span className="max-w-[100px] md:max-w-[150px] truncate">{label}</span>
-                       </div>
-                     );
-                   })}
-                 </div>
-              </div>
-            )}
-
-            {/* Display grounding chunks */}
-            {message.role === "assistant" && message.groundingChunks && message.groundingChunks.length > 0 && (
-              <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-border/50 space-y-1.5 md:space-y-2">
-                <div className="text-[10px] md:text-xs font-medium text-muted-foreground">Belge Kaynakları:</div>
-                <div className="flex flex-wrap gap-1.5 md:gap-2 max-h-32 overflow-y-auto">
-                  {message.groundingChunks.map((chunk, chunkIndex) => {
-                    let title = `Kaynak ${chunkIndex + 1}`;
-                    let sourceData = "";
-
-                    if (chunk.retrievedContext?.title) {
-                      title = chunk.retrievedContext.title;
-                    } else if (chunk.retrievedContext?.customMetadata) {
-                      const metadata = chunk.retrievedContext.customMetadata;
-                      if (Array.isArray(metadata)) {
-                        const filenameMeta = metadata.find((m: any) => m.key === "Dosya");
-                        if (filenameMeta) {
-                          title = filenameMeta.stringValue || filenameMeta.value || title;
-                        }
-                      }
-                    }
-
-                    sourceData = JSON.stringify({
-                      title,
-                      text: chunk.retrievedContext?.text || "İçerik bulunamadı",
-                    });
-
-                    return (
-                      <button
-                        key={chunkIndex}
-                        onClick={() => handleSourceClick(sourceData)}
-                        className="inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-primary/10 
-                                 hover:bg-primary/20 text-[10px] md:text-xs text-primary border border-primary/20
-                                 hover:border-primary/40 transition-all"
-                        title={title}
-                      >
-                        <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
-                        <span className="max-w-[100px] md:max-w-[150px] truncate">{title}</span>
-                      </button>
-                    );
-                  })}
+                  ) : currentSuggestion && !isLoading ? (
+                    <button
+                      onClick={() => onSuggestionClick?.(currentSuggestion)}
+                      className="group relative px-6 py-3 rounded-full border border-primary/20 
+                                 bg-primary/5 hover:bg-primary/10 hover:border-primary/40
+                                 transition-all duration-200 shadow-sm hover:shadow-md
+                                 max-w-xl w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                      aria-label={`Örnek soru: ${currentSuggestion}`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-xs text-muted-foreground font-medium">Örnek soru:</span>
+                        <span className="text-sm font-medium text-foreground">"{currentSuggestion}"</span>
+                      </div>
+                    </button>
+                  ) : null}
                 </div>
               </div>
-            )}
-          </MessageBubble>
-        ))}
+            </div>
+          )}
 
-        {isLoading && (
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="h-5 w-5 text-primary" />
+          {/* MESAJ LİSTESİ */}
+          {messages.map((message, index) => {
+            // 1. API'den gelen veriyi parçala (Metin + Metadata)
+            const parts = message.content.split("__METADATA__");
+            const cleanContent = parts[0];
+            let extractedSources: any[] = [];
+
+            // 2. Metadata varsa JSON'a çevir
+            if (parts.length > 1) {
+              try {
+                extractedSources = JSON.parse(parts[1]);
+              } catch (e) {
+                console.error("Metadata parse error", e);
+              }
+            }
+
+            // 3. Öncelik sırası: Mesajın kendi source'u > Çıkarılan source
+            const finalSources = message.sources && message.sources.length > 0 ? message.sources : extractedSources;
+
+            // 4. If showSources is disabled, clean citations from content and don't pass sources
+            const displayContent = showSources ? cleanContent : cleanCitations(cleanContent);
+            const displaySources = showSources ? finalSources : [];
+
+            return (
+              <MessageBubble
+                key={`msg-${index}-${message.timestamp || ""}`}
+                role={message.role}
+                content={displayContent}
+                timestamp={message.timestamp}
+                sources={displaySources}
+                supportCards={message.supportCards}
+                onRegenerate={
+                  message.role === "assistant" && index === messages.length - 1
+                    ? () => onRegenerateMessage?.(index)
+                    : undefined
+                }
+              />
+            );
+          })}
+
+          {isLoading && (
+            <div className="flex gap-3" role="status" aria-live="polite" aria-label="Yanıt hazırlanıyor">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center" aria-hidden="true">
+                <Bot className="h-5 w-5 text-primary" />
+              </div>
+              <div className="bg-muted/50 border border-border/50 rounded-2xl">
+                <TypingDots />
+              </div>
+              <span className="sr-only">Yanıt hazırlanıyor, lütfen bekleyin...</span>
             </div>
-            <div className="bg-muted/50 border border-border/50 rounded-2xl">
-              <TypingDots />
-            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Scroll to bottom button */}
+        {showScrollButton && (
+          <div className="fixed bottom-24 right-8">
+            <Button
+              onClick={scrollToBottom}
+              size="icon"
+              className="rounded-full shadow-lg h-10 w-10"
+              aria-label="Sohbetin sonuna git"
+            >
+              <ArrowDown className="h-5 w-5" aria-hidden="true" />
+            </Button>
           </div>
         )}
-        
-        <div ref={bottomRef} />
       </div>
-
-      {/* Scroll to bottom button */}
-      {showScrollButton && (
-        <div className="fixed bottom-24 right-8">
-          <Button
-            onClick={scrollToBottom}
-            size="icon"
-            className="rounded-full shadow-lg h-10 w-10"
-            title="Aşağı kaydır"
-          >
-            <ArrowDown className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
-      </div>
-
-      {/* Citation Modal */}
-      {modalContent &&
-        (() => {
-          try {
-            const sourceData = JSON.parse(modalContent);
-            return (
-              <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
-                <DialogContent className="max-w-2xl max-h-[80vh]">
-                  <DialogHeader>
-                    <DialogTitle>Kaynak: {sourceData.title}</DialogTitle>
-                    <DialogDescription>Bu cevap için kullanılan kaynak içeriği</DialogDescription>
-                  </DialogHeader>
-                  <div className="overflow-y-auto max-h-[60vh] space-y-4">
-                    <div className="bg-muted p-4 rounded-lg">
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{sourceData.text}</p>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            );
-          } catch {
-            // Fallback for non-JSON content (if any)
-            return (
-              <Dialog open={!!modalContent} onOpenChange={() => closeModal()}>
-                <DialogContent className="max-w-2xl max-h-[80vh]">
-                  <DialogHeader>
-                    <DialogTitle>Kaynak</DialogTitle>
-                    <DialogDescription>Bu cevap için kullanılan kaynak bilgisi</DialogDescription>
-                  </DialogHeader>
-                  <div className="overflow-y-auto max-h-[60vh] space-y-4">
-                    <div className="bg-muted p-4 rounded-lg">
-                      <p className="text-sm font-mono break-all">{modalContent}</p>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            );
-          }
-        })()}
     </div>
   );
 }

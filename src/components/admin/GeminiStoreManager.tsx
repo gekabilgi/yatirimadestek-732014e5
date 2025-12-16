@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Upload, FileText, CheckCircle2, X } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, FileText, CheckCircle2, FolderOpen, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   listRagStores,
   createRagStore,
@@ -25,32 +28,21 @@ import {
   type RagStore,
   type Document,
 } from "@/services/geminiRagService";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export const GeminiStoreManager = () => {
   const { toast } = useToast();
   const [stores, setStores] = useState<RagStore[]>([]);
-  const [selectedStore, setSelectedStore] = useState<string | null>(null);
+  const [expandedStore, setExpandedStore] = useState<string | null>(null);
   const [activeStore, setActiveStoreState] = useState<string | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [newStoreName, setNewStoreName] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
-  const itemsPerPage = 10;
-
-  // Upload modal state
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customFileName, setCustomFileName] = useState("");
   const [metadata, setMetadata] = useState<Array<{ key: string; value: string }>>([{ key: "", value: "" }]);
@@ -62,14 +54,13 @@ export const GeminiStoreManager = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedStore) {
-      loadDocuments(selectedStore);
-      setCurrentPage(1);
+    if (expandedStore) {
+      loadDocuments(expandedStore);
       setSelectedDocs(new Set());
     } else {
       setDocuments([]);
     }
-  }, [selectedStore]);
+  }, [expandedStore]);
 
   const loadStores = async () => {
     setLoading(true);
@@ -77,265 +68,131 @@ export const GeminiStoreManager = () => {
       const data = await listRagStores();
       setStores(data);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load stores",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: "Store'lar yüklenemedi", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   const loadDocuments = async (storeName: string) => {
-    setLoading(true);
     try {
       const data = await listDocuments(storeName);
       setDocuments(data);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load documents",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      toast({ title: "Hata", description: "Dokümanlar yüklenemedi", variant: "destructive" });
     }
   };
 
   const handleCreateStore = async () => {
     if (!newStoreName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a store name",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: "Store adı girin", variant: "destructive" });
       return;
     }
-
     setLoading(true);
     try {
       await createRagStore(newStoreName);
       setNewStoreName("");
-      toast({
-        title: "Success",
-        description: "Store created successfully",
-      });
+      setShowCreateDialog(false);
+      toast({ title: "Başarılı", description: "Store oluşturuldu" });
       await loadStores();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create store",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: "Store oluşturulamadı", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteStore = async (storeName: string) => {
-    if (!confirm("Are you sure you want to delete this store and all its documents?")) {
-      return;
-    }
-
+  const handleDeleteStore = async (e: React.MouseEvent, storeName: string) => {
+    e.stopPropagation();
+    if (!confirm("Bu store ve tüm dokümanları silinecek. Emin misiniz?")) return;
     setLoading(true);
     try {
       await deleteRagStore(storeName);
-      if (selectedStore === storeName) {
-        setSelectedStore(null);
-      }
+      if (expandedStore === storeName) setExpandedStore(null);
       if (activeStore === storeName) {
         setActiveStoreState(null);
         await setActiveStore("");
       }
-      toast({
-        title: "Success",
-        description: "Store deleted successfully",
-      });
+      toast({ title: "Başarılı", description: "Store silindi" });
       await loadStores();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete store",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: "Store silinemedi", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUploadClick = () => {
-    setIsUploadModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setIsUploadModalOpen(false);
-    setSelectedFile(null);
-    setCustomFileName("");
-    setMetadata([{ key: "", value: "" }]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  const handleSetActiveStore = async (e: React.MouseEvent, storeName: string) => {
+    e.stopPropagation();
+    try {
+      await setActiveStore(storeName);
+      setActiveStoreState(storeName);
+      toast({ title: "Başarılı", description: "Aktif store güncellendi" });
+    } catch (error) {
+      toast({ title: "Hata", description: "Store aktif yapılamadı", variant: "destructive" });
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     const file = files[0];
     const allowedTypes = [
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-      "application/pdf",
-      "text/plain",
-      "text/csv",
-      "application/json",
-      "application/msword",
-      "application/ms-excel",
+      "application/pdf", "text/plain", "text/csv", "application/json",
     ];
-
     if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Error",
-        description: "Please upload DOCX, XLSX, PDF, TXT, or CSV files",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: "DOCX, XLSX, PDF, TXT veya CSV dosyası yükleyin", variant: "destructive" });
       return;
     }
-
     setSelectedFile(file);
     setCustomFileName(file.name);
   };
 
-  const handleMetadataChange = (index: number, field: "key" | "value", value: string) => {
-    const newMetadata = [...metadata];
-    newMetadata[index][field] = value;
-    setMetadata(newMetadata);
-  };
-
-  const addMetadataRow = () => {
-    setMetadata([...metadata, { key: "", value: "" }]);
-  };
-
-  const removeMetadataRow = (index: number) => {
-    if (metadata.length > 1) {
-      setMetadata(metadata.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleModalUpload = async () => {
-    if (!selectedFile || !selectedStore) {
-      toast({
-        title: "Error",
-        description: "Please select a file to upload",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleUpload = async () => {
+    if (!selectedFile || !expandedStore) return;
     setUploading(true);
     try {
-      // Filter out empty metadata rows
-      const validMetadata = metadata
-        .filter((m) => m.key.trim() !== "")
-        .map((m) => ({ key: m.key.trim(), stringValue: m.value.trim() }));
-
-      await uploadDocument(
-        selectedStore,
-        selectedFile,
-        customFileName || selectedFile.name,
-        validMetadata.length > 0 ? validMetadata : undefined,
-      );
-
-      toast({
-        title: "Success",
-        description: "Document uploaded successfully",
-      });
-
-      await loadDocuments(selectedStore);
-      handleModalClose();
+      const validMetadata = metadata.filter((m) => m.key.trim() !== "").map((m) => ({ key: m.key.trim(), stringValue: m.value.trim() }));
+      await uploadDocument(expandedStore, selectedFile, customFileName || selectedFile.name, validMetadata.length > 0 ? validMetadata : undefined);
+      toast({ title: "Başarılı", description: "Doküman yüklendi" });
+      await loadDocuments(expandedStore);
+      setShowUploadDialog(false);
+      setSelectedFile(null);
+      setCustomFileName("");
+      setMetadata([{ key: "", value: "" }]);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload document",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: error instanceof Error ? error.message : "Yükleme başarısız", variant: "destructive" });
     } finally {
       setUploading(false);
     }
   };
-  const handleDeleteDocument = async (docName: string) => {
-    if (!confirm("Are you sure you want to delete this document?")) {
-      return;
-    }
 
-    setLoading(true);
+  const handleDeleteDocument = async (docName: string) => {
+    if (!confirm("Dokümanı silmek istediğinize emin misiniz?")) return;
     try {
       await deleteDocument(docName);
-      toast({
-        title: "Success",
-        description: "Document deleted successfully",
-      });
-      if (selectedStore) {
-        await loadDocuments(selectedStore);
-      }
+      toast({ title: "Başarılı", description: "Doküman silindi" });
+      if (expandedStore) await loadDocuments(expandedStore);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete document",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      toast({ title: "Hata", description: "Doküman silinemedi", variant: "destructive" });
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedDocs.size === 0) return;
-
-    if (!confirm(`Are you sure you want to delete ${selectedDocs.size} document(s)?`)) {
-      return;
-    }
-
+    if (!confirm(`${selectedDocs.size} doküman silinecek. Emin misiniz?`)) return;
     setLoading(true);
     try {
       await Promise.all(Array.from(selectedDocs).map((docName) => deleteDocument(docName)));
-      toast({
-        title: "Success",
-        description: `${selectedDocs.size} document(s) deleted successfully`,
-      });
+      toast({ title: "Başarılı", description: `${selectedDocs.size} doküman silindi` });
       setSelectedDocs(new Set());
-      if (selectedStore) {
-        await loadDocuments(selectedStore);
-      }
+      if (expandedStore) await loadDocuments(expandedStore);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete some documents",
-        variant: "destructive",
-      });
+      toast({ title: "Hata", description: "Bazı dokümanlar silinemedi", variant: "destructive" });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const toggleDocSelection = (docName: string) => {
-    const newSelected = new Set(selectedDocs);
-    if (newSelected.has(docName)) {
-      newSelected.delete(docName);
-    } else {
-      newSelected.add(docName);
-    }
-    setSelectedDocs(newSelected);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedDocs.size === documents.length) {
-      setSelectedDocs(new Set());
-    } else {
-      setSelectedDocs(new Set(documents.map((d) => d.name)));
     }
   };
 
@@ -343,361 +200,185 @@ export const GeminiStoreManager = () => {
     if (!bytes) return "N/A";
     const size = parseInt(bytes);
     if (isNaN(size)) return "N/A";
-    const units = ["B", "KB", "MB", "GB"];
+    const units = ["B", "KB", "MB"];
     let unitIndex = 0;
     let fileSize = size;
     while (fileSize >= 1024 && unitIndex < units.length - 1) {
       fileSize /= 1024;
       unitIndex++;
     }
-    return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
-  };
-
-  const handleSetActiveStore = async (storeName: string) => {
-    try {
-      await setActiveStore(storeName);
-      setActiveStoreState(storeName);
-      toast({
-        title: "Success",
-        description: "Active chatbot store updated",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update active store",
-        variant: "destructive",
-      });
-    }
+    return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Store</CardTitle>
-          <CardDescription>Create a new Gemini file search store</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Store name"
-              value={newStoreName}
-              onChange={(e) => setNewStoreName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreateStore()}
-            />
-            <Button onClick={handleCreateStore} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Create
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+        <div className="flex items-center gap-2">
+          <FolderOpen className="h-4 w-4 text-primary" />
+          <span className="font-medium text-sm">Gemini File Search Stores</span>
+          <Badge variant="outline" className="text-xs">{stores.length} store</Badge>
+        </div>
+        <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+          <Plus className="h-3.5 w-3.5 mr-1" /> Yeni Store
+        </Button>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Stores</CardTitle>
-          <CardDescription>Select a store to manage documents</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {stores.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No stores created yet</p>
-          ) : (
-            <div className="space-y-2">
-              {stores.map((store) => (
-                <div key={store.name} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{store.displayName}</span>
-                    {activeStore === store.name && (
-                      <Badge variant="default" className="flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Active
-                      </Badge>
+      {/* Store List */}
+      {loading && stores.length === 0 ? (
+        <div className="flex justify-center p-6">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      ) : stores.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground text-sm border rounded-lg bg-muted/20">
+          Henüz store oluşturulmamış
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {stores.map((store) => (
+            <Collapsible
+              key={store.name}
+              open={expandedStore === store.name}
+              onOpenChange={(open) => setExpandedStore(open ? store.name : null)}
+            >
+              <div className={`rounded-lg border transition-colors ${expandedStore === store.name ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-t-lg">
+                    <div className="flex items-center gap-2">
+                      {expandedStore === store.name ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <FolderOpen className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-sm">{store.displayName}</span>
+                      {activeStore === store.name && (
+                        <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 gap-1">
+                          <CheckCircle2 className="h-2.5 w-2.5" /> Aktif
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {activeStore !== store.name && (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={(e) => handleSetActiveStore(e, store.name)}>
+                          Aktif Yap
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={(e) => handleDeleteStore(e, store.name)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent>
+                  <div className="border-t p-3 space-y-3">
+                    {/* Document Actions */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{documents.length} doküman</span>
+                      <div className="flex items-center gap-2">
+                        {selectedDocs.size > 0 && (
+                          <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={handleBulkDelete}>
+                            <Trash2 className="h-3 w-3 mr-1" /> {selectedDocs.size} Sil
+                          </Button>
+                        )}
+                        <Button size="sm" className="h-7 text-xs" onClick={() => setShowUploadDialog(true)}>
+                          <Upload className="h-3 w-3 mr-1" /> Yükle
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Document List */}
+                    {documents.length === 0 ? (
+                      <div className="text-center py-4 text-muted-foreground text-xs">
+                        Henüz doküman yok
+                      </div>
+                    ) : (
+                      <div className="space-y-1 max-h-64 overflow-y-auto">
+                        {documents.map((doc) => {
+                          const displayName = doc.displayName || doc.customMetadata?.find(m => m.key === 'Dosya')?.stringValue || doc.name.split('/').pop() || doc.name;
+                          return (
+                            <div key={doc.name} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 group">
+                              <Checkbox
+                                checked={selectedDocs.has(doc.name)}
+                                onCheckedChange={(checked) => {
+                                  const newSet = new Set(selectedDocs);
+                                  if (checked) newSet.add(doc.name);
+                                  else newSet.delete(doc.name);
+                                  setSelectedDocs(newSet);
+                                }}
+                              />
+                              <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                              <span className="text-xs truncate flex-1" title={displayName}>{displayName}</span>
+                              <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.sizeBytes)}</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteDocument(doc.name)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setSelectedStore(store.name)}>
-                      View Documents
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleSetActiveStore(store.name)}
-                      disabled={activeStore === store.name}
-                    >
-                      Set Active
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDeleteStore(store.name)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {selectedStore && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Documents</CardTitle>
-            <CardDescription>
-              Manage documents in {stores.find((s) => s.name === selectedStore)?.displayName || selectedStore}
-              {documents.length > 0 && ` (${documents.length} document${documents.length === 1 ? "" : "s"})`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <Button onClick={handleUploadClick} disabled={uploading}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Document
-              </Button>
-              {selectedDocs.size > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete} disabled={loading}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Selected ({selectedDocs.size})
-                </Button>
-              )}
-            </div>
-
-            {loading ? (
-              <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
+                </CollapsibleContent>
               </div>
-            ) : documents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <input
-                          type="checkbox"
-                          checked={selectedDocs.size === documents.length && documents.length > 0}
-                          onChange={toggleSelectAll}
-                          className="cursor-pointer"
-                        />
-                      </TableHead>
-                      <TableHead>File Name</TableHead>
-                      <TableHead>File Size</TableHead>
-                      <TableHead>Upload Date & Time</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {documents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((doc) => (
-                      <TableRow key={doc.name}>
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={selectedDocs.has(doc.name)}
-                            onChange={() => toggleDocSelection(doc.name)}
-                            className="cursor-pointer"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1">
-                              <div className="font-medium">{doc.displayName}</div>
-                              <div className="text-xs text-muted-foreground truncate max-w-md">
-                                {doc.name.split("/").pop()}
-                              </div>
-
-                              {doc.customMetadata && doc.customMetadata.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-border text-xs">
-                                  <dl className="space-y-1">
-                                    {doc.customMetadata.map(
-                                      (meta, index) =>
-                                        meta.key && (
-                                          <div key={index} className="flex gap-2">
-                                            <dt className="font-medium text-foreground/80 truncate" title={meta.key}>
-                                              {meta.key}:
-                                            </dt>
-                                            <dd className="text-muted-foreground truncate" title={meta.stringValue}>
-                                              {meta.stringValue}
-                                            </dd>
-                                          </div>
-                                        ),
-                                    )}
-                                  </dl>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm">{formatFileSize(doc.sizeBytes)}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {doc.createTime
-                              ? new Date(doc.createTime).toLocaleString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : "N/A"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteDocument(doc.name)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <div className="mt-4">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                        />
-                      </PaginationItem>
-                      {Array.from({ length: Math.ceil(documents.length / itemsPerPage) }, (_, i) => i + 1).map(
-                        (page) => (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(page)}
-                              isActive={currentPage === page}
-                              className="cursor-pointer"
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        ),
-                      )}
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() =>
-                            setCurrentPage((p) => Math.min(Math.ceil(documents.length / itemsPerPage), p + 1))
-                          }
-                          className={
-                            currentPage === Math.ceil(documents.length / itemsPerPage)
-                              ? "pointer-events-none opacity-50"
-                              : "cursor-pointer"
-                          }
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+            </Collapsible>
+          ))}
+        </div>
       )}
 
-      {/* Upload Modal */}
-      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      {/* Create Store Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
-            <DialogDescription>
-              Upload a document to {stores.find((s) => s.name === selectedStore)?.displayName || selectedStore}
-            </DialogDescription>
+            <DialogTitle>Yeni Store Oluştur</DialogTitle>
+            <DialogDescription>Gemini File Search için yeni bir store oluşturun</DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* File Selection */}
+          <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Select File</label>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".docx,.xlsx,.pdf,.txt,.csv"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full justify-start"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {selectedFile ? selectedFile.name : "Choose File"}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">Supported: DOCX, XLSX, PDF, TXT, CSV</p>
+              <Label>Store Adı</Label>
+              <Input placeholder="my-store" value={newStoreName} onChange={(e) => setNewStoreName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleCreateStore()} />
             </div>
-
-            {/* Custom File Name */}
-            {selectedFile && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Display Name (Optional)</label>
-                <Input
-                  placeholder="Custom file name"
-                  value={customFileName}
-                  onChange={(e) => setCustomFileName(e.target.value)}
-                />
-              </div>
-            )}
-
-            {/* Custom Metadata */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Custom Metadata (Optional)</label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {metadata.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Input
-                      placeholder="Key"
-                      value={(item.key = "Dosya")}
-                      onChange={(e) => handleMetadataChange(index, "key", e.target.value)}
-                      className="flex-1"
-                    />
-                    <Input
-                      placeholder="Value"
-                      value={item.value}
-                      onChange={(e) => handleMetadataChange(index, "value", e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => removeMetadataRow(index)}
-                      disabled={metadata.length === 1}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={addMetadataRow} className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Metadata
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>İptal</Button>
+              <Button onClick={handleCreateStore} disabled={loading}>
+                {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Oluştur
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={handleModalClose} disabled={uploading}>
-              Cancel
-            </Button>
-            <Button onClick={handleModalUpload} disabled={uploading || !selectedFile}>
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </>
-              )}
-            </Button>
-          </DialogFooter>
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Doküman Yükle</DialogTitle>
+            <DialogDescription>DOCX, XLSX, PDF, TXT veya CSV dosyası yükleyin</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Dosya</Label>
+              <Input type="file" accept=".docx,.xlsx,.pdf,.txt,.csv,.json" onChange={handleFileSelect} ref={fileInputRef} />
+            </div>
+            {selectedFile && (
+              <div className="space-y-2">
+                <Label>Görünen Ad</Label>
+                <Input value={customFileName} onChange={(e) => setCustomFileName(e.target.value)} />
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowUploadDialog(false)}>İptal</Button>
+              <Button onClick={handleUpload} disabled={uploading || !selectedFile}>
+                {uploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Yükle
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

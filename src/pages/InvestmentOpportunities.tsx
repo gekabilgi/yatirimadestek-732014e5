@@ -177,7 +177,6 @@ const InvestmentOpportunities = () => {
           text: "Fizibilite Raporları",
           icon: TrendingUp
         }}
-        gradient="teal"
         compact
       />
       

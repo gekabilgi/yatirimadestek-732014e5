@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Mail, Eye, EyeOff } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Trash2, Edit, Plus, Mail, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { QnaAdminEmail } from '@/types/qna';
@@ -20,10 +21,8 @@ const QnaAdminEmailManagement = () => {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    is_active: true,
-    password: ''
+    is_active: true
   });
-  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchAdminEmails();
@@ -56,20 +55,13 @@ const QnaAdminEmailManagement = () => {
 
     try {
       if (editingEmail) {
-        const updateData: any = {
-          email: formData.email,
-          full_name: formData.full_name,
-          is_active: formData.is_active
-        };
-        
-        // Only update password if it's provided
-        if (formData.password && formData.password.trim() !== '') {
-          updateData.password = formData.password;
-        }
-
         const { error } = await supabase
           .from('qna_admin_emails')
-          .update(updateData)
+          .update({
+            email: formData.email,
+            full_name: formData.full_name,
+            is_active: formData.is_active
+          })
           .eq('id', editingEmail.id);
 
         if (error) throw error;
@@ -80,8 +72,7 @@ const QnaAdminEmailManagement = () => {
           .insert({
             email: formData.email,
             full_name: formData.full_name,
-            is_active: formData.is_active,
-            password: formData.password || null
+            is_active: formData.is_active
           });
 
         if (error) throw error;
@@ -91,8 +82,7 @@ const QnaAdminEmailManagement = () => {
       fetchAdminEmails();
       setIsDialogOpen(false);
       setEditingEmail(null);
-      setFormData({ email: '', full_name: '', is_active: true, password: '' });
-      setShowPassword(false);
+      setFormData({ email: '', full_name: '', is_active: true });
     } catch (error) {
       console.error('Error saving admin email:', error);
       toast.error('Admin e-postası kaydedilirken hata oluştu.');
@@ -140,17 +130,14 @@ const QnaAdminEmailManagement = () => {
     setFormData({
       email: adminEmail.email,
       full_name: adminEmail.full_name,
-      is_active: adminEmail.is_active,
-      password: ''
+      is_active: adminEmail.is_active
     });
-    setShowPassword(false);
     setIsDialogOpen(true);
   };
 
   const openAddDialog = () => {
     setEditingEmail(null);
-    setFormData({ email: '', full_name: '', is_active: true, password: '' });
-    setShowPassword(false);
+    setFormData({ email: '', full_name: '', is_active: true });
     setIsDialogOpen(true);
   };
 
@@ -163,154 +150,141 @@ const QnaAdminEmailManagement = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Admin E-posta Yönetimi
-          </CardTitle>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openAddDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Admin E-postası Ekle
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingEmail ? 'Admin E-postasını Düzenle' : 'Yeni Admin E-postası Ekle'}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="email">E-posta</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="E-posta adresini giriniz"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="full_name">Ad Soyad</Label>
-                  <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    placeholder="Ad ve soyadını giriniz"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">
-                    Şifre {editingEmail && <span className="text-sm text-muted-foreground">(değiştirmek için doldurun)</span>}
-                  </Label>
-                  <div className="relative">
+    <div className="space-y-4">
+      <Alert className="bg-primary/5 border-primary/20">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-sm">
+          Bu bölüm, S-S-S sayfasındaki sorular yanıtlandığında <strong>bildirim alacak e-posta adreslerini</strong> yönetmek içindir. 
+          Admin paneline giriş için <strong>"Kullanıcı ve Rol Yönetimi"</strong> sayfasından kullanıcı oluşturup admin rolü atamanız gerekmektedir.
+        </AlertDescription>
+      </Alert>
+
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                S-S-S Bildirim E-postaları
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Soru yanıtlandığında bu e-posta adreslerine bildirim gönderilir
+              </CardDescription>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openAddDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  E-posta Ekle
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingEmail ? 'Bildirim E-postasını Düzenle' : 'Yeni Bildirim E-postası Ekle'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="email">E-posta</Label>
                     <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder={editingEmail ? "Yeni şifre (opsiyonel)" : "Şifre giriniz"}
-                      className="pr-10"
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="E-posta adresini giriniz"
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_active"
-                    checked={formData.is_active}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                  />
-                  <Label htmlFor="is_active">Aktif</Label>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    İptal
-                  </Button>
-                  <Button type="submit">
-                    {editingEmail ? 'Güncelle' : 'Ekle'}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ad Soyad</TableHead>
-              <TableHead>E-posta</TableHead>
-              <TableHead>Durum</TableHead>
-              <TableHead>Eklenme Tarihi</TableHead>
-              <TableHead>İşlemler</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {adminEmails.map((adminEmail) => (
-              <TableRow key={adminEmail.id}>
-                <TableCell className="font-medium">{adminEmail.full_name}</TableCell>
-                <TableCell>{adminEmail.email}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={adminEmail.is_active ? "default" : "secondary"}>
-                      {adminEmail.is_active ? 'Aktif' : 'Pasif'}
-                    </Badge>
+                  <div>
+                    <Label htmlFor="full_name">Ad Soyad</Label>
+                    <Input
+                      id="full_name"
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      placeholder="Ad ve soyadını giriniz"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
                     <Switch
-                      checked={adminEmail.is_active}
-                      onCheckedChange={() => toggleActiveStatus(adminEmail.id, adminEmail.is_active)}
+                      id="is_active"
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                     />
+                    <Label htmlFor="is_active">Aktif (bildirim alır)</Label>
                   </div>
-                </TableCell>
-                <TableCell>
-                  {new Date(adminEmail.created_at).toLocaleDateString('tr-TR')}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditDialog(adminEmail)}
-                    >
-                      <Edit className="h-4 w-4" />
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      İptal
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(adminEmail.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
+                    <Button type="submit">
+                      {editingEmail ? 'Güncelle' : 'Ekle'}
                     </Button>
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {adminEmails.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            Henüz admin e-postası eklenmemiş.
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Ad Soyad</TableHead>
+                <TableHead>E-posta</TableHead>
+                <TableHead>Durum</TableHead>
+                <TableHead>Eklenme Tarihi</TableHead>
+                <TableHead>İşlemler</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {adminEmails.map((adminEmail) => (
+                <TableRow key={adminEmail.id}>
+                  <TableCell className="font-medium">{adminEmail.full_name}</TableCell>
+                  <TableCell>{adminEmail.email}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={adminEmail.is_active ? "default" : "secondary"}>
+                        {adminEmail.is_active ? 'Aktif' : 'Pasif'}
+                      </Badge>
+                      <Switch
+                        checked={adminEmail.is_active}
+                        onCheckedChange={() => toggleActiveStatus(adminEmail.id, adminEmail.is_active)}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(adminEmail.created_at).toLocaleDateString('tr-TR')}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(adminEmail)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(adminEmail.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {adminEmails.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              Henüz bildirim e-postası eklenmemiş.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

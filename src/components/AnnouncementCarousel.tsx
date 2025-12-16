@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,14 +9,29 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from '@/components/ui/carousel';
 import { ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import Autoplay from 'embla-carousel-autoplay';
+import { NewsletterSubscribeForm } from '@/components/NewsletterSubscribeForm';
 
 const AnnouncementCarousel = () => {
   const navigate = useNavigate();
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const autoplay = React.useRef(
+    Autoplay({
+      delay: 4000,
+      stopOnInteraction: true,
+      stopOnMouseEnter: true,
+    })
+  );
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ['announcements'],
@@ -34,9 +49,30 @@ const AnnouncementCarousel = () => {
     }
   });
 
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+
+    api.on('select', () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  const onDotClick = useCallback(
+    (index: number) => {
+      if (!api) return;
+      api.scrollTo(index);
+    },
+    [api]
+  );
+
   if (isLoading) {
     return (
-      <div className="w-full py-12">
+      <div className="w-full py-12 animate-fade-in">
         <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
           Güncel Destek Duyuruları
         </h2>
@@ -67,23 +103,29 @@ const AnnouncementCarousel = () => {
   }
 
   return (
-    <div className="w-full py-12">
-      <h2 className="text-3xl font-bold text-center mb-8 text-slate-900">
-        Güncel Destek Duyuruları
-      </h2>
+    <div className="w-full py-12 animate-fade-in">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+        <h2 className="text-3xl font-bold text-center text-slate-900">
+          Güncel Destek Duyuruları
+        </h2>
+        <NewsletterSubscribeForm />
+      </div>
       
-      <Carousel
-        opts={{
-          align: "start",
-          loop: true,
-        }}
-        className="w-full max-w-6xl mx-auto"
-      >
+      <div className="relative">
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          plugins={[autoplay.current]}
+          className="w-full max-w-6xl mx-auto"
+          setApi={setApi}
+        >
         <CarouselContent className="-ml-4">
           {announcements.map((announcement) => (
             <CarouselItem key={announcement.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
               <Card 
-                className="card-modern hover:shadow-xl transition-all duration-300 h-full cursor-pointer"
+                className="card-modern hover:shadow-xl transition-all duration-300 h-full cursor-pointer hover-scale"
                 onClick={() => navigate(`/duyuru/${announcement.id}`)}
               >
                 <CardContent className="p-6 flex flex-col h-full">
@@ -109,24 +151,36 @@ const AnnouncementCarousel = () => {
                       {format(new Date(announcement.announcement_date), 'd MMMM yyyy', { locale: tr })}
                     </span>
                     {announcement.external_link && (
-                      <ExternalLink className="h-4 w-4 text-primary" />
+                      <ExternalLink className="h-4 w-4 text-primary hover:text-primary/80 transition-colors" />
                     )}
-                  </div>
-
-                  {/* Progress bar indicator */}
-                  <div className="mt-4">
-                    <div className="h-1 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full w-1/3 bg-slate-900 rounded-full"></div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-0 -translate-x-12" />
-        <CarouselNext className="right-0 translate-x-12" />
+        <CarouselPrevious className="hidden md:flex" />
+        <CarouselNext className="hidden md:flex" />
       </Carousel>
+
+      {/* Slide Indicators */}
+      {count > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          {Array.from({ length: count }).map((_, index) => (
+            <button
+              key={index}
+              onClick={() => onDotClick(index)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index === current
+                  ? 'w-8 bg-primary'
+                  : 'w-2 bg-primary/30 hover:bg-primary/50'
+              }`}
+              aria-label={`Slayt ${index + 1}'e git`}
+            />
+          ))}
+        </div>
+      )}
+      </div>
     </div>
   );
 };

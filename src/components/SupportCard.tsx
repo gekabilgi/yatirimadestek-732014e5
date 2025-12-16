@@ -27,21 +27,34 @@ export const SupportCard = ({ program }: SupportCardProps) => {
     return today <= deadline;
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/searchsupport`;
+    const shareText = `${program?.title}\n\n${program?.description?.slice(0, 200)}...`;
+    
     if (navigator.share) {
-      navigator.share({
-        title: program?.title,
-        text: program?.description,
-        url: `${window.location.origin}/program/${program.id}`,
-      });
+      try {
+        await navigator.share({
+          title: program?.title,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (error) {
+        // User cancelled or share failed, fallback to clipboard
+        if ((error as Error).name !== 'AbortError') {
+          navigator.clipboard.writeText(`${program?.title}\n${shareUrl}`);
+          toast.success('Link kopyalandı!');
+        }
+      }
     } else {
-      navigator.clipboard.writeText(`${window.location.origin}/program/${program.id}`);
+      navigator.clipboard.writeText(`${program?.title}\n${shareUrl}`);
       toast.success('Link kopyalandı!');
     }
   };
 
   const handleFeedback = () => {
-    toast.info('Geri bildirim özelliği yakında eklenecek');
+    const subject = encodeURIComponent(`Geri Bildirim: ${program?.title}`);
+    const body = encodeURIComponent(`Program: ${program?.title}\n\nGeri Bildiriminiz:\n\n`);
+    window.open(`mailto:destek@tesviksor.com?subject=${subject}&body=${body}`, '_blank');
   };
 
   const isOpenProgram = isProgramOpen();
@@ -96,7 +109,7 @@ export const SupportCard = ({ program }: SupportCardProps) => {
           <CollapsibleContent className="space-y-4 mt-4">
             <div className="border-t pt-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-gray-500 mb-4 gap-3">
-                <span>Güncellenme: {formatDate(program.updated_at)}</span>
+                <span>Oluşturma: {formatDate(program.created_at)} | Güncellenme: {formatDate(program.updated_at)}</span>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                   <Button variant="outline" size="sm" onClick={handleFeedback} className="w-full sm:w-auto">
                     <MessageSquare className="w-4 h-4 mr-1" />
