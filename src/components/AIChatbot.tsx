@@ -113,47 +113,66 @@ function renderContentWithBadges(content: string) {
 // Markdown bileşenleri - asistan mesajları için formatlama
 const markdownComponents = {
   p: ({ children, ...props }: any) => (
-    <p className="mb-2 last:mb-0" {...props}>{children}</p>
+    <p className="mb-2 last:mb-0" {...props}>
+      {children}
+    </p>
   ),
   ul: ({ children, ...props }: any) => (
-    <ul className="list-disc list-inside mb-2 space-y-1 pl-2" {...props}>{children}</ul>
+    <ul className="list-disc list-inside mb-2 space-y-1 pl-2" {...props}>
+      {children}
+    </ul>
   ),
   ol: ({ children, ...props }: any) => (
-    <ol className="list-decimal list-inside mb-2 space-y-1 pl-2" {...props}>{children}</ol>
+    <ol className="list-decimal list-inside mb-2 space-y-1 pl-2" {...props}>
+      {children}
+    </ol>
   ),
   li: ({ children, ...props }: any) => (
-    <li className="text-sm leading-relaxed" {...props}>{children}</li>
+    <li className="text-sm leading-relaxed" {...props}>
+      {children}
+    </li>
   ),
   strong: ({ children, ...props }: any) => (
-    <strong className="font-semibold text-primary" {...props}>{children}</strong>
+    <strong className="font-semibold text-primary" {...props}>
+      {children}
+    </strong>
   ),
   a: ({ href, children, ...props }: any) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" 
-       className="text-primary hover:underline" {...props}>{children}</a>
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" {...props}>
+      {children}
+    </a>
   ),
   code: ({ children, ...props }: any) => (
-    <code className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
+    <code className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono" {...props}>
+      {children}
+    </code>
   ),
   h1: ({ children, ...props }: any) => (
-    <h1 className="text-base font-bold mb-2" {...props}>{children}</h1>
+    <h1 className="text-base font-bold mb-2" {...props}>
+      {children}
+    </h1>
   ),
   h2: ({ children, ...props }: any) => (
-    <h2 className="text-sm font-bold mb-2" {...props}>{children}</h2>
+    <h2 className="text-sm font-bold mb-2" {...props}>
+      {children}
+    </h2>
   ),
   h3: ({ children, ...props }: any) => (
-    <h3 className="text-sm font-semibold mb-1" {...props}>{children}</h3>
+    <h3 className="text-sm font-semibold mb-1" {...props}>
+      {children}
+    </h3>
   ),
 };
 
 function MessageBubble({ message, showSources }: { message: Message; showSources: boolean }) {
   const isUser = message.role === "user";
-  const { speak, stop, isSpeaking, isSupported } = useSpeechSynthesis({ lang: 'tr-TR', rate: 0.9 });
+  const { speak, stop, isSpeaking, isSupported } = useSpeechSynthesis({ lang: "tr-TR", rate: 0.9 });
 
   // Clean citations from content if showSources is disabled
   const cleanCitations = (text: string): string => {
     return text
-      .replace(/\[(\d+(?:,\s*\d+)*)\]/g, '') // Remove [1], [2, 3] etc.
-      .replace(/\s{2,}/g, ' ') // Clean up extra spaces
+      .replace(/\[(\d+(?:,\s*\d+)*)\]/g, "") // Remove [1], [2, 3] etc.
+      .replace(/\s{2,}/g, " ") // Clean up extra spaces
       .trim();
   };
 
@@ -164,10 +183,10 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
       stop();
     } else {
       const cleanText = displayContent
-        .replace(/\[badge:[^\]]+\]/gi, '')
-        .replace(/\[(\d+)\]/g, '')
-        .replace(/[#*_`]/g, '')
-        .replace(/\n+/g, '. ')
+        .replace(/\[badge:[^\]]+\]/gi, "")
+        .replace(/\[(\d+)\]/g, "")
+        .replace(/[#*_`]/g, "")
+        .replace(/\n+/g, ". ")
         .trim();
       speak(cleanText);
     }
@@ -257,14 +276,14 @@ export function AIChatbot() {
   // Track widget open and unique session
   useEffect(() => {
     if (isOpen) {
-      trackUniqueSession('floating_widget');
+      trackUniqueSession("floating_widget");
     }
   }, [isOpen, trackUniqueSession]);
 
   // Voice input handler
   const handleVoiceInput = () => {
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    
+
     if (!SpeechRecognition) {
       toast({
         variant: "destructive",
@@ -282,7 +301,7 @@ export function AIChatbot() {
 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
-    recognition.lang = 'tr-TR';
+    recognition.lang = "tr-TR";
     recognition.continuous = false;
     recognition.interimResults = false;
 
@@ -290,7 +309,7 @@ export function AIChatbot() {
     recognition.onend = () => setIsRecording(false);
     recognition.onerror = (event: any) => {
       setIsRecording(false);
-      if (event.error === 'not-allowed') {
+      if (event.error === "not-allowed") {
         toast({
           variant: "destructive",
           title: "Mikrofon Erişimi Reddedildi",
@@ -300,7 +319,7 @@ export function AIChatbot() {
     };
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+      setInput((prev) => prev + (prev ? " " : "") + transcript);
     };
 
     recognition.start();
@@ -465,9 +484,9 @@ export function AIChatbot() {
 
     // Save user message to database
     await saveMessage(newUserMsg, currentSessionId);
-    
+
     // Track user message for statistics
-    trackUserMessage('floating_widget');
+    trackUserMessage("floating_widget");
 
     setIsLoading(true);
     setShouldAutoScroll(true);
@@ -527,9 +546,11 @@ export function AIChatbot() {
         let fallbackMessage = "Yanıt alınamadı. Lütfen tekrar deneyin.";
 
         if (data?.emptyResponse) {
-          fallbackMessage = "Üzgünüm, belgelerimde bu konuyla ilgili bilgi bulamadım. Sorunuzu farklı kelimelerle ifade ederek tekrar deneyin.";
+          fallbackMessage =
+            "Üzgünüm, belgelerimde bu konuyla ilgili bilgi bulamadım. Sorunuzu farklı kelimelerle ifade ederek tekrar deneyin.";
         } else if (data?.retriedWithDynamicSearch) {
-          fallbackMessage = "Kapsamlı arama yapıldı ancak sonuç bulunamadı. İlgili Yatırım Destek Ofisi ile iletişime geçmenizi öneririz.";
+          fallbackMessage =
+            "Kapsamlı arama yapıldı ancak sonuç bulunamadı. İlgili Yatırım Destek Ofisi ile iletişime geçmenizi öneririz.";
         }
 
         const errorMsg: Message = {
@@ -544,8 +565,8 @@ export function AIChatbot() {
 
         toast({
           title: "Arama Tamamlandı",
-          description: data?.retriedWithDynamicSearch 
-            ? "Detaylı arama yapıldı, ancak sonuç bulunamadı." 
+          description: data?.retriedWithDynamicSearch
+            ? "Detaylı arama yapıldı, ancak sonuç bulunamadı."
             : "Sonuç bulunamadı.",
           variant: "default",
         });
@@ -583,11 +604,7 @@ export function AIChatbot() {
         if (abortControllerRef.current?.signal.aborted) break;
 
         currentText += (i > 0 ? " " : "") + words[i];
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantId ? { ...msg, content: currentText } : msg,
-          ),
-        );
+        setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? { ...msg, content: currentText } : msg)));
 
         // Variable delay for natural cadence
         await new Promise((resolve) => setTimeout(resolve, 30 + Math.random() * 20));
@@ -604,9 +621,9 @@ export function AIChatbot() {
 
       // Save assistant message to database
       await saveMessage(finalAssistantMsg, currentSessionId);
-      
+
       // Track assistant message for statistics
-      trackAssistantMessage('floating_widget');
+      trackAssistantMessage("floating_widget");
 
       // Reload sessions to update list
       loadChatSessions();
@@ -682,7 +699,7 @@ export function AIChatbot() {
     setInput("");
     setShowHistory(false);
     // Track new session
-    trackNewSession('floating_widget');
+    trackNewSession("floating_widget");
   };
 
   const handleClear = () => {
@@ -740,7 +757,7 @@ export function AIChatbot() {
       {/* Chat Modal */}
       {isOpen && (
         <Card
-          className={`fixed ${isMobile ? "top-16 left-0 right-0 bottom-0" : "bottom-6 right-6 w-[480px] max-h-[85vh] h-[680px]"} shadow-2xl z-[100] flex ${showHistory ? "flex-row" : "flex-col"} border-2 animate-in slide-in-from-bottom-5 duration-300`}
+          className={`fixed ${isMobile ? "top-16 left-0 right-0 bottom-0" : "bottom-6 right-6 w-[480px] max-h-[90vh] h-[768px]"} shadow-2xl z-[100] flex ${showHistory ? "flex-row" : "flex-col"} border-2 animate-in slide-in-from-bottom-5 duration-300`}
         >
           {/* Chat History Sidebar */}
           {showHistory && (
@@ -965,7 +982,7 @@ export function AIChatbot() {
                     disabled={isLoading}
                     size="icon"
                     variant={isRecording ? "destructive" : "outline"}
-                    className={`h-[22px] min-w-[44px] ${isRecording ? 'animate-pulse' : ''}`}
+                    className={`h-[22px] min-w-[44px] ${isRecording ? "animate-pulse" : ""}`}
                     aria-label={isRecording ? "Kaydı durdur" : "Sesli giriş"}
                   >
                     {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
