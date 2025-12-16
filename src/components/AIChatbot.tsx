@@ -24,6 +24,7 @@ import {
   VolumeX,
   Mic,
   MicOff,
+  MessageSquare,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useChatbotStats } from "@/hooks/useChatbotStats";
 import { useChatbotSettings } from "@/hooks/useChatbotSettings";
 import { SupportProgramCard, type SupportProgramCardData } from "@/components/chat/SupportProgramCard";
+import { extractFollowUpQuestion } from "@/utils/followUpQuestionParser";
 
 interface Message {
   role: "user" | "assistant";
@@ -176,13 +178,18 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
       .trim();
   };
 
-  const displayContent = showSources ? message.content : cleanCitations(message.content);
+  const rawContent = showSources ? message.content : cleanCitations(message.content);
+  
+  // Takip sorusunu ayır (sadece asistan mesajları için)
+  const { mainContent, followUpQuestion } = isUser 
+    ? { mainContent: rawContent, followUpQuestion: null } 
+    : extractFollowUpQuestion(rawContent);
 
   const handleSpeak = () => {
     if (isSpeaking) {
       stop();
     } else {
-      const cleanText = displayContent
+      const cleanText = mainContent
         .replace(/\[badge:[^\]]+\]/gi, "")
         .replace(/\[(\d+)\]/g, "")
         .replace(/[#*_`]/g, "")
@@ -191,6 +198,29 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
       speak(cleanText);
     }
   };
+
+  // Takip Sorusu Kartı (floating widget için)
+  const FollowUpCard = ({ question }: { question: string }) => (
+    <div className="mt-3 pt-3 border-t border-border/40">
+      <div className="rounded-lg bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 
+                      border-2 border-primary/40 p-3 shadow-sm">
+        <div className="flex items-start gap-2">
+          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/20 
+                          flex items-center justify-center ring-2 ring-primary/30">
+            <MessageSquare className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1">
+              Devam Etmek İçin
+            </p>
+            <p className="text-sm font-medium text-foreground leading-relaxed">
+              {question}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -202,11 +232,14 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
         >
           <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
             {isUser ? (
-              <span className="whitespace-pre-wrap">{displayContent}</span>
+              <span className="whitespace-pre-wrap">{mainContent}</span>
             ) : (
-              <ReactMarkdown components={markdownComponents}>{displayContent}</ReactMarkdown>
+              <ReactMarkdown components={markdownComponents}>{mainContent}</ReactMarkdown>
             )}
           </div>
+
+          {/* Takip Sorusu Kartı */}
+          {!isUser && followUpQuestion && <FollowUpCard question={followUpQuestion} />}
 
           {!isUser && isSupported && (
             <div className="mt-2 pt-1.5 border-t border-border/30 flex justify-end">
