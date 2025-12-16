@@ -10,6 +10,9 @@ import { extractFollowUpQuestion } from "@/utils/followUpQuestionParser";
 // Markdown içeriğini düzgün formatlama için ön işleme
 const preprocessMarkdown = (content: string): string => {
   return content
+    // Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
+    .replace(/^[\*\-]\s+(\*\*[^*]+:\*\*)/gm, '$1')
+    .replace(/\n[\*\-]\s+(\*\*[^*]+:\*\*)/g, '\n\n$1')
     // Liste işaretçileri öncesinde satır sonu ekle (* veya -)
     .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, '$1\n\n$2 $3')
     // Numaralı liste öğeleri öncesinde satır sonu
