@@ -192,6 +192,21 @@ const markdownComponents = {
   ),
 };
 
+// Markdown içeriğini düzgün formatlama için ön işleme
+const preprocessMarkdown = (content: string): string => {
+  return content
+    // Liste işaretçileri öncesinde satır sonu ekle (* veya -)
+    .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, '$1\n\n$2 $3')
+    // Numaralı liste öğeleri öncesinde satır sonu
+    .replace(/([.!?:,])\s+(\d+)\.\s+(\*\*)/g, '$1\n\n$2. $3')
+    // "Özel Durum:" gibi inline bold başlıklar için satır sonu
+    .replace(/([.!?])\s+(\*\*[^*]+:\*\*)/g, '$1\n\n$2')
+    // İç içe bold başlık + açıklama paterni (liste içinde)
+    .replace(/(\*\*[^*:]+:\*\*[^.!?*]+[.!?])\s+(\*\*[^*]+:\*\*)/g, '$1\n\n$2')
+    // Çift boşlukları temizle
+    .replace(/\n{3,}/g, '\n\n');
+};
+
 function MessageBubble({ message, showSources }: { message: Message; showSources: boolean }) {
   const isUser = message.role === "user";
   const { speak, stop, isSpeaking, isSupported } = useSpeechSynthesis({ lang: "tr-TR", rate: 0.9 });
@@ -260,7 +275,7 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
             {isUser ? (
               <span className="whitespace-pre-wrap">{mainContent}</span>
             ) : (
-              <ReactMarkdown components={markdownComponents}>{mainContent}</ReactMarkdown>
+              <ReactMarkdown components={markdownComponents}>{preprocessMarkdown(mainContent)}</ReactMarkdown>
             )}
           </div>
 
