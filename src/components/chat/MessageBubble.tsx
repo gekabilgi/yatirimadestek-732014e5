@@ -6,6 +6,22 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { SupportProgramCard, SupportProgramCardData } from "./SupportProgramCard";
 import { FollowUpQuestionCard } from "./FollowUpQuestionCard";
 import { extractFollowUpQuestion } from "@/utils/followUpQuestionParser";
+
+// Markdown içeriğini düzgün formatlama için ön işleme
+const preprocessMarkdown = (content: string): string => {
+  return content
+    // Liste işaretçileri öncesinde satır sonu ekle (* veya -)
+    .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, '$1\n\n$2 $3')
+    // Numaralı liste öğeleri öncesinde satır sonu
+    .replace(/([.!?:,])\s+(\d+)\.\s+(\*\*)/g, '$1\n\n$2. $3')
+    // "Özel Durum:" gibi inline bold başlıklar için satır sonu
+    .replace(/([.!?])\s+(\*\*[^*]+:\*\*)/g, '$1\n\n$2')
+    // İç içe bold başlık + açıklama paterni (liste içinde)
+    .replace(/(\*\*[^*:]+:\*\*[^.!?*]+[.!?])\s+(\*\*[^*]+:\*\*)/g, '$1\n\n$2')
+    // Çift boşlukları temizle
+    .replace(/\n{3,}/g, '\n\n');
+};
+
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
@@ -41,8 +57,10 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
 
   // --- İçerik + Atıf Baloncukları ---
   const renderContentWithCitations = () => {
+    const processedContent = preprocessMarkdown(mainContent);
+    
     if (!sources || sources.length === 0 || isUser) {
-      return <ReactMarkdown components={markdownComponentsBase}>{mainContent}</ReactMarkdown>;
+      return <ReactMarkdown components={markdownComponentsBase}>{processedContent}</ReactMarkdown>;
     }
 
     const citationMap = new Map<string, JSX.Element[]>();
@@ -116,7 +134,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
       },
     };
 
-    return <ReactMarkdown components={components}>{mainContent}</ReactMarkdown>;
+    return <ReactMarkdown components={components}>{processedContent}</ReactMarkdown>;
   };
 
   // --- Alt kısım: Kullanılan Kaynaklar (chip'ler) ---
