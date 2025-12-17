@@ -51,8 +51,8 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
     return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
   }
 
-  // Öncelik 3: API'den gelen özel format - "### 💬 Devam Etmek İçin" başlığı
-  const specialFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*\n?\**([^*\n]+)\**\s*$/i;
+  // Öncelik 3: API'den gelen özel format - "### 💬 Devam Etmek İçin" + soru (nokta ile bitebilir)
+  const specialFormatPattern = /\.?\s*###\s*💬?\s*Devam Etmek İçin\s*\n?\**([^*\n]+)\**\s*$/i;
   const specialMatch = workingContent.match(specialFormatPattern);
   if (specialMatch) {
     const question = specialMatch[1].trim();
@@ -61,8 +61,15 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
     return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
   }
 
-  // Öncelik 4: Inline format - "### 💬 Devam Etmek İçin Bu yatırımı..." (satır sonu olmadan)
-  const inlineFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*(.+?)\??\s*$/i;
+  // Öncelik 4: Sadece "### 💬 Devam Etmek İçin" başlığı (soru ayrı satırda veya yok)
+  const headerOnlyPattern = /\.?\s*###\s*💬?\s*Devam Etmek İçin\s*$/i;
+  if (headerOnlyPattern.test(workingContent)) {
+    const mainContent = workingContent.replace(headerOnlyPattern, '').trim();
+    return { mainContent, followUpQuestion: "Bu yatırımı hangi ilde yapmayı planlıyorsunuz?", supportCardsNotice };
+  }
+
+  // Öncelik 5: Inline format - "### 💬 Devam Etmek İçin Bu yatırımı..." (satır sonu olmadan)
+  const inlineFormatPattern = /\.?\s*###\s*💬?\s*Devam Etmek İçin\s+(.+?)$/i;
   const inlineMatch = workingContent.match(inlineFormatPattern);
   if (inlineMatch) {
     const question = inlineMatch[1].trim();
@@ -71,7 +78,7 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
     return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
   }
 
-  // Öncelik 5: Standart takip sorusu pattern'leri
+  // Öncelik 6: Standart takip sorusu pattern'leri
   const patterns = [
     // "...planlıyorsunuz?" tarzı sorular
     /\n\n([^.!?\n]*(?:planlıyorsunuz|belirtir misiniz|ister misiniz|paylaşır mısınız|söyler misiniz|bildirir misiniz|bildirmeniz|paylaşmanız)\??)\s*$/i,
