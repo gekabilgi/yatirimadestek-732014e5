@@ -11,18 +11,29 @@ import { extractFollowUpQuestion } from "@/utils/followUpQuestionParser";
 const preprocessMarkdown = (content: string): string => {
   return (
     content
-      // Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
+      // 1. Ardışık bold başlıkları (**: **) satır sonuna taşı
+      .replace(/(\*\*[^*:]+:\*\*)\s*([^*\n]+)\s*(\*\*[^*:]+:\*\*)/g, "$1 $2\n\n$3")
+      
+      // 2. Bold başlık içeren metinden önce satır sonu ekle (cümle ortasında gelen)
+      .replace(/([.!?:])\s+(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
+      
+      // 3. Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
       .replace(/^[\*\-]\s+(\*\*[^*]+:\*\*)/gm, "$1")
       .replace(/\n[\*\-]\s+(\*\*[^*]+:\*\*)/g, "\n\n$1")
-      // Liste işaretçileri öncesinde satır sonu ekle (* veya -)
+      
+      // 4. Liste işaretçileri öncesinde satır sonu ekle (* veya -)
       .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, "$1\n\n$2 $3")
-      // Numaralı liste öğeleri öncesinde satır sonu
+      
+      // 5. Numaralı liste öğeleri öncesinde satır sonu
       .replace(/([.!?:,])\s+(\d+)\.\s+(\*\*)/g, "$1\n\n$2. $3")
-      // "Özel Durum:" gibi inline bold başlıklar için satır sonu
-      .replace(/([.!?])\s+(\*\*[^*]+:\*\*)/g, "$1\n\n$2")
-      // İç içe bold başlık + açıklama paterni (liste içinde)
+      
+      // 6. İç içe bold başlık + açıklama paterni (liste içinde)
       .replace(/(\*\*[^*:]+:\*\*[^.!?*]+[.!?])\s+(\*\*[^*]+:\*\*)/g, "$1\n\n$2")
-      // Çift boşlukları temizle
+      
+      // 7. "Sektör Analizi:" gibi başlıkların ardından satır sonu
+      .replace(/^([^*\n:]+:)\s*(\*\*)/gm, "$1\n\n$2")
+      
+      // 8. Çift boşlukları temizle
       .replace(/\n{3,}/g, "\n\n")
   );
 };
@@ -54,9 +65,9 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const isUser = role === "user";
 
-  // Takip sorusunu ana içerikten ayır
-  const { mainContent, followUpQuestion } = isUser
-    ? { mainContent: content, followUpQuestion: null }
+  // Takip sorusunu ve destek programı bildirimini ana içerikten ayır
+  const { mainContent, followUpQuestion, supportCardsNotice } = isUser
+    ? { mainContent: content, followUpQuestion: null, supportCardsNotice: null }
     : extractFollowUpQuestion(content);
 
   if (role === "assistant") {
@@ -252,8 +263,13 @@ export function MessageBubble({
           {/* Ek içerik (progress, ekstra info vs.) */}
           {children}
 
-          {/* Takip Sorusu Kartı */}
-          {!isUser && followUpQuestion && <FollowUpQuestionCard question={followUpQuestion} />}
+          {/* Takip Sorusu Kartı (soru veya bildirim varsa göster) */}
+          {!isUser && (followUpQuestion || supportCardsNotice) && (
+            <FollowUpQuestionCard 
+              question={followUpQuestion}
+              supportCardsNotice={supportCardsNotice}
+            />
+          )}
 
           {/* Kullanılan Kaynaklar chip'leri */}
           {renderSourceSummary()}
