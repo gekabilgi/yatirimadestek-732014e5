@@ -1,34 +1,53 @@
 /**
- * Takip sorularını ana içerikten ayıran utility
+ * Takip sorularını ve destek programı bildirimlerini ana içerikten ayıran utility
  */
 
 export interface ParsedContent {
   mainContent: string;
   followUpQuestion: string | null;
+  supportCardsNotice: string | null;
 }
 
 /**
- * AI mesajındaki takip sorusunu tespit edip ayırır
+ * AI mesajındaki takip sorusunu ve destek programı bildirimini tespit edip ayırır
  */
 export function extractFollowUpQuestion(content: string): ParsedContent {
+  let workingContent = content;
+  let supportCardsNotice: string | null = null;
+
+  // Önce "Ayrıca aşağıdaki..." destek programı bildirimini ayır
+  const supportNoticePatterns = [
+    /\n*---\n*📋?\s*\*\*Ayrıca aşağıdaki[^*]*\*\*:?\s*$/i,
+    /\n*📋\s*\*\*Ayrıca aşağıdaki[^*]*\*\*:?\s*$/i,
+    /\n*---\n*📋?\s*Ayrıca aşağıdaki[^\n]*:?\s*$/i,
+  ];
+
+  for (const pattern of supportNoticePatterns) {
+    if (pattern.test(workingContent)) {
+      supportCardsNotice = "Ayrıca aşağıdaki güncel destek programları da ilginizi çekebilir";
+      workingContent = workingContent.replace(pattern, '').trim();
+      break;
+    }
+  }
+
   // Öncelik 1: API'den gelen özel format - "### 💬 Devam Etmek İçin" başlığı
   const specialFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*\n?\**([^*\n]+)\**\s*$/i;
-  const specialMatch = content.match(specialFormatPattern);
+  const specialMatch = workingContent.match(specialFormatPattern);
   if (specialMatch) {
     const question = specialMatch[1].trim();
     const formattedQuestion = question.endsWith('?') ? question : question + '?';
-    const mainContent = content.replace(specialFormatPattern, '').trim();
-    return { mainContent, followUpQuestion: formattedQuestion };
+    const mainContent = workingContent.replace(specialFormatPattern, '').trim();
+    return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
   }
 
   // Öncelik 2: Inline format - "### 💬 Devam Etmek İçin Bu yatırımı..." (satır sonu olmadan)
   const inlineFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*(.+?)\??\s*$/i;
-  const inlineMatch = content.match(inlineFormatPattern);
+  const inlineMatch = workingContent.match(inlineFormatPattern);
   if (inlineMatch) {
     const question = inlineMatch[1].trim();
     const formattedQuestion = question.endsWith('?') ? question : question + '?';
-    const mainContent = content.replace(inlineFormatPattern, '').trim();
-    return { mainContent, followUpQuestion: formattedQuestion };
+    const mainContent = workingContent.replace(inlineFormatPattern, '').trim();
+    return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
   }
 
   // Öncelik 3: Standart takip sorusu pattern'leri
@@ -46,14 +65,14 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
   ];
 
   for (const pattern of patterns) {
-    const match = content.match(pattern);
+    const match = workingContent.match(pattern);
     if (match) {
       const question = match[1].trim();
       const formattedQuestion = question.endsWith('?') ? question : question + '?';
-      const mainContent = content.replace(pattern, '').trim();
-      return { mainContent, followUpQuestion: formattedQuestion };
+      const mainContent = workingContent.replace(pattern, '').trim();
+      return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
     }
   }
 
-  return { mainContent: content, followUpQuestion: null };
+  return { mainContent: workingContent, followUpQuestion: null, supportCardsNotice };
 }

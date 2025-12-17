@@ -9,17 +9,33 @@ import { extractFollowUpQuestion } from "@/utils/followUpQuestionParser";
 
 // Markdown içeriğini düzgün formatlama için ön işleme
 const preprocessMarkdown = (content: string): string => {
-  return content
-    // Liste işaretçileri öncesinde satır sonu ekle (* veya -)
-    .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, '$1\n\n$2 $3')
-    // Numaralı liste öğeleri öncesinde satır sonu
-    .replace(/([.!?:,])\s+(\d+)\.\s+(\*\*)/g, '$1\n\n$2. $3')
-    // "Özel Durum:" gibi inline bold başlıklar için satır sonu
-    .replace(/([.!?])\s+(\*\*[^*]+:\*\*)/g, '$1\n\n$2')
-    // İç içe bold başlık + açıklama paterni (liste içinde)
-    .replace(/(\*\*[^*:]+:\*\*[^.!?*]+[.!?])\s+(\*\*[^*]+:\*\*)/g, '$1\n\n$2')
-    // Çift boşlukları temizle
-    .replace(/\n{3,}/g, '\n\n');
+  return (
+    content
+      // 1. Ardışık bold başlıkları (**: **) satır sonuna taşı
+      .replace(/(\*\*[^*:]+:\*\*)\s*([^*\n]+)\s*(\*\*[^*:]+:\*\*)/g, "$1 $2\n\n$3")
+      
+      // 2. Bold başlık içeren metinden önce satır sonu ekle (cümle ortasında gelen)
+      .replace(/([.!?:])\s+(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
+      
+      // 3. Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
+      .replace(/^[\*\-]\s+(\*\*[^*]+:\*\*)/gm, "$1")
+      .replace(/\n[\*\-]\s+(\*\*[^*]+:\*\*)/g, "\n\n$1")
+      
+      // 4. Liste işaretçileri öncesinde satır sonu ekle (* veya -)
+      .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, "$1\n\n$2 $3")
+      
+      // 5. Numaralı liste öğeleri öncesinde satır sonu
+      .replace(/([.!?:,])\s+(\d+)\.\s+(\*\*)/g, "$1\n\n$2. $3")
+      
+      // 6. İç içe bold başlık + açıklama paterni (liste içinde)
+      .replace(/(\*\*[^*:]+:\*\*[^.!?*]+[.!?])\s+(\*\*[^*]+:\*\*)/g, "$1\n\n$2")
+      
+      // 7. "Sektör Analizi:" gibi başlıkların ardından satır sonu
+      .replace(/^([^*\n:]+:)\s*(\*\*)/gm, "$1\n\n$2")
+      
+      // 8. Çift boşlukları temizle
+      .replace(/\n{3,}/g, "\n\n")
+  );
 };
 
 interface MessageBubbleProps {
@@ -38,12 +54,22 @@ interface MessageBubbleProps {
   supportCards?: SupportProgramCardData[];
 }
 
-export function MessageBubble({ role, content, timestamp, onRegenerate, children, sources, supportCards }: MessageBubbleProps) {
+export function MessageBubble({
+  role,
+  content,
+  timestamp,
+  onRegenerate,
+  children,
+  sources,
+  supportCards,
+}: MessageBubbleProps) {
   const isUser = role === "user";
-  
-  // Takip sorusunu ana içerikten ayır
-  const { mainContent, followUpQuestion } = isUser ? { mainContent: content, followUpQuestion: null } : extractFollowUpQuestion(content);
-  
+
+  // Takip sorusunu ve destek programı bildirimini ana içerikten ayır
+  const { mainContent, followUpQuestion, supportCardsNotice } = isUser
+    ? { mainContent: content, followUpQuestion: null, supportCardsNotice: null }
+    : extractFollowUpQuestion(content);
+
   if (role === "assistant") {
     console.log("SOURCES FOR MESSAGE:", { content: content.slice(0, 60), sources });
   }
@@ -58,7 +84,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
   // --- İçerik + Atıf Baloncukları ---
   const renderContentWithCitations = () => {
     const processedContent = preprocessMarkdown(mainContent);
-    
+
     if (!sources || sources.length === 0 || isUser) {
       return <ReactMarkdown components={markdownComponentsBase}>{processedContent}</ReactMarkdown>;
     }
@@ -214,9 +240,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
         <div
           className={cn(
             "rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-sm border backdrop-blur",
-            isUser
-              ? "bg-primary text-primary-foreground border-primary/40"
-              : "bg-card/95 text-card-foreground border-border/60",
+            isUser ? "bg-primary/5 text-primary border-primary/8" : "bg-card/95 text-card-foreground border-border/60",
           )}
         >
           {/* Başlık (Asistan / Siz) + Saat */}
@@ -239,9 +263,12 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
           {/* Ek içerik (progress, ekstra info vs.) */}
           {children}
 
-          {/* Takip Sorusu Kartı */}
-          {!isUser && followUpQuestion && (
-            <FollowUpQuestionCard question={followUpQuestion} />
+          {/* Takip Sorusu Kartı (soru veya bildirim varsa göster) */}
+          {!isUser && (followUpQuestion || supportCardsNotice) && (
+            <FollowUpQuestionCard 
+              question={followUpQuestion}
+              supportCardsNotice={supportCardsNotice}
+            />
           )}
 
           {/* Kullanılan Kaynaklar chip'leri */}
@@ -296,9 +323,10 @@ const markdownComponentsBase = {
     // Check if this li contains a strong/bold element as the first child (header-like item)
     const childArray = Array.isArray(children) ? children : [children];
     const firstChild = childArray[0];
-    const hasBoldHeader = firstChild?.type === 'strong' || 
-      (typeof firstChild === 'object' && firstChild?.props?.children?.[0]?.type === 'strong');
-    
+    const hasBoldHeader =
+      firstChild?.type === "strong" ||
+      (typeof firstChild === "object" && firstChild?.props?.children?.[0]?.type === "strong");
+
     // If it has a bold header, render without bullet (cleaner look)
     if (hasBoldHeader) {
       return (
@@ -307,7 +335,7 @@ const markdownComponentsBase = {
         </li>
       );
     }
-    
+
     // Regular list item with bullet
     return (
       <li className="mb-1 ml-4 list-disc" {...props}>
@@ -318,20 +346,20 @@ const markdownComponentsBase = {
   strong: ({ node, children, ...props }: any) => {
     // Extract text content from children
     const getText = (child: any): string => {
-      if (typeof child === 'string') return child;
-      if (Array.isArray(child)) return child.map(getText).join('');
+      if (typeof child === "string") return child;
+      if (Array.isArray(child)) return child.map(getText).join("");
       if (child?.props?.children) return getText(child.props.children);
-      return '';
+      return "";
     };
-    
+
     const text = getText(children);
-    
+
     // If content has colon, only bold the label part (before colon)
-    if (text.includes(':')) {
-      const colonIndex = text.indexOf(':');
+    if (text.includes(":")) {
+      const colonIndex = text.indexOf(":");
       const label = text.substring(0, colonIndex + 1);
       const rest = text.substring(colonIndex + 1);
-      
+
       return (
         <>
           <strong className="font-semibold text-foreground">{label}</strong>
@@ -339,7 +367,7 @@ const markdownComponentsBase = {
         </>
       );
     }
-    
+
     return <strong className="font-semibold text-foreground" {...props} />;
   },
 };

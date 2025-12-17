@@ -554,7 +554,7 @@ serve(async (req) => {
       }
     }
 
-    // If Vertex RAG mode, delegate to vertex-rag-query function (HYBRID: check support programs first)
+    // If Vertex RAG mode, delegate to vertex-rag-query function (HYBRID: parallel search)
     if (ragMode === "vertex_rag_corpora") {
       const lastUserMessage = messages
         .slice()
@@ -565,32 +565,7 @@ serve(async (req) => {
         throw new Error("No user message found");
       }
 
-      // HYBRID: First check if this is a support program query
-      const isSupportQuery = isSupportProgramQuery(lastUserMessage.content);
-      
-      if (isSupportQuery) {
-        console.log("🔍 [Vertex Hybrid] Detected support program query, searching...");
-        const supportCards = await searchSupportPrograms(lastUserMessage.content, supabase);
-        console.log(`📋 [Vertex Hybrid] Found ${supportCards.length} support programs`);
-
-        if (supportCards.length > 0) {
-          return new Response(
-            JSON.stringify({
-              text: "İlgili destek programlarını aşağıda listeliyorum.",
-              supportCards,
-              supportOnly: true,
-              sources: [],
-              groundingChunks: [],
-              vertexRag: true,
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        // If no support cards found, fall through to Vertex RAG
-        console.log("📋 [Vertex Hybrid] No support programs found, falling back to Vertex RAG");
-      }
-
-      // Normal Vertex RAG flow
+      // Get corpus settings first
       const { data: vertexCorpusData } = await supabase
         .from("admin_settings")
         .select("setting_value_text")
@@ -611,29 +586,83 @@ serve(async (req) => {
         const topK = settingsData?.find((s) => s.setting_key === "vertex_rag_top_k")?.setting_value || 10;
         const threshold = settingsData?.find((s) => s.setting_key === "vertex_rag_threshold")?.setting_value || 0.3;
 
-        // Call vertex-rag-query function
-        const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/vertex-rag-query`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: req.headers.get("Authorization") || "",
-          },
-          body: JSON.stringify({
-            corpusName,
-            messages,
-            topK,
-            vectorDistanceThreshold: threshold,
-          }),
-        });
+        // HYBRID: Run both Vertex RAG and Support Programs search in PARALLEL
+        console.log("🔄 [Vertex Hybrid] Running parallel search: Vertex RAG + Support Programs");
+        
+        const [vertexResponse, supportCards] = await Promise.all([
+          // 1. Vertex RAG query
+          (async () => {
+            try {
+              const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/vertex-rag-query`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: req.headers.get("Authorization") || "",
+                },
+                body: JSON.stringify({
+                  corpusName,
+                  messages,
+                  topK,
+                  vectorDistanceThreshold: threshold,
+                }),
+              });
 
-        if (!response.ok) {
-          throw new Error(`Vertex RAG query failed: ${response.status}`);
+              if (!response.ok) {
+                console.error(`Vertex RAG query failed: ${response.status}`);
+                return null;
+              }
+              return await response.json();
+            } catch (error) {
+              console.error("Vertex RAG error:", error);
+              return null;
+            }
+          })(),
+          
+          // 2. Support Programs search (always run in parallel)
+          searchSupportPrograms(lastUserMessage.content, supabase)
+        ]);
+
+        console.log(`📋 [Vertex Hybrid] Vertex response: ${vertexResponse ? 'OK' : 'null'}, Support cards: ${supportCards.length}`);
+
+        // Combine results
+        if (vertexResponse) {
+          // If we have both Vertex response and support cards, combine them
+          if (supportCards.length > 0) {
+            console.log("✅ [Vertex Hybrid] Combining Vertex RAG response with support cards");
+            return new Response(
+              JSON.stringify({
+                ...vertexResponse,
+                text: `${vertexResponse.text}\n\n---\n\n📋 **Ayrıca aşağıdaki güncel destek programları da ilginizi çekebilir:**`,
+                supportCards,
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          
+          // Only Vertex response, no support cards
+          return new Response(JSON.stringify(vertexResponse), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
-        const data = await response.json();
-        return new Response(JSON.stringify(data), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // Vertex RAG failed but we have support cards
+        if (supportCards.length > 0) {
+          console.log("📋 [Vertex Hybrid] Vertex failed, returning only support cards");
+          return new Response(
+            JSON.stringify({
+              text: "İlgili destek programlarını aşağıda listeliyorum.",
+              supportCards,
+              supportOnly: true,
+              sources: [],
+              groundingChunks: [],
+              vertexRag: true,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Both failed
+        throw new Error("Vertex RAG query failed and no support programs found");
       }
     }
 

@@ -195,6 +195,9 @@ const markdownComponents = {
 // Markdown içeriğini düzgün formatlama için ön işleme
 const preprocessMarkdown = (content: string): string => {
   return content
+    // Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
+    .replace(/^[\*\-]\s+(\*\*[^*]+:\*\*)/gm, '$1')
+    .replace(/\n[\*\-]\s+(\*\*[^*]+:\*\*)/g, '\n\n$1')
     // Liste işaretçileri öncesinde satır sonu ekle (* veya -)
     .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, '$1\n\n$2 $3')
     // Numaralı liste öğeleri öncesinde satır sonu
@@ -268,7 +271,7 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
       <div className="max-w-[85%]">
         <div
           className={`rounded-lg p-3 ${
-            isUser ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white" : "bg-muted"
+            isUser ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted"
           }`}
         >
           <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
