@@ -14,23 +14,26 @@ const preprocessMarkdown = (content: string): string => {
       // 0. Satır sonundaki "**soru?** ---?" formatını temizle (takip sorusu kalıntısı)
       .replace(/\*\*([^*]+\?)\*\*\s*(?:---\?)?\s*$/g, '\n\n$1')
       
-      // 1. İç içe bold başlıkları ayır - "**A:** değer **B:** değer" -> "**A:** değer\n\n**B:** değer"
-      .replace(/(\*\*[^*:]+:\*\*\s*[^*\n]+?)(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
+      // 1. TEK SATIR SONU + BOLD BAŞLIK -> ÇİFT SATIR SONU (EN KRİTİK)
+      .replace(/\n(\*\*[^*:]+:\*\*)/g, "\n\n$1")
       
-      // 2. Bold başlık içeren metinden önce satır sonu ekle (cümle ortasında gelen)
-      .replace(/([.!?])\s+(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
+      // 2. SATIR İÇİ BOLD BAŞLIKLARDAN ÖNCE ÇİFT SATIR SONU (karakter + bold)
+      .replace(/([^\n\s])(\s*)(\*\*[^*:]+:\*\*)/g, "$1\n\n$3")
       
-      // 3. Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
+      // 3. "Sektör Analizi:" gibi düz başlıklardan sonra çift satır sonu
+      .replace(/(Sektör Analizi:|Yatırım Teşvik Analiz Raporu)(\s*)/g, "$1\n\n")
+      
+      // 4. Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
       .replace(/^[\*\-]\s+(\*\*[^*]+:\*\*)/gm, "$1")
       .replace(/\n[\*\-]\s+(\*\*[^*]+:\*\*)/g, "\n\n$1")
       
-      // 4. Numaralı liste öğeleri öncesinde satır sonu
+      // 5. ### başlıklarından önce çift satır sonu
+      .replace(/([^\n])(###)/g, "$1\n\n$2")
+      
+      // 6. Numaralı liste öğeleri öncesinde satır sonu
       .replace(/([.!?])\s+(\d+)\.\s+/g, "$1\n\n$2. ")
       
-      // 5. Bold başlık arasındaki içerik düzeltmesi
-      .replace(/(\*\*[^*]+\*\*)\s*([^*\n]+)\s*(\*\*[^*]+\*\*)/g, "$1 $2\n\n$3")
-      
-      // 6. Çift boşlukları temizle
+      // 7. Çift boşlukları temizle (3+ -> 2)
       .replace(/\n{3,}/g, "\n\n")
       .trim()
   );

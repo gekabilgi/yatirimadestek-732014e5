@@ -5,6 +5,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Markdown formatlamasını düzelt - bold başlıklardan önce çift satır sonu zorla
+function fixMarkdownLineBreaks(text: string): string {
+  return text
+    // 1. Tek satır sonu + bold başlık -> çift satır sonu + bold başlık
+    .replace(/\n(\*\*[^*:]+:\*\*)/g, "\n\n$1")
+    // 2. Satır içi bold başlıklardan önce çift satır sonu (cümle bitişi olmadan)
+    .replace(/([^\n])(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
+    // 3. "Sektör Analizi:" gibi düz başlıklardan sonra çift satır sonu
+    .replace(/(Sektör Analizi:|Yatırım Teşvik Analiz Raporu)(\s*\n?)/g, "$1\n\n")
+    // 4. Üç veya daha fazla satır sonunu ikiye indir
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 // Inline atıf kontrolü ve fallback enjeksiyonu
 function ensureInlineCitations(text: string, sources: any[]): string {
   if (!sources || sources.length === 0) return text;
@@ -104,8 +118,9 @@ serve(async (req) => {
       }
     }
 
-    // Inline atıf kontrolü ve fallback enjeksiyonu uygula
-    const finalText = ensureInlineCitations(messageContent.trim(), sources);
+    // Markdown düzeltmesi ve inline atıf kontrolü uygula
+    const fixedMarkdown = fixMarkdownLineBreaks(messageContent.trim());
+    const finalText = ensureInlineCitations(fixedMarkdown, sources);
 
     // Return in chat-gemini compatible format
     return new Response(
