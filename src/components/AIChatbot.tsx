@@ -271,7 +271,7 @@ function MessageBubble({ message, showSources }: { message: Message; showSources
       <div className="max-w-[85%]">
         <div
           className={`rounded-lg p-3 ${
-            isUser ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white" : "bg-muted"
+            isUser ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted"
           }`}
         >
           <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
