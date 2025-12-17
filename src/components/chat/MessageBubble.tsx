@@ -229,7 +229,7 @@ export function MessageBubble({
         <div
           className={cn(
             "rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-sm border backdrop-blur",
-            isUser ? "bg-primary/4 text-primary border-primary/8" : "bg-card/95 text-card-foreground border-border/60",
+            isUser ? "bg-primary/5 text-primary border-primary/8" : "bg-card/95 text-card-foreground border-border/60",
           )}
         >
           {/* Başlık (Asistan / Siz) + Saat */}
