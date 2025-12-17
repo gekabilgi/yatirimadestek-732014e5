@@ -30,7 +30,28 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
     }
   }
 
-  // Öncelik 1: API'den gelen özel format - "### 💬 Devam Etmek İçin" başlığı
+  // Öncelik 1: Bold işaretli takip sorusu - "**...planlıyorsunuz?** ---?" formatı
+  const boldQuestionPattern = /\n*\*\*([^*]+(?:planlıyorsunuz|belirtir misiniz|ister misiniz|paylaşır mısınız|söyler misiniz|bildirir misiniz))\??\*\*\s*(?:---\?)?\s*$/i;
+  const boldMatch = workingContent.match(boldQuestionPattern);
+  if (boldMatch) {
+    const question = boldMatch[1].trim();
+    const formattedQuestion = question.endsWith('?') ? question : question + '?';
+    const mainContent = workingContent.replace(boldQuestionPattern, '').trim();
+    return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
+  }
+
+  // Öncelik 2: Bold başlangıçlı sorular - "**Bu yatırımı hangi ilde...**" formatı
+  const boldStartPattern = /\n*\*\*(Bu|Hangi|Lütfen)[^*]+\*\*\s*(?:---\?)?\s*$/i;
+  const boldStartMatch = workingContent.match(boldStartPattern);
+  if (boldStartMatch) {
+    const fullMatch = boldStartMatch[0];
+    const question = fullMatch.replace(/^\n*\*\*/, '').replace(/\*\*\s*(?:---\?)?\s*$/, '').trim();
+    const formattedQuestion = question.endsWith('?') ? question : question + '?';
+    const mainContent = workingContent.replace(boldStartPattern, '').trim();
+    return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
+  }
+
+  // Öncelik 3: API'den gelen özel format - "### 💬 Devam Etmek İçin" başlığı
   const specialFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*\n?\**([^*\n]+)\**\s*$/i;
   const specialMatch = workingContent.match(specialFormatPattern);
   if (specialMatch) {
@@ -40,7 +61,7 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
     return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
   }
 
-  // Öncelik 2: Inline format - "### 💬 Devam Etmek İçin Bu yatırımı..." (satır sonu olmadan)
+  // Öncelik 4: Inline format - "### 💬 Devam Etmek İçin Bu yatırımı..." (satır sonu olmadan)
   const inlineFormatPattern = /[.\s]*###\s*💬?\s*Devam Etmek İçin\s*(.+?)\??\s*$/i;
   const inlineMatch = workingContent.match(inlineFormatPattern);
   if (inlineMatch) {
@@ -50,7 +71,7 @@ export function extractFollowUpQuestion(content: string): ParsedContent {
     return { mainContent, followUpQuestion: formattedQuestion, supportCardsNotice };
   }
 
-  // Öncelik 3: Standart takip sorusu pattern'leri
+  // Öncelik 5: Standart takip sorusu pattern'leri
   const patterns = [
     // "...planlıyorsunuz?" tarzı sorular
     /\n\n([^.!?\n]*(?:planlıyorsunuz|belirtir misiniz|ister misiniz|paylaşır mısınız|söyler misiniz|bildirir misiniz|bildirmeniz|paylaşmanız)\??)\s*$/i,
