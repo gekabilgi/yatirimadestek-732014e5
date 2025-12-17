@@ -11,30 +11,28 @@ import { extractFollowUpQuestion } from "@/utils/followUpQuestionParser";
 const preprocessMarkdown = (content: string): string => {
   return (
     content
-      // 1. Ardışık bold başlıkları (**: **) satır sonuna taşı
-      .replace(/(\*\*[^*:]+:\*\*)\s*([^*\n]+)\s*(\*\*[^*:]+:\*\*)/g, "$1 $2\n\n$3")
+      // 0. Satır sonundaki "**soru?** ---?" formatını temizle (takip sorusu kalıntısı)
+      .replace(/\*\*([^*]+\?)\*\*\s*(?:---\?)?\s*$/g, '\n\n$1')
+      
+      // 1. İç içe bold başlıkları ayır - "**A:** değer **B:** değer" -> "**A:** değer\n\n**B:** değer"
+      .replace(/(\*\*[^*:]+:\*\*\s*[^*\n]+?)(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
       
       // 2. Bold başlık içeren metinden önce satır sonu ekle (cümle ortasında gelen)
-      .replace(/([.!?:])\s+(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
+      .replace(/([.!?])\s+(\*\*[^*:]+:\*\*)/g, "$1\n\n$2")
       
       // 3. Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
       .replace(/^[\*\-]\s+(\*\*[^*]+:\*\*)/gm, "$1")
       .replace(/\n[\*\-]\s+(\*\*[^*]+:\*\*)/g, "\n\n$1")
       
-      // 4. Liste işaretçileri öncesinde satır sonu ekle (* veya -)
-      .replace(/([.!?:,])\s*(\*|\-)\s+(\*\*)/g, "$1\n\n$2 $3")
+      // 4. Numaralı liste öğeleri öncesinde satır sonu
+      .replace(/([.!?])\s+(\d+)\.\s+/g, "$1\n\n$2. ")
       
-      // 5. Numaralı liste öğeleri öncesinde satır sonu
-      .replace(/([.!?:,])\s+(\d+)\.\s+(\*\*)/g, "$1\n\n$2. $3")
+      // 5. Bold başlık arasındaki içerik düzeltmesi
+      .replace(/(\*\*[^*]+\*\*)\s*([^*\n]+)\s*(\*\*[^*]+\*\*)/g, "$1 $2\n\n$3")
       
-      // 6. İç içe bold başlık + açıklama paterni (liste içinde)
-      .replace(/(\*\*[^*:]+:\*\*[^.!?*]+[.!?])\s+(\*\*[^*]+:\*\*)/g, "$1\n\n$2")
-      
-      // 7. "Sektör Analizi:" gibi başlıkların ardından satır sonu
-      .replace(/^([^*\n:]+:)\s*(\*\*)/gm, "$1\n\n$2")
-      
-      // 8. Çift boşlukları temizle
+      // 6. Çift boşlukları temizle
       .replace(/\n{3,}/g, "\n\n")
+      .trim()
   );
 };
 
