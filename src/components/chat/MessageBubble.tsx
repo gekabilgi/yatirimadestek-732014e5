@@ -218,7 +218,7 @@ export function MessageBubble({ role, content, timestamp, onRegenerate, children
           className={cn(
             "rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-sm border backdrop-blur",
             isUser
-              ? "bg-primary/10 text-primary border-primary/20"
+              ? "bg-primary/3 text-primary border-primary/7"
               : "bg-card/95 text-card-foreground border-border/60",
           )}
         >
