@@ -66,7 +66,7 @@ const EnhancedHero = () => {
 
         {/* Hero Content */}
         <div className="relative z-10 flex-1 px-4 sm:px-8 py-8 sm:py-12 flex items-center">
-          <div className="mx-auto max-w-5xl w-full text-center space-y-8">
+          <div className="mx-auto max-w-7xl w-full text-center space-y-8 px-4 sm:px-6 lg:px-8">
             {/* Platform Badge */}
             <div className="animate-fade-in">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
