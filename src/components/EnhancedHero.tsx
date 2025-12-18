@@ -305,7 +305,7 @@ const EnhancedHero = () => {
             </div>
 
             {/* Website Domain Link */}
-            <div className="animate-fade-in">
+            <div className="animate-fade-in content-center items-center">
               <a 
                 href="https://yatirimadestek.gov.tr" 
                 target="_blank" 
