@@ -61,7 +61,7 @@ const EnhancedHero = () => {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 flex-1 px-4 sm:px-8 py-8 sm:py-12 flex items-center">
+        <div className="relative z-10 flex-1 px-4 sm:px-8 py-4 sm:py-6 flex items-center">
           <div className="mx-auto max-w-7xl w-full text-center space-y-8 px-4 sm:px-6 lg:px-8">
             {/* Platform Badge */}
             <div className="animate-fade-in">
@@ -123,7 +123,7 @@ const EnhancedHero = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="animate-slide-up-delay-3 mt-12 sm:mt-16">
+            <div className="animate-slide-up-delay-3 mt-6 sm:mt-8">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-8">
                 {/* Today's Calculations */}
                 <div className="space-y-2">
