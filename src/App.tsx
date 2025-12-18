@@ -8,7 +8,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
-import { LogoSettingsProvider } from "@/contexts/LogoSettingsContext";
 import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import ProtectedMenuRoute from "@/components/ProtectedMenuRoute";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -81,9 +80,8 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <LogoSettingsProvider>
-          <AccessibilityProvider>
-            <AuthProvider>
+        <AccessibilityProvider>
+          <AuthProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -287,9 +285,8 @@ const App = () => {
             </TooltipProvider>
           </AuthProvider>
         </AccessibilityProvider>
-      </LogoSettingsProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 
