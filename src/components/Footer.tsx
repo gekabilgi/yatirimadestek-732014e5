@@ -11,7 +11,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Logo and Description */}
           <div className="flex flex-col items-start space-y-4">
-            <img src="/logo/logo.png" alt="Teşviksor Logo" className="h-16 w-auto object-contain" />
+            <Logo className="test-primary-foreground" width={220} height={56} />
             <p className="text-sm text-primary-foreground/80 max-w-xs">
               Türkiye'nin en kapsamlı teşvik ve yatırım destek platformu. Yatırımlarınız için en uygun teşvikleri
               kolayca bulun.
