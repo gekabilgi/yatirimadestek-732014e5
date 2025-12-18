@@ -399,4 +399,40 @@ export const adminSettingsService = {
       throw error;
     }
   },
+
+  async getLogoColorMode(): Promise<'all_themed' | 'graphic_themed' | 'text_themed' | 'original' | 'all_white'> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'logo_color_mode')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching logo color mode:', error);
+      return 'all_themed'; // default
+    }
+
+    const mode = data?.setting_value_text;
+    if (mode && ['all_themed', 'graphic_themed', 'text_themed', 'original', 'all_white'].includes(mode)) {
+      return mode as any;
+    }
+    return 'all_themed';
+  },
+
+  async setLogoColorMode(mode: 'all_themed' | 'graphic_themed' | 'text_themed' | 'original' | 'all_white'): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'logo_color_mode',
+        category: 'appearance',
+        setting_value: 0,
+        setting_value_text: mode,
+        description: 'Logo color mode: all_themed, graphic_themed, text_themed, original, or all_white'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting logo color mode:', error);
+      throw error;
+    }
+  },
 };
