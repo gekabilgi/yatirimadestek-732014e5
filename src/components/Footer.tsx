@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -11,7 +12,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Logo and Description */}
           <div className="flex flex-col items-start space-y-4">
-            <Logo className="test-primary-foreground" width={220} height={56} />
+            <Logo className="text-primary-foreground" width={220} height={56} />
             <p className="text-sm text-primary-foreground/80 max-w-xs">
               Türkiye'nin en kapsamlı teşvik ve yatırım destek platformu. Yatırımlarınız için en uygun teşvikleri
               kolayca bulun.
