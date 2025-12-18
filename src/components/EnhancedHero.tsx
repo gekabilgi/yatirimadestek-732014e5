@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ExternalLink,
   Loader2,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -301,6 +302,19 @@ const EnhancedHero = () => {
               <h1 className="text-balance text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white">
                 Yatırım Teşvikleri ve <span className="text-blue-200">Destek Programları</span>
               </h1>
+            </div>
+
+            {/* Website Domain Link */}
+            <div className="animate-fade-in">
+              <a 
+                href="https://yatirimadestek.gov.tr" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+              >
+                <Globe className="h-4 w-4" />
+                <span className="text-sm font-medium">yatirimadestek.gov.tr</span>
+              </a>
             </div>
 
             {/* Description */}
