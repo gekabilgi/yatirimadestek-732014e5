@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface PreRequestEmailData {
@@ -14,8 +14,8 @@ interface PreRequestEmailData {
 }
 
 const generateRandomString = (length: number): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -24,16 +24,16 @@ const generateRandomString = (length: number): string => {
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { to, companyName, contactPerson, requestId, taxId }: PreRequestEmailData = await req.json();
 
-    const brevoApiKey = Deno.env.get('BREVO_API_KEY');
+    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
     if (!brevoApiKey) {
-      throw new Error('BREVO_API_KEY not configured');
+      throw new Error("BREVO_API_KEY not configured");
     }
 
     // Generate 6-digit random characters for the tracking URL
@@ -43,13 +43,13 @@ const handler = async (req: Request): Promise<Response> => {
     const emailData = {
       sender: {
         name: "Teşviksor",
-        email: "noreply@tesviksor.com"
+        email: "noreply@tesviksor.com",
       },
       to: [
         {
           email: to,
-          name: contactPerson
-        }
+          name: contactPerson,
+        },
       ],
       subject: `Tedarik Zinciri Yerlileştirme Ön Talep ${requestId}`,
       htmlContent: `
@@ -120,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p>Sayın <strong>${contactPerson}</strong>,</p>
             
             <div class="highlight">
-              <p><strong>Yatırım Destek Platformu (tesviksor.com) üzerinden göndermiş olduğunuz Tedarik Zinciri Yerlileştirme Ön Talebiniz alınmıştır.</strong></p>
+              <p><strong>Yatırım Destek Platformu (yatirimadestek.gov.tr) üzerinden göndermiş olduğunuz Tedarik Zinciri Yerlileştirme Ön Talebiniz alınmıştır.</strong></p>
             </div>
             
             <p>Talebiniz değerlendirilerek, en kısa sürede sizinle iletişime geçilecektir.</p>
@@ -130,7 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
               <li>Talep No: ${requestId}</li>
               <li>Firma: ${companyName}</li>
               <li>İletişim Kişisi: ${contactPerson}</li>
-              <li>Gönderim Tarihi: ${new Date().toLocaleDateString('tr-TR')}</li>
+              <li>Gönderim Tarihi: ${new Date().toLocaleDateString("tr-TR")}</li>
             </ul>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -147,63 +147,65 @@ const handler = async (req: Request): Promise<Response> => {
             <p>Platformumuzu kullandığınız için teşekkür ederiz.</p>
             
             <p>Saygılarımızla,<br>
-            <strong>Teşviksor Yatırım Destek Platformu</strong></p>
+            <strong>Yatırıma Destek Platformu</strong></p>
           </div>
           
           <div class="footer">
             <p>Bu otomatik bir mesajdır. Lütfen bu e-postaya yanıt vermeyiniz.</p>
-            <p>© 2024 Teşviksor. Tüm hakları saklıdır.</p>
+            <p>© 2025 yatirimadestek.gov.tr. Tüm hakları saklıdır.</p>
           </div>
         </body>
         </html>
-      `
+      `,
     };
 
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
       headers: {
-        'Accept': 'application/json',
-        'Api-Key': brevoApiKey,
-        'Content-Type': 'application/json',
+        Accept: "application/json",
+        "Api-Key": brevoApiKey,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(emailData),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Brevo API error:', errorText);
+      console.error("Brevo API error:", errorText);
       throw new Error(`Email sending failed: ${response.status} ${errorText}`);
     }
 
     const result = await response.json();
-    console.log('Email sent successfully:', result);
+    console.log("Email sent successfully:", result);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      messageId: result.messageId,
-      trackingUrl 
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
-    });
-
-  } catch (error: any) {
-    console.error('Error in send-pre-request-email function:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
+        success: true,
+        messageId: result.messageId,
+        trackingUrl,
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      },
+    );
+  } catch (error: any) {
+    console.error("Error in send-pre-request-email function:", error);
+    return new Response(
+      JSON.stringify({
         error: error.message,
-        success: false 
+        success: false,
       }),
       {
         status: 500,
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...corsHeaders 
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
         },
-      }
+      },
     );
   }
 };
