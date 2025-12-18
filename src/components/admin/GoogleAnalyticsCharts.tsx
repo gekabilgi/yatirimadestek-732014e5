@@ -247,7 +247,7 @@ const GoogleAnalyticsCharts = () => {
           <CardContent>
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-600">
-                {analyticsData?.avgSessionDuration || '0'}
+                {analyticsData?.averageSessionDuration || '0:00'}
               </div>
               <p className="text-sm text-gray-600 mt-2">Dakika cinsinden</p>
             </div>
