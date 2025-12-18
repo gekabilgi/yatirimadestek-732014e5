@@ -2,8 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 
-import { Logo } from "@/components/Logo";
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
@@ -13,7 +11,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Logo and Description */}
           <div className="flex flex-col items-start space-y-4">
-            <Logo className="text-primary-foreground" width={220} height={56} />
+            <img src="/logo/logo.png" alt="Teşviksor Logo" className="h-16 w-auto object-contain" />
             <p className="text-sm text-primary-foreground/80 max-w-xs">
               Türkiye'nin en kapsamlı teşvik ve yatırım destek platformu. Yatırımlarınız için en uygun teşvikleri
               kolayca bulun.
@@ -60,7 +58,7 @@ const Footer = () => {
             <h3 className="font-semibold text-lg mb-2">İletişim</h3>
             <div className="flex items-start space-x-3 text-sm text-primary-foreground/80">
               <Mail className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span>info@tesviksor.com</span>
+              <span>info@yatirimadestek.gov.tr</span>
             </div>
             <div className="flex items-start space-x-3 text-sm text-primary-foreground/80">
               <Phone className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -76,7 +74,9 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-primary-foreground/20">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-sm text-primary-foreground/60">© {currentYear} Teşviksor. Tüm hakları saklıdır.</p>
+            <p className="text-sm text-primary-foreground/60">
+              © {currentYear} yatirimadestek.gov.tr. Tüm hakları saklıdır.
+            </p>
             <div className="flex space-x-6">
               <Link
                 to="/gizlilik"
