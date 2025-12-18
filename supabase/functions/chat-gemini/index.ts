@@ -170,8 +170,8 @@ async function searchSupportPrograms(query: string, supabase: any): Promise<any[
     // Search support programs
     const { data: programs, error } = await supabase.rpc("match_support_programs", {
       query_embedding: `[${queryEmbedding.join(",")}]`,
-      match_threshold: 0.4,
-      match_count: 5,
+      match_threshold: 0.65,
+      match_count: 3,
     });
 
     if (error) {
