@@ -281,6 +281,32 @@ async function searchSupportPrograms(query: string, supabase: any): Promise<any[
   }
 }
 
+// Vertex RAG yanıtının "bilgi bulunamadı" mesajı içerip içermediğini kontrol et
+function isNoResultsFoundResponse(text: string): boolean {
+  if (!text || text.trim().length === 0) return true;
+  
+  const noResultsPatterns = [
+    /verilen kaynaklarda.*?bilgi bulunmamaktadır/i,
+    /belgelerde.*?bilgi bulunmamaktadır/i,
+    /bu konuda.*?bilgi bulunamamıştır/i,
+    /kaynaklarda.*?bilgi yoktur/i,
+    /dokümanlarda.*?bilgi bulunamadı/i,
+    /ilgili.*?kaynak bulunamadı/i,
+    /herhangi bir bilgi.*?bulunmamaktadır/i,
+    /bu konuyla ilgili.*?bilgi mevcut değil/i,
+    /hakkında.*?bilgi bulunmamaktadır/i,
+    /destekleri hakkında bilgi bulunmamaktadır/i,
+  ];
+  
+  // Check if the text is just "---" or contains no real content
+  const trimmed = text.trim();
+  if (trimmed === '---' || trimmed === '' || /^-+\s*$/.test(trimmed)) {
+    return true;
+  }
+  
+  return noResultsPatterns.some(pattern => pattern.test(text));
+}
+
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -671,13 +697,31 @@ serve(async (req) => {
 
         // Combine results
         if (vertexResponse) {
+          const ragText = vertexResponse.text || '';
+          const noResultsInRag = isNoResultsFoundResponse(ragText);
+          
           // If we have both Vertex response and support cards, combine them
           if (supportCards.length > 0) {
+            if (noResultsInRag) {
+              // RAG'da bilgi yok ama destek kartları var - pozitif yönlendirme
+              console.log("🔄 [Vertex Hybrid] No results in RAG, showing positive redirect with support cards");
+              return new Response(
+                JSON.stringify({
+                  ...vertexResponse,
+                  text: "📋 **Bu konuyla ilgili sitemizdeki güncel destek programlarına göz atabilirsiniz:**",
+                  supportCards,
+                  noRagResults: true,
+                }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              );
+            }
+            
+            // RAG'da bilgi var ve destek kartları da var - ikisini birleştir
             console.log("✅ [Vertex Hybrid] Combining Vertex RAG response with support cards");
             return new Response(
               JSON.stringify({
                 ...vertexResponse,
-                text: `${vertexResponse.text}\n\n---\n\n📋 **Ayrıca aşağıdaki güncel destek programları da ilginizi çekebilir:**`,
+                text: `${ragText}\n\n---\n\n📋 **Ayrıca aşağıdaki güncel destek programları da ilginizi çekebilir:**`,
                 supportCards,
               }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -685,6 +729,19 @@ serve(async (req) => {
           }
           
           // Only Vertex response, no support cards
+          if (noResultsInRag) {
+            // RAG'da bilgi yok ve destek kartı da yok - kullanıcıya alternatif yol öner
+            console.log("⚠️ [Vertex Hybrid] No results in RAG and no support cards");
+            return new Response(
+              JSON.stringify({
+                ...vertexResponse,
+                text: "Üzgünüm, bu konuyla ilgili kaynaklarımızda bilgi bulunamadı. Lütfen farklı anahtar kelimelerle tekrar deneyin veya [Destek Ara](/destek-ara) sayfasından arama yapabilirsiniz.",
+                noRagResults: true,
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          
           return new Response(JSON.stringify(vertexResponse), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -695,7 +752,7 @@ serve(async (req) => {
           console.log("📋 [Vertex Hybrid] Vertex failed, returning only support cards");
           return new Response(
             JSON.stringify({
-              text: "İlgili destek programlarını aşağıda listeliyorum.",
+              text: "📋 **Bu konuyla ilgili sitemizdeki güncel destek programlarına göz atabilirsiniz:**",
               supportCards,
               supportOnly: true,
               sources: [],
