@@ -9,7 +9,6 @@ import { useActivityTracking } from '@/hooks/useActivityTracking';
 import AnnouncementCarousel from '@/components/AnnouncementCarousel';
 import AgencyLogosSection from '@/components/AgencyLogosSection';
 import { useCanvasAnimation } from '@/hooks/useCanvasAnimation';
-import MainNavbar from '@/components/MainNavbar';
 
 const EnhancedHero = () => {
   const navigate = useNavigate();
@@ -60,9 +59,6 @@ const EnhancedHero = () => {
           {/* Grid Pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
         </div>
-
-        {/* Use MainNavbar component */}
-        <MainNavbar className="relative z-10" />
 
         {/* Hero Content */}
         <div className="relative z-10 flex-1 px-4 sm:px-8 py-8 sm:py-12 flex items-center">
