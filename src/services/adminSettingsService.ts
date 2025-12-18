@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { AdminSetting, IncentiveCalculationSettings } from "@/types/adminSettings";
 
+export type LogoColorMode = 'all_themed' | 'graphic_themed' | 'text_themed' | 'original' | 'all_white';
+
 export const adminSettingsService = {
   async getIncentiveCalculationSettings(): Promise<IncentiveCalculationSettings> {
     const { data, error } = await supabase
@@ -396,6 +398,38 @@ export const adminSettingsService = {
 
     if (error) {
       console.error('Error setting chatbot show sources:', error);
+      throw error;
+    }
+  },
+
+  async getLogoColorMode(): Promise<LogoColorMode> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'logo_color_mode')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching logo color mode:', error);
+      return 'all_themed';
+    }
+
+    return (data?.setting_value_text as LogoColorMode) || 'all_themed';
+  },
+
+  async setLogoColorMode(mode: LogoColorMode): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'logo_color_mode',
+        category: 'appearance',
+        setting_value: 0,
+        setting_value_text: mode,
+        description: 'Logo color mode: all_themed, graphic_themed, text_themed, original, all_white'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting logo color mode:', error);
       throw error;
     }
   },

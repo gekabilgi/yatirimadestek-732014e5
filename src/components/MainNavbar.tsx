@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Calculator, User, LogOut, Settings, TrendingUp, ChevronDown } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { shouldShowMenuItem } from '@/utils/menuVisibility';
+import { Logo } from '@/components/Logo';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +14,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const MainNavbar = () => {
+interface MainNavbarProps {
+  className?: string;
+}
+
+const MainNavbar = ({ className }: MainNavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
-
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
@@ -58,28 +63,16 @@ const MainNavbar = () => {
   return (
     <nav 
       id="main-navigation"
-      className="nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm"
+      className={cn("nav-modern border-b bg-white/95 backdrop-blur-sm shadow-sm", className)}
       role="navigation"
       aria-label="Ana menü"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-                <TrendingUp className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  Yatırıma Destek
-                </span>
-                <div className="text-xs text-muted-foreground font-medium">
-                  Teşvik Sistemi
-                </div>
-              </div>
-            </Link>
-          </div>
+          <Link to="/" className="flex items-center">
+            <Logo className="text-primary h-12 w-auto" />
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
@@ -98,101 +91,147 @@ const MainNavbar = () => {
           {/* Auth Buttons - Desktop */}
           <div className="hidden lg:flex items-center space-x-2">
             {user && isAdmin ? (
-              <div className="flex items-center space-x-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
-                      <div className="flex items-center justify-center w-6 h-6 bg-primary/10 rounded-full">
-                        <User className="h-3 w-3 text-primary" />
-                      </div>
-                      <span className="hidden xl:inline text-sm font-medium">Admin</span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center">
-                        <User className="h-4 w-4 mr-2" />
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Admin Panel
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Çıkış Yap
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
+                    <User className="h-4 w-4" />
+                    <span>Admin</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/admin')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Admin Paneli</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profilim</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-primary">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Çıkış Yap</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
+                    <User className="h-4 w-4" />
+                    <span>Hesabım</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profilim</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-primary">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Çıkış Yap</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <Link to="/admin/login">
-                <Button variant="outline" className="h-9 px-3 gap-2 text-sm">
-                  <User className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-medium">Admin Girişi</span>
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/admin/login')}
+                className="h-9 px-3 gap-2 text-sm"
+              >
+                <User className="h-4 w-4" />
+                <span>Giriş Yap</span>
+              </Button>
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="lg:hidden flex items-center">
-            <Button variant="ghost" size="sm" onClick={toggleMenu} className="p-2 hover:bg-primary/5">
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="lg:hidden p-2 text-gray-700 hover:text-primary"
+          >
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden animate-slide-up">
-            <div className="px-4 pt-4 pb-6 space-y-2 border-t bg-white/95 backdrop-blur-sm">
-              {visibleNavItems.map((item) => (
+          <div className="lg:hidden mt-4 pb-4 space-y-2 border-t pt-4">
+            {visibleNavItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg relative group"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.name}
+                <span className="absolute inset-x-3 bottom-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200 rounded-full"></span>
+              </Link>
+            ))}
+            <div className="pt-2 border-t mt-2">
+              {user && isAdmin ? (
+                <>
+                  <Link
+                    to="/admin"
+                    className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Settings className="inline-block mr-2 h-4 w-4" />
+                    Admin Paneli
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="inline-block mr-2 h-4 w-4" />
+                    Profilim
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm font-medium text-primary hover:bg-gray-50 rounded-lg"
+                  >
+                    <LogOut className="inline-block mr-2 h-4 w-4" />
+                    Çıkış Yap
+                  </button>
+                </>
+              ) : user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="inline-block mr-2 h-4 w-4" />
+                    Profilim
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm font-medium text-primary hover:bg-gray-50 rounded-lg"
+                  >
+                    <LogOut className="inline-block mr-2 h-4 w-4" />
+                    Çıkış Yap
+                  </button>
+                </>
+              ) : (
                 <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-gray-700 hover:text-primary block px-4 py-3 text-base font-medium rounded-lg hover:bg-primary/5 transition-all duration-200"
+                  to="/admin/login"
+                  className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.name}
+                  <User className="inline-block mr-2 h-4 w-4" />
+                  Giriş Yap
                 </Link>
-              ))}
-              <div className="pt-4 border-t border-border mt-4 space-y-2">
-                {user && isAdmin ? (
-                  <div className="space-y-3">
-                    <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" className="w-full justify-start h-12 text-base gap-3">
-                        <Settings className="h-5 w-5 mr-3" />
-                        Admin Panel
-                      </Button>
-                    </Link>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        handleSignOut();
-                        setIsMenuOpen(false);
-                      }} 
-                      className="w-full justify-start h-12 text-base gap-3 text-red-600 hover:text-red-600 hover:bg-red-50"
-                    >
-                      <LogOut className="h-5 w-5 mr-3" />
-                      Çıkış Yap
-                    </Button>
-                  </div>
-                ) : (
-                  <Link to="/admin/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full justify-start h-12 text-base gap-3">
-                      <User className="h-5 w-5 mr-3" />
-                      Admin Girişi
-                    </Button>
-                  </Link>
-                )}
-              </div>
+              )}
             </div>
           </div>
         )}
