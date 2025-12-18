@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Calculator, User, LogOut, Settings, TrendingUp, ChevronDown } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { shouldShowMenuItem } from '@/utils/menuVisibility';
+import { Logo } from '@/components/Logo';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,21 +66,9 @@ const MainNavbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-                <TrendingUp className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  Yatırıma Destek
-                </span>
-                <div className="text-xs text-muted-foreground font-medium">
-                  Teşvik Sistemi
-                </div>
-              </div>
-            </Link>
-          </div>
+          <Link to="/" className="flex items-center">
+            <Logo className="text-primary h-12 w-auto" />
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
