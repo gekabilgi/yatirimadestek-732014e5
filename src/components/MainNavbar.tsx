@@ -64,14 +64,14 @@ const MainNavbar = () => {
       aria-label="Ana menü"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
+        <div className="flex h-16 items-center">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center flex-shrink-0">
             <Logo className="text-primary h-12 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-1 ml-8">
             {visibleNavItems.map((item) => (
               <Link
                 key={item.name}
@@ -83,6 +83,9 @@ const MainNavbar = () => {
               </Link>
             ))}
           </div>
+
+          {/* Spacer to push auth buttons to the right */}
+          <div className="flex-1" />
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden lg:flex items-center space-x-2">
