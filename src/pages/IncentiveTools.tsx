@@ -41,7 +41,7 @@ const IncentiveTools = () => {
       />
       
       {/* Incentive Tools Section */}
-      <div className="container mx-auto py-4 px-4 sm:py-6">
+      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 sm:py-6">
         <div className="mb-6">
           <Card className="card-elevated border-0 animate-fade-in">
             <CardHeader className="pb-3 pt-3 px-4 sm:px-6">
