@@ -30,7 +30,17 @@ const getLogoColors = (mode: LogoColorMode) => {
 };
 
 export const Logo: React.FC<LogoProps> = ({ className = "text-primary", width, height }) => {
-  const { logoColorMode, isLoading } = useLogoSettings();
+  // Safely try to get logo settings, fallback to original if context not available
+  let logoColorMode: LogoColorMode = 'original';
+  let isLoading = false;
+  
+  try {
+    const settings = useLogoSettings();
+    logoColorMode = settings.logoColorMode;
+    isLoading = settings.isLoading;
+  } catch {
+    // Context not available, use original colors
+  }
   
   // Default to original colors while loading
   const colors = getLogoColors(isLoading ? 'original' : logoColorMode);
