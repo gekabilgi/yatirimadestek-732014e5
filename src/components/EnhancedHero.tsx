@@ -310,10 +310,10 @@ const EnhancedHero = () => {
                 href="https://yatirimadestek.gov.tr" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                className="inline-flex items-center gap-3 text-white/90 hover:text-white transition-colors"
               >
-                <Globe className="h-4 w-4" />
-                <span className="text-sm font-medium">yatirimadestek.gov.tr</span>
+                <Globe className="h-8 w-8 sm:h-10 sm:w-10" />
+                <span className="text-2xl sm:text-3xl md:text-4xl font-bold">yatirimadestek.gov.tr</span>
               </a>
             </div>
 
