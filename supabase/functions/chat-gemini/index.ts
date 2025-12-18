@@ -98,51 +98,137 @@ async function generateEmbedding(text: string, model: string, dimensions: number
 }
 
 // Support Programs Search Functions
+const normalizeSupportQuery = (input: string): string =>
+  input
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+    .replace(/ı/g, "i")
+    .trim();
+
 function isSupportProgramQuery(message: string): boolean {
-  const lowerMsg = message.toLowerCase();
+  const q = normalizeSupportQuery(message);
 
   // Program kodları (örn. "1507 desteği") açıkça destek programlarını işaret eder
-  const programCodeMatch = /\b(1501|1507|1509|1602|4006)\b/.test(lowerMsg);
+  const programCodeMatch = /\b(1501|1507|1509|1602|4006)\b/.test(q);
   if (programCodeMatch) return true;
 
+  // "destek" kökü Türkçe çekimlerde "destegi/destekleri" gibi görünebilir
+  const hasDestekRoot = q.includes("destek") || q.includes("desteg");
+
   const keywords = [
-    "destek programı",
-    "destek programları",
+    "destek programi",
+    "destek programlari",
     "destekler",
-    "hibeler",
     "hibe",
-    "çağrı",
-    "çağrılar",
-    "açık çağrı",
-    "başvuru",
+    "hibeler",
+    "cagri",
+    "cagrilar",
+    "acik cagri",
+    "basvuru",
     "fon",
     "finansman",
-    "tübitak",
     "tubitak",
     "kosgeb",
-    "kalkınma ajansı",
+    "kalkinma ajansi",
     "tkdk",
-    "kobi desteği",
-    "ar-ge desteği",
-    "ihracat desteği",
-    "güncel destekler",
+    "kobi destegi",
+    "arge",
+    "ar ge",
+    "ar-ge",
+    "ihracat destegi",
+    "guncel destekler",
     "hangi destekler",
-    "ne tür destekler",
-    "destek var mı",
-    "başvurabileceğim",
-    "yararlanabileceğim",
-    "destek programlarını",
+    "ne tur destekler",
+    "destek var mi",
+    "basvurabilecegim",
+    "yararlanabilecegim",
+    "destek programlarini",
   ];
 
-  return keywords.some((kw) => lowerMsg.includes(kw));
+  return hasDestekRoot || keywords.some((kw) => q.includes(kw));
 }
 
 async function searchSupportPrograms(query: string, supabase: any): Promise<any[]> {
+  const enrichPrograms = async (programRows: any[]) => {
+    const enrichedPrograms = await Promise.all(
+      programRows.map(async (p: any) => {
+        // Get institution
+        const { data: institution } = await supabase
+          .from("institutions")
+          .select("id, name")
+          .eq("id", p.institution_id)
+          .single();
+
+        // Get tags
+        const { data: tagLinks } = await supabase
+          .from("support_program_tags")
+          .select("tag_id, tags(id, name, category_id, tag_categories(id, name))")
+          .eq("support_program_id", p.id);
+
+        // Get files
+        const { data: files } = await supabase
+          .from("file_attachments")
+          .select("id, filename, file_url")
+          .eq("support_program_id", p.id);
+
+        const tags =
+          tagLinks
+            ?.map((t: any) => ({
+              id: t.tags?.id,
+              name: t.tags?.name,
+              category: t.tags?.tag_categories,
+            }))
+            .filter((t: any) => t.id) || [];
+
+        return {
+          id: p.id,
+          title: p.title,
+          kurum: institution?.name || "Bilinmiyor",
+          son_tarih: p.application_deadline,
+          ozet: p.description?.substring(0, 300) + (p.description?.length > 300 ? "..." : ""),
+          uygunluk:
+            p.eligibility_criteria?.substring(0, 200) + (p.eligibility_criteria?.length > 200 ? "..." : ""),
+          iletisim: p.contact_info,
+          belgeler: files || [],
+          tags,
+          detay_link: `/program/${p.id}`,
+        };
+      }),
+    );
+
+    return enrichedPrograms;
+  };
+
   try {
-    // Generate embedding for query using OpenAI
+    const normalized = normalizeSupportQuery(query);
+
+    // 1) Program kodu sorularında embedding'e bağımlı kalmadan direkt eşleştir (1501, 1507, ...)
+    const code = normalized.match(/\b(1501|1507|1509|1602|4006)\b/)?.[1];
+    if (code) {
+      console.log(`🎯 Support search: direct lookup by program code: ${code}`);
+      const { data: directPrograms, error: directErr } = await supabase
+        .from("support_programs")
+        .select(
+          "id, title, description, eligibility_criteria, application_deadline, contact_info, institution_id",
+        )
+        .ilike("title", `%${code}%`)
+        .limit(5);
+
+      if (directErr) {
+        console.error("Error in direct support program lookup:", directErr);
+      } else if (directPrograms?.length) {
+        console.log(`✅ Direct code lookup matched ${directPrograms.length} program(s)`);
+        return await enrichPrograms(directPrograms);
+      } else {
+        console.log("⚠️ Direct code lookup returned 0 rows, falling back to embedding search");
+      }
+    }
+
+    // 2) Embedding ile arama (daha genel sorgular)
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
-      console.log("⚠️ No OpenAI API key for support program search");
+      console.log("⚠️ No OpenAI API key for support program embedding search");
       return [];
     }
 
@@ -165,71 +251,30 @@ async function searchSupportPrograms(query: string, supabase: any): Promise<any[
     }
 
     const embeddingData = await embeddingResponse.json();
-    const queryEmbedding = embeddingData.data[0].embedding;
+    const queryEmbedding = embeddingData.data?.[0]?.embedding;
+    if (!Array.isArray(queryEmbedding) || queryEmbedding.length === 0) {
+      console.error("Support search embedding response missing embedding array");
+      return [];
+    }
 
-    // Search support programs
     const { data: programs, error } = await supabase.rpc("match_support_programs", {
       query_embedding: `[${queryEmbedding.join(",")}]`,
-      match_threshold: 0.65,
-      match_count: 3,
+      match_threshold: 0.55,
+      match_count: 6,
     });
 
     if (error) {
-      console.error("Error searching support programs:", error);
+      console.error("Error searching support programs (rpc match_support_programs):", error);
       return [];
     }
 
     if (!programs || programs.length === 0) {
-      console.log("No matching support programs found");
+      console.log("No matching support programs found via embeddings");
       return [];
     }
 
     console.log(`Found ${programs.length} matching support programs`);
-
-    // Enrich with related data
-    const enrichedPrograms = await Promise.all(
-      programs.map(async (p: any) => {
-        // Get institution
-        const { data: institution } = await supabase
-          .from("institutions")
-          .select("id, name")
-          .eq("id", p.institution_id)
-          .single();
-
-        // Get tags
-        const { data: tagLinks } = await supabase
-          .from("support_program_tags")
-          .select("tag_id, tags(id, name, category_id, tag_categories(id, name))")
-          .eq("support_program_id", p.id);
-
-        // Get files
-        const { data: files } = await supabase
-          .from("file_attachments")
-          .select("id, filename, file_url")
-          .eq("support_program_id", p.id);
-
-        const tags = tagLinks?.map((t: any) => ({
-          id: t.tags?.id,
-          name: t.tags?.name,
-          category: t.tags?.tag_categories,
-        })).filter((t: any) => t.id) || [];
-
-        return {
-          id: p.id,
-          title: p.title,
-          kurum: institution?.name || "Bilinmiyor",
-          son_tarih: p.application_deadline,
-          ozet: p.description?.substring(0, 300) + (p.description?.length > 300 ? "..." : ""),
-          uygunluk: p.eligibility_criteria?.substring(0, 200) + (p.eligibility_criteria?.length > 200 ? "..." : ""),
-          iletisim: p.contact_info,
-          belgeler: files || [],
-          tags: tags,
-          detay_link: `/program/${p.id}`,
-        };
-      })
-    );
-
-    return enrichedPrograms;
+    return await enrichPrograms(programs);
   } catch (err) {
     console.error("Error in searchSupportPrograms:", err);
     return [];
