@@ -27,15 +27,6 @@ import {
   DEFAULT_VISIBILITY,
   DEFAULT_ADMIN_VISIBILITY,
 } from "@/types/menuSettings";
-import {
-  MenuVisibilitySettings,
-  MenuItemVisibility,
-  MENU_ITEMS,
-  AdminMenuVisibilitySettings,
-  ADMIN_MENU_ITEMS,
-  DEFAULT_VISIBILITY,
-  DEFAULT_ADMIN_VISIBILITY,
-} from "@/types/menuSettings";
 
 const AdminMenuSettings = () => {
   // Domain management state
