@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { adminSettingsService, LogoColorMode } from '@/services/adminSettingsService';
 
+export type { LogoColorMode } from '@/services/adminSettingsService';
+
 interface LogoSettingsContextType {
   logoColorMode: LogoColorMode;
   isLoading: boolean;

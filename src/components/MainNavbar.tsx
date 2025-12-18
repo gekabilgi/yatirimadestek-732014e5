@@ -70,8 +70,8 @@ const MainNavbar = ({ className }: MainNavbarProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <Logo className="text-primary h-12 w-auto" />
+          <Link to="/" className="flex items-center flex-shrink-0">
+            <Logo className="text-primary h-12 w-auto min-w-[180px]" />
           </Link>
 
           {/* Desktop Navigation */}
