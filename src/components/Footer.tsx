@@ -1,6 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -11,32 +11,44 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Logo and Description */}
           <div className="flex flex-col items-start space-y-4">
-            <img
-              src="/logo/logo.png"
-              alt="Teşviksor Logo"
-              className="h-16 w-auto object-contain"
-            />
+            <img src="/logo/logo.svg" alt="yatirimadestek.gov.tr Logo" className="h-16 w-auto object-contain" />
             <p className="text-sm text-primary-foreground/80 max-w-xs">
-              Türkiye'nin en kapsamlı teşvik ve yatırım destek platformu. Yatırımlarınız için en uygun teşvikleri kolayca bulun.
+              Türkiye'nin en kapsamlı teşvik ve yatırım destek platformu. Yatırımlarınız için en uygun teşvikleri
+              kolayca bulun.
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="flex flex-col space-y-3">
             <h3 className="font-semibold text-lg mb-2">Hızlı Erişim</h3>
-            <Link to="/searchsupport" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+            <Link
+              to="/searchsupport"
+              className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+            >
               Destek Arama
             </Link>
-            <Link to="/incentive-tools" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+            <Link
+              to="/incentive-tools"
+              className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+            >
               Teşvik Hesaplama
             </Link>
-            <Link to="/yatirim-firsatlari" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+            <Link
+              to="/yatirim-firsatlari"
+              className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+            >
               Yatırım Fırsatları
             </Link>
-            <Link to="/qna" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+            <Link
+              to="/qna"
+              className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+            >
               Soru & Cevap
             </Link>
-            <Link to="/mevzuat" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+            <Link
+              to="/mevzuat"
+              className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+            >
               Mevzuat
             </Link>
           </div>
@@ -63,13 +75,19 @@ const Footer = () => {
         <div className="pt-8 border-t border-primary-foreground/20">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-primary-foreground/60">
-              © {currentYear} Teşviksor. Tüm hakları saklıdır.
+              © {currentYear} yatirimadestek.gov.tr. Tüm hakları saklıdır.
             </p>
             <div className="flex space-x-6">
-              <Link to="/gizlilik" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+              <Link
+                to="/gizlilik"
+                className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+              >
                 Gizlilik Politikası
               </Link>
-              <Link to="/kullanim-kosullari" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+              <Link
+                to="/kullanim-kosullari"
+                className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+              >
                 Kullanım Koşulları
               </Link>
             </div>
