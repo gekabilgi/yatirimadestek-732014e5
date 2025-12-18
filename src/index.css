@@ -5,6 +5,7 @@
 /* Smooth scroll behavior */
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable; /* Scrollbar alanını her zaman rezerve et - sayfa geçişlerinde kayma önlenir */
 }
 
 /* Modern Corporate Design System */
