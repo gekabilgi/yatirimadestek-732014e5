@@ -18,6 +18,41 @@ interface MainNavbarProps {
   className?: string;
 }
 
+// Cache configuration
+const MENU_CACHE_KEY = 'mainNavbar_menuItems';
+const MENU_CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+// Default menu items to show initially (all public items)
+const DEFAULT_MENU_ITEMS = [
+  { name: 'Destek Arama', href: '/searchsupport' },
+  { name: 'Teşvik Araçları', href: '/incentive-tools' },
+  { name: 'Yatırım Fırsatları', href: '/investmentopportunities' },
+  { name: 'Mevzuat', href: '/legislation' },
+  { name: 'Yatırımcı Sözlüğü', href: '/investorglossary' },
+  { name: 'Soru & Cevap', href: '/qna' },
+  { name: 'Duyurular', href: '/#announcements' },
+  { name: 'Soru Sor', href: '/qna#ask' },
+];
+
+// Helper function to get initial menu items from cache or defaults
+const getInitialMenuItems = () => {
+  try {
+    const cached = localStorage.getItem(MENU_CACHE_KEY);
+    if (cached) {
+      const { items, timestamp } = JSON.parse(cached);
+      // Use cache if less than 5 minutes old
+      if (Date.now() - timestamp < MENU_CACHE_EXPIRY && Array.isArray(items) && items.length > 0) {
+        return items;
+      }
+    }
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+  
+  // Fallback: Start with all default items visible (items may hide, but won't suddenly appear)
+  return DEFAULT_MENU_ITEMS;
+};
+
 const MainNavbar = ({ className }: MainNavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
@@ -27,9 +62,8 @@ const MainNavbar = ({ className }: MainNavbarProps) => {
     await signOut();
   };
 
-  const [visibleNavItems, setVisibleNavItems] = useState([
-    { name: 'Destek Arama', href: '/searchsupport' },
-  ]);
+  // Initialize with cached or default items to prevent flickering
+  const [visibleNavItems, setVisibleNavItems] = useState(getInitialMenuItems);
 
   // Fetch menu visibility settings and filter based on user authentication/role
   useEffect(() => {
@@ -49,6 +83,16 @@ const MainNavbar = ({ className }: MainNavbarProps) => {
           name: item.title,
           href: item.url,
         }));
+        
+        // Cache the results for future page loads
+        try {
+          localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({
+            items: visibleItems,
+            timestamp: Date.now()
+          }));
+        } catch (e) {
+          // Ignore localStorage errors
+        }
         
         setVisibleNavItems(visibleItems);
       } catch (error) {
@@ -71,7 +115,7 @@ const MainNavbar = ({ className }: MainNavbarProps) => {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link to="/" className="flex items-center flex-shrink-0">
-            <Logo className="text-primary h-12 w-auto min-w-[180px]" />
+            <Logo className="text-primary h-12 w-auto min-w-[212px]" />
           </Link>
 
           {/* Desktop Navigation */}
