@@ -108,9 +108,9 @@ const EnhancedHero = () => {
         </div>
 
         {/* Integrated Header */}
-        <header className="relative z-10 border-b border-white/20 bg-white/95 px-4 sm:px-8 py-4 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex items-center justify-between">
+        <header className="relative z-10 border-b bg-white/95 backdrop-blur-sm shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
               {/* Logo */}
               <Link to="/" className="flex items-center gap-3">
                 <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-primary">
