@@ -11,9 +11,22 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, Globe, Settings, X, Plus, Loader2, Trash2, Copy, Check } from "lucide-react";
+import { Menu, Globe, Settings, X, Plus, Loader2, Trash2, Copy, Check, Palette } from "lucide-react";
 import { menuVisibilityService } from "@/services/menuVisibilityService";
+import { adminSettingsService, LogoColorMode } from "@/services/adminSettingsService";
+import { Logo } from "@/components/Logo";
+import {
+  MenuVisibilitySettings,
+  MenuItemVisibility,
+  MENU_ITEMS,
+  AdminMenuVisibilitySettings,
+  ADMIN_MENU_ITEMS,
+  DEFAULT_VISIBILITY,
+  DEFAULT_ADMIN_VISIBILITY,
+} from "@/types/menuSettings";
 import {
   MenuVisibilitySettings,
   MenuItemVisibility,
@@ -37,6 +50,8 @@ const AdminMenuSettings = () => {
   const [adminSettings, setAdminSettings] = useState<AdminMenuVisibilitySettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [savingStates, setSavingStates] = useState<Record<string, boolean>>({});
+  const [logoMode, setLogoMode] = useState<LogoColorMode>('all_themed');
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
   
   const { toast } = useToast();
   const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
@@ -48,6 +63,9 @@ const AdminMenuSettings = () => {
       setConfiguredDomains(domains);
     };
     loadDomains();
+    
+    // Load logo mode
+    adminSettingsService.getLogoColorMode().then(setLogoMode);
   }, []);
 
   // Load settings when selected domain changes
@@ -293,6 +311,19 @@ const AdminMenuSettings = () => {
     }
   };
 
+  const handleLogoModeChange = async (mode: LogoColorMode) => {
+    setIsSavingLogo(true);
+    try {
+      await adminSettingsService.setLogoColorMode(mode);
+      setLogoMode(mode);
+      toast({ title: "Başarılı", description: "Logo renk modu güncellendi." });
+    } catch (error) {
+      toast({ title: "Hata", description: "Logo modu kaydedilemedi.", variant: "destructive" });
+    } finally {
+      setIsSavingLogo(false);
+    }
+  };
+
   // Render menu table
   const renderMenuTable = (
     items: typeof MENU_ITEMS | typeof ADMIN_MENU_ITEMS,
@@ -501,7 +532,7 @@ const AdminMenuSettings = () => {
         {/* Menu Settings Tabs */}
         {frontendSettings && adminSettings && (
           <Tabs defaultValue="frontend" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="frontend" className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 Frontend Menü
@@ -509,6 +540,10 @@ const AdminMenuSettings = () => {
               <TabsTrigger value="admin" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Admin Menü
+              </TabsTrigger>
+              <TabsTrigger value="logo" className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Logo Ayarları
               </TabsTrigger>
             </TabsList>
 
@@ -543,6 +578,62 @@ const AdminMenuSettings = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   {renderMenuTable(ADMIN_MENU_ITEMS, adminSettings, handleAdminToggleChange, "admin")}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="logo">
+              <Card>
+                <CardHeader className="py-4">
+                  <CardTitle className="text-base">Logo Renk Ayarları</CardTitle>
+                  <CardDescription className="text-sm">
+                    Logo renklerinin tema ile uyumunu ayarlayın. Yeşil # işareti her zaman sabit kalır.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-center p-6 bg-primary rounded-lg">
+                    <Logo className="text-primary-foreground" width={200} />
+                  </div>
+                  
+                  <RadioGroup value={logoMode} onValueChange={(v) => handleLogoModeChange(v as LogoColorMode)} disabled={isSavingLogo}>
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50">
+                        <RadioGroupItem value="all_themed" id="all_themed" />
+                        <Label htmlFor="all_themed" className="flex-1 cursor-pointer">
+                          <span className="font-medium">Hepsi Tema Uyumlu</span>
+                          <span className="block text-sm text-muted-foreground">Grafik ve yazılar tema rengini kullanır</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50">
+                        <RadioGroupItem value="graphic_themed" id="graphic_themed" />
+                        <Label htmlFor="graphic_themed" className="flex-1 cursor-pointer">
+                          <span className="font-medium">Sadece Grafik Tema</span>
+                          <span className="block text-sm text-muted-foreground">Grafik tema rengi, yazılar sabit lacivert</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50">
+                        <RadioGroupItem value="text_themed" id="text_themed" />
+                        <Label htmlFor="text_themed" className="flex-1 cursor-pointer">
+                          <span className="font-medium">Sadece Yazılar Tema</span>
+                          <span className="block text-sm text-muted-foreground">Grafik sabit kırmızı, yazılar tema rengi</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50">
+                        <RadioGroupItem value="original" id="original" />
+                        <Label htmlFor="original" className="flex-1 cursor-pointer">
+                          <span className="font-medium">Orijinal Renkler</span>
+                          <span className="block text-sm text-muted-foreground">Tüm renkler sabit (kırmızı, lacivert, yeşil)</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50">
+                        <RadioGroupItem value="all_white" id="all_white" />
+                        <Label htmlFor="all_white" className="flex-1 cursor-pointer">
+                          <span className="font-medium">Tamamı Beyaz</span>
+                          <span className="block text-sm text-muted-foreground">Logo beyaz, yeşil # sabit kalır</span>
+                        </Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
                 </CardContent>
               </Card>
             </TabsContent>
