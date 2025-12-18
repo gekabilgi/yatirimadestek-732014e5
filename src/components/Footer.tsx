@@ -11,7 +11,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Logo and Description */}
           <div className="flex flex-col items-start space-y-4">
-            <img src="/logo/logo.svg" alt="yatirimadestek.gov.tr Logo" className="h-16 w-auto object-contain" />
+            <img src="./logo/logo.png" alt="Teşviksor Logo" className="h-16 w-auto object-contain" />
             <p className="text-sm text-primary-foreground/80 max-w-xs">
               Türkiye'nin en kapsamlı teşvik ve yatırım destek platformu. Yatırımlarınız için en uygun teşvikleri
               kolayca bulun.
@@ -74,9 +74,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-primary-foreground/20">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-sm text-primary-foreground/60">
-              © {currentYear} yatirimadestek.gov.tr. Tüm hakları saklıdır.
-            </p>
+            <p className="text-sm text-primary-foreground/60">© {currentYear} Teşviksor. Tüm hakları saklıdır.</p>
             <div className="flex space-x-6">
               <Link
                 to="/gizlilik"
