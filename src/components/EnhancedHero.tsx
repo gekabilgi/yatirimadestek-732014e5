@@ -116,10 +116,14 @@ const EnhancedHero = () => {
                 <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-primary">
                   <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
                 </div>
-                <div className="hidden sm:block text-gray-900">
-                  <div className="text-base font-bold leading-tight">Yatırıma Destek</div>
-                  <div className="text-xs text-gray-600">Teşvik Sistemi</div>
-                </div>
+            <div className="hidden sm:block">
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                Yatırıma Destek
+              </span>
+              <div className="text-xs text-muted-foreground font-medium">
+                Teşvik Sistemi
+              </div>
+            </div>
               </Link>
 
               {/* Desktop Navigation */}
