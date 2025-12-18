@@ -112,22 +112,24 @@ const EnhancedHero = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
               {/* Logo */}
-              <Link to="/" className="flex items-center gap-3">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-primary">
-                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
-                </div>
-            <div className="hidden sm:block">
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                Yatırıma Destek
-              </span>
-              <div className="text-xs text-muted-foreground font-medium">
-                Teşvik Sistemi
+              <div className="flex items-center space-x-3">
+                <Link to="/" className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                      Yatırıma Destek
+                    </span>
+                    <div className="text-xs text-muted-foreground font-medium">
+                      Teşvik Sistemi
+                    </div>
+                  </div>
+                </Link>
               </div>
-            </div>
-              </Link>
 
               {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-4">
+              <div className="hidden lg:flex items-center space-x-1">
                 {visibleNavItems.map((item) => (
                   <Link
                     key={item.name}
@@ -138,10 +140,10 @@ const EnhancedHero = () => {
                     <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200 rounded-full"></span>
                   </Link>
                 ))}
-              </nav>
+              </div>
 
               {/* Desktop Auth */}
-              <div className="hidden lg:flex items-center gap-2">
+              <div className="hidden lg:flex items-center space-x-2">
                 {user && isAdmin ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
