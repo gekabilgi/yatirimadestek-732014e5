@@ -48,11 +48,11 @@ export function ChatSidebar({
         <div
           className={cn(
             "flex items-center border-b transition-all duration-300",
-            isCollapsed ? "p-2 justify-center" : "p-4 justify-center",
+            isCollapsed ? "p-2 justify-center" : "p-1 justify-center",
           )}
         >
           <Link to="/" className="hover:opacity-80 transition-opacity">
-            <Logo className={cn("transition-all duration-300", isCollapsed ? "h-8 w-8" : "h-14 w-auto")} />
+            <Logo className={cn("transition-all duration-300", isCollapsed ? "h-8 w-8" : "h-16 w-auto")} />
           </Link>
         </div>
 
