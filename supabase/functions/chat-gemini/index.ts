@@ -903,6 +903,40 @@ const normalizeRegionNumbers = (text: string): string => {
   return normalized;
 };
 
+// ============= ALAKASIZ İÇERİK TEMİZLEME FONKSİYONU =============
+// Gemini'nin yanıtından "İlgili Bilgiler" gibi alakasız bölümleri temizler
+const cleanIrrelevantContent = (text: string): string => {
+  // Pattern 1: "---" ayracı sonrası gelen "İlgili Bilgiler" bölümü
+  // Pattern 2: "📊 İlgili Bilgiler:" başlıklı bölüm
+  // Pattern 3: Numara listesiyle gelen alakasız konular
+  // Pattern 4: "Ayrıca şunlar da desteklenmektedir" ifadesi sonrası
+  
+  const patterns = [
+    /\n*---\s*\n*📊?\s*İlgili Bilgiler[\s\S]*$/i,
+    /\n*📊\s*İlgili Bilgiler:[\s\S]*$/i,
+    /\n*İlgili Bilgiler:[\s\S]*$/i,
+    /\n*Ayrıca şunlar da desteklenmektedir[\s\S]*$/i,
+    /\n*---\s*\n*\d+\.\s*(?:Grafit|Deri İşleme|Sentetik|Taş Kâğıt|Kâğıt Üretimi)[\s\S]*$/i,
+    /\n*Alternatif(?:\s+soru)?:[\s\S]*$/i,
+  ];
+  
+  let cleaned = text;
+  for (const pattern of patterns) {
+    cleaned = cleaned.replace(pattern, '');
+  }
+  
+  // Trailing whitespace ve fazla satır sonlarını temizle
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+  
+  console.log('🧹 cleanIrrelevantContent:', {
+    originalLength: text.length,
+    cleanedLength: cleaned.length,
+    removedChars: text.length - cleaned.length
+  });
+  
+  return cleaned;
+};
+
 // FIX 1: Robustly filter out internal tool and thought content (tool call leakage).
 function extractTextAndChunks(response: any) {
   const candidate = response?.candidates?.[0];
@@ -1849,6 +1883,31 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
 - Bilgileri verirken mutlaka kendi cümlelerinle açıkla, özetle ve yeniden ifade et. Belge içeriğini kelimesi kelimesine kopyalama.
 - Eğer yüklenen belgeler soruyu kapsamıyorsa "Bu soru yüklenen belgelerin kapsamı dışında, sadece genel kavramsal açıklama yapabilirim." diye belirt ve genel kavramı çok kısa özetle.
 - En son satıra detaylı bilgi almak için ilgili ilin yatırım destek ofisi ile iletişime geçebilirsiniz.
+
+---
+
+## 9. KESİN YASAKLAR - ALAKASIZ İÇERİK FİLTRELEME
+
+⚠️ **ALAKASIZ İÇERİK EKLEME YASAKTIR:**
+
+1. **"İlgili Bilgiler" bölümü ASLA yazma** - File Search sonuçlarında çıkan diğer yatırım konularını yanıta dahil etme.
+
+2. **YALNIZCA SORULAN KONUYU CEVAPLA:**
+   - Kullanıcı "pektin yatırımı" sormuşsa → SADECE pektin hakkında bilgi ver
+   - Grafit, Deri İşleme, Sentetik Kâğıt gibi alakasız konuları EKLEME
+   - "Ayrıca şunlar da desteklenmektedir..." YAZMA
+   - "📊 İlgili Bilgiler:" bölümü OLUŞTURMA
+
+3. **TEMİZ ÇIKIŞ FORMATI:**
+   - Sektör Analizi + il sorusu ile bitir
+   - Grounding sonuçlarından alakasız chunk'ları KULLANMA
+   - Alternatif soru önerileri EKLEME
+
+4. **DOĞRU SONLANDIRMA:**
+   - Yanıt "Bu yatırımı hangi ilde yapmayı planlıyorsunuz?" veya benzer takip sorusuyla bitecek
+   - Bundan sonra HİÇBİR ŞEY YAZMA
+   - "---" ayraç çizgisi KOYMA
+   - Numara listesiyle başka konuları sıralama
 `;
 
     const normalizedUserMessage = normalizeRegionNumbers(lastUserMessage.content);
@@ -1895,7 +1954,11 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
 
     let { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
 
-    console.log("📊 Initial Response Analysis:", {
+    // ============= ALAKASIZ İÇERİK TEMİZLEME =============
+    // "İlgili Bilgiler" gibi alakasız bölümleri yanıttan kaldır
+    textOut = cleanIrrelevantContent(textOut);
+
+    console.log("📊 Initial Response Analysis (after cleaning):", {
       textLength: textOut.length,
       textPreview: textOut.substring(0, 150),
       chunksCount: groundingChunks.length,
@@ -1982,7 +2045,7 @@ BAŞLA! 🚀
 
       // Retry başarılı! Yeni sonuçları kullan
       console.log("✅ Retry successful - using new results");
-      textOut = retryResult.textOut;
+      textOut = cleanIrrelevantContent(retryResult.textOut);
       groundingChunks = retryResult.groundingChunks;
       finishReason = retryResult.finishReason;
 
