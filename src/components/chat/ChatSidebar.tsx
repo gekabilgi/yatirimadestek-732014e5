@@ -47,8 +47,8 @@ export function ChatSidebar({
         {/* Logo Section - Clickable to home */}
         <div
           className={cn(
-            "flex items-center border-b transition-all duration-300 h-[52px] md:h-[60px]",
-            isCollapsed ? "p-2 justify-center" : "px-4"
+            "flex items-center border-b transition-all duration-300 h-[72px] md:h-[80px]",
+            isCollapsed ? "p-2 justify-center" : "px-4 justify-center"
           )}
         >
           <Link to="/" className={cn(
@@ -58,7 +58,7 @@ export function ChatSidebar({
             {isCollapsed ? (
               <Home className="h-5 w-5 text-primary" />
             ) : (
-              <Logo className="h-10 w-full max-h-10 transition-all duration-300 [&_path]:fill-primary" />
+              <Logo className="h-16 w-full transition-all duration-300 [&_path]:fill-primary" />
             )}
           </Link>
         </div>
