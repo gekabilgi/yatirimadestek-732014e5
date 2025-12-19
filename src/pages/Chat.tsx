@@ -196,7 +196,7 @@ export default function Chat() {
     <div className="h-screen flex overflow-hidden">
       {/* Desktop Sidebar */}
       <aside 
-        className={`hidden lg:block transition-all duration-300 ${isSidebarCollapsed ? 'w-16' : 'w-80'}`} 
+        className={`hidden lg:block transition-all duration-300 ${isSidebarCollapsed ? 'w-16' : 'w-72'}`} 
         role="complementary" 
         aria-label="Sohbet geçmişi"
       >
@@ -222,7 +222,7 @@ export default function Chat() {
             </SheetTrigger>
           </div>
           
-          <SheetContent side="left" className="w-80 p-0">
+          <SheetContent side="left" className="w-72 p-0">
             <ChatSidebar
               sessions={sessions}
               activeSessionId={activeSessionId}
