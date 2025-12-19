@@ -85,7 +85,11 @@ const preprocessMarkdown = (content: string): string => {
         "$1\n\n**$2**",
       )
 
-      // 10. Çift boşlukları temizle (3+ -> 2)
+      // 10. Inline asterisk'leri yeni satıra taşı (": * item" veya ". * item")
+      .replace(/:\s*\*\s+([^\n*])/g, ":\n\n* $1")
+      .replace(/\.\s*\*\s+([^\n*])/g, ".\n\n* $1")
+
+      // 11. Çift boşlukları temizle (3+ -> 2)
       .replace(/\n{3,}/g, "\n\n")
       .trim()
   );
