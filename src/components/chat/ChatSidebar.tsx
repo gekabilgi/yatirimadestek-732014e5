@@ -43,27 +43,27 @@ export function ChatSidebar({
         {/* Logo/Home Section - Matches ChatHeader height */}
         <div className={cn(
           "flex items-center border-b h-[52px] md:h-[60px]",
-          isCollapsed ? "justify-center px-2" : "justify-center px-4"
+          isCollapsed ? "justify-center p-2" : "p-4"
         )}>
-  <Link to="/" className={cn(
-    "hover:opacity-80 transition-opacity flex items-center justify-center",
-    isCollapsed ? "" : "w-full"
-  )}>
-    {isCollapsed ? (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="p-2 rounded-md hover:bg-accent">
-            <Home className="h-5 w-5" />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right">
-          <p>Anasayfa</p>
-        </TooltipContent>
-      </Tooltip>
-    ) : (
-      <Logo className="w-full h-auto max-h-10 text-primary" />
-    )}
-  </Link>
+          <Link to="/" className={cn(
+            "hover:opacity-80 transition-opacity flex items-center justify-center",
+            isCollapsed ? "" : "w-full"
+          )}>
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="p-2 rounded-md hover:bg-accent">
+                    <Home className="h-5 w-5" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Anasayfa</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Logo className="w-full h-auto max-h-8 text-primary" />
+            )}
+          </Link>
         </div>
 
         {/* Button and Search */}
