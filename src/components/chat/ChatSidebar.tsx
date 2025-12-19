@@ -51,7 +51,7 @@ export function ChatSidebar({
             isCollapsed ? "p-2 justify-center" : "p-4 justify-center",
           )}
         >
-          <Link to="/" className="hover:opacity-80 transition-opacity w-full">
+          <Link to="/" className="hover:opacity-80 transition-opacity">
             <Logo className={cn("transition-all duration-300", isCollapsed ? "h-8 w-8" : "h-10 w-auto")} />
           </Link>
         </div>
