@@ -58,7 +58,7 @@ export function ChatSidebar({
             {isCollapsed ? (
               <Home className="h-5 w-5 text-primary" />
             ) : (
-              <Logo className="h-16 w-full transition-all duration-300 [&_path]:fill-primary" />
+              <Logo className="h-16 w-full transition-all duration-300 text-primary" />
             )}
           </Link>
         </div>
