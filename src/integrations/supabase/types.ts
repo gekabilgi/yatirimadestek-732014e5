@@ -1012,6 +1012,81 @@ export type Database = {
         }
         Relationships: []
       }
+      hybrid_search_analytics: {
+        Row: {
+          cache_hit: boolean | null
+          cache_key: string | null
+          created_at: string | null
+          embedding_time_ms: number | null
+          expanded_queries_count: number | null
+          id: string
+          keywords_extracted: number | null
+          query: string
+          query_expanded: boolean | null
+          query_hash: string | null
+          qv_best_similarity: number | null
+          qv_match_count: number | null
+          qv_match_type: string | null
+          qv_search_time_ms: number | null
+          response_length: number | null
+          response_source: string | null
+          session_id: string | null
+          support_match_count: number | null
+          support_search_time_ms: number | null
+          total_response_time_ms: number | null
+          vertex_has_results: boolean | null
+          vertex_search_time_ms: number | null
+        }
+        Insert: {
+          cache_hit?: boolean | null
+          cache_key?: string | null
+          created_at?: string | null
+          embedding_time_ms?: number | null
+          expanded_queries_count?: number | null
+          id?: string
+          keywords_extracted?: number | null
+          query: string
+          query_expanded?: boolean | null
+          query_hash?: string | null
+          qv_best_similarity?: number | null
+          qv_match_count?: number | null
+          qv_match_type?: string | null
+          qv_search_time_ms?: number | null
+          response_length?: number | null
+          response_source?: string | null
+          session_id?: string | null
+          support_match_count?: number | null
+          support_search_time_ms?: number | null
+          total_response_time_ms?: number | null
+          vertex_has_results?: boolean | null
+          vertex_search_time_ms?: number | null
+        }
+        Update: {
+          cache_hit?: boolean | null
+          cache_key?: string | null
+          created_at?: string | null
+          embedding_time_ms?: number | null
+          expanded_queries_count?: number | null
+          id?: string
+          keywords_extracted?: number | null
+          query?: string
+          query_expanded?: boolean | null
+          query_hash?: string | null
+          qv_best_similarity?: number | null
+          qv_match_count?: number | null
+          qv_match_type?: string | null
+          qv_search_time_ms?: number | null
+          response_length?: number | null
+          response_source?: string | null
+          session_id?: string | null
+          support_match_count?: number | null
+          support_search_time_ms?: number | null
+          total_response_time_ms?: number | null
+          vertex_has_results?: boolean | null
+          vertex_search_time_ms?: number | null
+        }
+        Relationships: []
+      }
       incentive_queries: {
         Row: {
           created_at: string | null
@@ -1892,6 +1967,54 @@ export type Database = {
           },
         ]
       }
+      question_cache: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          grounding_chunks: Json | null
+          hit_count: number | null
+          id: string
+          last_hit_at: string | null
+          normalized_query: string
+          original_query: string
+          query_hash: string
+          response_text: string
+          search_metadata: Json | null
+          source: string | null
+          support_cards: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          grounding_chunks?: Json | null
+          hit_count?: number | null
+          id?: string
+          last_hit_at?: string | null
+          normalized_query: string
+          original_query: string
+          query_hash: string
+          response_text: string
+          search_metadata?: Json | null
+          source?: string | null
+          support_cards?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          grounding_chunks?: Json | null
+          hit_count?: number | null
+          id?: string
+          last_hit_at?: string | null
+          normalized_query?: string
+          original_query?: string
+          query_hash?: string
+          response_text?: string
+          search_metadata?: Json | null
+          source?: string | null
+          support_cards?: Json | null
+        }
+        Relationships: []
+      }
       question_variants: {
         Row: {
           canonical_answer: string
@@ -2620,6 +2743,17 @@ export type Database = {
           logo_url?: string | null
           on_request_id?: string | null
           status?: string | null
+        }
+        Relationships: []
+      }
+      cache_statistics_view: {
+        Row: {
+          avg_hits_per_query: number | null
+          expired_entries: number | null
+          new_today: number | null
+          popular_queries: number | null
+          total_cache_hits: number | null
+          total_cached_queries: number | null
         }
         Relationships: []
       }

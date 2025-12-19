@@ -23,6 +23,157 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// ============= CACHING AND ANALYTICS HELPER FUNCTIONS =============
+
+// Normalize and hash query for caching
+async function normalizeQueryForCache(query: string): Promise<{ normalized: string; hash: string }> {
+  const normalized = query
+    .toLowerCase()
+    .replace(/[?!.,;:'"()]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Generate SHA-256 hash
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalized);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  
+  return { normalized, hash };
+}
+
+// Check cache for existing response
+async function checkCache(supabase: any, queryHash: string): Promise<any | null> {
+  try {
+    const { data, error } = await supabase
+      .from('question_cache')
+      .select('*')
+      .eq('query_hash', queryHash)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+    
+    if (error || !data) return null;
+    
+    // Update hit count asynchronously (don't wait)
+    supabase
+      .from('question_cache')
+      .update({ 
+        hit_count: data.hit_count + 1,
+        last_hit_at: new Date().toISOString()
+      })
+      .eq('id', data.id)
+      .then(() => console.log('✅ Cache hit count updated'))
+      .catch((err: any) => console.error('⚠️ Failed to update cache hit count:', err));
+    
+    console.log(`🎯 Cache HIT for hash: ${queryHash.substring(0, 8)}...`);
+    return data;
+  } catch (error) {
+    console.error('⚠️ Cache check error:', error);
+    return null;
+  }
+}
+
+// Save response to cache
+async function saveToCache(supabase: any, params: {
+  queryHash: string;
+  normalizedQuery: string;
+  originalQuery: string;
+  responseText: string;
+  groundingChunks?: any;
+  supportCards?: any;
+  source?: string;
+  searchMetadata?: any;
+}): Promise<void> {
+  try {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    await supabase.from('question_cache').upsert({
+      query_hash: params.queryHash,
+      normalized_query: params.normalizedQuery,
+      original_query: params.originalQuery,
+      response_text: params.responseText,
+      grounding_chunks: params.groundingChunks || null,
+      support_cards: params.supportCards || null,
+      source: params.source || 'gemini',
+      search_metadata: params.searchMetadata || null,
+      expires_at: expiresAt,
+      hit_count: 1,
+      last_hit_at: new Date().toISOString()
+    }, { onConflict: 'query_hash' });
+    
+    console.log(`💾 Response cached for hash: ${params.queryHash.substring(0, 8)}...`);
+  } catch (error) {
+    console.error('⚠️ Cache save error:', error);
+  }
+}
+
+// Analytics tracking interface
+interface SearchAnalytics {
+  sessionId?: string;
+  query: string;
+  queryHash: string;
+  timings: {
+    total?: number;
+    embedding?: number;
+    qvSearch?: number;
+    vertexSearch?: number;
+    supportSearch?: number;
+  };
+  results: {
+    qvMatchCount: number;
+    qvBestSimilarity?: number;
+    qvMatchType?: string;
+    vertexHasResults: boolean;
+    supportMatchCount: number;
+  };
+  cache: {
+    hit: boolean;
+    key?: string;
+  };
+  queryAnalysis: {
+    expanded: boolean;
+    expandedCount: number;
+    keywordsCount: number;
+  };
+  response: {
+    source: string;
+    length: number;
+  };
+}
+
+// Track search analytics
+async function trackSearchAnalytics(supabase: any, analytics: SearchAnalytics): Promise<void> {
+  try {
+    await supabase.from('hybrid_search_analytics').insert({
+      session_id: analytics.sessionId,
+      query: analytics.query,
+      query_hash: analytics.queryHash,
+      total_response_time_ms: analytics.timings.total,
+      embedding_time_ms: analytics.timings.embedding,
+      qv_search_time_ms: analytics.timings.qvSearch,
+      vertex_search_time_ms: analytics.timings.vertexSearch,
+      support_search_time_ms: analytics.timings.supportSearch,
+      qv_match_count: analytics.results.qvMatchCount,
+      qv_best_similarity: analytics.results.qvBestSimilarity,
+      qv_match_type: analytics.results.qvMatchType,
+      vertex_has_results: analytics.results.vertexHasResults,
+      support_match_count: analytics.results.supportMatchCount,
+      cache_hit: analytics.cache.hit,
+      cache_key: analytics.cache.key,
+      query_expanded: analytics.queryAnalysis.expanded,
+      expanded_queries_count: analytics.queryAnalysis.expandedCount,
+      keywords_extracted: analytics.queryAnalysis.keywordsCount,
+      response_source: analytics.response.source,
+      response_length: analytics.response.length
+    });
+    
+    console.log(`📊 Analytics tracked for query: ${analytics.query.substring(0, 30)}...`);
+  } catch (error) {
+    console.error('⚠️ Analytics tracking error:', error);
+  }
+}
+
 // Custom RAG handler
 async function handleCustomRagChat(supabase: any, storeId: string, messages: any[], sessionId: string) {
   const lastUserMessage = messages[messages.length - 1];
@@ -928,6 +1079,41 @@ serve(async (req) => {
       if (corpusName) {
         console.log("🔍 Using Enhanced Vertex RAG Corpus:", corpusName);
 
+        // ============= STEP 0: CHECK CACHE FIRST =============
+        const startTime = Date.now();
+        const timings = { embedding: 0, qvSearch: 0, vertexSearch: 0, supportSearch: 0 };
+        
+        const { normalized: normalizedQuery, hash: queryHash } = await normalizeQueryForCache(lastUserMessage.content);
+        console.log(`🔑 Query hash: ${queryHash.substring(0, 8)}...`);
+        
+        const cachedResponse = await checkCache(supabase, queryHash);
+        
+        if (cachedResponse) {
+          // Track cache hit analytics
+          await trackSearchAnalytics(supabase, {
+            sessionId,
+            query: lastUserMessage.content,
+            queryHash,
+            timings: { total: Date.now() - startTime },
+            results: { qvMatchCount: 0, vertexHasResults: false, supportMatchCount: 0 },
+            cache: { hit: true, key: queryHash },
+            queryAnalysis: { expanded: false, expandedCount: 0, keywordsCount: 0 },
+            response: { source: 'cache', length: cachedResponse.response_text?.length || 0 }
+          });
+          
+          return new Response(
+            JSON.stringify({
+              text: cachedResponse.response_text,
+              groundingChunks: cachedResponse.grounding_chunks || [],
+              supportCards: cachedResponse.support_cards || [],
+              sources: cachedResponse.search_metadata?.sources || [],
+              fromCache: true,
+              cacheHit: true
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         // Get Vertex RAG settings
         const { data: settingsData } = await supabase
           .from("admin_settings")
@@ -1016,10 +1202,58 @@ serve(async (req) => {
           topSources: rerankedResult.topSources
         });
 
-        // ============= STEP 4: BUILD RESPONSE =============
+        // ============= STEP 4: BUILD RESPONSE WITH CACHING =============
         const vertexText = rerankedResult.vertexText || '';
         const noResultsInVertex = isNoResultsFoundResponse(vertexText);
         const hasQvContent = rerankedResult.qvContext && rerankedResult.qvContext.length > 50;
+        
+        const totalTime = Date.now() - startTime;
+
+        // Helper function to save cache and track analytics
+        const finishWithCacheAndAnalytics = async (
+          responseText: string, 
+          responseSource: string,
+          supportCardsData: any[],
+          groundingChunks?: any[]
+        ) => {
+          // Track analytics (don't await)
+          trackSearchAnalytics(supabase, {
+            sessionId,
+            query: lastUserMessage.content,
+            queryHash,
+            timings: { total: totalTime },
+            results: {
+              qvMatchCount: qvMatches?.length || 0,
+              qvBestSimilarity: qvMatches?.[0]?.similarity || undefined,
+              qvMatchType: qvMatches?.[0]?.match_type || undefined,
+              vertexHasResults: !noResultsInVertex,
+              supportMatchCount: supportCardsData.length
+            },
+            cache: { hit: false },
+            queryAnalysis: {
+              expanded: queryExpansion.expandedQueries.length > 0,
+              expandedCount: queryExpansion.expandedQueries.length,
+              keywordsCount: queryExpansion.keywords.length
+            },
+            response: { source: responseSource, length: responseText.length }
+          });
+
+          // Save to cache (don't await)
+          saveToCache(supabase, {
+            queryHash,
+            normalizedQuery,
+            originalQuery: lastUserMessage.content,
+            responseText,
+            groundingChunks,
+            supportCards: supportCardsData,
+            source: responseSource,
+            searchMetadata: {
+              qvMatchType: qvMatches?.[0]?.match_type,
+              vertexUsed: !noResultsInVertex,
+              sources: rerankedResult.topSources
+            }
+          });
+        };
 
         // Case 1: Vertex has good content
         if (!noResultsInVertex && vertexText.length > 100) {
@@ -1036,6 +1270,10 @@ serve(async (req) => {
           }
           
           console.log("✅ [Enhanced Hybrid] Returning combined Vertex + QV + Support response");
+          
+          // Cache and track (fire and forget)
+          finishWithCacheAndAnalytics(finalText, 'vertex_combined', rerankedResult.supportCards, vertexResponse?.groundingChunks);
+          
           return new Response(
             JSON.stringify({
               ...(vertexResponse || {}),
