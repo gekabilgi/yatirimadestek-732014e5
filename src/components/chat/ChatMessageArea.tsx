@@ -84,7 +84,7 @@ export function ChatMessageArea({
           .select("*")
           .eq("session_id", activeSessionId)
           .eq("status", "collecting")
-          .single();
+          .maybeSingle();
 
         if (!error) setIncentiveProgress(data);
         else setIncentiveProgress(null);
