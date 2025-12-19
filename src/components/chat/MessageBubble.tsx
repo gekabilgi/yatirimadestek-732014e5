@@ -33,7 +33,18 @@ const preprocessMarkdown = (content: string): string => {
       // 6. Numaralı liste öğeleri öncesinde satır sonu
       .replace(/([.!?])\s+(\d+)\.\s+/g, "$1\n\n$2. ")
       
-      // 7. Çift boşlukları temizle (3+ -> 2)
+      // ========== YENİ: DÜZ METİN BAŞLIKLARINI FORMAT ===============
+      // 7. Satır içi ardışık "Başlık: değer Başlık2: değer2" kalıplarını ayır
+      // Önce iki noktalı başlık arasına satır sonu ekle
+      .replace(/(:)\s*([^:\n]{2,50})\s+((?:NACE|Sektör|Teşvik|Yatırım|Lokasyon|Program|Bölge|KDV|Gümrük|Vergi|Sigorta|Faiz|Makine|Asgari|OSB|İl|Ana|Alt|Hedef|Öncelikli|Uygulanan|İşletme|Sabit|Minimum)[^:]*:)/gi, "$1 $2\n\n**$3**")
+      
+      // 8. Satır başındaki düz metin başlıkları bold yap (eğer bold değilse)
+      .replace(/^((?:NACE Kodu|Ana Sektör Tanımı|Alt Sektör Tanımı|Teşvik Statüsü|Yatırım Konusu|Lokasyon|Uygulanan Program|Bölge|İl|KDV İstisnası|Gümrük Muafiyeti|Vergi İndirimi|Sigorta Primi|Faiz Desteği|Makine Teçhizat|Asgari Yatırım|OSB Durumu|Hedef Yatırım|Öncelikli Yatırım|İşletme Büyüklüğü|Sabit Yatırım Tutarı|Minimum Yatırım):)(\s)/gim, "**$1**$2")
+      
+      // 9. Paragraf içi düz başlıkların önüne satır sonu ekle
+      .replace(/([.!?)\]0-9])\s+((?:NACE Kodu|Ana Sektör|Alt Sektör|Teşvik Statüsü|Yatırım Konusu|Lokasyon|Uygulanan Program|Bölge|İl|KDV|Gümrük|Vergi|Sigorta|Faiz|Makine|Asgari|OSB|Hedef|Öncelikli)[^:]*:)/gi, "$1\n\n**$2**")
+      
+      // 10. Çift boşlukları temizle (3+ -> 2)
       .replace(/\n{3,}/g, "\n\n")
       .trim()
   );
