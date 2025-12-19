@@ -1,15 +1,15 @@
-import { Plus, Search, Trash2, MessageSquare, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import type { ChatSession } from '@/hooks/useChatSession';
-import { formatDistanceToNow } from 'date-fns';
-import { tr } from 'date-fns/locale';
-import { Logo } from '@/components/Logo';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Search, Trash2, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import type { ChatSession } from "@/hooks/useChatSession";
+import { formatDistanceToNow } from "date-fns";
+import { tr } from "date-fns/locale";
+import { Logo } from "@/components/Logo";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
@@ -18,6 +18,7 @@ interface ChatSidebarProps {
   onCreateSession: () => void;
   onDeleteSession: (id: string) => void;
   isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export function ChatSidebar({
@@ -27,57 +28,69 @@ export function ChatSidebar({
   onCreateSession,
   onDeleteSession,
   isCollapsed = false,
+  onToggleCollapse,
 }: ChatSidebarProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredSessions = sessions.filter(session =>
-    session.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSessions = sessions.filter((session) =>
+    session.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
     <TooltipProvider>
-      <div className={cn(
-        "flex flex-col h-full border-r bg-background transition-all duration-300",
-        isCollapsed ? "w-16" : "w-full"
-      )}>
-        {/* Logo/Home Section - Matches ChatHeader height */}
-        <div className={cn(
-          "flex items-center border-b h-[52px] md:h-[60px]",
-          isCollapsed ? "justify-center p-2" : "px-4"
-        )}>
-          <Link to="/" className={cn(
-            "hover:opacity-80 transition-opacity",
-            isCollapsed ? "flex items-center justify-center" : "block w-full"
-          )}>
-            {isCollapsed ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="p-2 rounded-md hover:bg-accent">
-                    <Home className="h-5 w-5" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Anasayfa</p>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Logo className="w-full h-auto max-h-10 text-primary" />
-            )}
+      <div
+        className={cn(
+          "flex flex-col h-full border-r bg-background transition-all duration-300",
+          isCollapsed ? "w-16" : "w-full",
+        )}
+      >
+        {/* Logo Section - Clickable to home */}
+        <div
+          className={cn(
+            "flex items-center border-b transition-all duration-300",
+            isCollapsed ? "p-2 justify-center" : "p-4 justify-center",
+          )}
+        >
+          <Link to="/" className="hover:opacity-80 transition-opacity h-full w-full">
+            <Logo className={cn("transition-all duration-300", isCollapsed ? "h-8 w-8" : "h-10 w-auto")} />
           </Link>
         </div>
 
+        {/* Toggle Button */}
+        {onToggleCollapse && (
+          <div className="px-2 py-2 border-b">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onToggleCollapse}
+                  className="w-full flex items-center justify-center"
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <>
+                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      <span>Daralt</span>
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              {isCollapsed && (
+                <TooltipContent side="right">
+                  <p>Genişlet</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
+        )}
+
         {/* Button and Search */}
-        <div className={cn(
-          "border-b space-y-3 transition-all duration-300",
-          isCollapsed ? "p-2" : "p-4"
-        )}>
+        <div className={cn("border-b space-y-3 transition-all duration-300", isCollapsed ? "p-2" : "p-4")}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                onClick={onCreateSession}
-                className="w-full"
-                variant="default"
-              >
+              <Button onClick={onCreateSession} className="w-full" variant="default">
                 <Plus className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
                 {!isCollapsed && "Yeni Sohbet"}
               </Button>
@@ -88,7 +101,7 @@ export function ChatSidebar({
               </TooltipContent>
             )}
           </Tooltip>
-          
+
           {!isCollapsed && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -111,9 +124,7 @@ export function ChatSidebar({
                     className={cn(
                       "group relative flex items-center gap-2 rounded-lg cursor-pointer transition-colors",
                       isCollapsed ? "p-2 justify-center" : "p-3",
-                      activeSessionId === session.id
-                        ? 'bg-accent text-accent-foreground'
-                        : 'hover:bg-accent/50'
+                      activeSessionId === session.id ? "bg-accent text-accent-foreground" : "hover:bg-accent/50",
                     )}
                     onClick={() => onSelectSession(session.id)}
                   >
@@ -130,7 +141,7 @@ export function ChatSidebar({
                             })}
                           </div>
                         </div>
-                        
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -153,10 +164,10 @@ export function ChatSidebar({
                 )}
               </Tooltip>
             ))}
-            
+
             {filteredSessions.length === 0 && !isCollapsed && (
               <div className="text-center text-muted-foreground py-8">
-                {searchQuery ? 'Sohbet bulunamadı' : 'Henüz sohbet yok'}
+                {searchQuery ? "Sohbet bulunamadı" : "Henüz sohbet yok"}
               </div>
             )}
           </div>
