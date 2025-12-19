@@ -252,13 +252,32 @@ serve(async (req) => {
     // Generate embedding for the question
     const queryEmbedding = await generateEmbedding(question);
 
-    // Search for similar questions using the new question_variants table
-    console.log("Searching question_variants with hybrid search...");
+    // Extract keywords for query expansion
+    const keywords = question
+      .toLowerCase()
+      .replace(/[?.,!]/g, "")
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !["hangi", "nedir", "nasıl", "nerede", "kaç", "için", "olan", "gibi"].includes(w));
+    
+    // Generate simple query variations
+    const expandedQueries = keywords.length > 0 
+      ? [
+          keywords.join(" "),
+          keywords.slice(0, 2).join(" "),
+          ...keywords.slice(0, 3)
+        ].filter((q, i, arr) => q && arr.indexOf(q) === i)
+      : [];
+
+    console.log("Query expansion:", { keywords, expandedQueries: expandedQueries.slice(0, 3) });
+
+    // Search for similar questions using the enhanced hybrid search with expanded queries
+    console.log("Searching question_variants with enhanced hybrid search...");
     const { data: matches, error: matchError } = await supabase.rpc("hybrid_match_question_variants", {
       query_text: question,
       query_embedding: queryEmbedding,
       match_threshold: 0.04,
       match_count: 10,
+      expanded_queries: expandedQueries.length > 0 ? expandedQueries : null
     });
 
     if (matchError) {
@@ -267,8 +286,37 @@ serve(async (req) => {
     }
 
     console.log(`Found ${matches?.length || 0} matching question variants`);
+    
+    // Log match types distribution
+    if (matches && matches.length > 0) {
+      const matchTypes = matches.reduce((acc: Record<string, number>, m: any) => {
+        acc[m.match_type] = (acc[m.match_type] || 0) + 1;
+        return acc;
+      }, {});
+      console.log("Match type distribution:", matchTypes);
+    }
 
     if (!matches || matches.length === 0) {
+      // Try adaptive threshold before giving up
+      console.log("No results with standard threshold, trying adaptive thresholds...");
+      const adaptiveThresholds = [0.03, 0.02, 0.01];
+      
+      for (const threshold of adaptiveThresholds) {
+        const { data: adaptiveMatches } = await supabase.rpc("hybrid_match_question_variants", {
+          query_text: question,
+          query_embedding: queryEmbedding,
+          match_threshold: threshold,
+          match_count: 5,
+          expanded_queries: expandedQueries.length > 0 ? expandedQueries : null
+        });
+        
+        if (adaptiveMatches && adaptiveMatches.length > 0) {
+          console.log(`Found ${adaptiveMatches.length} matches at threshold ${threshold}`);
+          // Use these matches instead
+          return processMatches(adaptiveMatches, messages, question, { adaptiveThreshold: threshold });
+        }
+      }
+      
       return new Response(
         JSON.stringify({
           answer:
@@ -276,7 +324,8 @@ serve(async (req) => {
           sources: [],
           debug: {
             matchCount: 0,
-            systemVersion: "v2",
+            systemVersion: "v2-enhanced",
+            adaptiveSearchTried: true
           },
         }),
         {
@@ -285,6 +334,31 @@ serve(async (req) => {
       );
     }
 
+    return processMatches(matches, messages, question, {});
+  } catch (error) {
+    console.error("Error in chat-rag-v2 function:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+        details: error instanceof Error ? error.stack : String(error),
+        systemVersion: "v2-enhanced",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+});
+
+// Helper function to process matches and generate response
+async function processMatches(
+  matches: any[], 
+  messages: any[], 
+  question: string,
+  debugInfo: Record<string, any>
+) {
     // Extract matched questions including variants
     const matchedQuestions: string[] = [];
     matches.forEach((match) => {
@@ -331,31 +405,17 @@ serve(async (req) => {
         matchCount: matches.length,
         topSimilarity: matches[0]?.similarity || 0,
         topMatchType: matches[0]?.match_type || "none",
-        matchTypes: matches.reduce((acc, m) => {
+        matchTypes: matches.reduce((acc: Record<string, number>, m) => {
           acc[m.match_type] = (acc[m.match_type] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
         variantCount: matchedQuestions.length,
-        systemVersion: "v2-hybrid",
+        systemVersion: "v2-enhanced",
+        ...debugInfo
       },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    console.error("Error in chat-rag-v2 function:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
-        details: error instanceof Error ? error.stack : String(error),
-        systemVersion: "v2",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
-});
+}
