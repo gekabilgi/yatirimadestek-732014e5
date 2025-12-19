@@ -903,26 +903,113 @@ const normalizeRegionNumbers = (text: string): string => {
   return normalized;
 };
 
+// ============= GROUNDING CHUNK FİLTRELEME FONKSİYONU =============
+// Chunk'ları ana topic'e göre filtreler, alakasız konuları çıkarır
+const filterGroundingChunksByTopic = (
+  chunks: any[],
+  mainTopic: string
+): any[] => {
+  if (!mainTopic || chunks.length === 0) return chunks;
+  
+  const topicLower = mainTopic.toLowerCase().trim();
+  const topicWords = topicLower.split(/\s+/).filter(w => w.length > 2);
+  
+  // Bilinen alakasız konular listesi - bu konular ana topic olmadıkça filtrelen
+  const irrelevantTopics = [
+    'grafit zenginleştirme',
+    'grafit',
+    'deri işleme',
+    'sentetik kâğıt',
+    'taş kâğıt',
+    'aktif karbon',
+    'su paketleme',
+    'çay atıkları',
+    'fındık kabuğu',
+    'meyve suyu konsantresi',
+    'ayçiçek yağı',
+    'zeytin yağı',
+  ];
+  
+  // Ana topic'in alakasız listede olup olmadığını kontrol et
+  const isMainTopicIrrelevant = irrelevantTopics.some(t => topicLower.includes(t));
+  
+  // Eğer ana topic alakasız listede ise, o konuyu filtreden çıkar
+  const topicsToFilter = isMainTopicIrrelevant 
+    ? irrelevantTopics.filter(t => !topicLower.includes(t))
+    : irrelevantTopics;
+  
+  const filteredChunks = chunks.filter(chunk => {
+    const text = (chunk?.retrievedContext?.text || '').toLowerCase();
+    const title = (chunk?.retrievedContext?.title || '').toLowerCase();
+    const combined = text + ' ' + title;
+    
+    // Ana topic'i içeriyorsa kesinlikle tut
+    const containsMainTopic = topicWords.some(word => combined.includes(word));
+    
+    // Alakasız konuları içeriyorsa ve ana topic'i içermiyorsa çıkar
+    const containsIrrelevant = topicsToFilter.some(t => combined.includes(t));
+    
+    if (containsMainTopic) {
+      console.log(`✅ CHUNK KEPT - contains main topic "${mainTopic}":`, title.substring(0, 80));
+      return true;
+    }
+    
+    if (containsIrrelevant) {
+      console.log(`❌ CHUNK FILTERED - irrelevant topic found:`, title.substring(0, 80));
+      return false;
+    }
+    
+    // Genel chunk - tut
+    return true;
+  });
+  
+  console.log(`🔍 filterGroundingChunksByTopic: ${chunks.length} → ${filteredChunks.length} chunks (topic: "${mainTopic}")`);
+  
+  return filteredChunks;
+};
+
 // ============= ALAKASIZ İÇERİK TEMİZLEME FONKSİYONU =============
 // Gemini'nin yanıtından "İlgili Bilgiler" gibi alakasız bölümleri temizler
-const cleanIrrelevantContent = (text: string): string => {
+const cleanIrrelevantContent = (text: string, mainTopic?: string): string => {
   // Pattern 1: "---" ayracı sonrası gelen "İlgili Bilgiler" bölümü
   // Pattern 2: "📊 İlgili Bilgiler:" başlıklı bölüm
   // Pattern 3: Numara listesiyle gelen alakasız konular
   // Pattern 4: "Ayrıca şunlar da desteklenmektedir" ifadesi sonrası
+  // Pattern 5: Takip sorusundan sonraki her şey
   
   const patterns = [
     /\n*---\s*\n*📊?\s*İlgili Bilgiler[\s\S]*$/i,
     /\n*📊\s*İlgili Bilgiler:[\s\S]*$/i,
     /\n*İlgili Bilgiler:[\s\S]*$/i,
     /\n*Ayrıca şunlar da desteklenmektedir[\s\S]*$/i,
-    /\n*---\s*\n*\d+\.\s*(?:Grafit|Deri İşleme|Sentetik|Taş Kâğıt|Kâğıt Üretimi)[\s\S]*$/i,
+    /\n*---\s*\n*\d+\.\s*(?:Grafit|Deri İşleme|Sentetik|Taş Kâğıt|Kâğıt Üretimi|Aktif Karbon|Su Paketleme)[\s\S]*$/i,
     /\n*Alternatif(?:\s+soru)?:[\s\S]*$/i,
+    // YENİ: Numaralı liste ile başlayan alakasız blokları kes
+    /\n+---\s*\n+\d+\.\s+[^\n]+yatırımı[\s\S]*$/gi,
   ];
   
   let cleaned = text;
   for (const pattern of patterns) {
     cleaned = cleaned.replace(pattern, '');
+  }
+  
+  // YENİ: Takip sorusundan sonraki alakasız içeriği kes
+  const followUpPatterns = [
+    'Bu yatırımı hangi ilde yapmayı planlıyorsunuz?',
+    'Bu yatırımı hangi ilde',
+    'Hangi ilde yatırım yapmayı',
+  ];
+  
+  for (const followUp of followUpPatterns) {
+    const followUpIndex = cleaned.indexOf(followUp);
+    if (followUpIndex > 0) {
+      // Takip sorusunun sonuna kadar al, gerisini kes
+      const endOfQuestion = cleaned.indexOf('?', followUpIndex);
+      if (endOfQuestion > followUpIndex) {
+        cleaned = cleaned.substring(0, endOfQuestion + 1);
+        break;
+      }
+    }
   }
   
   // Trailing whitespace ve fazla satır sonlarını temizle
@@ -931,10 +1018,39 @@ const cleanIrrelevantContent = (text: string): string => {
   console.log('🧹 cleanIrrelevantContent:', {
     originalLength: text.length,
     cleanedLength: cleaned.length,
-    removedChars: text.length - cleaned.length
+    removedChars: text.length - cleaned.length,
+    mainTopic: mainTopic || 'N/A'
   });
   
   return cleaned;
+};
+
+// ============= CACHE VALİDASYON FONKSİYONU =============
+// Cache'e kaydetmeden önce yanıtın temiz olduğunu kontrol et
+const isCleanResponse = (text: string): boolean => {
+  const badPatterns = [
+    'İlgili Bilgiler',
+    'Alternatif:',
+    'Alternatif soru:',
+    'Grafit Zenginleştirme',
+    'Çay Atıklarından Aktif Karbon',
+    'Su Paketleme Tesisi',
+  ];
+  
+  const badRegexPatterns = [
+    /\n---\s*\n\d+\./,  // Numaralı liste ayracı
+  ];
+  
+  const hasBadString = badPatterns.some(p => text.includes(p));
+  const hasBadRegex = badRegexPatterns.some(p => p.test(text));
+  
+  const isClean = !hasBadString && !hasBadRegex;
+  
+  if (!isClean) {
+    console.log('⚠️ Response failed cleanliness check - will not cache');
+  }
+  
+  return isClean;
 };
 
 // FIX 1: Robustly filter out internal tool and thought content (tool call leakage).
@@ -1954,26 +2070,32 @@ Bir ürün/sektör hakkında "hangi illerde" sorulduğunda:
 
     let { finishReason, groundingChunks, textOut } = extractTextAndChunks(response);
 
+    // Extract main keyword from user query for validation (e.g., "pektin" from "pektin hangi illerde")
+    const queryKeywords = normalizedUserMessage
+      .toLowerCase()
+      .replace(/hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|desteklen.*|var|üretim|yatırım|yapmak|istiyorum/gi, "")
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 2); // Min 3 character words
+
+    const mainTopic = queryKeywords.join(' ').trim();
+    console.log("🔍 Extracted main topic for filtering:", mainTopic);
+
+    // ============= GROUNDING CHUNKS FİLTRELEME =============
+    // Alakasız chunk'ları (grafit, deri işleme vb.) ana topic'e göre filtrele
+    groundingChunks = filterGroundingChunksByTopic(groundingChunks, mainTopic);
+
     // ============= ALAKASIZ İÇERİK TEMİZLEME =============
     // "İlgili Bilgiler" gibi alakasız bölümleri yanıttan kaldır
-    textOut = cleanIrrelevantContent(textOut);
+    textOut = cleanIrrelevantContent(textOut, mainTopic);
 
-    console.log("📊 Initial Response Analysis (after cleaning):", {
+    console.log("📊 Initial Response Analysis (after filtering & cleaning):", {
       textLength: textOut.length,
       textPreview: textOut.substring(0, 150),
       chunksCount: groundingChunks.length,
       finishReason,
+      mainTopic,
     });
-
-    // Extract main keyword from user query for validation (e.g., "pektin" from "pektin hangi illerde")
-    const queryKeywords = normalizedUserMessage
-      .toLowerCase()
-      .replace(/hangi (il|şehir|yer|yerde|yerlerde|illerde)|nerede|nerelerde|desteklen.*|var|üretim/gi, "")
-      .trim()
-      .split(/\s+/)
-      .filter((word) => word.length > 3); // Min 4 character words
-
-    console.log("🔍 Extracted query keywords for validation:", queryKeywords);
 
     // ============= ADIM 1: BOŞ YANIT KONTROLÜ VE DYNAMIC RETRY =============
     if (!textOut || textOut.trim().length === 0) {
@@ -2045,8 +2167,9 @@ BAŞLA! 🚀
 
       // Retry başarılı! Yeni sonuçları kullan
       console.log("✅ Retry successful - using new results");
-      textOut = cleanIrrelevantContent(retryResult.textOut);
-      groundingChunks = retryResult.groundingChunks;
+      // Retry sonuçları için de filtreleme ve temizleme uygula
+      groundingChunks = filterGroundingChunksByTopic(retryResult.groundingChunks, mainTopic);
+      textOut = cleanIrrelevantContent(retryResult.textOut, mainTopic);
       finishReason = retryResult.finishReason;
 
       // Enrichment işlemini retry sonuçları için de yapacağız (aşağıda)
@@ -2165,14 +2288,19 @@ BAŞLA! 🔍
       // Feedback loop sonrası daha iyi sonuç varsa kullan
       if (feedbackResult.textOut && feedbackResult.textOut.length > textOut.length) {
         console.log("✅ Feedback loop improved results - using enhanced response");
-        textOut = feedbackResult.textOut;
-        groundingChunks = feedbackResult.groundingChunks;
+        // Feedback sonuçları için de filtreleme ve temizleme uygula
+        const cleanedFeedbackText = cleanIrrelevantContent(feedbackResult.textOut, mainTopic);
+        const filteredFeedbackChunks = filterGroundingChunksByTopic(feedbackResult.groundingChunks, mainTopic);
+        
+        textOut = cleanedFeedbackText;
+        groundingChunks = filteredFeedbackChunks;
         finishReason = feedbackResult.finishReason;
 
         // Flag ekle ki frontend bilsin
         const finalWithFeedback = await enrichAndReturn(textOut, groundingChunks, storeName, GEMINI_API_KEY || "", {
           enhancedViaFeedbackLoop: true,
           supportCards,
+          responseValidated: isCleanResponse(textOut),
         });
         return finalWithFeedback;
       }
@@ -2198,8 +2326,19 @@ BAŞLA! 🔍
 
     let finalText = textOut;
 
+    // ============= SON TEMİZLİK VE VALİDASYON =============
+    // Response döndürmeden önce son bir temizlik yap
+    finalText = cleanIrrelevantContent(finalText, mainTopic);
+    
+    // Eğer yanıt temiz değilse cache'leme (isCleanResponse kontrolü saveToCache'de yapılacak)
+    const responseIsClean = isCleanResponse(finalText);
+    console.log("🧹 Final response cleanliness check:", { isClean: responseIsClean });
+
     // Normal flow için de enrichment yap
-    return await enrichAndReturn(finalText, groundingChunks, storeName, GEMINI_API_KEY || "", { supportCards });
+    return await enrichAndReturn(finalText, groundingChunks, storeName, GEMINI_API_KEY || "", { 
+      supportCards,
+      responseValidated: responseIsClean 
+    });
   } catch (error) {
     console.error("❌ Error in chat-gemini:", error);
     return new Response(
