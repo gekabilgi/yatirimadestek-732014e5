@@ -295,6 +295,11 @@ function isSupportProgramQuery(message: string): boolean {
     "basvurabilecegim",
     "yararlanabilecegim",
     "destek programlarini",
+    "ihracat",
+    "ihracata",
+    "ihracatci",
+    "dis ticaret",
+    "dis ticareti",
   ];
 
   return hasDestekRoot || keywords.some((kw) => q.includes(kw));
@@ -410,7 +415,7 @@ async function searchSupportPrograms(query: string, supabase: any): Promise<any[
 
     const { data: programs, error } = await supabase.rpc("match_support_programs", {
       query_embedding: `[${queryEmbedding.join(",")}]`,
-      match_threshold: 0.55,
+      match_threshold: 0.40,
       match_count: 6,
     });
 
