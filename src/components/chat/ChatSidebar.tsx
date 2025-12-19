@@ -52,7 +52,7 @@ export function ChatSidebar({
           )}
         >
           <Link to="/" className="hover:opacity-80 transition-opacity">
-            <Logo className={cn("transition-all duration-300", isCollapsed ? "h-8 w-8" : "h-10 w-auto")} />
+            <Logo className={cn("transition-all duration-300", isCollapsed ? "h-8 w-8" : "h-14 w-auto")} />
           </Link>
         </div>
 
