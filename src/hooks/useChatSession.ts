@@ -113,7 +113,7 @@ export function useChatSession() {
     }
   }, [activeSessionId]);
 
-  const createSession = useCallback(async (title: string = "New Chat") => {
+  const createSession = useCallback(async (title: string = "Yeni Sohbet") => {
     try {
       const sessionId = generateUUID();
 
@@ -184,7 +184,7 @@ export function useChatSession() {
           console.warn("Session not found in local state, creating temporary session object");
           session = {
             id: sessionId,
-            title: "New Chat",
+            title: "Yeni Sohbet",
             messages: [],
             createdAt: Date.now(),
             updatedAt: Date.now(),
