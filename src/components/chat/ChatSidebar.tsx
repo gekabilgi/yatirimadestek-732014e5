@@ -46,8 +46,8 @@ export function ChatSidebar({
           isCollapsed ? "justify-center p-2" : "px-4"
         )}>
           <Link to="/" className={cn(
-            "hover:opacity-80 transition-opacity flex items-center justify-center",
-            isCollapsed ? "" : "w-full"
+            "hover:opacity-80 transition-opacity",
+            isCollapsed ? "flex items-center justify-center" : "block w-full"
           )}>
             {isCollapsed ? (
               <Tooltip>
