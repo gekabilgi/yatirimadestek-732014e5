@@ -307,6 +307,286 @@ function isNoResultsFoundResponse(text: string): boolean {
   return noResultsPatterns.some(pattern => pattern.test(text));
 }
 
+// ============= ENHANCED HYBRID SEARCH FUNCTIONS =============
+
+// Query Expansion with Gemini - generates query variations and extracts keywords
+async function expandQueryWithGemini(
+  query: string, 
+  conversationHistory: any[]
+): Promise<{
+  expandedQueries: string[];
+  keywords: string[];
+  contextualQuery: string;
+}> {
+  try {
+    const ai = getAiClient();
+    
+    // Extract recent context from conversation
+    const recentUserMessages = conversationHistory
+      .filter((m: any) => m.role === "user")
+      .slice(-3)
+      .map((m: any) => m.content);
+    
+    const recentContext = recentUserMessages.slice(0, -1).join(" ").substring(0, 300);
+    
+    const prompt = `Aşağıdaki kullanıcı sorusu için 3 farklı soru varyasyonu ve anahtar kelimeleri çıkar.
+
+Kullanıcı Sorusu: "${query}"
+${recentContext ? `Önceki Bağlam: "${recentContext}"` : ""}
+
+SADECE JSON formatında yanıt ver, başka bir şey yazma:
+{
+  "variations": ["varyasyon1", "varyasyon2", "varyasyon3"],
+  "keywords": ["anahtar1", "anahtar2", "anahtar3"]
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { 
+        temperature: 0.1,
+        maxOutputTokens: 500
+      },
+    });
+
+    const responseText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+    // Parse JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const variations = parsed.variations || [];
+      const keywords = parsed.keywords || [];
+      
+      // Build contextual query combining context and original query
+      const contextualQuery = recentContext 
+        ? `${recentContext} ${query}`.trim()
+        : query;
+      
+      console.log("✅ Query expansion successful:", { variations: variations.length, keywords: keywords.length });
+      
+      return {
+        expandedQueries: variations.slice(0, 3),
+        keywords: keywords.slice(0, 5),
+        contextualQuery
+      };
+    }
+  } catch (error) {
+    console.error("⚠️ Query expansion failed, using original query:", error);
+  }
+  
+  // Fallback: extract keywords manually
+  const keywords = query
+    .toLowerCase()
+    .replace(/[?.,!]/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 3 && !["hangi", "nedir", "nasıl", "nerede", "kaç"].includes(w));
+  
+  return {
+    expandedQueries: [],
+    keywords,
+    contextualQuery: query
+  };
+}
+
+// Search question_variants table with expanded queries
+async function searchQuestionVariants(
+  query: string,
+  expandedQueries: string[],
+  supabase: any
+): Promise<any[] | null> {
+  try {
+    // Generate embedding for the query
+    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAIApiKey) {
+      console.log("⚠️ No OpenAI API key for QV embedding search");
+      return null;
+    }
+
+    const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openAIApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: query,
+      }),
+    });
+
+    if (!embeddingResponse.ok) {
+      console.error("Failed to generate embedding for QV search");
+      return null;
+    }
+
+    const embeddingData = await embeddingResponse.json();
+    const queryEmbedding = embeddingData.data?.[0]?.embedding;
+
+    if (!queryEmbedding) {
+      console.error("No embedding returned");
+      return null;
+    }
+
+    // Call hybrid_match_question_variants with expanded queries
+    const { data: matches, error } = await supabase.rpc("hybrid_match_question_variants", {
+      query_text: query,
+      query_embedding: queryEmbedding,
+      match_threshold: 0.04,
+      match_count: 10,
+      expanded_queries: expandedQueries.length > 0 ? expandedQueries : null
+    });
+
+    if (error) {
+      console.error("Error in QV hybrid search:", error);
+      return null;
+    }
+
+    console.log(`📚 QV search found ${matches?.length || 0} matches`);
+    return matches;
+  } catch (error) {
+    console.error("QV search error:", error);
+    return null;
+  }
+}
+
+// Intelligent reranking of results from all sources
+interface RerankResult {
+  vertexText: string | null;
+  qvContext: string | null;
+  qvSimilarity: number;
+  supportCards: any[];
+  topSources: string[];
+}
+
+function rerankResults(
+  vertexResponse: any | null,
+  qvMatches: any[],
+  supportCards: any[],
+  keywords: string[],
+  originalQuery: string
+): RerankResult {
+  // Source weights
+  const SOURCE_WEIGHTS = {
+    vertex: 0.50,
+    questionVariant: 0.30,
+    supportProgram: 0.20
+  };
+
+  // Calculate keyword bonus
+  const calculateKeywordBonus = (text: string): number => {
+    if (!text || keywords.length === 0) return 0;
+    const lowerText = text.toLowerCase();
+    const matchCount = keywords.filter(k => lowerText.includes(k.toLowerCase())).length;
+    return Math.min(matchCount * 0.05, 0.15); // Max 15% bonus
+  };
+
+  // Process QV matches with reranking
+  const rankedQvMatches = qvMatches.map((match) => {
+    const baseScore = match.similarity || 0;
+    const keywordBonus = calculateKeywordBonus(match.canonical_question + " " + match.canonical_answer);
+    const matchTypeBonus = match.match_type === "exact" ? 0.1 : 
+                          match.match_type === "fuzzy" ? 0.05 : 0;
+    
+    return {
+      ...match,
+      rerankScore: (baseScore * SOURCE_WEIGHTS.questionVariant) + keywordBonus + matchTypeBonus
+    };
+  }).sort((a, b) => b.rerankScore - a.rerankScore);
+
+  // Process support cards with keyword boosting
+  const rankedSupportCards = supportCards.map((card) => {
+    const textToCheck = `${card.title || ""} ${card.ozet || ""} ${card.kurum || ""}`;
+    const keywordBonus = calculateKeywordBonus(textToCheck);
+    return {
+      ...card,
+      rerankScore: SOURCE_WEIGHTS.supportProgram + keywordBonus
+    };
+  }).sort((a, b) => b.rerankScore - a.rerankScore);
+
+  // Build QV context from top matches
+  const topQvMatches = rankedQvMatches.slice(0, 3);
+  const qvContext = topQvMatches.length > 0
+    ? topQvMatches.map((m, i) => {
+        const variants = m.variants?.length > 0 ? `\n*Alternatif: ${m.variants[0]}*` : "";
+        return `**${i + 1}. ${m.canonical_question}**${variants}\n${m.canonical_answer}`;
+      }).join("\n\n---\n\n")
+    : null;
+
+  // Calculate average QV similarity
+  const qvSimilarity = topQvMatches.length > 0
+    ? topQvMatches.reduce((sum, m) => sum + (m.similarity || 0), 0) / topQvMatches.length
+    : 0;
+
+  // Collect top sources
+  const topSources = [
+    ...topQvMatches.map(m => m.source_document).filter(Boolean),
+    ...rankedSupportCards.slice(0, 2).map(c => c.kurum).filter(Boolean)
+  ].slice(0, 5);
+
+  return {
+    vertexText: vertexResponse?.text || null,
+    qvContext,
+    qvSimilarity,
+    supportCards: rankedSupportCards.slice(0, 5),
+    topSources
+  };
+}
+
+// Adaptive threshold search - tries progressively lower thresholds
+async function searchWithAdaptiveThreshold(
+  query: string,
+  expandedQueries: string[],
+  supabase: any
+): Promise<any[] | null> {
+  const thresholds = [0.03, 0.02, 0.01];
+  
+  // Generate embedding once
+  const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!openAIApiKey) return null;
+
+  try {
+    const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openAIApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: query,
+      }),
+    });
+
+    if (!embeddingResponse.ok) return null;
+
+    const embeddingData = await embeddingResponse.json();
+    const queryEmbedding = embeddingData.data?.[0]?.embedding;
+    if (!queryEmbedding) return null;
+
+    for (const threshold of thresholds) {
+      console.log(`🔍 Trying adaptive threshold: ${threshold}`);
+      
+      const { data: matches, error } = await supabase.rpc("hybrid_match_question_variants", {
+        query_text: query,
+        query_embedding: queryEmbedding,
+        match_threshold: threshold,
+        match_count: 5,
+        expanded_queries: expandedQueries.length > 0 ? expandedQueries : null
+      });
+
+      if (!error && matches && matches.length > 0) {
+        console.log(`✅ Found ${matches.length} results at threshold ${threshold}`);
+        return matches;
+      }
+    }
+  } catch (error) {
+    console.error("Adaptive threshold search error:", error);
+  }
+
+  return null;
+}
+
 const cleanProvince = (text: string): string => {
   let cleaned = text
     .replace(/'da$/i, "")
@@ -625,7 +905,7 @@ serve(async (req) => {
       }
     }
 
-    // If Vertex RAG mode, delegate to vertex-rag-query function (HYBRID: parallel search)
+    // If Vertex RAG mode, delegate to vertex-rag-query function (ENHANCED HYBRID: 3-way parallel search)
     if (ragMode === "vertex_rag_corpora") {
       const lastUserMessage = messages
         .slice()
@@ -646,7 +926,7 @@ serve(async (req) => {
       const corpusName = vertexCorpusData?.setting_value_text;
 
       if (corpusName) {
-        console.log("🔍 Using Vertex RAG Corpus:", corpusName);
+        console.log("🔍 Using Enhanced Vertex RAG Corpus:", corpusName);
 
         // Get Vertex RAG settings
         const { data: settingsData } = await supabase
@@ -657,11 +937,21 @@ serve(async (req) => {
         const topK = settingsData?.find((s) => s.setting_key === "vertex_rag_top_k")?.setting_value || 10;
         const threshold = settingsData?.find((s) => s.setting_key === "vertex_rag_threshold")?.setting_value || 0.3;
 
-        // HYBRID: Run both Vertex RAG and Support Programs search in PARALLEL
-        console.log("🔄 [Vertex Hybrid] Running parallel search: Vertex RAG + Support Programs");
+        // ============= STEP 1: QUERY EXPANSION WITH GEMINI =============
+        console.log("🧠 [Enhanced Hybrid] Step 1: Query expansion with Gemini...");
+        const queryExpansion = await expandQueryWithGemini(lastUserMessage.content, messages);
+        console.log(`📝 [Enhanced Hybrid] Query expansion results:`, {
+          originalQuery: lastUserMessage.content,
+          expandedQueries: queryExpansion.expandedQueries,
+          keywords: queryExpansion.keywords,
+          contextualQuery: queryExpansion.contextualQuery.substring(0, 100) + "..."
+        });
+
+        // ============= STEP 2: PARALLEL 3-WAY SEARCH =============
+        console.log("🔄 [Enhanced Hybrid] Step 2: Running parallel 3-way search...");
         
-        const [vertexResponse, supportCards] = await Promise.all([
-          // 1. Vertex RAG query
+        const [vertexResponse, qvMatches, supportCards] = await Promise.all([
+          // 1. Vertex RAG query with contextual query
           (async () => {
             try {
               const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/vertex-rag-query`, {
@@ -672,7 +962,10 @@ serve(async (req) => {
                 },
                 body: JSON.stringify({
                   corpusName,
-                  messages,
+                  messages: [
+                    ...messages.slice(0, -1),
+                    { ...lastUserMessage, content: queryExpansion.contextualQuery }
+                  ],
                   topK,
                   vectorDistanceThreshold: threshold,
                 }),
@@ -689,82 +982,166 @@ serve(async (req) => {
             }
           })(),
           
-          // 2. Support Programs search (always run in parallel)
+          // 2. question_variants search with expanded queries (NEW!)
+          searchQuestionVariants(
+            lastUserMessage.content, 
+            queryExpansion.expandedQueries, 
+            supabase
+          ),
+          
+          // 3. Support Programs search
           searchSupportPrograms(lastUserMessage.content, supabase)
         ]);
 
-        console.log(`📋 [Vertex Hybrid] Vertex response: ${vertexResponse ? 'OK' : 'null'}, Support cards: ${supportCards.length}`);
+        console.log(`📋 [Enhanced Hybrid] Search results:`, {
+          vertex: vertexResponse ? 'OK' : 'null',
+          qvMatches: qvMatches?.length || 0,
+          supportCards: supportCards.length
+        });
 
-        // Combine results
-        if (vertexResponse) {
-          const ragText = vertexResponse.text || '';
-          const noResultsInRag = isNoResultsFoundResponse(ragText);
+        // ============= STEP 3: INTELLIGENT RERANKING =============
+        console.log("🎯 [Enhanced Hybrid] Step 3: Reranking results...");
+        const rerankedResult = rerankResults(
+          vertexResponse,
+          qvMatches || [],
+          supportCards,
+          queryExpansion.keywords,
+          lastUserMessage.content
+        );
+
+        console.log(`📊 [Enhanced Hybrid] Reranking complete:`, {
+          hasVertexContent: !!rerankedResult.vertexText,
+          qvContentLength: rerankedResult.qvContext?.length || 0,
+          supportCardsCount: rerankedResult.supportCards.length,
+          topSources: rerankedResult.topSources
+        });
+
+        // ============= STEP 4: BUILD RESPONSE =============
+        const vertexText = rerankedResult.vertexText || '';
+        const noResultsInVertex = isNoResultsFoundResponse(vertexText);
+        const hasQvContent = rerankedResult.qvContext && rerankedResult.qvContext.length > 50;
+
+        // Case 1: Vertex has good content
+        if (!noResultsInVertex && vertexText.length > 100) {
+          let finalText = vertexText;
           
-          // If we have both Vertex response and support cards, combine them
-          if (supportCards.length > 0) {
-            if (noResultsInRag) {
-              // RAG'da bilgi yok ama destek kartları var - pozitif yönlendirme
-              console.log("🔄 [Vertex Hybrid] No results in RAG, showing positive redirect with support cards");
-              return new Response(
-                JSON.stringify({
-                  ...vertexResponse,
-                  text: "📋 **Bu konuyla ilgili sitemizdeki güncel destek programlarına göz atabilirsiniz:**",
-                  supportCards,
-                  noRagResults: true,
-                }),
-                { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-              );
-            }
-            
-            // RAG'da bilgi var ve destek kartları da var - ikisini birleştir
-            console.log("✅ [Vertex Hybrid] Combining Vertex RAG response with support cards");
-            return new Response(
-              JSON.stringify({
-                ...vertexResponse,
-                text: `${ragText}\n\n---\n\n📋 **Ayrıca aşağıdaki güncel destek programları da ilginizi çekebilir:**`,
-                supportCards,
-              }),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
+          // Add QV context if highly relevant
+          if (hasQvContent && rerankedResult.qvSimilarity > 0.5) {
+            finalText = `${vertexText}\n\n---\n\n📚 **İlgili Bilgiler:**\n${rerankedResult.qvContext}`;
           }
           
-          // Only Vertex response, no support cards
-          if (noResultsInRag) {
-            // RAG'da bilgi yok ve destek kartı da yok - kullanıcıya alternatif yol öner
-            console.log("⚠️ [Vertex Hybrid] No results in RAG and no support cards");
-            return new Response(
-              JSON.stringify({
-                ...vertexResponse,
-                text: "Üzgünüm, bu konuyla ilgili kaynaklarımızda bilgi bulunamadı. Lütfen farklı anahtar kelimelerle tekrar deneyin veya [Destek Ara](/destek-ara) sayfasından arama yapabilirsiniz.",
-                noRagResults: true,
-              }),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
+          // Add support cards if available
+          if (rerankedResult.supportCards.length > 0) {
+            finalText = `${finalText}\n\n---\n\n📋 **Güncel Destek Programları:**`;
           }
           
-          return new Response(JSON.stringify(vertexResponse), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-
-        // Vertex RAG failed but we have support cards
-        if (supportCards.length > 0) {
-          console.log("📋 [Vertex Hybrid] Vertex failed, returning only support cards");
+          console.log("✅ [Enhanced Hybrid] Returning combined Vertex + QV + Support response");
           return new Response(
             JSON.stringify({
-              text: "📋 **Bu konuyla ilgili sitemizdeki güncel destek programlarına göz atabilirsiniz:**",
-              supportCards,
-              supportOnly: true,
-              sources: [],
-              groundingChunks: [],
-              vertexRag: true,
+              ...(vertexResponse || {}),
+              text: finalText,
+              supportCards: rerankedResult.supportCards,
+              hybridSearch: {
+                vertexUsed: true,
+                qvMatches: qvMatches?.length || 0,
+                supportPrograms: rerankedResult.supportCards.length,
+                queryExpanded: queryExpansion.expandedQueries.length > 0
+              }
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        // Both failed
-        throw new Error("Vertex RAG query failed and no support programs found");
+        // Case 2: Vertex has no results but QV has content
+        if (noResultsInVertex && hasQvContent) {
+          console.log("🔄 [Enhanced Hybrid] Vertex empty, using QV as primary source");
+          let finalText = `📚 **Bilgi Bankamızdan:**\n\n${rerankedResult.qvContext}`;
+          
+          if (rerankedResult.supportCards.length > 0) {
+            finalText += `\n\n---\n\n📋 **Güncel Destek Programları:**`;
+          }
+          
+          return new Response(
+            JSON.stringify({
+              text: finalText,
+              supportCards: rerankedResult.supportCards,
+              sources: rerankedResult.topSources,
+              groundingChunks: [],
+              hybridSearch: {
+                vertexUsed: false,
+                qvPrimary: true,
+                qvMatches: qvMatches?.length || 0,
+                supportPrograms: rerankedResult.supportCards.length
+              }
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Case 3: Both Vertex and QV have no content, but support cards exist
+        if (rerankedResult.supportCards.length > 0) {
+          console.log("📋 [Enhanced Hybrid] No RAG content, showing support programs");
+          return new Response(
+            JSON.stringify({
+              text: "📋 **Bu konuyla ilgili sitemizdeki güncel destek programlarına göz atabilirsiniz:**",
+              supportCards: rerankedResult.supportCards,
+              supportOnly: true,
+              sources: [],
+              groundingChunks: [],
+              hybridSearch: {
+                vertexUsed: false,
+                qvPrimary: false,
+                supportOnly: true
+              }
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Case 4: Adaptive threshold - retry with lower threshold
+        console.log("⚠️ [Enhanced Hybrid] No results found, trying adaptive threshold...");
+        const adaptiveResult = await searchWithAdaptiveThreshold(
+          lastUserMessage.content,
+          queryExpansion.expandedQueries,
+          supabase
+        );
+
+        if (adaptiveResult && adaptiveResult.length > 0) {
+          console.log("✅ [Enhanced Hybrid] Found results with adaptive threshold");
+          const adaptiveContext = adaptiveResult
+            .map((r: any) => `**${r.canonical_question}**\n${r.canonical_answer}`)
+            .join("\n\n---\n\n");
+          
+          return new Response(
+            JSON.stringify({
+              text: `📚 **İlgili Bilgiler:**\n\n${adaptiveContext}`,
+              supportCards: [],
+              sources: adaptiveResult.map((r: any) => r.source_document),
+              groundingChunks: [],
+              hybridSearch: {
+                adaptiveThreshold: true,
+                matchCount: adaptiveResult.length
+              }
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Final fallback
+        console.log("❌ [Enhanced Hybrid] All search methods failed");
+        return new Response(
+          JSON.stringify({
+            text: "Üzgünüm, bu konuyla ilgili kaynaklarımızda bilgi bulunamadı. Lütfen farklı anahtar kelimelerle tekrar deneyin veya [Destek Ara](/destek-ara) sayfasından arama yapabilirsiniz.",
+            supportCards: [],
+            sources: [],
+            groundingChunks: [],
+            noRagResults: true,
+            hybridSearch: {
+              allFailed: true
+            }
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 

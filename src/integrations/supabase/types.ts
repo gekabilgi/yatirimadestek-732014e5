@@ -2733,24 +2733,44 @@ export type Database = {
         Args: { _province: string; _user_id: string }
         Returns: boolean
       }
-      hybrid_match_question_variants: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          query_embedding: string
-          query_text: string
-        }
-        Returns: {
-          canonical_answer: string
-          canonical_question: string
-          id: string
-          match_type: string
-          metadata: Json
-          similarity: number
-          source_document: string
-          variants: string[]
-        }[]
-      }
+      hybrid_match_question_variants:
+        | {
+            Args: {
+              match_count?: number
+              match_threshold?: number
+              query_embedding: string
+              query_text: string
+            }
+            Returns: {
+              canonical_answer: string
+              canonical_question: string
+              id: string
+              match_type: string
+              metadata: Json
+              similarity: number
+              source_document: string
+              variants: string[]
+            }[]
+          }
+        | {
+            Args: {
+              expanded_queries?: string[]
+              match_count?: number
+              match_threshold?: number
+              query_embedding: string
+              query_text: string
+            }
+            Returns: {
+              canonical_answer: string
+              canonical_question: string
+              id: string
+              match_type: string
+              metadata: Json
+              similarity: number
+              source_document: string
+              variants: string[]
+            }[]
+          }
       increment_chatbot_stat: {
         Args: { p_source: string; p_stat_type: string }
         Returns: undefined
