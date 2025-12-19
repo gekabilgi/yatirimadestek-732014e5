@@ -28,6 +28,7 @@ export default function Chat() {
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
   const [currentSuggestion, setCurrentSuggestion] = useState('');
   const [inputValue, setInputValue] = useState('');
@@ -191,21 +192,23 @@ export default function Chat() {
     }
   };
 
-  const SidebarContent = (
-    <ChatSidebar
-      sessions={sessions}
-      activeSessionId={activeSessionId}
-      onSelectSession={handleSelectSession}
-      onCreateSession={handleCreateSession}
-      onDeleteSession={deleteSession}
-    />
-  );
-
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-80" role="complementary" aria-label="Sohbet geçmişi">
-        {SidebarContent}
+      <aside 
+        className={`hidden lg:block transition-all duration-300 ${isSidebarCollapsed ? 'w-16' : 'w-80'}`} 
+        role="complementary" 
+        aria-label="Sohbet geçmişi"
+      >
+        <ChatSidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={handleSelectSession}
+          onCreateSession={handleCreateSession}
+          onDeleteSession={deleteSession}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
       </aside>
 
       {/* Main Chat Area */}
@@ -221,7 +224,13 @@ export default function Chat() {
           </div>
           
           <SheetContent side="left" className="w-80 p-0">
-            {SidebarContent}
+            <ChatSidebar
+              sessions={sessions}
+              activeSessionId={activeSessionId}
+              onSelectSession={handleSelectSession}
+              onCreateSession={handleCreateSession}
+              onDeleteSession={deleteSession}
+            />
           </SheetContent>
         </Sheet>
 
