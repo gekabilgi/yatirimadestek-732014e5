@@ -1,4 +1,4 @@
-import { Plus, Search, Trash2, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { Plus, Search, Trash2, MessageSquare, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,7 +18,6 @@ interface ChatSidebarProps {
   onCreateSession: () => void;
   onDeleteSession: (id: string) => void;
   isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
 }
 
 export function ChatSidebar({
@@ -28,7 +27,6 @@ export function ChatSidebar({
   onCreateSession,
   onDeleteSession,
   isCollapsed = false,
-  onToggleCollapse,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -42,48 +40,28 @@ export function ChatSidebar({
         "flex flex-col h-full border-r bg-background transition-all duration-300",
         isCollapsed ? "w-16" : "w-full"
       )}>
-        {/* Logo Section - Clickable to home */}
+        {/* Logo/Home Section - Matches ChatHeader height */}
         <div className={cn(
-          "flex items-center border-b transition-all duration-300",
-          isCollapsed ? "p-2 justify-center" : "p-4 justify-center"
+          "flex items-center border-b h-[52px] md:h-[60px]",
+          isCollapsed ? "justify-center px-2" : "justify-center px-4"
         )}>
           <Link to="/" className="hover:opacity-80 transition-opacity">
-            <Logo className={cn(
-              "transition-all duration-300",
-              isCollapsed ? "h-8 w-8" : "h-10 w-auto"
-            )} />
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="p-2 rounded-md hover:bg-accent">
+                    <Home className="h-5 w-5" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Anasayfa</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Logo className="h-10 w-auto text-primary" />
+            )}
           </Link>
         </div>
-
-        {/* Toggle Button */}
-        {onToggleCollapse && (
-          <div className="px-2 py-2 border-b">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onToggleCollapse}
-                  className="w-full flex items-center justify-center"
-                >
-                  {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
-                    <>
-                      <ChevronLeft className="h-4 w-4 mr-2" />
-                      <span>Daralt</span>
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right">
-                  <p>Genişlet</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </div>
-        )}
 
         {/* Button and Search */}
         <div className={cn(

@@ -207,7 +207,6 @@ export default function Chat() {
           onCreateSession={handleCreateSession}
           onDeleteSession={deleteSession}
           isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
       </aside>
 
@@ -239,6 +238,8 @@ export default function Chat() {
           onClearChat={handleClearChat}
           onExportChat={handleExportChat}
           onRenameSession={handleRenameSession}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
