@@ -7,16 +7,21 @@ import { useChatSession } from '@/hooks/useChatSession';
 import { geminiRagService } from '@/services/geminiRagService';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, LogIn, Cloud } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useChatbotStats } from '@/hooks/useChatbotStats';
+import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export default function Chat() {
+  const { user, loading: authLoading } = useAuth();
+  
   const {
     sessions,
     activeSession,
     activeSessionId,
     isLoading,
+    isAnonymous,
     loadSessions,
     createSession,
     deleteSession,
@@ -24,7 +29,7 @@ export default function Chat() {
     setActiveSessionId,
     updateSession,
     stopGeneration,
-  } = useChatSession();
+  } = useChatSession(user);
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -43,6 +48,9 @@ export default function Chat() {
   }, [trackUniqueSession]);
 
   useEffect(() => {
+    // Wait for auth to finish loading before initializing
+    if (authLoading) return;
+    
     const initialize = async () => {
       const store = await geminiRagService.getActiveStore();
       setActiveStore(store);
@@ -56,7 +64,7 @@ export default function Chat() {
       }
     };
     initialize();
-  }, []);
+  }, [authLoading, user]); // Re-initialize when user changes
 
   // Load example questions when active store changes
   useEffect(() => {
@@ -192,6 +200,15 @@ export default function Chat() {
     }
   };
 
+  // Show loading state while auth is loading
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Desktop Sidebar */}
@@ -232,6 +249,22 @@ export default function Chat() {
             />
           </SheetContent>
         </Sheet>
+
+        {/* Anonymous User Banner */}
+        {isAnonymous && (
+          <div className="bg-muted/50 border-b px-4 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Cloud className="h-4 w-4" />
+              <span>Sohbet geçmişiniz bu cihazda geçici olarak saklanıyor.</span>
+            </div>
+            <Link to="/admin/login">
+              <Button variant="outline" size="sm" className="gap-2">
+                <LogIn className="h-4 w-4" />
+                Giriş Yap
+              </Button>
+            </Link>
+          </div>
+        )}
 
         <ChatHeader 
           sessionTitle={activeSession?.title || 'Yeni Sohbet'}
