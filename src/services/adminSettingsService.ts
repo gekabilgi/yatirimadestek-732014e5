@@ -407,9 +407,9 @@ export const adminSettingsService = {
       .from('admin_settings')
       .select('setting_value_text')
       .eq('setting_key', 'logo_color_mode')
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error fetching logo color mode:', error);
       return 'all_themed';
     }
