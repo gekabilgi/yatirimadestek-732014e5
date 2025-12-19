@@ -6,8 +6,10 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
-import { BarChart3, Users, FileText, TrendingUp, MessageSquare, Building, Calendar, Globe, Target, DollarSign } from 'lucide-react';
+import { BarChart3, Users, FileText, TrendingUp, MessageSquare, Building, Calendar, Globe, Target, DollarSign, Database, Search } from 'lucide-react';
 import GoogleAnalyticsCharts from '@/components/admin/GoogleAnalyticsCharts';
+import CacheManagement from '@/components/admin/CacheManagement';
+import HybridSearchAnalytics from '@/components/admin/HybridSearchAnalytics';
 
 interface FeasibilityReport {
   id: string;
@@ -214,52 +216,58 @@ const AdminAnalytics = () => {
       <div className="p-6 space-y-6">
 
         <Tabs defaultValue="google-analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-2 bg-gradient-to-r from-slate-50 to-purple-50/30 border-2 border-slate-200/50 rounded-2xl shadow-lg backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-5 h-auto p-2 bg-gradient-to-r from-slate-50 to-purple-50/30 border-2 border-slate-200/50 rounded-2xl shadow-lg backdrop-blur-sm">
             <TabsTrigger 
               value="google-analytics" 
-              className="relative flex items-center justify-center gap-3 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-blue-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-blue-600 data-[state=inactive]:hover:bg-white/50 group"
+              className="relative flex items-center justify-center gap-2 px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-blue-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-blue-600 data-[state=inactive]:hover:bg-white/50 group"
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md group-data-[state=active]:from-blue-600 group-data-[state=active]:to-blue-700 group-data-[state=active]:shadow-lg transition-all duration-300">
-                <Globe className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-bold">Google Analytics</span>
-                <span className="text-xs opacity-75 hidden sm:block">Web Analitikleri</span>
-              </div>
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
+              <Globe className="h-4 w-4" />
+              <span className="hidden md:inline">Google Analytics</span>
             </TabsTrigger>
             
             <TabsTrigger 
               value="system-analytics" 
-              className="relative flex items-center justify-center gap-3 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-green-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/50 group"
+              className="relative flex items-center justify-center gap-2 px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-green-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/50 group"
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md group-data-[state=active]:from-green-600 group-data-[state=active]:to-green-700 group-data-[state=active]:shadow-lg transition-all duration-300">
-                <BarChart3 className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-bold">Sistem Analitikleri</span>
-                <span className="text-xs opacity-75 hidden sm:block">Uygulama Verileri</span>
-              </div>
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500/10 to-blue-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden md:inline">Sistem</span>
             </TabsTrigger>
 
             <TabsTrigger 
               value="feasibility-analytics" 
-              className="relative flex items-center justify-center gap-3 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-orange-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-orange-600 data-[state=inactive]:hover:bg-white/50 group"
+              className="relative flex items-center justify-center gap-2 px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-orange-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-orange-600 data-[state=inactive]:hover:bg-white/50 group"
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md group-data-[state=active]:from-orange-600 group-data-[state=active]:to-orange-700 group-data-[state=active]:shadow-lg transition-all duration-300">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-bold">Fizibilite İstatistikleri</span>
-                <span className="text-xs opacity-75 hidden sm:block">Yatırım Verileri</span>
-              </div>
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/10 to-yellow-500/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden md:inline">Fizibilite</span>
+            </TabsTrigger>
+
+            <TabsTrigger 
+              value="cache-management" 
+              className="relative flex items-center justify-center gap-2 px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-purple-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-purple-600 data-[state=inactive]:hover:bg-white/50 group"
+            >
+              <Database className="h-4 w-4" />
+              <span className="hidden md:inline">Önbellek</span>
+            </TabsTrigger>
+
+            <TabsTrigger 
+              value="search-analytics" 
+              className="relative flex items-center justify-center gap-2 px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=active]:text-cyan-700 data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:text-cyan-600 data-[state=inactive]:hover:bg-white/50 group"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden md:inline">Arama</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="google-analytics" className="space-y-6">
             <GoogleAnalyticsCharts />
+          </TabsContent>
+
+          <TabsContent value="cache-management" className="space-y-6">
+            <CacheManagement />
+          </TabsContent>
+
+          <TabsContent value="search-analytics" className="space-y-6">
+            <HybridSearchAnalytics />
           </TabsContent>
 
           <TabsContent value="system-analytics" className="space-y-6">
