@@ -14,59 +14,77 @@ const preprocessMarkdown = (content: string): string => {
       // ========== BOZUK BOLD TAG DÜZELTMELERİ (ÖNCELİKLİ) ==========
       // A1. "**text: **" → "**text:** " (boşluk kapatmadan önce)
       .replace(/\*\*([^*]+?):\s*\*\*/g, "**$1:** ")
-      
+
       // A2. "**text:**value" → "**text:** value" (iki nokta sonrası boşluk yok)
       .replace(/\*\*([^*]+):\*\*(\S)/g, "**$1:** $2")
-      
+
       // A3. Tek başına açık "**" işaretlerini kaldır (kapatılmamış)
       .replace(/\*\*([^*\n]{3,50}[^*\s])(?!\*\*)/g, (match, p1) => {
         // Eğer satırda başka ** yoksa, bu orphan bir açılış
         if (!p1.includes("**")) return p1;
         return match;
       })
-      
+
       // A4. Satır sonundaki yalnız "**" kaldır
       .replace(/\*\*\s*$/gm, "")
-      
-      // A5. Satır başındaki yalnız "**" kaldır  
+
+      // A5. Satır başındaki yalnız "**" kaldır
       .replace(/^\*\*\s+(?!\S+:)/gm, "")
-      
+
       // A6. "text:**" → "text:" (sonundaki orphan **)
       .replace(/([^*]):\*\*(?!\s*\S)/g, "$1:")
-      
-      // ========== NORMAL FORMAT KURALLARI ==========
+
+      // ========== BAŞLIKLARI AYRI SATIRA AL ==========
+      // B1. "**Başlık:** değer **Başlık2:**" → araya paragraf kır
+      .replace(/(\*\*[^*]+:\*\*)\s*([^:\n]{2,120})\s+(\*\*[^*]+:\*\*)/g, "$1 $2\n\n$3")
+
+      // B2. "**Başlık:** değer Başlık2:" → araya paragraf kır + ikinci başlığı kalınlaştır
+      .replace(
+        /(\*\*[^*]+:\*\*)\s*([^:\n]{2,120})\s+((?:NACE Kodu|Ana Sektör Tanımı|Alt Sektör Tanımı|Sektör Tanımı|Teşvik Statüsü|Yatırım Konusu|Lokasyon|Uygulanan Program|Yerel Kalkınma Hamlesi|Teknoloji Hamlesi Programı|Özel Şartlar):)/gim,
+        "$1 $2\n\n**$3** ",
+      )
+
       // 0. Satır sonundaki "**soru?** ---?" formatını temizle (takip sorusu kalıntısı)
-      .replace(/\*\*([^*]+\?)\*\*\s*(?:---\?)?\s*$/g, '\n\n$1')
-      
+      .replace(/\*\*([^*]+\?)\*\*\s*(?:---\?)?\s*$/g, "\n\n$1")
+
       // 1. TEK SATIR SONU + BOLD BAŞLIK -> ÇİFT SATIR SONU (EN KRİTİK)
       .replace(/\n(\*\*[^*:]+:\*\*)/g, "\n\n$1")
-      
+
       // 2. SATIR İÇİ BOLD BAŞLIKLARDAN ÖNCE ÇİFT SATIR SONU (karakter + bold)
       .replace(/([^\n\s])(\s*)(\*\*[^*:]+:\*\*)/g, "$1\n\n$3")
-      
+
       // 3. "Sektör Analizi:" gibi düz başlıklardan sonra çift satır sonu
       .replace(/(Sektör Analizi:|Yatırım Teşvik Analiz Raporu)(\s*)/g, "$1\n\n")
-      
+
       // 4. Bold başlık içeren liste öğelerinden bullet'ı kaldır (* **Label:** veya - **Label:**)
       .replace(/^[\*\-]\s+(\*\*[^*]+:\*\*)/gm, "$1")
       .replace(/\n[\*\-]\s+(\*\*[^*]+:\*\*)/g, "\n\n$1")
-      
+
       // 5. ### başlıklarından önce çift satır sonu
       .replace(/([^\n])(###)/g, "$1\n\n$2")
-      
+
       // 6. Numaralı liste öğeleri öncesinde satır sonu
       .replace(/([.!?])\s+(\d+)\.\s+/g, "$1\n\n$2. ")
-      
+
       // ========== DÜZ METİN BAŞLIKLARINI FORMAT ===============
       // 7. Satır içi ardışık "Başlık: değer Başlık2: değer2" kalıplarını ayır
-      .replace(/(:)\s*([^:\n]{2,50})\s+((?:NACE|Sektör|Teşvik|Yatırım|Lokasyon|Program|Bölge|KDV|Gümrük|Vergi|Sigorta|Faiz|Makine|Asgari|OSB|İl|Ana|Alt|Hedef|Öncelikli|Uygulanan|İşletme|Sabit|Minimum|Yerel|Teknoloji|Özel)[^:]*:)/gi, "$1 $2\n\n**$3**")
-      
+      .replace(
+        /(:)\s*([^:\n]{2,50})\s+((?:NACE|Sektör|Teşvik|Yatırım|Lokasyon|Program|Bölge|KDV|Gümrük|Vergi|Sigorta|Faiz|Makine|Asgari|OSB|İl|Ana|Alt|Hedef|Öncelikli|Uygulanan|İşletme|Sabit|Minimum|Yerel|Teknoloji|Özel)[^:]*:)/gi,
+        "$1 $2\n\n**$3**",
+      )
+
       // 8. Satır başındaki düz metin başlıkları bold yap (eğer bold değilse)
-      .replace(/^((?:NACE Kodu|Ana Sektör Tanımı|Alt Sektör Tanımı|Teşvik Statüsü|Yatırım Konusu|Lokasyon|Uygulanan Program|Bölge|İl|KDV İstisnası|Gümrük Muafiyeti|Vergi İndirimi|Sigorta Primi|Faiz Desteği|Makine Teçhizat|Asgari Yatırım|OSB Durumu|Hedef Yatırım|Öncelikli Yatırım|İşletme Büyüklüğü|Sabit Yatırım Tutarı|Minimum Yatırım|Yerel Kalkınma Hamlesi|Teknoloji Hamlesi Programı|Özel Şartlar):)(\s)/gim, "**$1**$2")
-      
+      .replace(
+        /^((?:NACE Kodu|Ana Sektör Tanımı|Alt Sektör Tanımı|Sektör Tanımı|Teşvik Statüsü|Yatırım Konusu|Lokasyon|Uygulanan Program|Bölge|İl|KDV İstisnası|Gümrük Muafiyeti|Vergi İndirimi|Sigorta Primi|Faiz Desteği|Makine Teçhizat|Asgari Yatırım|OSB Durumu|Hedef Yatırım|Öncelikli Yatırım|İşletme Büyüklüğü|Sabit Yatırım Tutarı|Minimum Yatırım|Yerel Kalkınma Hamlesi|Teknoloji Hamlesi Programı|Özel Şartlar):)(\s)/gim,
+        "**$1**$2",
+      )
+
       // 9. Paragraf içi düz başlıkların önüne satır sonu ekle
-      .replace(/([.!?)\]0-9])\s+((?:NACE Kodu|Ana Sektör|Alt Sektör|Teşvik Statüsü|Yatırım Konusu|Lokasyon|Uygulanan Program|Bölge|İl|KDV|Gümrük|Vergi|Sigorta|Faiz|Makine|Asgari|OSB|Hedef|Öncelikli|Yerel|Teknoloji|Özel)[^:]*:)/gi, "$1\n\n**$2**")
-      
+      .replace(
+        /([.!?)\]0-9])\s+((?:NACE Kodu|Ana Sektör|Alt Sektör|Sektör Tanımı|Teşvik Statüsü|Yatırım Konusu|Lokasyon|Uygulanan Program|Bölge|İl|KDV|Gümrük|Vergi|Sigorta|Faiz|Makine|Asgari|OSB|Hedef|Öncelikli|Yerel|Teknoloji|Özel)[^:]*:)/gi,
+        "$1\n\n**$2**",
+      )
+
       // 10. Çift boşlukları temizle (3+ -> 2)
       .replace(/\n{3,}/g, "\n\n")
       .trim()
