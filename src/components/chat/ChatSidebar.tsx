@@ -1,4 +1,4 @@
-import { Plus, Search, Trash2, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { Plus, Search, Trash2, ChevronLeft, ChevronRight, MessageSquare, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -47,12 +47,19 @@ export function ChatSidebar({
         {/* Logo Section - Clickable to home */}
         <div
           className={cn(
-            "flex items-center border-b transition-all duration-300",
-            isCollapsed ? "p-2 justify-center" : "p-1 justify-center",
+            "flex items-center border-b transition-all duration-300 h-[52px] md:h-[60px]",
+            isCollapsed ? "p-2 justify-center" : "px-4"
           )}
         >
-          <Link to="/" className="hover:opacity-80 transition-opacity">
-            <Logo className={cn("transition-all duration-300", isCollapsed ? "h-8 w-8" : "h-16 w-full")} />
+          <Link to="/" className={cn(
+            "hover:opacity-80 transition-opacity",
+            isCollapsed ? "flex items-center justify-center" : "block w-full"
+          )}>
+            {isCollapsed ? (
+              <Home className="h-5 w-5 text-primary" />
+            ) : (
+              <Logo className="h-10 w-full max-h-10 transition-all duration-300 [&_path]:fill-primary" />
+            )}
           </Link>
         </div>
 
