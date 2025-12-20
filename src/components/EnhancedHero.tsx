@@ -305,15 +305,15 @@ const EnhancedHero = () => {
             </div>
 
             {/* Website Domain Link */}
-            <div className="animate-fade-in content-center items-center">
+            <div className="animate-fade-in flex justify-center">
               <a 
                 href="https://yatirimadestek.gov.tr" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 text-white/90 hover:text-white transition-colors"
               >
-                <Globe className="h-8 w-8 sm:h-10 sm:w-10" strokeWidth={0.75} />
-                <span className="text-2xl sm:text-3xl md:text-4xl font-thin">yatirimadestek.gov.tr</span>
+                <Globe className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" strokeWidth={0.75} />
+                <span className="text-2xl sm:text-3xl md:text-4xl font-thin leading-none">yatirimadestek.gov.tr</span>
               </a>
             </div>
 
