@@ -58,7 +58,7 @@ const Start = () => {
       
       {/* Hero Section */}
       <section className="relative py-16 px-4">
-        <div className="container mx-auto max-w-6xl text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             Teşvik ve Destek Platformu
           </h1>
@@ -70,7 +70,7 @@ const Start = () => {
 
       {/* Feature Cards Grid */}
       <section className="py-8 px-4">
-        <div className="container mx-auto max-w-6xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {featureCards.map((card) => {
               const Icon = card.icon;

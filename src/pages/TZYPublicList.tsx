@@ -96,7 +96,7 @@ export default function TZYPublicList() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
@@ -132,7 +132,7 @@ export default function TZYPublicList() {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground mb-2">

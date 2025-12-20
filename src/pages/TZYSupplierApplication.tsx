@@ -437,8 +437,8 @@ const TZYSupplierApplication = () => {
 
   if (!productInfo) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex justify-center items-center min-h-[400px]">
           <RefreshCw className="h-8 w-8 animate-spin" />
         </div>
       </div>
@@ -448,7 +448,7 @@ const TZYSupplierApplication = () => {
   return (
     <div className="min-h-screen bg-background">
       <MainNavbar />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">

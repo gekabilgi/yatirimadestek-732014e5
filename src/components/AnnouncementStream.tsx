@@ -31,7 +31,7 @@ const AnnouncementStream = () => {
 
   return (
     <section className="py-12 bg-gray-50">
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Bell className="h-6 w-6 text-primary" />
@@ -42,7 +42,7 @@ const AnnouncementStream = () => {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="space-y-4">
           {announcements.map((announcement) => (
             <Card key={announcement.id} className={`transition-all hover:shadow-md ${announcement.urgent ? 'border-orange-200 bg-orange-50' : ''}`}>
               <CardContent className="p-6">
