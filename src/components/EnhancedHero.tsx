@@ -307,7 +307,7 @@ const EnhancedHero = () => {
             {/* Website Domain Link */}
             <div className="animate-fade-in flex justify-center">
               <a
-                href="https://mail.yatirimadestek.gov.tr"
+                href="https://test.yatirimadestek.gov.tr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 text-white/90 hover:text-white transition-colors"
