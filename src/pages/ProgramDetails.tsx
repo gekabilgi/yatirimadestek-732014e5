@@ -91,7 +91,7 @@ const ProgramDetails = () => {
       <div className="min-h-screen bg-gray-50">
         <MainNavbar />
         <div className="p-4">
-          <div className="container mx-auto max-w-4xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-white rounded-lg p-6 animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
               <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
@@ -108,7 +108,7 @@ const ProgramDetails = () => {
       <div className="min-h-screen bg-gray-50">
         <MainNavbar />
         <div className="p-4">
-          <div className="container mx-auto max-w-4xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center py-12">
               <div className="text-gray-500 text-lg mb-2">Program bulunamadı</div>
               <Button onClick={() => navigate('/')} variant="outline">
@@ -128,7 +128,7 @@ const ProgramDetails = () => {
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />
       <div className="p-4">
-        <div className="container mx-auto max-w-4xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Button 
             onClick={() => navigate('/')} 
             variant="ghost" 

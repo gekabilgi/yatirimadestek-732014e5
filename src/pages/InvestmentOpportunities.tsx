@@ -156,7 +156,7 @@ const InvestmentOpportunities = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <MainNavbar />
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Hata Oluştu</h1>
             <p className="text-gray-600">Yatırım fırsatları yüklenirken bir hata oluştu.</p>
@@ -180,7 +180,7 @@ const InvestmentOpportunities = () => {
         compact
       />
       
-      <div className={`mx-auto px-2 sm:px-4 py-4 sm:py-8 ${isMobile ? 'max-w-full' : 'max-w-6xl'}`}>
+      <div className={`mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 ${isMobile ? 'max-w-full' : 'max-w-7xl'}`}>
         <div className="mb-4 sm:mb-6">
           <p className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
             Toplam {allReports.length} sonuç bulundu

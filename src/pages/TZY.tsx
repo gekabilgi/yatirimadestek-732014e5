@@ -68,7 +68,7 @@ const TZY = () => {
 
       {/* Modern Flow Diagram */}
       <section className="py-16 bg-gray-50/50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
             Süreç Akışı
           </h2>
@@ -145,7 +145,7 @@ const TZY = () => {
 
       {/* Action Buttons */}
       <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-8 text-gray-900">
             Hangi Kategoridesiniz?
           </h2>
@@ -201,7 +201,7 @@ const TZY = () => {
 
       {/* Info Section */}
       <section className="py-16 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-8 text-gray-900">
             Neden Tedarik Zinciri Yerlileştirme?
           </h2>

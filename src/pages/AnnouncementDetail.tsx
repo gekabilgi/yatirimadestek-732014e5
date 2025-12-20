@@ -34,7 +34,7 @@ const AnnouncementDetail = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <MainNavbar />
-        <div className="container mx-auto px-4 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-4xl mx-auto space-y-6">
             <Skeleton className="h-12 w-32" />
             <Card>
@@ -60,7 +60,7 @@ const AnnouncementDetail = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <MainNavbar />
-        <div className="container mx-auto px-4 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-4xl mx-auto text-center space-y-4">
             <h1 className="text-4xl font-bold">Duyuru Bulunamadı</h1>
             <p className="text-muted-foreground">Aradığınız duyuru bulunamadı veya artık aktif değil.</p>
@@ -78,7 +78,7 @@ const AnnouncementDetail = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <MainNavbar />
       
-      <div className="container mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-4xl mx-auto space-y-6">
           <Button
             variant="ghost"
