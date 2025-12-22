@@ -311,7 +311,7 @@ function isSupportProgramQuery(message: string): boolean {
     "ne tur destekler",
     "destek var mı",
     "destek var mi",
-    "başvurabileceğim"
+    "başvurabileceğim",
     "basvurabilecegim",
     "yararlanabileceğim",
     "yararlanabilecegim",
