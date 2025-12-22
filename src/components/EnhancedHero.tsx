@@ -313,7 +313,7 @@ const EnhancedHero = () => {
                 className="inline-flex items-center gap-3 text-white/90 hover:text-white transition-colors"
               >
                 <Globe className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" strokeWidth={0.75} />
-                <span className="text-2xl sm:text-3xl md:text-4xl font-thin leading-none">yatirimadestek.gov.tr</span>
+                <span className="text-2xl sm:text-3xl md:text-4xl font-thin">yatirimadestek.gov.tr</span>
               </a>
             </div>
 
