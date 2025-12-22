@@ -76,3 +76,6 @@ verify_jwt = false
 
 [functions.send-announcement-email]
 verify_jwt = true
+
+[functions.tcmb-exchange]
+verify_jwt = false
