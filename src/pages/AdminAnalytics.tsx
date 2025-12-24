@@ -147,6 +147,23 @@ const AdminAnalytics = () => {
     }
   };
 
+  // Format large currency values for readability (e.g., 2.995.401.081 -> "~3 Milyar")
+  const formatLargeCurrency = (value: number): string => {
+    if (!value || value === 0) return '0 TL';
+    
+    if (value >= 1_000_000_000) {
+      const billions = value / 1_000_000_000;
+      return `~${billions.toFixed(1).replace('.', ',')} Milyar TL`;
+    } else if (value >= 1_000_000) {
+      const millions = value / 1_000_000;
+      return `~${millions.toFixed(1).replace('.', ',')} Milyon TL`;
+    } else if (value >= 1_000) {
+      const thousands = value / 1_000;
+      return `~${thousands.toFixed(0)} Bin TL`;
+    }
+    return `${value.toLocaleString('tr-TR')} TL`;
+  };
+
   // Sector breakdown - grouped into 5 main categories
   const mapToMainSector = (sector: string | null): string => {
     if (!sector) return 'Diğer';
@@ -535,7 +552,7 @@ const AdminAnalytics = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {totalInvestmentDetailed.toLocaleString('tr-TR')} TL
+                        {formatLargeCurrency(totalInvestmentDetailed)}
                       </div>
                       <p className="text-xs text-muted-foreground">Toplam sabit yatırım</p>
                     </CardContent>
