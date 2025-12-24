@@ -338,16 +338,19 @@ export type Database = {
           created_at: string | null
           id: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1009,6 +1012,81 @@ export type Database = {
           gtipcode?: string
           id?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      hybrid_search_analytics: {
+        Row: {
+          cache_hit: boolean | null
+          cache_key: string | null
+          created_at: string | null
+          embedding_time_ms: number | null
+          expanded_queries_count: number | null
+          id: string
+          keywords_extracted: number | null
+          query: string
+          query_expanded: boolean | null
+          query_hash: string | null
+          qv_best_similarity: number | null
+          qv_match_count: number | null
+          qv_match_type: string | null
+          qv_search_time_ms: number | null
+          response_length: number | null
+          response_source: string | null
+          session_id: string | null
+          support_match_count: number | null
+          support_search_time_ms: number | null
+          total_response_time_ms: number | null
+          vertex_has_results: boolean | null
+          vertex_search_time_ms: number | null
+        }
+        Insert: {
+          cache_hit?: boolean | null
+          cache_key?: string | null
+          created_at?: string | null
+          embedding_time_ms?: number | null
+          expanded_queries_count?: number | null
+          id?: string
+          keywords_extracted?: number | null
+          query: string
+          query_expanded?: boolean | null
+          query_hash?: string | null
+          qv_best_similarity?: number | null
+          qv_match_count?: number | null
+          qv_match_type?: string | null
+          qv_search_time_ms?: number | null
+          response_length?: number | null
+          response_source?: string | null
+          session_id?: string | null
+          support_match_count?: number | null
+          support_search_time_ms?: number | null
+          total_response_time_ms?: number | null
+          vertex_has_results?: boolean | null
+          vertex_search_time_ms?: number | null
+        }
+        Update: {
+          cache_hit?: boolean | null
+          cache_key?: string | null
+          created_at?: string | null
+          embedding_time_ms?: number | null
+          expanded_queries_count?: number | null
+          id?: string
+          keywords_extracted?: number | null
+          query?: string
+          query_expanded?: boolean | null
+          query_hash?: string | null
+          qv_best_similarity?: number | null
+          qv_match_count?: number | null
+          qv_match_type?: string | null
+          qv_search_time_ms?: number | null
+          response_length?: number | null
+          response_source?: string | null
+          session_id?: string | null
+          support_match_count?: number | null
+          support_search_time_ms?: number | null
+          total_response_time_ms?: number | null
+          vertex_has_results?: boolean | null
+          vertex_search_time_ms?: number | null
         }
         Relationships: []
       }
@@ -1770,7 +1848,6 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
-          password: string | null
         }
         Insert: {
           created_at?: string
@@ -1778,7 +1855,6 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean
-          password?: string | null
         }
         Update: {
           created_at?: string
@@ -1786,7 +1862,6 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
-          password?: string | null
         }
         Relationships: []
       }
@@ -1891,6 +1966,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      question_cache: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          grounding_chunks: Json | null
+          hit_count: number | null
+          id: string
+          last_hit_at: string | null
+          normalized_query: string
+          original_query: string
+          query_hash: string
+          response_text: string
+          search_metadata: Json | null
+          source: string | null
+          support_cards: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          grounding_chunks?: Json | null
+          hit_count?: number | null
+          id?: string
+          last_hit_at?: string | null
+          normalized_query: string
+          original_query: string
+          query_hash: string
+          response_text: string
+          search_metadata?: Json | null
+          source?: string | null
+          support_cards?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          grounding_chunks?: Json | null
+          hit_count?: number | null
+          id?: string
+          last_hit_at?: string | null
+          normalized_query?: string
+          original_query?: string
+          query_hash?: string
+          response_text?: string
+          search_metadata?: Json | null
+          source?: string | null
+          support_cards?: Json | null
+        }
+        Relationships: []
       }
       question_variants: {
         Row: {
@@ -2623,6 +2746,17 @@ export type Database = {
         }
         Relationships: []
       }
+      cache_statistics_view: {
+        Row: {
+          avg_hits_per_query: number | null
+          expired_entries: number | null
+          new_today: number | null
+          popular_queries: number | null
+          total_cache_hits: number | null
+          total_cached_queries: number | null
+        }
+        Relationships: []
+      }
       pre_requests_security_summary: {
         Row: {
           access_count: number | null
@@ -2638,6 +2772,8 @@ export type Database = {
         Row: {
           answer: string | null
           answer_date: string | null
+          answer_status: string | null
+          answered: boolean | null
           category: string | null
           created_at: string | null
           id: string | null
@@ -2648,6 +2784,8 @@ export type Database = {
         Insert: {
           answer?: string | null
           answer_date?: string | null
+          answer_status?: string | null
+          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
@@ -2658,6 +2796,8 @@ export type Database = {
         Update: {
           answer?: string | null
           answer_date?: string | null
+          answer_status?: string | null
+          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
@@ -2733,24 +2873,44 @@ export type Database = {
         Args: { _province: string; _user_id: string }
         Returns: boolean
       }
-      hybrid_match_question_variants: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          query_embedding: string
-          query_text: string
-        }
-        Returns: {
-          canonical_answer: string
-          canonical_question: string
-          id: string
-          match_type: string
-          metadata: Json
-          similarity: number
-          source_document: string
-          variants: string[]
-        }[]
-      }
+      hybrid_match_question_variants:
+        | {
+            Args: {
+              match_count?: number
+              match_threshold?: number
+              query_embedding: string
+              query_text: string
+            }
+            Returns: {
+              canonical_answer: string
+              canonical_question: string
+              id: string
+              match_type: string
+              metadata: Json
+              similarity: number
+              source_document: string
+              variants: string[]
+            }[]
+          }
+        | {
+            Args: {
+              expanded_queries?: string[]
+              match_count?: number
+              match_threshold?: number
+              query_embedding: string
+              query_text: string
+            }
+            Returns: {
+              canonical_answer: string
+              canonical_question: string
+              id: string
+              match_type: string
+              metadata: Json
+              similarity: number
+              source_document: string
+              variants: string[]
+            }[]
+          }
       increment_chatbot_stat: {
         Args: { p_source: string; p_stat_type: string }
         Returns: undefined

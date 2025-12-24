@@ -1,22 +1,24 @@
-import { Home, Trash2, Download, Edit2, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Download, Edit2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 interface ChatHeaderProps {
   sessionTitle: string;
   onClearChat: () => void;
   onExportChat: () => void;
   onRenameSession: (newTitle: string) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export function ChatHeader({ 
   sessionTitle, 
   onClearChat, 
   onExportChat,
-  onRenameSession 
+  onRenameSession,
+  isCollapsed = false,
+  onToggleCollapse,
 }: ChatHeaderProps) {
-  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(sessionTitle);
 
@@ -34,17 +36,25 @@ export function ChatHeader({
 
   return (
     <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center justify-between px-2 md:px-4 py-2.5 md:py-3">
-        {/* Left: Home button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/")}
-          title="Anasayfa"
-          className="h-8 w-8 md:h-10 md:w-10"
-        >
-          <Home className="h-4 w-4 md:h-5 md:w-5" />
-        </Button>
+      <div className="flex items-center justify-between px-2 md:px-4 h-[72px] md:h-[80px]">
+        {/* Left: Toggle sidebar button */}
+        {onToggleCollapse ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            title={isCollapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+            className="h-8 w-8 md:h-10 md:w-10 hidden lg:flex"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+            )}
+          </Button>
+        ) : (
+          <div className="w-8 md:w-10 hidden lg:block" />
+        )}
 
         {/* Center: Session title (editable) */}
         <div className="flex items-center gap-2 flex-1 md:justify-center md:max-w-md px-2">

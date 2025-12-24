@@ -7,16 +7,21 @@ import { useChatSession } from '@/hooks/useChatSession';
 import { geminiRagService } from '@/services/geminiRagService';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, LogIn, Cloud } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useChatbotStats } from '@/hooks/useChatbotStats';
+import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export default function Chat() {
+  const { user, loading: authLoading } = useAuth();
+  
   const {
     sessions,
     activeSession,
     activeSessionId,
     isLoading,
+    isAnonymous,
     loadSessions,
     createSession,
     deleteSession,
@@ -24,10 +29,11 @@ export default function Chat() {
     setActiveSessionId,
     updateSession,
     stopGeneration,
-  } = useChatSession();
+  } = useChatSession(user);
 
   const [activeStore, setActiveStore] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [exampleQuestions, setExampleQuestions] = useState<string[]>([]);
   const [currentSuggestion, setCurrentSuggestion] = useState('');
   const [inputValue, setInputValue] = useState('');
@@ -41,21 +47,31 @@ export default function Chat() {
     trackUniqueSession('chat_page');
   }, [trackUniqueSession]);
 
+  // Track initialization to prevent duplicate calls
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
+    // Wait for auth to finish loading before initializing
+    if (authLoading) return;
+    
+    // Prevent re-initialization on same session
+    if (hasInitialized.current) return;
+    
     const initialize = async () => {
       const store = await geminiRagService.getActiveStore();
       setActiveStore(store);
       
-      const loadedSessions = await loadSessions();
-      
-      // Create first session if none exists after loading
-      if (loadedSessions.length === 0) {
-        await createSession();
-        trackNewSession('chat_page');
-      }
+      await loadSessions();
+      // Don't auto-create session - let user create via button or first message
+      hasInitialized.current = true;
     };
     initialize();
-  }, []);
+  }, [authLoading, user]);
+
+  // Reset initialization flag when user changes (logout/login)
+  useEffect(() => {
+    hasInitialized.current = false;
+  }, [user?.id]);
 
   // Load example questions when active store changes
   useEffect(() => {
@@ -191,21 +207,31 @@ export default function Chat() {
     }
   };
 
-  const SidebarContent = (
-    <ChatSidebar
-      sessions={sessions}
-      activeSessionId={activeSessionId}
-      onSelectSession={handleSelectSession}
-      onCreateSession={handleCreateSession}
-      onDeleteSession={deleteSession}
-    />
-  );
+  // Show loading state while auth is loading
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-80" role="complementary" aria-label="Sohbet geçmişi">
-        {SidebarContent}
+      <aside 
+        className={`hidden lg:block transition-all duration-300 ${isSidebarCollapsed ? 'w-16' : 'w-72'}`} 
+        role="complementary" 
+        aria-label="Sohbet geçmişi"
+      >
+        <ChatSidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={handleSelectSession}
+          onCreateSession={handleCreateSession}
+          onDeleteSession={deleteSession}
+          isCollapsed={isSidebarCollapsed}
+        />
       </aside>
 
       {/* Main Chat Area */}
@@ -220,16 +246,40 @@ export default function Chat() {
             </SheetTrigger>
           </div>
           
-          <SheetContent side="left" className="w-80 p-0">
-            {SidebarContent}
+          <SheetContent side="left" className="w-72 p-0">
+            <ChatSidebar
+              sessions={sessions}
+              activeSessionId={activeSessionId}
+              onSelectSession={handleSelectSession}
+              onCreateSession={handleCreateSession}
+              onDeleteSession={deleteSession}
+            />
           </SheetContent>
         </Sheet>
+
+        {/* Anonymous User Banner */}
+        {isAnonymous && (
+          <div className="bg-muted/50 border-b px-4 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Cloud className="h-4 w-4" />
+              <span>Sohbet geçmişiniz bu cihazda geçici olarak saklanıyor.</span>
+            </div>
+            <Link to="/admin/login">
+              <Button variant="outline" size="sm" className="gap-2">
+                <LogIn className="h-4 w-4" />
+                Giriş Yap
+              </Button>
+            </Link>
+          </div>
+        )}
 
         <ChatHeader 
           sessionTitle={activeSession?.title || 'Yeni Sohbet'}
           onClearChat={handleClearChat}
           onExportChat={handleExportChat}
           onRenameSession={handleRenameSession}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">

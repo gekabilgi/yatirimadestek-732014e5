@@ -17,7 +17,7 @@ const TZYSupplierApplicationSuccess = () => {
   }, [on_request_id, product_id, navigate]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Card>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">

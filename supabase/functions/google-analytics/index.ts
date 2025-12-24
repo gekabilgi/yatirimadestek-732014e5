@@ -239,13 +239,30 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
           limit: 20,
         }),
       }),
+      
+      // Engagement metrics (engagementRate, averageSessionDuration, bounceRate)
+      fetch(`${baseUrl}/properties/${propertyId}:runReport`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+          metrics: [
+            { name: 'engagementRate' },
+            { name: 'averageSessionDuration' },
+            { name: 'bounceRate' }
+          ],
+        }),
+      }),
     ];
 
     const responses = await Promise.all(requests);
     
     const results = await Promise.all(
       responses.map(async (response, index) => {
-        const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'dailyPageViews', 'topCountries'];
+        const requestNames = ['activeUsers', 'newUsers', 'sessions', 'pageViews', 'dailyPageViews', 'topCountries', 'engagementMetrics'];
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Failed to fetch ${requestNames[index]}:`, response.status, errorText);
@@ -265,12 +282,31 @@ async function fetchAnalyticsData(accessToken: string, propertyId: string) {
 
     console.log('Country data retrieved:', topCountries);
 
+    // Process engagement metrics
+    const engagementData = results[6]?.rows?.[0]?.metricValues || [];
+    const rawEngagementRate = parseFloat(engagementData[0]?.value || '0');
+    const rawAvgSessionDuration = parseFloat(engagementData[1]?.value || '0');
+    const rawBounceRate = parseFloat(engagementData[2]?.value || '0');
+
+    // Format engagement rate as percentage (GA4 returns it as decimal, e.g., 0.75 = 75%)
+    const engagementRate = (rawEngagementRate * 100).toFixed(1);
+    // Format average session duration as minutes and seconds
+    const avgSessionMinutes = Math.floor(rawAvgSessionDuration / 60);
+    const avgSessionSeconds = Math.round(rawAvgSessionDuration % 60);
+    const averageSessionDuration = `${avgSessionMinutes}:${avgSessionSeconds.toString().padStart(2, '0')}`;
+    // Format bounce rate as percentage
+    const bounceRate = (rawBounceRate * 100).toFixed(1);
+
+    console.log('Engagement metrics:', { engagementRate, averageSessionDuration, bounceRate });
+
     return {
       activeUsers: results[0]?.rows?.[0]?.metricValues?.[0]?.value || '0',
       newUsers: results[1]?.rows?.[0]?.metricValues?.[0]?.value || '0',
       sessions: results[2]?.rows?.[0]?.metricValues?.[0]?.value || '0',
       pageViews: results[3]?.rows?.[0]?.metricValues?.[0]?.value || '0',
-      engagementRate: '0', // Simplified for now
+      engagementRate: engagementRate,
+      averageSessionDuration: averageSessionDuration,
+      bounceRate: bounceRate,
       dailyPageViews: results[4]?.rows?.map((row: any) => ({
         date: row.dimensionValues[0].value,
         views: parseInt(row.metricValues[0].value)

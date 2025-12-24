@@ -1,8 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { DollarSign, Euro, Banknote } from 'lucide-react';
+import { Banknote } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 
 interface ExchangeRates {
   usd_buying: number;
@@ -67,6 +74,15 @@ export const CurrencyBadges = ({ usdAmount }: CurrencyBadgesProps) => {
     }
   };
 
+  const formatRateDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'd MMMM yyyy', { locale: tr });
+    } catch {
+      return dateString;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex gap-2">
@@ -90,25 +106,57 @@ export const CurrencyBadges = ({ usdAmount }: CurrencyBadgesProps) => {
   const tryAmount = usdAmount * rates.usd_buying;
   const eurAmount = usdAmount / rates.eur_buying * rates.usd_buying;
   const gbpAmount = usdAmount / rates.gbp_buying * rates.usd_buying;
+  const rateDate = formatRateDate(rates.date);
+  const tooltipText = `TCMB kurları: ${rateDate} (1 USD = ₺${rates.usd_buying.toFixed(2)}, 1 EUR = ₺${rates.eur_buying.toFixed(2)}, 1 GBP = ₺${rates.gbp_buying.toFixed(2)})`;
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-        <Banknote className="h-3 w-3 mr-1" />
-        ${usdAmount.toLocaleString('en-US')}
-      </Badge>
-      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-        <Banknote className="h-3 w-3 mr-1" />
-        ₺{tryAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
-      </Badge>
-      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-        <Banknote className="h-3 w-3 mr-1" />
-        €{eurAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-      </Badge>
-      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-        <Banknote className="h-3 w-3 mr-1" />
-        £{gbpAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-      </Badge>
-    </div>
+    <TooltipProvider>
+      <div className="flex flex-wrap gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 cursor-help">
+              <Banknote className="h-3 w-3 mr-1" />
+              ${usdAmount.toLocaleString('en-US')}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tooltipText}</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 cursor-help">
+              <Banknote className="h-3 w-3 mr-1" />
+              ₺{tryAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tooltipText}</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 cursor-help">
+              <Banknote className="h-3 w-3 mr-1" />
+              €{eurAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tooltipText}</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 cursor-help">
+              <Banknote className="h-3 w-3 mr-1" />
+              £{gbpAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tooltipText}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   );
 };

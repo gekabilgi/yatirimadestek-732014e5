@@ -34,7 +34,11 @@ export const ThemeSelector: React.FC = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <div className="max-h-[400px] overflow-y-auto">
-          {themeList.map((theme) => (
+          {[...themeList].sort((a, b) => {
+            if (a.id === currentTheme) return -1;
+            if (b.id === currentTheme) return 1;
+            return 0;
+          }).map((theme) => (
             <DropdownMenuItem
               key={theme.id}
               onClick={() => setTheme(theme.id)}
