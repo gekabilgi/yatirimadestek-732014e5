@@ -96,6 +96,17 @@ const SearchSupport = () => {
         });
       }
 
+      // Apply status filter (open/closed)
+      if (searchFilters?.status) {
+        filteredPrograms = filteredPrograms.filter(program => {
+          const deadline = program.application_deadline;
+          const isOpen = !deadline || new Date() <= new Date(deadline);
+          if (searchFilters.status === 'open') return isOpen;
+          if (searchFilters.status === 'closed') return !isOpen;
+          return true;
+        });
+      }
+
       // Transform the data to match our SupportProgram interface
       const transformedPrograms: SupportProgram[] = filteredPrograms.map(program => ({
         ...program,
