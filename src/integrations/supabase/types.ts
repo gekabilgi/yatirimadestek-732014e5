@@ -2772,6 +2772,8 @@ export type Database = {
         Row: {
           answer: string | null
           answer_date: string | null
+          answer_status: string | null
+          answered: boolean | null
           category: string | null
           created_at: string | null
           id: string | null
@@ -2782,6 +2784,8 @@ export type Database = {
         Insert: {
           answer?: string | null
           answer_date?: string | null
+          answer_status?: string | null
+          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
@@ -2792,6 +2796,8 @@ export type Database = {
         Update: {
           answer?: string | null
           answer_date?: string | null
+          answer_status?: string | null
+          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
