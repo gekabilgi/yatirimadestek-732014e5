@@ -47,24 +47,31 @@ export default function Chat() {
     trackUniqueSession('chat_page');
   }, [trackUniqueSession]);
 
+  // Track initialization to prevent duplicate calls
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
     // Wait for auth to finish loading before initializing
     if (authLoading) return;
+    
+    // Prevent re-initialization on same session
+    if (hasInitialized.current) return;
     
     const initialize = async () => {
       const store = await geminiRagService.getActiveStore();
       setActiveStore(store);
       
-      const loadedSessions = await loadSessions();
-      
-      // Create first session if none exists after loading
-      if (loadedSessions.length === 0) {
-        await createSession();
-        trackNewSession('chat_page');
-      }
+      await loadSessions();
+      // Don't auto-create session - let user create via button or first message
+      hasInitialized.current = true;
     };
     initialize();
-  }, [authLoading, user]); // Re-initialize when user changes
+  }, [authLoading, user]);
+
+  // Reset initialization flag when user changes (logout/login)
+  useEffect(() => {
+    hasInitialized.current = false;
+  }, [user?.id]);
 
   // Load example questions when active store changes
   useEffect(() => {
