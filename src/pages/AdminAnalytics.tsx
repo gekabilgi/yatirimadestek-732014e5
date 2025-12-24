@@ -132,6 +132,21 @@ const AdminAnalytics = () => {
   const averagePayback = detailedFeasibilityStats?.length ? 
     detailedFeasibilityStats.reduce((sum, report) => sum + (report.geri_odeme_suresi || 0), 0) / detailedFeasibilityStats.filter(r => r.geri_odeme_suresi).length : 0;
 
+  // Format payback period: if value is in years (e.g., 5.6), display as "5 yıl 6 ay"
+  const formatPaybackPeriod = (years: number): string => {
+    if (!years || years === 0) return '-';
+    const wholeYears = Math.floor(years);
+    const months = Math.round((years - wholeYears) * 12);
+    
+    if (wholeYears === 0 && months > 0) {
+      return `${months} ay`;
+    } else if (months === 0) {
+      return `${wholeYears} yıl`;
+    } else {
+      return `${wholeYears} yıl ${months} ay`;
+    }
+  };
+
   // Sector breakdown - grouped into 5 main categories
   const mapToMainSector = (sector: string | null): string => {
     if (!sector) return 'Diğer';
@@ -543,7 +558,7 @@ const AdminAnalytics = () => {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{averagePayback.toFixed(1)} ay</div>
+                      <div className="text-2xl font-bold">{formatPaybackPeriod(averagePayback)}</div>
                       <p className="text-xs text-muted-foreground">Ortalama süre</p>
                     </CardContent>
                   </Card>
