@@ -22,6 +22,7 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
   const [selectedTags, setSelectedTags] = useState<number[]>(filters.tags || []);
   const [keyword, setKeyword] = useState(filters.keyword || '');
   const [institution, setInstitution] = useState(filters.institution || '');
+  const [status, setStatus] = useState<'all' | 'open' | 'closed'>(filters.status || 'all');
 
   useEffect(() => {
     fetchTags();
@@ -70,6 +71,7 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
       keyword: keyword.trim() || undefined,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
       institution: institution.trim() || undefined,
+      status: status !== 'all' ? status : undefined,
     });
   };
 
@@ -77,6 +79,7 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
     setKeyword('');
     setInstitution('');
     setSelectedTags([]);
+    setStatus('all');
     onSearch({});
   };
 
@@ -121,9 +124,9 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filtreler</span>
             <span className="sm:hidden">Filtre</span>
-            {(selectedTags.length > 0 || institution) && (
+            {(selectedTags.length > 0 || institution || status !== 'all') && (
               <Badge variant="secondary" className="ml-1 text-xs">
-                {selectedTags.length + (institution ? 1 : 0)}
+                {selectedTags.length + (institution ? 1 : 0) + (status !== 'all' ? 1 : 0)}
               </Badge>
             )}
           </Button>
@@ -147,6 +150,38 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
                   value={institution}
                   onChange={(e) => setInstitution(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <Label>Başvuru Durumu</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant={status === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatus('all')}
+                  >
+                    Tümü
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={status === 'open' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatus('open')}
+                    className={status === 'open' ? 'bg-green-600 hover:bg-green-700' : ''}
+                  >
+                    Açık Başvurular
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={status === 'closed' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatus('closed')}
+                    className={status === 'closed' ? 'bg-red-600 hover:bg-red-700' : ''}
+                  >
+                    Kapalı Başvurular
+                  </Button>
+                </div>
               </div>
 
               <div>
@@ -201,8 +236,20 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
       )}
 
       {/* Active Filters Display */}
-      {(selectedTags.length > 0 || institution) && (
+      {(selectedTags.length > 0 || institution || status !== 'all') && (
         <div className="flex flex-wrap gap-2">
+          {status !== 'all' && (
+            <Badge 
+              variant="secondary" 
+              className={`flex items-center gap-1 ${status === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+            >
+              {status === 'open' ? 'Açık Başvurular' : 'Kapalı Başvurular'}
+              <X 
+                className="w-3 h-3 cursor-pointer" 
+                onClick={() => setStatus('all')}
+              />
+            </Badge>
+          )}
           {institution && (
             <Badge variant="secondary" className="flex items-center gap-1">
               Kurum: {institution}

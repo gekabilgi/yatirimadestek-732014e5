@@ -54,4 +54,5 @@ export interface SearchFilters {
   keyword?: string;
   tags?: number[];
   institution?: string;
+  status?: 'all' | 'open' | 'closed';
 }
