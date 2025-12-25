@@ -63,27 +63,9 @@ const SearchSupport = () => {
         `)
         .order('created_at', { ascending: false });
 
-      // Apply keyword filter
-      if (searchFilters?.keyword) {
-        query = query.or(`title.ilike.%${searchFilters.keyword}%,description.ilike.%${searchFilters.keyword}%`);
-      }
-
-      // Apply institution filter
-      if (searchFilters?.institution) {
-        const { data: institutionData } = await supabase
-          .from('institutions')
-          .select('id')
-          .ilike('name', `%${searchFilters.institution}%`);
-        
-        if (institutionData && institutionData.length > 0) {
-          const institutionIds = institutionData.map(inst => inst.id);
-          query = query.in('institution_id', institutionIds);
-        } else {
-          // No matching institutions found, return empty result
-          setPrograms([]);
-          setLoading(false);
-          return;
-        }
+      // If institution dropdown is selected, filter directly by institution_id
+      if (searchFilters?.institutionId) {
+        query = query.eq('institution_id', searchFilters.institutionId);
       }
 
       const { data, error } = await query;
@@ -91,6 +73,25 @@ const SearchSupport = () => {
       if (error) throw error;
 
       let filteredPrograms = data || [];
+
+      // Hybrid keyword search: search in title, description, eligibility_criteria, and institution name
+      if (searchFilters?.keyword) {
+        const keywordLower = searchFilters.keyword.toLowerCase().trim();
+        const keywords = keywordLower.split(/\s+/).filter(k => k.length >= 2);
+        
+        filteredPrograms = filteredPrograms.filter(program => {
+          const searchableText = [
+            program.title,
+            program.description,
+            program.eligibility_criteria,
+            program.contact_info,
+            program.institution?.name
+          ].filter(Boolean).join(' ').toLowerCase();
+          
+          // Match if any keyword is found in the searchable text
+          return keywords.some(kw => searchableText.includes(kw));
+        });
+      }
 
       // Apply tag filters on the client side
       if (searchFilters?.tags && searchFilters.tags.length > 0) {
@@ -123,11 +124,15 @@ const SearchSupport = () => {
       setPrograms(sortedPrograms);
 
       // Track search analytics
-      if (shouldTrack && (searchFilters?.keyword || searchFilters?.institution || searchFilters?.tags?.length)) {
+      if (shouldTrack && (searchFilters?.keyword || searchFilters?.institutionId || searchFilters?.tags?.length)) {
         const endTime = performance.now();
+        const institutionName = searchFilters?.institutionId 
+          ? filteredPrograms.find(p => p.institution_id === searchFilters.institutionId)?.institution?.name 
+          : undefined;
+        
         const searchQuery = [
           searchFilters?.keyword,
-          searchFilters?.institution,
+          institutionName,
           searchFilters?.tags?.join(',')
         ].filter(Boolean).join(' | ');
         
@@ -136,7 +141,7 @@ const SearchSupport = () => {
           resultsCount: sortedPrograms.length,
           filters: {
             keyword: searchFilters?.keyword,
-            institution: searchFilters?.institution,
+            institutionId: searchFilters?.institutionId,
             tags: searchFilters?.tags,
             status: searchFilters?.status
           }
