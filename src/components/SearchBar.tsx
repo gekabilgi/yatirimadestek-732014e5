@@ -8,7 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SearchFilters, Tag } from '@/types/support';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchFilters, Tag, Institution } from '@/types/support';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SearchBarProps {
@@ -19,13 +20,15 @@ interface SearchBarProps {
 export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
   const [showFilters, setShowFilters] = useState(false);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [availableInstitutions, setAvailableInstitutions] = useState<Institution[]>([]);
   const [selectedTags, setSelectedTags] = useState<number[]>(filters.tags || []);
   const [keyword, setKeyword] = useState(filters.keyword || '');
-  const [institution, setInstitution] = useState(filters.institution || '');
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | undefined>(filters.institutionId);
   const [status, setStatus] = useState<'all' | 'open' | 'closed'>(filters.status || 'all');
 
   useEffect(() => {
     fetchTags();
+    fetchInstitutions();
   }, []);
 
   // Auto-search with debouncing when keyword changes
@@ -55,6 +58,20 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
     }
   };
 
+  const fetchInstitutions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('institutions')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setAvailableInstitutions(data || []);
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+    }
+  };
+
   const handleTagToggle = (tagId: number) => {
     const newSelectedTags = selectedTags.includes(tagId)
       ? selectedTags.filter(id => id !== tagId)
@@ -66,18 +83,17 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
   const handleSearch = async () => {
     console.log('SearchBar handleSearch called - NO TRACKING (support search page)');
     
-    // Only call onSearch without any tracking for support search
     onSearch({
       keyword: keyword.trim() || undefined,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
-      institution: institution.trim() || undefined,
+      institutionId: selectedInstitutionId,
       status: status !== 'all' ? status : undefined,
     });
   };
 
   const clearFilters = () => {
     setKeyword('');
-    setInstitution('');
+    setSelectedInstitutionId(undefined);
     setSelectedTags([]);
     setStatus('all');
     onSearch({});
@@ -87,6 +103,10 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
     return availableTags
       .filter(tag => selectedTags.includes(tag.id))
       .map(tag => tag.name);
+  };
+
+  const getSelectedInstitutionName = () => {
+    return availableInstitutions.find(inst => inst.id === selectedInstitutionId)?.name;
   };
 
   // Group tags by category
@@ -99,6 +119,8 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
     return acc;
   }, {} as Record<string, Tag[]>);
 
+  const activeFilterCount = selectedTags.length + (selectedInstitutionId ? 1 : 0) + (status !== 'all' ? 1 : 0);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col lg:flex-row gap-3 lg:gap-2">
@@ -106,7 +128,7 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Destek programlarında ara..."
+              placeholder="Destek adı, kurum, çağrı veya anahtar kelime ile ara..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               className="pl-10 h-11 text-base w-full"
@@ -124,9 +146,9 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filtreler</span>
             <span className="sm:hidden">Filtre</span>
-            {(selectedTags.length > 0 || institution || status !== 'all') && (
+            {activeFilterCount > 0 && (
               <Badge variant="secondary" className="ml-1 text-xs">
-                {selectedTags.length + (institution ? 1 : 0) + (status !== 'all' ? 1 : 0)}
+                {activeFilterCount}
               </Badge>
             )}
           </Button>
@@ -143,13 +165,23 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="institution">Kurum</Label>
-                <Input
-                  id="institution"
-                  placeholder="Kurum adı ile filtrele..."
-                  value={institution}
-                  onChange={(e) => setInstitution(e.target.value)}
-                />
+                <Label htmlFor="institution-select">Kurum</Label>
+                <Select
+                  value={selectedInstitutionId?.toString() || 'all'}
+                  onValueChange={(val) => setSelectedInstitutionId(val === 'all' ? undefined : parseInt(val))}
+                >
+                  <SelectTrigger id="institution-select" className="mt-1">
+                    <SelectValue placeholder="Tüm Kurumlar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Kurumlar</SelectItem>
+                    {availableInstitutions.map(inst => (
+                      <SelectItem key={inst.id} value={inst.id.toString()}>
+                        {inst.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -236,7 +268,7 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
       )}
 
       {/* Active Filters Display */}
-      {(selectedTags.length > 0 || institution || status !== 'all') && (
+      {(selectedTags.length > 0 || selectedInstitutionId || status !== 'all') && (
         <div className="flex flex-wrap gap-2">
           {status !== 'all' && (
             <Badge 
@@ -250,12 +282,12 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
               />
             </Badge>
           )}
-          {institution && (
+          {selectedInstitutionId && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Kurum: {institution}
+              Kurum: {getSelectedInstitutionName()}
               <X 
                 className="w-3 h-3 cursor-pointer" 
-                onClick={() => setInstitution('')}
+                onClick={() => setSelectedInstitutionId(undefined)}
               />
             </Badge>
           )}
