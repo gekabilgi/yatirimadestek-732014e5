@@ -2434,6 +2434,7 @@ export type Database = {
           description: string
           eligibility_criteria: string | null
           embedding: string | null
+          fts_vector: unknown
           id: string
           institution_id: number | null
           title: string
@@ -2447,6 +2448,7 @@ export type Database = {
           description: string
           eligibility_criteria?: string | null
           embedding?: string | null
+          fts_vector?: unknown
           id?: string
           institution_id?: number | null
           title: string
@@ -2460,6 +2462,7 @@ export type Database = {
           description?: string
           eligibility_criteria?: string | null
           embedding?: string | null
+          fts_vector?: unknown
           id?: string
           institution_id?: number | null
           title?: string
@@ -2914,6 +2917,29 @@ export type Database = {
               variants: string[]
             }[]
           }
+      hybrid_search_support_programs: {
+        Args: {
+          p_institution_id?: number
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_tag_ids?: number[]
+          query_text?: string
+        }
+        Returns: {
+          application_deadline: string
+          contact_info: string
+          created_at: string
+          description: string
+          eligibility_criteria: string
+          id: string
+          institution_id: number
+          match_type: string
+          score: number
+          title: string
+          updated_at: string
+        }[]
+      }
       increment_chatbot_stat: {
         Args: { p_source: string; p_stat_type: string }
         Returns: undefined
