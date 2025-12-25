@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
   BarChart, 
   Bar, 
   XAxis, 
@@ -47,12 +48,22 @@ interface AnalyticsEntry {
   response_length: number | null;
   query_expanded: boolean;
   created_at: string;
+  search_source?: string;
 }
 
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1'];
+const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1', '#a4de6c'];
+
+const SOURCE_LABELS: Record<string, string> = {
+  chatbot: 'Chatbot',
+  support_search: 'Destek Arama',
+  investment_search: 'Yatırım Fırsatları',
+  glossary_search: 'Yatırımcı Sözlüğü',
+  incentive_query: 'Teşvik Robotu',
+};
 
 const HybridSearchAnalytics: React.FC = () => {
   const [dateRange, setDateRange] = useState<'7d' | '30d' | 'all'>('7d');
+  const [searchSource, setSearchSource] = useState<string>('all');
 
   const getDateFilter = () => {
     if (dateRange === '7d') return subDays(new Date(), 7).toISOString();
@@ -62,7 +73,7 @@ const HybridSearchAnalytics: React.FC = () => {
 
   // Fetch analytics data
   const { data: analytics, isLoading, refetch } = useQuery({
-    queryKey: ['hybrid-search-analytics', dateRange],
+    queryKey: ['hybrid-search-analytics', dateRange, searchSource],
     queryFn: async () => {
       let query = supabase
         .from('hybrid_search_analytics')
@@ -72,6 +83,11 @@ const HybridSearchAnalytics: React.FC = () => {
       const dateFilter = getDateFilter();
       if (dateFilter) {
         query = query.gte('created_at', dateFilter);
+      }
+
+      // Filter by search source
+      if (searchSource !== 'all') {
+        query = query.eq('search_source', searchSource);
       }
       
       const { data, error } = await query.limit(1000);
@@ -108,6 +124,13 @@ const HybridSearchAnalytics: React.FC = () => {
       responseSources[source] = (responseSources[source] || 0) + 1;
     });
 
+    // Search source distribution (for pie chart)
+    const searchSources: Record<string, number> = {};
+    analytics.forEach(a => {
+      const source = a.search_source || 'chatbot';
+      searchSources[source] = (searchSources[source] || 0) + 1;
+    });
+
     // Daily trend
     const dailyData: Record<string, { queries: number; cacheHits: number; avgTime: number[] }> = {};
     analytics.forEach(a => {
@@ -139,36 +162,59 @@ const HybridSearchAnalytics: React.FC = () => {
       vertexSuccess,
       matchTypes: Object.entries(matchTypes).map(([name, value]) => ({ name, value })),
       responseSources: Object.entries(responseSources).map(([name, value]) => ({ name, value })),
+      searchSources: Object.entries(searchSources).map(([key, value]) => ({ 
+        name: SOURCE_LABELS[key] || key, 
+        value,
+        key 
+      })),
       dailyTrend
     };
   }, [analytics]);
 
   return (
     <div className="space-y-6">
-      {/* Date Range Selector */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={dateRange === '7d' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setDateRange('7d')}
-          >
-            Son 7 Gün
-          </Button>
-          <Button
-            variant={dateRange === '30d' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setDateRange('30d')}
-          >
-            Son 30 Gün
-          </Button>
-          <Button
-            variant={dateRange === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setDateRange('all')}
-          >
-            Tümü
-          </Button>
+      {/* Date Range and Source Selector */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={dateRange === '7d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateRange('7d')}
+            >
+              Son 7 Gün
+            </Button>
+            <Button
+              variant={dateRange === '30d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateRange('30d')}
+            >
+              Son 30 Gün
+            </Button>
+            <Button
+              variant={dateRange === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateRange('all')}
+            >
+              Tümü
+            </Button>
+          </div>
+          
+          <div className="h-6 w-px bg-border mx-2" />
+          
+          <Select value={searchSource} onValueChange={setSearchSource}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Kaynak seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Kaynaklar</SelectItem>
+              <SelectItem value="chatbot">Chatbot</SelectItem>
+              <SelectItem value="support_search">Destek Arama</SelectItem>
+              <SelectItem value="investment_search">Yatırım Fırsatları</SelectItem>
+              <SelectItem value="glossary_search">Yatırımcı Sözlüğü</SelectItem>
+              <SelectItem value="incentive_query">Teşvik Robotu</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <Button variant="ghost" size="sm" onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -397,6 +443,45 @@ const HybridSearchAnalytics: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Search Source Distribution - NEW */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Arama Kaynağı Dağılımı
+            </CardTitle>
+            <CardDescription>
+              Aramaların hangi sayfalardan yapıldığı
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[300px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={stats?.searchSources || []}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  >
+                    {stats?.searchSources.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Queries Table */}
@@ -422,6 +507,7 @@ const HybridSearchAnalytics: React.FC = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-2 text-sm font-medium">Sorgu</th>
+                    <th className="text-left p-2 text-sm font-medium">Sayfa</th>
                     <th className="text-left p-2 text-sm font-medium">Kaynak</th>
                     <th className="text-left p-2 text-sm font-medium">Süre</th>
                     <th className="text-left p-2 text-sm font-medium">Önbellek</th>
@@ -431,8 +517,13 @@ const HybridSearchAnalytics: React.FC = () => {
                 <tbody>
                   {analytics?.slice(0, 20).map((entry) => (
                     <tr key={entry.id} className="border-b hover:bg-muted/50">
-                      <td className="p-2 text-sm max-w-[300px] truncate">
+                      <td className="p-2 text-sm max-w-[250px] truncate">
                         {entry.query}
+                      </td>
+                      <td className="p-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {SOURCE_LABELS[entry.search_source || 'chatbot'] || entry.search_source}
+                        </Badge>
                       </td>
                       <td className="p-2">
                         <Badge variant="outline" className="text-xs">

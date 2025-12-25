@@ -7,6 +7,7 @@ import { SectorSearchData } from '@/types/database';
 import { IncentiveResult } from '@/types/incentive';
 import { useRealtimeCounters } from '@/hooks/useRealtimeCounters';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
 
 export interface UnifiedQueryData {
   selectedSector: SectorSearchData | null;
@@ -27,6 +28,7 @@ const UnifiedIncentiveQuery: React.FC = () => {
   const [isCalculating, setIsCalculating] = useState(false);
   const { incrementCounter } = useRealtimeCounters('search_clicks');
   const { trackSearch } = useActivityTracking();
+  const { trackSearch: trackSearchAnalytics } = useSearchAnalytics();
 
   const updateQueryData = (updates: Partial<UnifiedQueryData>) => {
     setQueryData(prev => ({ ...prev, ...updates }));
@@ -108,6 +110,20 @@ const UnifiedIncentiveQuery: React.FC = () => {
               {
                 moduleName: 'Sektör Bazlı Teşvik Sorgulama',
                 searchTerm: queryData.selectedSector?.sektor || '',
+              }
+            );
+            // Also track in hybrid_search_analytics
+            await trackSearchAnalytics(
+              `${queryData.selectedSector?.sektor || ''} - ${queryData.selectedProvince}`,
+              'incentive_query',
+              {
+                filters: {
+                  sector: queryData.selectedSector?.sektor,
+                  nace_code: queryData.selectedSector?.nace_kodu,
+                  province: queryData.selectedProvince,
+                  district: queryData.selectedDistrict,
+                  osb_status: queryData.osbStatus
+                }
               }
             );
           }}

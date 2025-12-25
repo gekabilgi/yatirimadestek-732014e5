@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SearchBar } from '@/components/SearchBar';
 import { SupportList } from '@/components/SupportList';
 import { SearchFilters, SupportProgram } from '@/types/support';
@@ -7,11 +7,14 @@ import { toast } from 'sonner';
 import MainNavbar from '@/components/MainNavbar';
 import StandardHero from '@/components/StandardHero';
 import { Target } from 'lucide-react';
+import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
 
 const SearchSupport = () => {
   const [programs, setPrograms] = useState<SupportProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<SearchFilters>({});
+  const { trackSearch } = useSearchAnalytics();
+  const searchStartTimeRef = useRef<number>(0);
 
   useEffect(() => {
     fetchPrograms();
@@ -41,8 +44,9 @@ const SearchSupport = () => {
     });
   };
 
-  const fetchPrograms = async (searchFilters?: SearchFilters) => {
+  const fetchPrograms = async (searchFilters?: SearchFilters, shouldTrack = false) => {
     setLoading(true);
+    searchStartTimeRef.current = performance.now();
     try {
       let query = supabase
         .from('support_programs')
@@ -117,6 +121,27 @@ const SearchSupport = () => {
       // Sort programs by open/closed status and then by updated date
       const sortedPrograms = sortPrograms(transformedPrograms);
       setPrograms(sortedPrograms);
+
+      // Track search analytics
+      if (shouldTrack && (searchFilters?.keyword || searchFilters?.institution || searchFilters?.tags?.length)) {
+        const endTime = performance.now();
+        const searchQuery = [
+          searchFilters?.keyword,
+          searchFilters?.institution,
+          searchFilters?.tags?.join(',')
+        ].filter(Boolean).join(' | ');
+        
+        await trackSearch(searchQuery, 'support_search', {
+          responseTimeMs: Math.round(endTime - searchStartTimeRef.current),
+          resultsCount: sortedPrograms.length,
+          filters: {
+            keyword: searchFilters?.keyword,
+            institution: searchFilters?.institution,
+            tags: searchFilters?.tags,
+            status: searchFilters?.status
+          }
+        });
+      }
     } catch (error) {
       console.error('Error fetching programs:', error);
       toast.error('Destek programları yüklenirken hata oluştu');
@@ -127,7 +152,7 @@ const SearchSupport = () => {
 
   const handleSearch = (searchFilters: SearchFilters) => {
     setFilters(searchFilters);
-    fetchPrograms(searchFilters);
+    fetchPrograms(searchFilters, true);
   };
 
   return (
