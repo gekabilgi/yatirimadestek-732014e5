@@ -42,6 +42,13 @@ export const useHybridSupportSearch = () => {
     
     try {
       // Call the hybrid search RPC
+      console.log('[HybridSearch] Calling RPC with filters:', {
+        keyword: filters.keyword || null,
+        institutionId: filters.institutionId || null,
+        tags: filters.tags,
+        status: filters.status
+      });
+      
       const { data: searchResults, error: searchError } = await supabase.rpc(
         'hybrid_search_support_programs',
         {
@@ -53,6 +60,12 @@ export const useHybridSupportSearch = () => {
           p_offset: 0
         }
       );
+
+      console.log('[HybridSearch] RPC response:', {
+        resultCount: searchResults?.length || 0,
+        error: searchError,
+        firstResult: searchResults?.[0]
+      });
 
       // Check if this is still the latest request
       if (currentRequestId !== requestIdRef.current) {
