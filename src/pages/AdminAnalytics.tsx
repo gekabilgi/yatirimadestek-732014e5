@@ -132,6 +132,38 @@ const AdminAnalytics = () => {
   const averagePayback = detailedFeasibilityStats?.length ? 
     detailedFeasibilityStats.reduce((sum, report) => sum + (report.geri_odeme_suresi || 0), 0) / detailedFeasibilityStats.filter(r => r.geri_odeme_suresi).length : 0;
 
+  // Format payback period: if value is in years (e.g., 5.6), display as "5 yıl 6 ay"
+  const formatPaybackPeriod = (years: number): string => {
+    if (!years || years === 0) return '-';
+    const wholeYears = Math.floor(years);
+    const months = Math.round((years - wholeYears) * 12);
+    
+    if (wholeYears === 0 && months > 0) {
+      return `${months} ay`;
+    } else if (months === 0) {
+      return `${wholeYears} yıl`;
+    } else {
+      return `${wholeYears} yıl ${months} ay`;
+    }
+  };
+
+  // Format large currency values for readability (e.g., 2.995.401.081 -> "~3 Milyar")
+  const formatLargeCurrency = (value: number): string => {
+    if (!value || value === 0) return '0 TL';
+    
+    if (value >= 1_000_000_000) {
+      const billions = value / 1_000_000_000;
+      return `~${billions.toFixed(1).replace('.', ',')} Milyar TL`;
+    } else if (value >= 1_000_000) {
+      const millions = value / 1_000_000;
+      return `~${millions.toFixed(1).replace('.', ',')} Milyon TL`;
+    } else if (value >= 1_000) {
+      const thousands = value / 1_000;
+      return `~${thousands.toFixed(0)} Bin TL`;
+    }
+    return `${value.toLocaleString('tr-TR')} TL`;
+  };
+
   // Sector breakdown - grouped into 5 main categories
   const mapToMainSector = (sector: string | null): string => {
     if (!sector) return 'Diğer';
@@ -520,7 +552,7 @@ const AdminAnalytics = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {totalInvestmentDetailed.toLocaleString('tr-TR')} TL
+                        {formatLargeCurrency(totalInvestmentDetailed)}
                       </div>
                       <p className="text-xs text-muted-foreground">Toplam sabit yatırım</p>
                     </CardContent>
@@ -543,7 +575,7 @@ const AdminAnalytics = () => {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{averagePayback.toFixed(1)} ay</div>
+                      <div className="text-2xl font-bold">{formatPaybackPeriod(averagePayback)}</div>
                       <p className="text-xs text-muted-foreground">Ortalama süre</p>
                     </CardContent>
                   </Card>

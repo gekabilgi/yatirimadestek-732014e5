@@ -248,6 +248,51 @@ async function generateEmbedding(text: string, model: string, dimensions: number
   }
 }
 
+// ============= SECTOR/TOPIC CHANGE DETECTION =============
+
+// Detect if user is asking about a new sector/NACE code (topic change)
+function detectNewSectorQuery(userMessage: string, existingQuery: any): boolean {
+  if (!existingQuery?.sector) return false; // No existing sector to compare
+  
+  const message = userMessage.toLowerCase();
+  
+  // NACE code pattern: XX.XX or XX.XX.XX
+  const nacePattern = /\b(\d{2}(?:\.\d{2}){1,2})\b/g;
+  const messageNaceCodes = [...message.matchAll(nacePattern)].map(m => m[1]);
+  
+  // If message contains a NACE code, check if it's different from existing
+  if (messageNaceCodes.length > 0) {
+    const existingNaceMatch = existingQuery.sector.match(nacePattern);
+    const existingNace = existingNaceMatch ? existingNaceMatch[0] : null;
+    
+    // If any NACE code in message is different from existing, it's a new topic
+    const hasNewNace = messageNaceCodes.some(code => code !== existingNace);
+    if (hasNewNace) {
+      console.log(`🔄 New NACE code detected: ${messageNaceCodes.join(', ')} (existing: ${existingNace})`);
+      return true;
+    }
+  }
+  
+  // Keywords indicating a new/different topic
+  const resetKeywords = [
+    /yeni (bir )?(sektör|yatırım|proje|konu)/i,
+    /farklı (bir )?(sektör|yatırım|konu)/i,
+    /başka (bir )?(sektör|konu|yatırım)/i,
+    /peki ya\b/i,
+    /şimdi de\b/i,
+    /bir de\b/i,
+    /bunun yerine\b/i,
+    /konuyu değiştir/i,
+  ];
+  
+  if (resetKeywords.some(pattern => pattern.test(userMessage))) {
+    console.log("🔄 Topic change keyword detected");
+    return true;
+  }
+  
+  return false;
+}
+
 // Support Programs Search Functions
 const normalizeSupportQuery = (input: string): string =>
   input
@@ -1625,55 +1670,100 @@ serve(async (req) => {
       }
 
       if (existingQuery) {
-        incentiveQuery = existingQuery;
-        console.log("✓ Found existing incentive query:", incentiveQuery);
-
-        const userContent = lastUserMessage.content;
-        let updated = false;
-
-        // Note: The slot filling logic below is sequential and prone to the "greedy" problem.
-        // It's left as is to match your original structure, but the prompt fixes
-        // and history cleanup should make the chatbot's *output* cleaner.
-        if (!incentiveQuery.sector) {
-          incentiveQuery.sector = userContent;
-          updated = true;
-        } else if (!incentiveQuery.province) {
-          const province = cleanProvince(userContent);
-          incentiveQuery.province = province;
-          updated = true;
-        } else if (!incentiveQuery.district) {
-          const district = cleanDistrict(userContent);
-          incentiveQuery.district = district;
-          updated = true;
-        } else if (!incentiveQuery.osb_status) {
-          const osbStatus = parseOsbStatus(userContent);
-          if (osbStatus) {
-            incentiveQuery.osb_status = osbStatus;
-            updated = true;
-          }
-        }
-
-        if (updated && incentiveQuery.id) {
-          const allFilled =
-            incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
-          const newStatus = allFilled ? "complete" : "collecting";
-
-          const { error: updateError } = await supabase
+        // ============= TOPIC CHANGE DETECTION =============
+        // Check if user is asking about a different sector/NACE code
+        const isNewTopic = detectNewSectorQuery(lastUserMessage.content, existingQuery);
+        
+        if (isNewTopic) {
+          console.log("🔄 Topic change detected! Resetting incentive_query for new sector...");
+          
+          // Delete the old query
+          const { error: deleteError } = await supabase
             .from("incentive_queries")
-            .update({
-              sector: incentiveQuery.sector,
-              province: incentiveQuery.province,
-              district: incentiveQuery.district,
-              osb_status: incentiveQuery.osb_status,
-              status: newStatus,
+            .delete()
+            .eq("id", existingQuery.id);
+          
+          if (deleteError) {
+            console.error("Error deleting old incentive_query:", deleteError);
+          }
+          
+          // Create a new query with the new sector
+          const { data: newQuery, error: insertError } = await supabase
+            .from("incentive_queries")
+            .insert({
+              session_id: sessionId,
+              status: "collecting",
+              sector: lastUserMessage.content, // New sector from user message
+              province: null,
+              district: null,
+              osb_status: null,
             })
-            .eq("id", incentiveQuery.id);
-
-          if (updateError) {
-            console.error("Error updating incentive_queries:", updateError);
+            .select()
+            .single();
+          
+          if (!insertError && newQuery) {
+            incentiveQuery = newQuery;
+            console.log("✓ Created new incentive query for topic change:", incentiveQuery);
           } else {
-            incentiveQuery.status = newStatus;
-            console.log("✓ Updated incentive query:", incentiveQuery);
+            console.error("Error creating new incentive query:", insertError);
+          }
+          
+          // Also filter conversation history to only include the last message
+          // This prevents the AI from referencing old sector context
+          messages = [lastUserMessage];
+          console.log("📝 Conversation history cleared for new topic");
+        } else {
+          // Continue with existing query (normal slot filling)
+          incentiveQuery = existingQuery;
+          console.log("✓ Found existing incentive query:", incentiveQuery);
+
+          const userContent = lastUserMessage.content;
+          let updated = false;
+
+          // Note: The slot filling logic below is sequential and prone to the "greedy" problem.
+          // It's left as is to match your original structure, but the prompt fixes
+          // and history cleanup should make the chatbot's *output* cleaner.
+          if (!incentiveQuery.sector) {
+            incentiveQuery.sector = userContent;
+            updated = true;
+          } else if (!incentiveQuery.province) {
+            const province = cleanProvince(userContent);
+            incentiveQuery.province = province;
+            updated = true;
+          } else if (!incentiveQuery.district) {
+            const district = cleanDistrict(userContent);
+            incentiveQuery.district = district;
+            updated = true;
+          } else if (!incentiveQuery.osb_status) {
+            const osbStatus = parseOsbStatus(userContent);
+            if (osbStatus) {
+              incentiveQuery.osb_status = osbStatus;
+              updated = true;
+            }
+          }
+
+          if (updated && incentiveQuery.id) {
+            const allFilled =
+              incentiveQuery.sector && incentiveQuery.province && incentiveQuery.district && incentiveQuery.osb_status;
+            const newStatus = allFilled ? "complete" : "collecting";
+
+            const { error: updateError } = await supabase
+              .from("incentive_queries")
+              .update({
+                sector: incentiveQuery.sector,
+                province: incentiveQuery.province,
+                district: incentiveQuery.district,
+                osb_status: incentiveQuery.osb_status,
+                status: newStatus,
+              })
+              .eq("id", incentiveQuery.id);
+
+            if (updateError) {
+              console.error("Error updating incentive_queries:", updateError);
+            } else {
+              incentiveQuery.status = newStatus;
+              console.log("✓ Updated incentive query:", incentiveQuery);
+            }
           }
         }
       } else {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { InvestmentOpportunityRow } from '@/components/InvestmentOpportunityRow'
 import { InvestmentOpportunityMobileCard } from '@/components/InvestmentOpportunityMobileCard';
 import { InvestmentSearchBar, InvestmentFilters } from '@/components/InvestmentSearchBar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
 
 interface FeasibilityReport {
   id: string;
@@ -48,6 +49,8 @@ const InvestmentOpportunities = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const isMobile = useIsMobile();
+  const { trackSearch } = useSearchAnalytics();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['feasibility-reports', page, filters],
@@ -150,6 +153,32 @@ const InvestmentOpportunities = () => {
     setAllReports([]);
     setExpandedCards(new Set());
     setHasMore(true);
+
+    // Debounced search analytics tracking
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    const hasActiveFilters = newFilters.keyword || newFilters.province || newFilters.sector || newFilters.scope || newFilters.investmentRange;
+    if (hasActiveFilters) {
+      debounceTimerRef.current = setTimeout(() => {
+        const searchQuery = [
+          newFilters.keyword,
+          newFilters.province,
+          newFilters.sector
+        ].filter(Boolean).join(' | ') || 'filter-only';
+        
+        trackSearch(searchQuery, 'investment_search', {
+          filters: {
+            keyword: newFilters.keyword,
+            province: newFilters.province,
+            sector: newFilters.sector,
+            scope: newFilters.scope,
+            investmentRange: newFilters.investmentRange
+          }
+        });
+      }, 1000);
+    }
   };
 
   if (error) {

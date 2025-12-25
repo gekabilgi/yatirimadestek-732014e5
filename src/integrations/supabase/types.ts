@@ -1033,6 +1033,7 @@ export type Database = {
           qv_search_time_ms: number | null
           response_length: number | null
           response_source: string | null
+          search_source: string | null
           session_id: string | null
           support_match_count: number | null
           support_search_time_ms: number | null
@@ -1057,6 +1058,7 @@ export type Database = {
           qv_search_time_ms?: number | null
           response_length?: number | null
           response_source?: string | null
+          search_source?: string | null
           session_id?: string | null
           support_match_count?: number | null
           support_search_time_ms?: number | null
@@ -1081,6 +1083,7 @@ export type Database = {
           qv_search_time_ms?: number | null
           response_length?: number | null
           response_source?: string | null
+          search_source?: string | null
           session_id?: string | null
           support_match_count?: number | null
           support_search_time_ms?: number | null
