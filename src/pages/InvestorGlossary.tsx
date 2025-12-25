@@ -1,16 +1,15 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
 import MainNavbar from '@/components/MainNavbar';
 import StandardHero from '@/components/StandardHero';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BookOpen } from 'lucide-react';
+import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
 
 interface GlossaryTerm {
   id: string;
@@ -25,6 +24,8 @@ const InvestorGlossary = () => {
   const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
   const isMobile = useIsMobile();
+  const { trackSearch } = useSearchAnalytics();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Turkish alphabet
   const turkishAlphabet = ['A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 'Ğ', 'H', 'I', 'İ', 'J', 'K', 'L', 'M', 'N', 'O', 'Ö', 'P', 'R', 'S', 'Ş', 'T', 'U', 'Ü', 'V', 'Y', 'Z'];
@@ -65,11 +66,24 @@ const InvestorGlossary = () => {
     setSearchQuery('');
   };
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
     setSelectedLetter('');
     setCurrentPage(1);
-  };
+
+    // Debounced search analytics tracking
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    if (value.length >= 3) {
+      debounceTimerRef.current = setTimeout(() => {
+        trackSearch(value, 'glossary_search', {
+          filters: { searchQuery: value }
+        });
+      }, 1000);
+    }
+  }, [trackSearch]);
 
   const toggleTermExpansion = (termId: string) => {
     const newExpanded = new Set(expandedTerms);
