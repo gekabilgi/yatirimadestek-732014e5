@@ -12,6 +12,7 @@ import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
 const SearchSupport = () => {
   const [programs, setPrograms] = useState<SupportProgram[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({});
   const { trackSearch } = useSearchAnalytics();
   const searchStartTimeRef = useRef<number>(0);
@@ -152,6 +153,7 @@ const SearchSupport = () => {
       toast.error('Destek programları yüklenirken hata oluştu');
     } finally {
       setLoading(false);
+      setInitialLoadComplete(true);
     }
   };
 
@@ -181,7 +183,7 @@ const SearchSupport = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <SupportList programs={programs} isLoading={loading} />
+        <SupportList programs={programs} isLoading={loading || !initialLoadComplete} />
       </div>
     </div>
   );
