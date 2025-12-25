@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SearchBar } from '@/components/SearchBar';
 import { SupportList } from '@/components/SupportList';
 import { SearchFilters } from '@/types/support';
@@ -7,9 +7,18 @@ import StandardHero from '@/components/StandardHero';
 import { Target } from 'lucide-react';
 import { useHybridSupportSearch } from '@/hooks/useHybridSupportSearch';
 
+// Build version for debugging deployments
+const BUILD_VERSION = '2025-12-25-v2-hybrid-search';
+
 const SearchSupport = () => {
   const { programs, loading, initialLoadComplete, search } = useHybridSupportSearch();
   const [filters, setFilters] = React.useState<SearchFilters>({});
+
+  // Log build version on mount for debugging
+  useEffect(() => {
+    console.log('[SearchSupport] Build version:', BUILD_VERSION);
+    console.log('[SearchSupport] Using hybrid search hook');
+  }, []);
 
   const handleSearch = (searchFilters: SearchFilters) => {
     setFilters(searchFilters);
