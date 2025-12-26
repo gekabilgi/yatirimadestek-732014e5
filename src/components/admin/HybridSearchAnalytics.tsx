@@ -150,7 +150,11 @@ const HybridSearchAnalytics: React.FC = () => {
     // Search source distribution (for pie chart)
     const searchSources: Record<string, number> = {};
     analytics.forEach(a => {
-      const source = a.search_source || 'chatbot';
+      // sector_search'i incentive_query ile birleştir (ikisi de Teşvik Robotu)
+      let source = a.search_source || 'chatbot';
+      if (source === 'sector_search') {
+        source = 'incentive_query';
+      }
       searchSources[source] = (searchSources[source] || 0) + 1;
     });
 
