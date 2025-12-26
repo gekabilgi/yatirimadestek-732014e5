@@ -14,7 +14,9 @@ import {
   Building,
   BarChart3,
   Book,
-  Home
+  Home,
+  Server,
+  Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RecentActivities } from './RecentActivities';
@@ -212,6 +214,55 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* System Info Card */}
+      <Card className="card-modern">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 bg-slate-100 rounded-lg">
+              <Server className="h-5 w-5 text-slate-600" />
+            </div>
+            Sistem Bilgisi
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-slate-500" />
+                <span className="text-xs font-medium text-slate-600">Build Tarihi</span>
+              </div>
+              <div className="text-sm font-bold text-slate-800 font-mono">{__BUILD_DATE__}</div>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="h-4 w-4 text-slate-500" />
+                <span className="text-xs font-medium text-slate-600">Build Saati</span>
+              </div>
+              <div className="text-sm font-bold text-slate-800 font-mono">{__BUILD_TIME__}</div>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Server className="h-4 w-4 text-slate-500" />
+                <span className="text-xs font-medium text-slate-600">Build ID</span>
+              </div>
+              <div className="text-sm font-bold text-slate-800 font-mono">{__BUILD_ID__}</div>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-xs font-medium text-green-600">Durum</span>
+              </div>
+              <div className="text-sm font-bold text-green-700">Aktif</div>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+            <p className="text-xs text-muted-foreground font-mono break-all">
+              Tam Timestamp: {__BUILD_TIMESTAMP__}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Chatbot Statistics */}
       <ChatbotStatisticsCard />
