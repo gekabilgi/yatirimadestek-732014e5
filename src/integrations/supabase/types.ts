@@ -2861,6 +2861,10 @@ export type Database = {
         Args: { session_id_param: string }
         Returns: boolean
       }
+      check_newsletter_rate_limit: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       check_submission_spam: {
         Args: {
           p_cooldown_minutes?: number
