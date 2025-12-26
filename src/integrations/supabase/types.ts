@@ -2890,7 +2890,6 @@ export type Database = {
           title: string
         }[]
       }
-      get_client_session_id: { Args: never; Returns: string }
       get_public_qna: {
         Args: { limit_count?: number }
         Returns: {
