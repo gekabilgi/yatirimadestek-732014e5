@@ -75,9 +75,14 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-primary-foreground/20">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-sm text-primary-foreground/60">
-              © {currentYear} yatirimadestek.gov.tr. Tüm hakları saklıdır.
-            </p>
+            <div className="flex flex-col items-center md:items-start gap-1">
+              <p className="text-sm text-primary-foreground/60">
+                © {currentYear} yatirimadestek.gov.tr. Tüm hakları saklıdır.
+              </p>
+              <p className="text-xs text-primary-foreground/40" title={__BUILD_TIMESTAMP__}>
+                Build: {__BUILD_DATE__} {__BUILD_TIME__}
+              </p>
+            </div>
             <div className="flex space-x-6">
               <Link
                 to="/gizlilik"
