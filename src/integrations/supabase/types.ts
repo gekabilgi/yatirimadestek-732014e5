@@ -2778,8 +2778,6 @@ export type Database = {
         Row: {
           answer: string | null
           answer_date: string | null
-          answer_status: string | null
-          answered: boolean | null
           category: string | null
           created_at: string | null
           id: string | null
@@ -2790,8 +2788,6 @@ export type Database = {
         Insert: {
           answer?: string | null
           answer_date?: string | null
-          answer_status?: string | null
-          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
@@ -2802,14 +2798,60 @@ export type Database = {
         Update: {
           answer?: string | null
           answer_date?: string | null
-          answer_status?: string | null
-          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
           province?: string | null
           question?: string | null
           question_number?: number | null
+        }
+        Relationships: []
+      }
+      vertex_configs_public: {
+        Row: {
+          config_key: string | null
+          created_at: string | null
+          id: number | null
+          max_output_tokens: number | null
+          model_name: string | null
+          rag_corpus: string | null
+          similarity_top_k: number | null
+          staging_bucket: string | null
+          system_instruction: string | null
+          temperature: number | null
+          top_p: number | null
+          updated_at: string | null
+          vector_distance_threshold: number | null
+        }
+        Insert: {
+          config_key?: string | null
+          created_at?: string | null
+          id?: number | null
+          max_output_tokens?: number | null
+          model_name?: string | null
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          staging_bucket?: string | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vector_distance_threshold?: number | null
+        }
+        Update: {
+          config_key?: string | null
+          created_at?: string | null
+          id?: number | null
+          max_output_tokens?: number | null
+          model_name?: string | null
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          staging_bucket?: string | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vector_distance_threshold?: number | null
         }
         Relationships: []
       }
@@ -3021,22 +3063,39 @@ export type Database = {
               updated_at: string
             }[]
           }
-      match_custom_rag_chunks: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          p_store_id: string
-          query_embedding: string
-        }
-        Returns: {
-          chunk_index: number
-          content: string
-          document_id: string
-          document_name: string
-          id: string
-          similarity: number
-        }[]
-      }
+      match_custom_rag_chunks:
+        | {
+            Args: {
+              match_count?: number
+              match_threshold?: number
+              p_store_id: string
+              query_embedding: string
+            }
+            Returns: {
+              chunk_index: number
+              content: string
+              document_id: string
+              document_name: string
+              id: string
+              similarity: number
+            }[]
+          }
+        | {
+            Args: {
+              match_count?: number
+              match_threshold?: number
+              p_store_id: string
+              query_embedding: string
+            }
+            Returns: {
+              chunk_index: number
+              content: string
+              document_id: string
+              document_name: string
+              id: string
+              similarity: number
+            }[]
+          }
       match_document_chunks: {
         Args: {
           match_count?: number
