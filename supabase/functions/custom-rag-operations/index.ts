@@ -60,7 +60,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
@@ -267,7 +267,7 @@ async function uploadDocument(supabase: any, params: any) {
       .from("custom_rag_documents")
       .update({
         status: "failed",
-        error_message: error.message,
+        error_message: error instanceof Error ? error.message : "Unknown error",
       })
       .eq("id", document.id);
 
@@ -354,7 +354,7 @@ async function generateEmbedding(
       },
     });
     
-    return result.embeddings[0].values;
+    return result.embeddings?.[0]?.values ?? [];
   } else {
     // OpenAI
     const response = await fetch("https://api.openai.com/v1/embeddings", {
