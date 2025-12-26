@@ -78,7 +78,7 @@ JSON array formatında dön: ["soru1", "soru2", ..., "soru12"]`;
       },
     });
 
-    let jsonText = response.text.trim();
+    let jsonText = (response.text ?? "").trim();
     console.log("Raw AI response:", jsonText);
 
     let questions: string[] = [];
@@ -147,7 +147,7 @@ JSON array formatında dön: ["soru1", "soru2", ..., "soru12"]`;
     console.error("Error generating example questions:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : "Unknown error",
         questions: []
       }),
       {
