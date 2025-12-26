@@ -59,6 +59,7 @@ const SOURCE_LABELS: Record<string, string> = {
   investment_search: 'Yatırım Fırsatları',
   glossary_search: 'Yatırımcı Sözlüğü',
   incentive_query: 'Teşvik Robotu',
+  sector_search: 'Teşvik Robotu', // Eski kayıtlar için geriye dönük uyumluluk
 };
 
 const HybridSearchAnalytics: React.FC = () => {
