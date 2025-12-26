@@ -134,7 +134,7 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
       );
       
       // Track to hybrid_search_analytics table
-      await trackSearch(rawInput, 'sector_search', {
+      await trackSearch(rawInput, 'incentive_query', {
         responseTimeMs: Math.round(endTime - startTime),
         resultsCount: data?.length || 0,
         filters: { searchType: isNaceSearchType ? 'nace_code' : 'sector_name' }
