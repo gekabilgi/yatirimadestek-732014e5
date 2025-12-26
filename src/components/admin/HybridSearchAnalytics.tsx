@@ -59,6 +59,7 @@ const SOURCE_LABELS: Record<string, string> = {
   investment_search: 'Yatırım Fırsatları',
   glossary_search: 'Yatırımcı Sözlüğü',
   incentive_query: 'Teşvik Robotu',
+  sector_search: 'Sektör Arama',
 };
 
 const HybridSearchAnalytics: React.FC = () => {
@@ -235,6 +236,7 @@ const HybridSearchAnalytics: React.FC = () => {
               <SelectItem value="investment_search">Yatırım Fırsatları</SelectItem>
               <SelectItem value="glossary_search">Yatırımcı Sözlüğü</SelectItem>
               <SelectItem value="incentive_query">Teşvik Robotu</SelectItem>
+              <SelectItem value="sector_search">Sektör Arama</SelectItem>
             </SelectContent>
           </Select>
         </div>
