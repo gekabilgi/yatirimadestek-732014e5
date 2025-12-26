@@ -6,7 +6,8 @@ export type SearchSource =
   | 'support_search' 
   | 'investment_search' 
   | 'glossary_search' 
-  | 'incentive_query';
+  | 'incentive_query'
+  | 'sector_search';
 
 interface SearchMetadata {
   responseTimeMs?: number;
