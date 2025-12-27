@@ -28,5 +28,33 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Core React
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            // UI components
+            'ui-vendor': [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+              '@radix-ui/react-tooltip',
+              '@radix-ui/react-popover',
+            ],
+            // Charts (lazy loaded)
+            'charts-vendor': ['recharts'],
+            // PDF generation (lazy loaded)
+            'pdf-vendor': ['@react-pdf/renderer', 'jspdf'],
+            // Data utilities
+            'data-vendor': ['xlsx', 'date-fns'],
+            // Supabase
+            'supabase-vendor': ['@supabase/supabase-js'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 500,
+    },
   };
 });
