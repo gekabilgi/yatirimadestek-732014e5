@@ -64,10 +64,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  // Generate or retrieve session ID for this browser tab
+  const getSessionId = () => {
+    let sessionId = sessionStorage.getItem('auth_session_id');
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      sessionStorage.setItem('auth_session_id', sessionId);
+    }
+    return sessionId;
+  };
+
+  // Record login event to user_sessions table
+  const recordLoginEvent = async (userId: string) => {
+    try {
+      const sessionId = getSessionId();
+      await supabase.from('user_sessions').insert({
+        user_id: userId,
+        session_id: sessionId,
+        activity_type: 'session_start',
+        page_path: window.location.pathname,
+        user_agent: navigator.userAgent,
+        ip_address: 'Unknown',
+      });
+      console.log('Login event recorded for user:', userId);
+    } catch (error) {
+      console.error('Failed to record login event:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -76,6 +104,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);
+          
+          // Record login event when user signs in
+          if (event === 'SIGNED_IN') {
+            setTimeout(() => {
+              recordLoginEvent(session.user.id);
+            }, 0);
+          }
         } else {
           setProfile(null);
         }
