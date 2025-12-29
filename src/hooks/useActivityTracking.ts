@@ -11,6 +11,16 @@ const generateSessionId = () => {
   return newId;
 };
 
+// Get current authenticated user ID
+const getCurrentUserId = async (): Promise<string | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
 // Cached location data to avoid repeated API calls
 let cachedLocation: { country: string; city: string; region: string; ip: string } | null = null;
 let locationPromise: Promise<typeof cachedLocation> | null = null;
@@ -109,15 +119,19 @@ export const useActivityTracking = () => {
       investmentTopic?: string;
     }
   ) => {
-    // Use requestIdleCallback for non-critical tracking
+  // Use requestIdleCallback for non-critical tracking
     const track = async () => {
       try {
-        const location = await getUserLocation();
+        const [location, userId] = await Promise.all([
+          getUserLocation(),
+          getCurrentUserId()
+        ]);
         
-        await supabase
+        await (supabase as any)
           .from('user_sessions')
           .insert({
             session_id: sessionId,
+            user_id: userId,
             ip_address: location?.ip || 'Unknown',
             location_country: location?.country || 'Turkey',
             location_city: location?.city || 'Unknown',

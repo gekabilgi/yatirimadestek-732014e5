@@ -2599,6 +2599,7 @@ export type Database = {
           session_id: string
           updated_at: string
           user_agent: string | null
+          user_id: string | null
         }
         Insert: {
           activity_data?: Json | null
@@ -2616,6 +2617,7 @@ export type Database = {
           session_id: string
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Update: {
           activity_data?: Json | null
@@ -2633,6 +2635,7 @@ export type Database = {
           session_id?: string
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

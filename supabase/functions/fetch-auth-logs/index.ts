@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
+      console.log('Unauthorized access attempt');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -43,11 +44,20 @@ Deno.serve(async (req) => {
 
     const { limit = 10 } = await req.json();
 
-    // Query user sessions for login history
-    const { data: sessions, error: sessionsError } = await supabaseClient
+    console.log(`Fetching login history for user: ${user.id}, limit: ${limit}`);
+
+    // Use service role client for querying user_sessions
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Query user sessions for login history - filter by user_id and session_start activity
+    const { data: sessions, error: sessionsError } = await serviceClient
       .from('user_sessions')
       .select('*')
-      .eq('session_id', user.id)
+      .eq('user_id', user.id)
+      .eq('activity_type', 'session_start')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -61,6 +71,8 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    console.log(`Found ${sessions?.length || 0} login sessions for user`);
 
     // Format login history from user sessions
     const loginHistory: LoginHistory[] = (sessions || []).map((session) => ({
