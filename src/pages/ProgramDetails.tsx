@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getFileIcon, getFileIconColor } from '@/utils/fileIcons';
 import MainNavbar from '@/components/MainNavbar';
+import { isProgramOpen } from '@/utils/dateUtils';
 
 const ProgramDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -62,12 +63,6 @@ const ProgramDetails = () => {
     return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
-  const isProgramOpen = () => {
-    if (!program?.application_deadline) return true;
-    const today = new Date();
-    const deadline = new Date(program.application_deadline);
-    return today <= deadline;
-  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -122,7 +117,7 @@ const ProgramDetails = () => {
     );
   }
 
-  const isOpen = isProgramOpen();
+  const isOpen = isProgramOpen(program?.application_deadline);
 
   return (
     <div className="min-h-screen bg-gray-50">
