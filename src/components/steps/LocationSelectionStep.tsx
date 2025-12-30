@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { ProvinceRegionMap } from '@/types/database';
+import { isEarthquakeAffectedDistrict, isCazibeMerkeziProvince } from '@/utils/regionUtils';
 
 interface LocationSelectionStepProps {
   selectedProvince: string;
@@ -285,6 +286,18 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
             {!altBolge && !isLoadingAltBolge && osbStatus && (
               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs sm:text-sm">
                 Alt bölge bulunamadı
+              </Badge>
+            )}
+            {/* Deprem Bölgesi İlçesi Badge */}
+            {selectedDistrict && isEarthquakeAffectedDistrict(selectedProvince, selectedDistrict) && (
+              <Badge className="bg-amber-500 text-white text-xs sm:text-sm">
+                🏗️ Deprem Bölgesi İlçesi
+              </Badge>
+            )}
+            {/* Cazibe Merkezi + OSB İçi Badge */}
+            {isCazibeMerkeziProvince(selectedProvince) && osbStatus === "İÇİ" && (
+              <Badge className="bg-emerald-500 text-white text-xs sm:text-sm">
+                🎯 Cazibe Merkezi - OSB İçi
               </Badge>
             )}
           </div>

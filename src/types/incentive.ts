@@ -32,6 +32,14 @@ export interface LocationData {
   sgk_destek_suresi: string;
 }
 
+export interface SpecialProgram {
+  isEligible: boolean;
+  programType: 'earthquake_zone' | 'cazibe_merkezleri' | null;
+  description?: string;
+  originalRegion?: number;
+  appliedRegion?: number;
+}
+
 export interface IncentiveResult {
   sector: {
     nace_code: string;
@@ -48,8 +56,10 @@ export interface IncentiveResult {
     district: string;
     osb_status: "İÇİ" | "DIŞI";
     region: number;
+    originalRegion?: number;
     subregion: string;
     sgk_duration: string;
+    specialProgram?: SpecialProgram;
   };
   supports: {
     vat_exemption: boolean;
