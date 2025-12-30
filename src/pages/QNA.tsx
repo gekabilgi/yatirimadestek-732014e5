@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MainNavbar from "@/components/MainNavbar";
 import StandardHero from "@/components/StandardHero";
-import QnaSection from "@/components/QnaSection";
 import AnsweredQuestionsSection from "@/components/AnsweredQuestionsSection";
 import SoruSorModal from "@/components/SoruSorModal";
 import { Button } from "@/components/ui/button";
@@ -78,22 +77,20 @@ const QNA = () => {
         }}
         compact
       >
-        {/* Stats Grid inside Hero */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
+        {/* Stats Grid - Compact */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mt-4">
           {statsData.map((stat) => {
             const IconComponent = stat.icon;
             return (
               <div 
                 key={stat.label} 
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 text-center border border-white/20"
+                className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 text-center border border-white/20"
               >
-                <div className="flex justify-center mb-2">
-                  <div className="rounded-lg bg-white/10 p-2">
-                    <IconComponent className="h-5 w-5 text-white" />
-                  </div>
+                <div className="flex items-center justify-center gap-2 sm:flex-col sm:gap-1">
+                  <IconComponent className="h-4 w-4 text-white/80 shrink-0" />
+                  <div className="text-lg sm:text-xl font-bold text-white">{stat.value}</div>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-white">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-white/70">{stat.label}</div>
+                <div className="text-xs text-white/70 hidden sm:block">{stat.label}</div>
               </div>
             );
           })}
@@ -101,9 +98,8 @@ const QNA = () => {
       </StandardHero>
       
       <div data-qna-section>
-        <QnaSection />
+        <AnsweredQuestionsSection />
       </div>
-      <AnsweredQuestionsSection />
       
       {/* Sticky Soru Sor Button */}
       {showStickyButton && (
