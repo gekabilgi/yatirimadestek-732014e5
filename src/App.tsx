@@ -62,6 +62,7 @@ import Legislation from "./pages/Legislation";
 import QNA from "./pages/QNA";
 import InvestorGlossary from "./pages/InvestorGlossary";
 import TermsOfUse from "./pages/TermsOfUse";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ApplicationProcess from "./pages/ApplicationProcess";
 import YdoSecureAccess from "./pages/YdoSecureAccess";
 import TZYOTGBasarili from "./pages/TZYOTGBasarili";
@@ -111,6 +112,7 @@ const App = () => {
                     <Route path="/program/:id" element={<ProgramDetails />} />
                     <Route path="/form/:slug" element={<PublicForm />} />
                     <Route path="/kullanim-kosullari" element={<TermsOfUse />} />
+                    <Route path="/gizlilik" element={<PrivacyPolicy />} />
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="*" element={<NotFound />} />
                     
