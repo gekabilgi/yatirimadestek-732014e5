@@ -87,8 +87,8 @@ const QNA = () => {
         <AnsweredQuestionsSection />
       </div>
       
-      {/* Sabit Soru Sor Butonu - Her zaman görünür */}
-      <div className="fixed right-8 top-32 z-50">
+      {/* Sabit Soru Sor Butonu - Her zaman görünür, içerikle hizalı */}
+      <div className="fixed top-32 z-50" style={{ right: 'max(2rem, calc((100vw - 80rem) / 2 + 1rem))' }}>
         <SoruSorModal 
           trigger={
             <Button 
