@@ -73,7 +73,9 @@ const StandardHero: React.FC<StandardHeroProps> = ({
 
           {/* Description */}
           {description && (
-            <p className="text-lg sm:text-xl leading-8 text-white/80 max-w-3xl mx-auto mb-8 animate-fade-in font-medium">
+            <p className={`text-lg sm:text-xl leading-8 text-white/80 max-w-3xl mx-auto animate-fade-in font-medium ${
+              children ? 'mb-4' : 'mb-8'
+            }`}>
               {description}
             </p>
           )}
