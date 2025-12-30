@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail } from "lucide-react";
 import Logo from "@/components/Logo";
 
 const Footer = () => {
@@ -60,14 +60,6 @@ const Footer = () => {
             <div className="flex items-start space-x-3 text-sm text-primary-foreground/80">
               <Mail className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <span>info@yatirimadestek.gov.tr</span>
-            </div>
-            <div className="flex items-start space-x-3 text-sm text-primary-foreground/80">
-              <Phone className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span>+90 (XXX) XXX XX XX</span>
-            </div>
-            <div className="flex items-start space-x-3 text-sm text-primary-foreground/80">
-              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span>Ankara, Türkiye</span>
             </div>
           </div>
         </div>
