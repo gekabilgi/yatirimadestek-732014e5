@@ -8,26 +8,12 @@ import { MessageSquare, Users, Clock, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const QNA = () => {
-  const [showStickyButton, setShowStickyButton] = useState(false);
   const [stats, setStats] = useState({
     totalQuestions: "0",
     activeExperts: "0",
     averageResponseTime: "Hesaplanıyor...",
     answeredRate: "%100"
   });
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const qnaSection = document.querySelector('[data-qna-section]');
-      if (qnaSection) {
-        const qnaSectionBottom = qnaSection.getBoundingClientRect().bottom;
-        setShowStickyButton(qnaSectionBottom < 0);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -101,33 +87,26 @@ const QNA = () => {
         <AnsweredQuestionsSection />
       </div>
       
-      {/* Sticky Soru Sor Button */}
-      {showStickyButton && (
-        <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-50">
-          <SoruSorModal 
-            trigger={
-              <Button 
-                size="lg"
-                className="relative rounded-full p-6 shadow-xl hover:shadow-2xl 
-                           transition-all duration-300 
-                           bg-gradient-to-r from-primary to-blue-600 
-                           hover:from-primary/90 hover:to-blue-500
-                           animate-chatbot-pulse
-                           group"
-              >
-                <MessageSquare className="h-10 w-10 group-hover:scale-110 transition-transform" />
-                {/* Notification badge */}
-                <span className="absolute -top-1 -right-1 flex h-7 w-7">
-                  <span className="animate-soft-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-7 w-7 bg-red-500 text-white text-sm items-center justify-center font-bold">
-                    ?
-                  </span>
-                </span>
-              </Button>
-            }
-          />
-        </div>
-      )}
+      {/* Sabit Soru Sor Butonu - Her zaman görünür */}
+      <div className="fixed right-8 top-32 z-50">
+        <SoruSorModal 
+          trigger={
+            <Button 
+              size="lg"
+              className="px-6 py-4 text-lg font-semibold
+                         shadow-xl hover:shadow-2xl 
+                         transition-all duration-300 
+                         bg-gradient-to-r from-primary to-blue-600 
+                         hover:from-primary/90 hover:to-blue-500
+                         animate-chatbot-pulse
+                         flex items-center gap-3"
+            >
+              <MessageSquare className="h-6 w-6" />
+              <span>Soru Sor</span>
+            </Button>
+          }
+        />
+      </div>
     </div>
   );
 };
