@@ -94,13 +94,18 @@ export default {
 				'0%': { boxShadow: '0 0 0 0 hsl(var(--primary) / 0.7)' },
 				'70%': { boxShadow: '0 0 0 16px hsl(var(--primary) / 0)' },
 				'100%': { boxShadow: '0 0 0 0 hsl(var(--primary) / 0)' }
+			},
+			'soft-ping': {
+				'0%, 100%': { transform: 'scale(1)', opacity: '0.75' },
+				'50%': { transform: 'scale(1.3)', opacity: '0' }
 			}
 		},
 		animation: {
 			'accordion-down': 'accordion-down 0.2s ease-out',
 			'accordion-up': 'accordion-up 0.2s ease-out',
 			'pulse-ring': 'pulse-ring 2s ease-out infinite',
-			'glow': 'glow 2s ease-out infinite'
+			'glow': 'glow 2s ease-out infinite',
+			'soft-ping': 'soft-ping 3s ease-in-out infinite'
 		}
 		}
 	},

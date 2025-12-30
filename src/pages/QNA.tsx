@@ -55,13 +55,13 @@ const QNA = () => {
                            transition-all duration-300 
                            bg-gradient-to-r from-primary to-blue-600 
                            hover:from-primary/90 hover:to-blue-500
-                           animate-glow
+                           animate-chatbot-pulse
                            group"
               >
                 <MessageSquare className="h-10 w-10 group-hover:scale-110 transition-transform" />
                 {/* Notification badge */}
                 <span className="absolute -top-1 -right-1 flex h-7 w-7">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="animate-soft-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-7 w-7 bg-red-500 text-white text-sm items-center justify-center font-bold">
                     ?
                   </span>
