@@ -152,7 +152,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
       className="px-10 py-5 text-xl bg-gradient-to-r from-primary to-blue-600 
                  hover:from-primary/90 hover:to-blue-500 
                  shadow-lg hover:shadow-xl 
-                 animate-pulse-ring
+                 animate-chatbot-pulse
                  transition-all duration-300
                  group"
     >
