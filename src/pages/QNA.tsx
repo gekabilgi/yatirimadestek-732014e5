@@ -87,25 +87,27 @@ const QNA = () => {
         <AnsweredQuestionsSection />
       </div>
       
-      {/* Sabit Soru Sor Butonu - Her zaman görünür, içerikle hizalı */}
-      <div className="fixed top-32 z-50" style={{ right: 'max(2rem, calc((100vw - 80rem) / 2 + 1rem))' }}>
-        <SoruSorModal 
-          trigger={
-            <Button 
-              size="lg"
-              className="px-6 py-4 text-lg font-semibold
-                         shadow-xl hover:shadow-2xl 
-                         transition-all duration-300 
-                         bg-gradient-to-r from-primary to-blue-600 
-                         hover:from-primary/90 hover:to-blue-500
-                         animate-chatbot-pulse
-                         flex items-center gap-3"
-            >
-              <MessageSquare className="h-6 w-6" />
-              <span>Soru Sor</span>
-            </Button>
-          }
-        />
+      {/* Sabit Soru Sor Butonu - Yanıtlanmış Sorular ile hizalı */}
+      <div className="fixed top-32 left-0 right-0 z-50 pointer-events-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
+          <SoruSorModal 
+            trigger={
+              <Button 
+                size="lg"
+                className="pointer-events-auto px-6 py-4 text-lg font-semibold
+                           shadow-xl hover:shadow-2xl 
+                           transition-all duration-300 
+                           bg-gradient-to-r from-primary to-blue-600 
+                           hover:from-primary/90 hover:to-blue-500
+                           animate-chatbot-pulse
+                           flex items-center gap-3"
+              >
+                <MessageSquare className="h-6 w-6" />
+                <span>Soru Sor</span>
+              </Button>
+            }
+          />
+        </div>
       </div>
     </div>
   );
