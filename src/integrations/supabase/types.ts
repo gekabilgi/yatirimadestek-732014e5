@@ -2911,6 +2911,15 @@ export type Database = {
         }[]
       }
       get_public_qna_count: { Args: never; Returns: number }
+      get_search_suggestions: {
+        Args: { query_text: string; suggestion_limit?: number }
+        Returns: {
+          category_name: string
+          suggestion_id: string
+          suggestion_text: string
+          suggestion_type: string
+        }[]
+      }
       get_user_roles: { Args: { p_user_id: string }; Returns: string[] }
       get_ydo_user_count: { Args: never; Returns: number }
       has_any_role: {
