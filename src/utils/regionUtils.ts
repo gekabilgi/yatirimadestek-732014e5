@@ -12,7 +12,7 @@ const REGION_6_PROVINCES = [
   "Bitlis",
   "Diyarbakır",
   "Gümüşhane",
-  "Hakkâri",
+  "Hakkari",
   "Iğdır",
   "Kars",
   "Mardin",
@@ -26,8 +26,8 @@ const REGION_6_PROVINCES = [
 // Cazibe Merkezleri İlleri (Ek-1) - 9903 sayılı Karar
 export const CAZIBE_MERKEZLERI_PROVINCES = [
   'Adıyaman', 'Ağrı', 'Ardahan', 'Batman', 'Bayburt', 'Bingöl', 
-  'Bitlis', 'Diyarbakır', 'Elâzığ', 'Erzincan', 'Erzurum', 
-  'Gümüşhane', 'Hakkâri', 'Iğdır', 'Kars', 'Malatya', 'Mardin', 
+  'Bitlis', 'Diyarbakır', 'Elazığ', 'Erzincan', 'Erzurum', 
+  'Gümüşhane', 'Hakkari', 'Iğdır', 'Kars', 'Malatya', 'Mardin',
   'Muş', 'Siirt', 'Şanlıurfa', 'Şırnak', 'Tunceli', 'Van'
 ];
 
@@ -59,7 +59,7 @@ export const EARTHQUAKE_AFFECTED_DISTRICTS: Record<string, string[]> = {
   'Şanlıurfa': ['Akçakale', 'Birecik', 'Bozova', 'Ceylanpınar', 
                 'Eyyübiye', 'Halfeti', 'Haliliye', 'Harran', 
                 'Hilvan', 'Karaköprü', 'Siverek', 'Suruç', 'Viranşehir'],
-  'Elâzığ': ['Ağın', 'Alacakaya', 'Arıcak', 'Baskil', 'Karakoçan', 
+  'Elazığ': ['Ağın', 'Alacakaya', 'Arıcak', 'Baskil', 'Karakoçan', 
              'Keban', 'Kovancılar', 'Maden', 'Merkez', 'Palu', 
              'Sivrice']
 };
