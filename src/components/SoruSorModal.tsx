@@ -148,12 +148,20 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
 
   const defaultTrigger = (
     <Button 
-      variant="outline" 
       size="lg"
-      className="px-8 py-3 text-lg"
+      className="px-8 py-4 text-lg bg-gradient-to-r from-primary to-blue-600 
+                 hover:from-primary/90 hover:to-blue-500 
+                 shadow-lg hover:shadow-xl 
+                 animate-pulse-ring
+                 transition-all duration-300
+                 group"
     >
-      <MessageSquare className="mr-2 h-5 w-5" />
+      <MessageSquare className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
       Soru Sor
+      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 
+                       text-xs font-semibold bg-white/20 rounded-full">
+        Uzman
+      </span>
     </Button>
   );
 
