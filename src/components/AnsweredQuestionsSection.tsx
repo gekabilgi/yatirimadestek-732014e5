@@ -9,11 +9,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/types/qna';
 import { toast } from '@/hooks/use-toast';
+import SoruSorModal from '@/components/SoruSorModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -158,6 +159,28 @@ const AnsweredQuestionsSection = () => {
   return (
     <section className="py-16 bg-gray-50" data-answered-section>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Sticky Soru Sor Butonu - Başlıkla aynı hizada başlar */}
+        <div className="sticky top-4 z-50 flex justify-end mb-4 pointer-events-none">
+          <SoruSorModal
+            trigger={
+              <Button
+                size="lg"
+                className="px-5 py-3 text-base font-semibold
+                           shadow-xl hover:shadow-2xl
+                           transition-all duration-300
+                           bg-gradient-to-r from-primary to-blue-600
+                           hover:from-primary/90 hover:to-blue-500
+                           animate-chatbot-pulse
+                           flex items-center gap-2
+                           pointer-events-auto"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span>Soru Sor</span>
+              </Button>
+            }
+          />
+        </div>
+
         <div className="mb-12 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-4">
             Yanıtlanmış
