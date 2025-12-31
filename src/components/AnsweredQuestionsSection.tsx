@@ -159,31 +159,27 @@ const AnsweredQuestionsSection = () => {
   return (
     <section className="py-16 bg-gray-50" data-answered-section>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Başlık container - relative yaparak buton pozisyonlaması için */}
-        <div className="mb-12 text-center relative">
-          {/* Sticky Soru Sor Butonu - Başlık satırında, sağda */}
-          <div className="absolute right-0 top-0 z-50">
-            <div className="sticky top-20 pointer-events-none">
-              <SoruSorModal
-                trigger={
-                  <Button
-                    size="lg"
-                    className="px-5 py-3 text-base font-semibold
-                               shadow-xl hover:shadow-2xl
-                               transition-all duration-300
-                               bg-gradient-to-r from-primary to-blue-600
-                               hover:from-primary/90 hover:to-blue-500
-                               animate-chatbot-pulse
-                               flex items-center gap-2
-                               pointer-events-auto"
-                  >
-                    <MessageSquare className="h-5 w-5" />
-                    <span>Soru Sor</span>
-                  </Button>
-                }
-              />
-            </div>
-          </div>
+        {/* Desktop/Tablet: Sticky overlay - h-0 ile başlığı itmez */}
+        <div className="sticky top-24 z-50 h-0 pointer-events-none hidden sm:flex justify-end">
+          <SoruSorModal
+            trigger={
+              <Button
+                size="lg"
+                className="pointer-events-auto px-5 py-3 text-base font-semibold
+                           shadow-xl hover:shadow-2xl transition-all duration-300
+                           bg-gradient-to-r from-primary to-blue-600
+                           hover:from-primary/90 hover:to-blue-500
+                           animate-chatbot-pulse flex items-center gap-2"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span>Soru Sor</span>
+              </Button>
+            }
+          />
+        </div>
+
+        {/* Başlık */}
+        <div className="mb-12 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-4">
             Yanıtlanmış
             <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
@@ -399,10 +395,30 @@ const AnsweredQuestionsSection = () => {
 
         {/* Page info */}
         {totalPages > 1 && (
-          <div className="text-center mt-4 text-sm text-gray-500">
+          <div className="text-center mt-4 text-sm text-gray-500 pb-20 sm:pb-0">
             Sayfa {currentPage} / {totalPages} ({filteredQuestions.length} soru)
           </div>
         )}
+      </div>
+
+      {/* Mobile: Bottom fixed CTA */}
+      <div className="fixed inset-x-0 bottom-4 z-50 px-4 sm:hidden pointer-events-none">
+        <div className="max-w-sm mx-auto">
+          <SoruSorModal
+            trigger={
+              <Button
+                size="lg"
+                className="pointer-events-auto w-full px-5 py-3 text-base font-semibold
+                           shadow-xl transition-all duration-300
+                           bg-gradient-to-r from-primary to-blue-600
+                           animate-chatbot-pulse flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span>Soru Sor</span>
+              </Button>
+            }
+          />
+        </div>
       </div>
     </section>
   );
