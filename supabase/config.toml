@@ -79,3 +79,6 @@ verify_jwt = true
 
 [functions.tcmb-exchange]
 verify_jwt = false
+
+[functions.verify-recaptcha]
+verify_jwt = false
