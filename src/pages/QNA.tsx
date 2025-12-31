@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import StandardHero from "@/components/StandardHero";
 import AnsweredQuestionsSection from "@/components/AnsweredQuestionsSection";
-import SoruSorModal from "@/components/SoruSorModal";
-import { Button } from "@/components/ui/button";
 import { MessageSquare, Users, Clock, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -83,30 +81,6 @@ const QNA = () => {
           })}
         </div>
       </StandardHero>
-
-      {/* Sticky Soru Sor Butonu */}
-      <div className="fixed top-150 left-0 right-0 z-150 pointer-events-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
-          <SoruSorModal
-            trigger={
-              <Button
-                size="lg"
-                className="px-5 py-3 text-base font-semibold
-                           shadow-xl hover:shadow-2xl
-                           transition-all duration-300
-                           bg-gradient-to-r from-primary to-blue-600
-                           hover:from-primary/90 hover:to-blue-500
-                           animate-chatbot-pulse
-                           flex items-center gap-2
-                           pointer-events-auto"
-              >
-                <MessageSquare className="h-5 w-5" />
-                <span>Soru Sor</span>
-              </Button>
-            }
-          />
-        </div>
-      </div>
 
       <div data-qna-section>
         <AnsweredQuestionsSection />
