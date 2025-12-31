@@ -238,7 +238,7 @@ export const NewsletterSubscribeForm = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 success-foreground/10 hover:bg-primary/20 border-primary/30">
+        <Button variant="outline" className="gap-2 success/10 hover:bg-primary/20 border-primary/30">
           <Bell className="w-4 h-4" />
           Desteklerden Haberdar Ol
         </Button>
