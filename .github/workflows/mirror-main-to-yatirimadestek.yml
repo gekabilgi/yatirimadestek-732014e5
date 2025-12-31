@@ -3,7 +3,7 @@ name: Mirror source main -> destination yatirimadestek
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/3 * * * *"  # every 3 minutes
+    - cron: "*/3 * * * *"
 
 jobs:
   mirror:
@@ -15,25 +15,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure git identity
-        run: |
-          git config user.name "mirror-bot"
-          git config user.email "mirror-bot@users.noreply.github.com"
-
       - name: Add source remote & fetch
         run: |
           git remote add source https://github.com/gekabilgi/yatirimadestek-732014e5.git
           git fetch source --prune
 
-      # SAFE mode: only fast-forward (won't overwrite destination if diverged)
-      - name: Update destination branch (fast-forward only)
-        run: |
-          git checkout yatirimadestek || git checkout -b yatirimadestek
-          git merge --ff-only source/main
-
-      - name: Push to destination branch yatirimadestek
+      - name: Force mirror source/main -> destination/yatirimadestek
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
           git remote set-url origin https://x-access-token:${MIRROR_TOKEN}@github.com/ktlesr/m-rehberi-tr.git
-          git push origin yatirimadestek
+          git push origin refs/remotes/source/main:refs/heads/yatirimadestek --force
