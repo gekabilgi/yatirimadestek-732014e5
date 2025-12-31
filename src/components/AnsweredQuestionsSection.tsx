@@ -17,11 +17,7 @@ import { toast } from '@/hooks/use-toast';
 
 const ITEMS_PER_PAGE = 10;
 
-type AnsweredQuestionsSectionProps = {
-  headerAction?: React.ReactNode;
-};
-
-const AnsweredQuestionsSection = ({ headerAction }: AnsweredQuestionsSectionProps) => {
+const AnsweredQuestionsSection = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -162,27 +158,17 @@ const AnsweredQuestionsSection = ({ headerAction }: AnsweredQuestionsSectionProp
   return (
     <section className="py-16 bg-gray-50" data-answered-section>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
-            <div className="text-center sm:text-left flex-1">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-4">
-                Yanıtlanmış
-                <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-                  {" "}Sorular
-                </span>
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl sm:max-w-none mx-auto sm:mx-0 mb-0">
-                Daha önce uzmanlarımız tarafından yanıtlanmış soruları inceleyin.
-                Aradığınız bilgiyi burada bulabilirsiniz.
-              </p>
-            </div>
-
-            {headerAction ? (
-              <div className="shrink-0 flex justify-center sm:justify-end pt-1">
-                {headerAction}
-              </div>
-            ) : null}
-          </div>
+        <div className="mb-12 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-4">
+            Yanıtlanmış
+            <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
+              {" "}Sorular
+            </span>
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-0">
+            Daha önce uzmanlarımız tarafından yanıtlanmış soruları inceleyin.
+            Aradığınız bilgiyi burada bulabilirsiniz.
+          </p>
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-8 mt-8">
