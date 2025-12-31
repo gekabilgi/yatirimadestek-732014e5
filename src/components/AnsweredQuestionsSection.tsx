@@ -40,7 +40,8 @@ const AnsweredQuestionsSection = () => {
   const fetchAnsweredQuestions = async () => {
     try {
       console.log('🔍 Starting to fetch answered questions...');
-      const { data, error } = await supabase.rpc('get_public_qna', { limit_count: 100 });
+      // Load all questions without limit
+      const { data, error } = await supabase.rpc('get_public_qna', { limit_count: 10000 });
 
       if (error) {
         console.error('Error fetching answered questions:', error);
