@@ -1,42 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import StandardHero from "@/components/StandardHero";
 import AnsweredQuestionsSection from "@/components/AnsweredQuestionsSection";
 import SoruSorModal from "@/components/SoruSorModal";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Users, Clock, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { MessageSquare, Users, Clock, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const QNA = () => {
   const [stats, setStats] = useState({
     totalQuestions: "0",
     activeExperts: "0",
     averageResponseTime: "Hesaplanıyor...",
-    answeredRate: "%100"
+    answeredRate: "%100",
   });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         // Fetch average response time
-        const { data: avgTimeData, error: avgTimeError } = await supabase.functions.invoke('calculate-avg-response-time');
+        const { data: avgTimeData, error: avgTimeError } =
+          await supabase.functions.invoke("calculate-avg-response-time");
         if (!avgTimeError && avgTimeData) {
-          setStats(prev => ({ ...prev, averageResponseTime: avgTimeData.averageResponseTime || "24 saat" }));
+          setStats((prev) => ({ ...prev, averageResponseTime: avgTimeData.averageResponseTime || "24 saat" }));
         }
 
         // Fetch total public Q&A count via secure RPC
-        const { data: totalCountData, error: totalError } = await supabase.rpc('get_public_qna_count');
+        const { data: totalCountData, error: totalError } = await supabase.rpc("get_public_qna_count");
         if (!totalError && totalCountData !== null) {
-          setStats(prev => ({ ...prev, totalQuestions: totalCountData.toLocaleString() }));
+          setStats((prev) => ({ ...prev, totalQuestions: totalCountData.toLocaleString() }));
         }
 
         // Fetch active experts (YDO users) via secure RPC
-        const { data: expertsCountData, error: expertsError } = await supabase.rpc('get_ydo_user_count');
+        const { data: expertsCountData, error: expertsError } = await supabase.rpc("get_ydo_user_count");
         if (!expertsError && expertsCountData !== null) {
-          setStats(prev => ({ ...prev, activeExperts: expertsCountData.toString() }));
+          setStats((prev) => ({ ...prev, activeExperts: expertsCountData.toString() }));
         }
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        console.error("Error fetching stats:", error);
       }
     };
 
@@ -53,13 +54,13 @@ const QNA = () => {
   return (
     <div className="min-h-screen bg-background">
       <MainNavbar />
-      
+
       <StandardHero
         title="Uzmanlarımıza Soru Sorun"
         description="Yatırım destekleri, teşvik sistemleri ve başvuru süreçleri hakkında merak ettiklerinizi alanında uzman ekibimize sorabilirsiniz."
         badge={{
           text: "Uzman Destek Sistemi",
-          icon: Users
+          icon: Users,
         }}
         compact
       >
@@ -68,8 +69,8 @@ const QNA = () => {
           {statsData.map((stat) => {
             const IconComponent = stat.icon;
             return (
-              <div 
-                key={stat.label} 
+              <div
+                key={stat.label}
                 className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 text-center border border-white/20"
               >
                 <div className="flex items-center justify-center gap-2 sm:flex-col sm:gap-1">
@@ -82,9 +83,9 @@ const QNA = () => {
           })}
         </div>
       </StandardHero>
-      
+
       {/* Sticky Soru Sor Butonu */}
-      <div className="fixed top-32 left-0 right-0 z-50 pointer-events-none">
+      <div className="fixed top-132 left-0 right-0 z-50 pointer-events-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
           <SoruSorModal
             trigger={
