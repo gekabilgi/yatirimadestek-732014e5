@@ -8,6 +8,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { Bell, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 const PROVINCES = [
   "Adana",
@@ -98,6 +99,7 @@ export const NewsletterSubscribeForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [institutions, setInstitutions] = useState<{ value: string; label: string; description?: string }[]>([]);
   const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
+  const { verifyRecaptcha, isReady: recaptchaReady } = useRecaptcha();
   const [formData, setFormData] = useState({
     adSoyad: "",
     telefon: "",
@@ -177,6 +179,16 @@ export const NewsletterSubscribeForm = () => {
 
     setIsLoading(true);
     try {
+      // Verify reCAPTCHA first
+      if (recaptchaReady) {
+        const recaptchaResult = await verifyRecaptcha('newsletter_subscribe');
+        if (!recaptchaResult.success) {
+          toast.error('Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Check if email already exists
       const { data: existingSubscriber } = await supabase
         .from("bulten_uyeler")
@@ -326,7 +338,7 @@ export const NewsletterSubscribeForm = () => {
           </Button>
 
           <p className="text-xs text-muted-foreground text-center">
-            Destek programları ve duyurular hakkında bilgilendirileceksiniz.
+            Bu form reCAPTCHA ile korunmaktadır.
           </p>
         </form>
       </DialogContent>
