@@ -20,31 +20,55 @@ const ITEMS_PER_PAGE = 10;
 
 const AnsweredQuestionsSection = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [allQuestionsForSearch, setAllQuestionsForSearch] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [totalAnsweredCount, setTotalAnsweredCount] = useState(0);
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
+  // Fetch total count on mount
   useEffect(() => {
-    fetchAnsweredQuestions();
     fetchTotalAnsweredCount();
   }, []);
 
-  // Reset page when search term changes
+  // Fetch questions for current page (lazy loading)
   useEffect(() => {
-    setCurrentPage(1);
+    if (!isSearchMode) {
+      fetchPageQuestions(currentPage);
+    }
+  }, [currentPage, isSearchMode]);
+
+  // Handle search mode
+  useEffect(() => {
+    if (searchTerm.length >= 2) {
+      setIsSearchMode(true);
+      setCurrentPage(1);
+      // Load all questions for search if not already loaded
+      if (allQuestionsForSearch.length === 0) {
+        fetchAllQuestionsForSearch();
+      }
+    } else if (searchTerm.length === 0) {
+      setIsSearchMode(false);
+      setCurrentPage(1);
+    }
   }, [searchTerm]);
 
-  const fetchAnsweredQuestions = async () => {
+  const fetchPageQuestions = async (page: number) => {
     try {
-      console.log('🔍 Starting to fetch answered questions...');
-      // Load all questions without limit
-      const { data, error } = await supabase.rpc('get_public_qna', { limit_count: 10000 });
+      setPageLoading(true);
+      const offset = (page - 1) * ITEMS_PER_PAGE;
+      
+      const { data, error } = await supabase.rpc('get_public_qna', { 
+        limit_count: ITEMS_PER_PAGE,
+        offset_count: offset 
+      });
 
       if (error) {
-        console.error('Error fetching answered questions:', error);
+        console.error('Error fetching questions:', error);
         toast({
           title: "Hata",
           description: `Sorular yüklenirken hata oluştu: ${error.message}`,
@@ -53,27 +77,7 @@ const AnsweredQuestionsSection = () => {
         return;
       }
 
-      console.log('✅ Raw data from get_public_qna:', data);
-
-      const transformedData = data?.map(item => ({
-        ...item,
-        full_name: 'Anonim Kullanıcı',
-        email: 'Gizli',
-        phone: null,
-        answered: true,
-        sent_to_user: true,
-        sent_to_ydo: true,
-        answer_status: 'approved' as const,
-        return_status: null,
-        admin_notes: null,
-        answered_by_user_id: null,
-        approved_by_admin_id: null,
-        return_reason: null,
-        admin_sent: null,
-        return_date: null,
-        answered_by_full_name: null
-      })) || [];
-
+      const transformedData = transformQnaData(data);
       setQuestions(transformedData);
     } catch (error: any) {
       console.error('Error:', error);
@@ -84,7 +88,51 @@ const AnsweredQuestionsSection = () => {
       });
     } finally {
       setLoading(false);
+      setPageLoading(false);
     }
+  };
+
+  const fetchAllQuestionsForSearch = async () => {
+    try {
+      setPageLoading(true);
+      const { data, error } = await supabase.rpc('get_public_qna', { 
+        limit_count: 10000,
+        offset_count: 0 
+      });
+
+      if (error) {
+        console.error('Error fetching all questions for search:', error);
+        return;
+      }
+
+      const transformedData = transformQnaData(data);
+      setAllQuestionsForSearch(transformedData);
+    } catch (error: any) {
+      console.error('Error:', error);
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const transformQnaData = (data: any[]): Question[] => {
+    return data?.map(item => ({
+      ...item,
+      full_name: 'Anonim Kullanıcı',
+      email: 'Gizli',
+      phone: null,
+      answered: true,
+      sent_to_user: true,
+      sent_to_ydo: true,
+      answer_status: 'approved' as const,
+      return_status: null,
+      admin_notes: null,
+      answered_by_user_id: null,
+      approved_by_admin_id: null,
+      return_reason: null,
+      admin_sent: null,
+      return_date: null,
+      answered_by_full_name: null
+    })) || [];
   };
 
   const fetchTotalAnsweredCount = async () => {
@@ -100,16 +148,24 @@ const AnsweredQuestionsSection = () => {
     }
   };
 
-  const filteredQuestions = questions.filter(question =>
-    question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.answer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.province.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter questions in search mode
+  const filteredQuestions = isSearchMode 
+    ? allQuestionsForSearch.filter(question =>
+        question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        question.answer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        question.province.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : questions;
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
+  const totalPages = isSearchMode 
+    ? Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE)
+    : Math.ceil(totalAnsweredCount / ITEMS_PER_PAGE);
+  
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedQuestions = filteredQuestions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedQuestions = isSearchMode 
+    ? filteredQuestions.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+    : questions; // In lazy mode, questions already contains the current page
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('tr-TR', {
@@ -216,7 +272,11 @@ const AnsweredQuestionsSection = () => {
 
         {/* Questions List */}
         <div className="max-w-4xl mx-auto space-y-6">
-          {paginatedQuestions.length === 0 ? (
+          {pageLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            </div>
+          ) : paginatedQuestions.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <MessageCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -397,7 +457,7 @@ const AnsweredQuestionsSection = () => {
         {/* Page info */}
         {totalPages > 1 && (
           <div className="text-center mt-4 text-sm text-gray-500 pb-20 sm:pb-0">
-            Sayfa {currentPage} / {totalPages} ({filteredQuestions.length} soru)
+            Sayfa {currentPage} / {totalPages} ({isSearchMode ? filteredQuestions.length : totalAnsweredCount} soru)
           </div>
         )}
       </div>
