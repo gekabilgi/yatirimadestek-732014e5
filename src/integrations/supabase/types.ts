@@ -2897,19 +2897,33 @@ export type Database = {
           title: string
         }[]
       }
-      get_public_qna: {
-        Args: { limit_count?: number }
-        Returns: {
-          answer: string
-          answer_date: string
-          category: string
-          created_at: string
-          id: string
-          province: string
-          question: string
-          question_number: number
-        }[]
-      }
+      get_public_qna:
+        | {
+            Args: { limit_count?: number; offset_count?: number }
+            Returns: {
+              answer: string
+              answer_date: string
+              category: string
+              created_at: string
+              id: string
+              province: string
+              question: string
+              question_number: number
+            }[]
+          }
+        | {
+            Args: { limit_count?: number }
+            Returns: {
+              answer: string
+              answer_date: string
+              category: string
+              created_at: string
+              id: string
+              province: string
+              question: string
+              question_number: number
+            }[]
+          }
       get_public_qna_count: { Args: never; Returns: number }
       get_search_suggestions: {
         Args: { query_text: string; suggestion_limit?: number }
