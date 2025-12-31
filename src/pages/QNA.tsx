@@ -85,7 +85,7 @@ const QNA = () => {
       </StandardHero>
 
       {/* Sticky Soru Sor Butonu */}
-      <div className="fixed top-132 left-0 right-0 z-50 pointer-events-none">
+      <div className="fixed top-145 left-0 right-0 z-50 pointer-events-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
           <SoruSorModal
             trigger={
