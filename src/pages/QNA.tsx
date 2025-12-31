@@ -54,7 +54,7 @@ const QNA = () => {
             trigger={
               <Button
                 size="lg"
-                className="sticky rounded-full p-4 shadow-lg hover:shadow-2xl 
+                className="relative rounded-full p-4 shadow-lg hover:shadow-2xl 
                            transition-all duration-300 
                            bg-gradient-to-r from-primary to-blue-600 
                            hover:from-primary/90 hover:to-blue-500
