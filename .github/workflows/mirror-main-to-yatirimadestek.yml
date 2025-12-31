@@ -1,16 +1,16 @@
-name: Force mirror source/main -> destination/yatirimadestek
+name: Mirror source main -> destination yatirimadestek
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/3 * * * *" # every 15 minutes
+    - cron: "*/3 * * * *"  # every 3 minutes
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout destination repo (Account B)
+      - name: Checkout destination repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -25,16 +25,15 @@ jobs:
           git remote add source https://github.com/gekabilgi/yatirimadestek-732014e5.git
           git fetch source --prune
 
-      # OPTION 1 (SAFE): Fast-forward only
-      # Requires destination branch to be an ancestor of source/main (or identical history).
+      # SAFE mode: only fast-forward (won't overwrite destination if diverged)
       - name: Update destination branch (fast-forward only)
         run: |
           git checkout yatirimadestek || git checkout -b yatirimadestek
           git merge --ff-only source/main
 
-      - name: Push to Account B branch yatirimadestek
+      - name: Push to destination branch yatirimadestek
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          git remote set-url origin https://x-access-token:${MIRROR_TOKEN}@github.com/ktlesr/m-rehberitr.git
+          git remote set-url origin https://x-access-token:${MIRROR_TOKEN}@github.com/ktlesr/m-rehberi-tr.git
           git push origin yatirimadestek
