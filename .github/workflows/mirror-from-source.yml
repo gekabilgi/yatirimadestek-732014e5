@@ -8,16 +8,17 @@ on:
 jobs:
   mirror:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout destination repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Add source remote & fetch
+      - name: Add source remote & fetch (with auth)
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          git remote add source https://github.com/ktlesr/m-rehberi-tr.git
+          git remote add source https://x-access-token:${MIRROR_TOKEN}@github.com/ktlesr/m-rehberi-tr.git
           git fetch source --prune
 
       - name: Force mirror source/main -> destination/main
