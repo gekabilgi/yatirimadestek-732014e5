@@ -462,12 +462,12 @@ const AnsweredQuestionsSection = () => {
             </div>
           </div>
 
-          {/* Results Count */}
+          {/* Results Count 
           <div className="text-center mb-6">
             <Badge variant="outline" className="text-lg px-4 py-2">
               {searchTerm ? `${filteredQuestions.length} sonuç bulundu` : `${totalAnsweredCount} yanıtlanmış soru bulundu`}
             </Badge>
-          </div>
+          </div>*/}
         </div>
 
         {/* Questions List */}
