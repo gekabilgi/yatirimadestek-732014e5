@@ -1,9 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { create, verify, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const brevoApiKey = Deno.env.get("BREVO_API_KEY")!;
+const ydoTokenSecret = Deno.env.get("YDO_TOKEN_SECRET")!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -28,7 +30,7 @@ const getBaseUrl = (): string => {
   return "https://efd7e70c-3a69-4fb9-a26d-55aefb24b4b1.lovable.app";
 };
 
-// Enhanced mobile-compatible token generation and verification
+// YDO Token payload interface
 export interface YdoTokenPayload {
   email: string;
   province: string;
@@ -36,61 +38,63 @@ export interface YdoTokenPayload {
   iat: number;
 }
 
-// Simple token generation for YDO access - Fixed to handle UTF-8 characters
-const generateYdoToken = (email: string, province: string): string => {
+// Create HMAC key from secret for JWT signing
+const getSecretKey = async (): Promise<CryptoKey> => {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(ydoTokenSecret);
+  return await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+};
+
+// Secure JWT token generation with HMAC-SHA256 signature
+const generateYdoToken = async (email: string, province: string): Promise<string> => {
+  const key = await getSecretKey();
+  
   const payload = {
     email,
     province,
-    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24 hours
-    iat: Math.floor(Date.now() / 1000),
+    iat: getNumericDate(0),
+    exp: getNumericDate(24 * 60 * 60), // 24 hours
   };
 
-  // Convert to UTF-8 bytes then base64 encode properly
-  const jsonString = JSON.stringify(payload);
-  const encoder = new TextEncoder();
-  const data = encoder.encode(jsonString);
+  const token = await create(
+    { alg: "HS256", typ: "JWT" },
+    payload,
+    key
+  );
 
-  // Use Deno's built-in base64 encoding which handles UTF-8 properly
-  return btoa(String.fromCharCode(...data));
+  console.log("Secure JWT token generated for:", email);
+  return token;
 };
 
-// Safe token verification function
-const verifyYdoToken = (token: string): YdoTokenPayload | null => {
+// Secure JWT token verification with signature validation
+const verifyYdoToken = async (token: string): Promise<YdoTokenPayload | null> => {
   try {
-    // Normalize URL-safe Base64 (- → +, _ → /)
-    let base64 = token.replace(/-/g, "+").replace(/_/g, "/");
-
-    // Add padding (=) to make it a multiple of 4
-    base64 += "=".repeat((4 - (base64.length % 4)) % 4);
-
-    // Decode to binary string
-    const binaryStr = atob(base64);
-
-    // Convert to Uint8Array
-    const bytes = Uint8Array.from(binaryStr, (c) => c.charCodeAt(0));
-
-    // Use TextDecoder for safe UTF-8 decoding
-    const jsonStr = new TextDecoder("utf-8").decode(bytes);
-
-    // Parse JSON
-    const payload = JSON.parse(jsonStr) as YdoTokenPayload;
-
-    // Check expiration
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (payload.exp < currentTime) {
-      console.error("Token expired");
-      return null;
-    }
-
+    const key = await getSecretKey();
+    
+    const payload = await verify(token, key);
+    
     // Validate required fields
     if (!payload.email || !payload.province) {
-      console.error("Missing required fields");
+      console.error("Missing required fields in token payload");
       return null;
     }
 
-    return payload;
+    console.log("Token verified successfully for province:", payload.province);
+    
+    return {
+      email: payload.email as string,
+      province: payload.province as string,
+      exp: payload.exp as number,
+      iat: payload.iat as number,
+    };
   } catch (error) {
-    console.error("Token verification failed:", error);
+    console.error("Token verification failed:", error instanceof Error ? error.message : "Unknown error");
     return null;
   }
 };
@@ -221,7 +225,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       // Verify the YDO token
-      const tokenPayload = verifyYdoToken(token);
+      const tokenPayload = await verifyYdoToken(token);
       if (!tokenPayload) {
         return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
           status: 401,
@@ -277,7 +281,7 @@ const handler = async (req: Request): Promise<Response> => {
         });
       }
 
-      const tokenPayload = verifyYdoToken(token);
+      const tokenPayload = await verifyYdoToken(token);
       if (!tokenPayload) {
         return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
           status: 401,
@@ -419,7 +423,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (ydoUsers && ydoUsers.length > 0) {
         for (const ydoUser of ydoUsers) {
-          const token = generateYdoToken(ydoUser.email, questionData.province);
+          const token = await generateYdoToken(ydoUser.email, questionData.province);
           const secureAccessUrl = `${baseUrl}/ydo/secure-access?token=${token}`;
 
           const emailData: EmailData = {
@@ -565,7 +569,7 @@ const sendNewQuestionNotifications = async (questionData: any) => {
   // Send secure access links to YDO users
   if (ydoUsers && ydoUsers.length > 0) {
     for (const ydoUser of ydoUsers) {
-      const token = generateYdoToken(ydoUser.email, questionData.province);
+      const token = await generateYdoToken(ydoUser.email, questionData.province);
       const secureAccessUrl = `${baseUrl}/ydo/secure-access?token=${token}`;
 
       const ydoEmailData: EmailData = {

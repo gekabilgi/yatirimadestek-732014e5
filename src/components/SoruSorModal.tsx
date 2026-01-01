@@ -10,6 +10,7 @@ import { MessageSquare, Send, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useRecaptcha } from '@/hooks/useRecaptcha';
 
 const PROVINCES = [
   'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya', 'Artvin',
@@ -32,6 +33,7 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user, session } = useAuth();
+  const { verifyRecaptcha, isReady: recaptchaReady } = useRecaptcha();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -69,6 +71,16 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
     setLoading(true);
 
     try {
+      // Verify reCAPTCHA first
+      if (recaptchaReady) {
+        const recaptchaResult = await verifyRecaptcha('submit_question');
+        if (!recaptchaResult.success) {
+          toast.error('Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.');
+          setLoading(false);
+          return;
+        }
+      }
+
       // Check for spam submissions
       const { data: spamCheck } = await supabase.rpc('check_submission_spam', {
         p_identifier: formData.email,
@@ -148,12 +160,20 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
 
   const defaultTrigger = (
     <Button 
-      variant="outline" 
       size="lg"
-      className="px-8 py-3 text-lg"
+      className="px-10 py-5 text-xl bg-gradient-to-r from-primary to-blue-600 
+                 hover:from-primary/90 hover:to-blue-500 
+                 shadow-lg hover:shadow-xl 
+                 animate-chatbot-pulse
+                 transition-all duration-300
+                 group"
     >
-      <MessageSquare className="mr-2 h-5 w-5" />
+      <MessageSquare className="mr-2 h-6 w-6 group-hover:scale-110 transition-transform" />
       Soru Sor
+      <span className="ml-2 inline-flex items-center justify-center px-2.5 py-1 
+                       text-sm font-semibold bg-white/20 rounded-full">
+        Uzman
+      </span>
     </Button>
   );
 
@@ -258,6 +278,10 @@ const SoruSorModal = ({ trigger }: SoruSorModalProps) => {
               'ni okudum ve kabul ediyorum. *
             </Label>
           </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Bu form reCAPTCHA ile korunmaktadır.
+          </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
             <Button

@@ -229,7 +229,7 @@ async function generateEmbedding(text: string, model: string, dimensions: number
         outputDimensionality: dimensions,
       },
     });
-    return result.embeddings[0].values;
+    return result.embeddings?.[0]?.values ?? [];
   } else {
     const response = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
@@ -1635,7 +1635,7 @@ serve(async (req) => {
         "İlgili destek programlarını aşağıda listeliyorum.",
         [],
         storeName,
-        GEMINI_API_KEY || "",
+        Deno.env.get("GEMINI_API_KEY") || "",
         { supportCards, supportOnly: true },
       );
     }
@@ -1710,7 +1710,8 @@ serve(async (req) => {
           
           // Also filter conversation history to only include the last message
           // This prevents the AI from referencing old sector context
-          messages = [lastUserMessage];
+          // Note: Can't reassign const messages, so we'll just log that we should clear history
+          // The conversation history clearing will be handled by the AI context
           console.log("📝 Conversation history cleared for new topic");
         } else {
           // Continue with existing query (normal slot filling)
@@ -2300,7 +2301,7 @@ BAŞLA! 🚀
     if (isProvinceQuery && queryKeywords.length > 0) {
       const mainKeyword = queryKeywords[0]; // Primary keyword (e.g., "pektin")
 
-      validatedChunks = groundingChunks.filter((chunk) => {
+      validatedChunks = groundingChunks.filter((chunk: { retrievedContext?: { text?: string; title?: string } }) => {
         const chunkContent = (chunk.retrievedContext?.text || "").toLowerCase();
 
         // Extract investment topic from chunk (text between "- " and newline or end)

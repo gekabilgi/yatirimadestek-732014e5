@@ -2,7 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Bell, Settings, Menu, X, Home, User } from 'lucide-react';
+import { LogOut, Bell, Settings, Menu, X, Home, User, Server } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
@@ -85,6 +87,24 @@ export const AdminTopbar = ({ isMobileMenuOpen, toggleMobileMenu, onLogout }: Ad
 
       {/* Right section - Home, Search, notifications, user menu */}
       <div className="flex items-center space-x-3">
+        {/* Build version badge */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="text-xs font-mono hidden sm:flex items-center gap-1 cursor-help">
+              <Server className="h-3 w-3" />
+              v{__BUILD_ID__}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            <div className="space-y-1">
+              <p className="font-semibold">Build Bilgisi</p>
+              <p>Tarih: {__BUILD_DATE__}</p>
+              <p>Saat: {__BUILD_TIME__}</p>
+              <p className="text-muted-foreground text-[10px] font-mono">{__BUILD_TIMESTAMP__}</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+
         {/* Home button */}
         <Button 
           variant="ghost" 

@@ -8,6 +8,8 @@ import { SectorSearchData } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { isRegion6Province } from '@/utils/regionUtils';
+import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 
 interface SectorSearchStepProps {
   selectedSector: SectorSearchData | null;
@@ -23,6 +25,8 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SectorSearchData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const { trackSearch } = useSearchAnalytics();
+  const { trackSearch: trackActivitySearch } = useActivityTracking();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -69,6 +73,7 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
     }
 
     setIsSearching(true);
+    const startTime = performance.now();
     try {
       // Increment search clicks statistics
       await supabase.rpc('increment_stat', { stat_name_param: 'search_clicks' });
@@ -117,6 +122,23 @@ const SectorSearchStep: React.FC<SectorSearchStepProps> = ({
       }
 
       setSearchResults(data || []);
+
+      // Track search analytics
+      const endTime = performance.now();
+      const isNaceSearchType = /\d/.test(rawInput);
+      
+      // Track activity for live notifications (user_sessions)
+      await trackActivitySearch(
+        { query: rawInput, resultsCount: data?.length || 0, searchType: isNaceSearchType ? 'nace_code' : 'sector_name' },
+        { moduleName: 'Sektör Arama', searchTerm: rawInput }
+      );
+      
+      // Track to hybrid_search_analytics table
+      await trackSearch(rawInput, 'incentive_query', {
+        responseTimeMs: Math.round(endTime - startTime),
+        resultsCount: data?.length || 0,
+        filters: { searchType: isNaceSearchType ? 'nace_code' : 'sector_name' }
+      });
 
       if (!data || data.length === 0) {
         toast({

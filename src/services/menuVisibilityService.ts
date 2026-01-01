@@ -8,6 +8,58 @@ import {
   DomainMenuSettings
 } from "@/types/menuSettings";
 
+// Cache keys and duration
+const CACHE_KEY_PREFIX = 'menu_settings_cache_';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+// Get cached data if valid
+function getCachedData<T>(key: string): T | null {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY_PREFIX + key);
+    if (!cached) return null;
+    
+    const entry: CacheEntry<T> = JSON.parse(cached);
+    const isValid = Date.now() - entry.timestamp < CACHE_DURATION;
+    
+    if (isValid) {
+      return entry.data;
+    }
+    
+    // Remove expired cache
+    localStorage.removeItem(CACHE_KEY_PREFIX + key);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Set cached data
+function setCachedData<T>(key: string, data: T): void {
+  try {
+    const entry: CacheEntry<T> = {
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(CACHE_KEY_PREFIX + key, JSON.stringify(entry));
+  } catch {
+    // Silent fail - cache is optional
+  }
+}
+
+// Clear specific cache
+function clearCache(key: string): void {
+  try {
+    localStorage.removeItem(CACHE_KEY_PREFIX + key);
+  } catch {
+    // Silent fail
+  }
+}
+
 // Convert old mode format to new format
 function convertOldModeToNew(mode: string): MenuItemVisibility {
   switch (mode) {
@@ -177,8 +229,12 @@ export const menuVisibilityService = {
   // GLOBAL MENU SETTINGS (EXISTING)
   // ============================================
 
-  // Frontend menu visibility (global)
+  // Frontend menu visibility (global) - with caching
   async getMenuVisibilitySettings(): Promise<MenuVisibilitySettings> {
+    // Check cache first
+    const cached = getCachedData<MenuVisibilitySettings>('frontend_global');
+    if (cached) return cached;
+
     try {
       const { data, error } = await supabase
         .from('admin_settings')
@@ -193,16 +249,16 @@ export const menuVisibilityService = {
         const key = row.setting_key as keyof MenuVisibilitySettings;
         if (key in settings && row.setting_value_text) {
           try {
-            // Try to parse as JSON first (new format)
             settings[key] = JSON.parse(row.setting_value_text);
           } catch (e) {
-            // If JSON parsing fails, it's in old format - convert it
             const oldMode = row.setting_value_text;
             settings[key] = convertOldModeToNew(oldMode);
           }
         }
       });
 
+      // Cache the result
+      setCachedData('frontend_global', settings);
       return settings;
     } catch (error) {
       console.error('Error fetching menu visibility settings:', error);

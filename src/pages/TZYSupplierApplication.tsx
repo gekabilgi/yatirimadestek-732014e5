@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, FileText, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import MainNavbar from '@/components/MainNavbar';
+import { useRecaptcha } from '@/hooks/useRecaptcha';
 
 // Turkish provinces
 const PROVINCES = [
@@ -65,6 +66,7 @@ const TZYSupplierApplication = () => {
   const [canLoadPrevious, setCanLoadPrevious] = useState(false);
   const [productInfo, setProductInfo] = useState<any>(null);
   const [lastSubmissionCheck, setLastSubmissionCheck] = useState<Date | null>(null);
+  const { verifyRecaptcha, isReady: recaptchaReady } = useRecaptcha();
 
   // Storage key for form persistence
   const storageKey = `tzy_supplier_form_${on_request_id}_${product_id}`;
@@ -354,6 +356,20 @@ const TZYSupplierApplication = () => {
     setIsSubmitting(true);
 
     try {
+      // Verify reCAPTCHA first
+      if (recaptchaReady) {
+        const recaptchaResult = await verifyRecaptcha('supplier_application');
+        if (!recaptchaResult.success) {
+          toast({
+            title: 'Hata',
+            description: 'Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.',
+            variant: 'destructive',
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       // Check spam protection
       const isSpam = await checkSubmissionSpam();
       if (isSpam) {

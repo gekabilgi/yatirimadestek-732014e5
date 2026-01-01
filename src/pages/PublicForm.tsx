@@ -25,10 +25,12 @@ import {
 import type { FormTemplate, FormField } from '@/types/formBuilder';
 import IntegratedFormLayout from '@/components/IntegratedFormLayout';
 import StandaloneFormLayout from '@/components/StandaloneFormLayout';
+import { useRecaptcha } from '@/hooks/useRecaptcha';
 
 const PublicForm: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { verifyRecaptcha, isReady: recaptchaReady } = useRecaptcha();
   
   const [form, setForm] = useState<FormTemplate | null>(null);
   const [fields, setFields] = useState<FormField[]>([]);
@@ -150,6 +152,16 @@ const PublicForm: React.FC = () => {
 
     try {
       setSubmitting(true);
+
+      // Verify reCAPTCHA first
+      if (recaptchaReady) {
+        const recaptchaResult = await verifyRecaptcha(`public_form_${slug}`);
+        if (!recaptchaResult.success) {
+          toast.error('Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.');
+          setSubmitting(false);
+          return;
+        }
+      }
       
       // Find email field value
       const emailField = fields.find(f => f.field_type === 'email');
@@ -439,6 +451,10 @@ const PublicForm: React.FC = () => {
           {fields.map((field) => (
             <div key={field.id}>{renderField(field)}</div>
           ))}
+
+          <p className="text-xs text-muted-foreground text-center">
+            Bu form reCAPTCHA ile korunmaktadır.
+          </p>
 
           <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? (

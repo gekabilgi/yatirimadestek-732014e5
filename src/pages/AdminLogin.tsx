@@ -8,6 +8,7 @@ import { Lock, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import MainNavbar from "@/components/MainNavbar";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -15,6 +16,7 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+  const { verifyRecaptcha, isReady: recaptchaReady } = useRecaptcha();
 
   useEffect(() => {
     // Redirect if already authenticated as admin
@@ -34,6 +36,16 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
+      // Verify reCAPTCHA first
+      if (recaptchaReady) {
+        const recaptchaResult = await verifyRecaptcha('admin_login');
+        if (!recaptchaResult.success) {
+          toast.error("Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const { error } = await signIn(email, password);
 
       if (error) {
@@ -130,6 +142,10 @@ const AdminLogin = () => {
                 system administrator to request admin access.
               </p>
             </div>
+
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              Bu site reCAPTCHA ile korunmaktadır.
+            </p>
           </CardContent>
         </Card>
       </div>

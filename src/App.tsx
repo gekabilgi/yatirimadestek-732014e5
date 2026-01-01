@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,59 +12,68 @@ import ProtectedAdminRoute from "@/components/ProtectedAdminRoute";
 import ProtectedMenuRoute from "@/components/ProtectedMenuRoute";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import SkipLinks from "@/components/SkipLinks";
-import AccessibilityWidget from "@/components/AccessibilityWidget";
-import ReadingGuide from "@/components/ReadingGuide";
+import { 
+  PageLoadingFallback,
+  LazyAdmin,
+  LazyAdminSupportPrograms,
+  LazyAdminAnnouncements,
+  LazyAdminNewsletterSubscribers,
+  LazyAdminFeasibilityReports,
+  LazyAdminAnalytics,
+  LazyQAManagement,
+  LazyAdminEmailManagement,
+  LazyAdminUserManagement,
+  LazyAdminGlossaryManagement,
+  LazyAdminIncentiveSettings,
+  LazyAdminMenuSettings,
+  LazyAdminLegislation,
+  LazyAdminKnowledgeBase,
+  LazyAdminFormBuilder,
+  LazyAdminFormBuilderEdit,
+  LazyAdminFormBuilderSubmissions,
+  LazyTZYPreRequestList,
+  LazyTZYCompanyEdit,
+  LazyTZYProductAdd,
+  LazyTZYProductList,
+  LazyTZYEmailLogs,
+  LazyTZYSupplierApplications,
+  LazyChat,
+  LazyIncentiveTools,
+  LazyInvestmentOpportunities,
+  LazyUserProfile,
+  LazySearchSupport,
+  LazyTZY,
+  LazyTZYPublicList,
+  LazyTZYOTG,
+  LazyTZYKayitliTalepler,
+  LazyTZYTalepler,
+  LazyTZYSupplierApplication,
+} from "@/components/LazyComponents";
+
+// Eagerly loaded pages (critical path)
 import Index from "./pages/Index";
 import Start from "./pages/Start";
-import IncentiveTools from "./pages/IncentiveTools";
-import InvestmentOpportunities from "./pages/InvestmentOpportunities";
-import Admin from "./pages/Admin";
-import AdminSupportPrograms from "./pages/AdminSupportPrograms";
-import AdminAnnouncements from "./pages/AdminAnnouncements";
-import AdminNewsletterSubscribers from "./pages/AdminNewsletterSubscribers";
 import AnnouncementDetail from "./pages/AnnouncementDetail";
-import AdminFeasibilityReports from "./pages/AdminFeasibilityReports";
 import AdminLogin from "./pages/AdminLogin";
-import AdminAnalytics from "./pages/AdminAnalytics";
-import QAManagement from "./pages/QAManagement";
-import AdminEmailManagement from "./pages/AdminEmailManagement";
-import AdminUserManagement from "./pages/AdminUserManagement";
-import AdminGlossaryManagement from "./pages/AdminGlossaryManagement";
-import AdminIncentiveSettings from "./pages/AdminIncentiveSettings";
-import AdminMenuSettings from "./pages/AdminMenuSettings";
-import InvestorGlossary from "./pages/InvestorGlossary";
-import ApplicationProcess from "./pages/ApplicationProcess";
-import ProgramDetails from "./pages/ProgramDetails";
 import NotFound from "./pages/NotFound";
-import SearchSupport from "./pages/SearchSupport";
-import YdoSecureAccess from "./pages/YdoSecureAccess";
+import ProgramDetails from "./pages/ProgramDetails";
+import PublicForm from "./pages/PublicForm";
+import Legislation from "./pages/Legislation";
 import QNA from "./pages/QNA";
-import TZY from "./pages/TZY";
-import TZYPublicList from "./pages/TZYPublicList";
-import TZYOTG from "./pages/TZYOTG";
+import InvestorGlossary from "./pages/InvestorGlossary";
+import TermsOfUse from "./pages/TermsOfUse";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ApplicationProcess from "./pages/ApplicationProcess";
+import YdoSecureAccess from "./pages/YdoSecureAccess";
 import TZYOTGBasarili from "./pages/TZYOTGBasarili";
 import TZYOTGBasarisiz from "./pages/TZYOTGBasarisiz";
-import TZYKayitliTalepler from "./pages/TZYKayitliTalepler";
-import TZYPreRequestList from "./pages/admin/TZYPreRequestList";
-import TZYCompanyEdit from "./pages/admin/TZYCompanyEdit";
-import TZYProductAdd from "./pages/admin/TZYProductAdd";
-import TZYProductList from "./pages/admin/TZYProductList";
-import TZYEmailLogs from "./pages/admin/TZYEmailLogs";
-import TZYTalepler from "./pages/TZYTalepler";
-import TZYSupplierApplication from "./pages/TZYSupplierApplication";
 import TZYSupplierApplicationSuccess from "./pages/TZYSupplierApplicationSuccess";
 import TZYSupplierApplicationError from "./pages/TZYSupplierApplicationError";
-import TZYSupplierApplications from "./pages/admin/TZYSupplierApplications";
-import Legislation from "./pages/Legislation";
-import AdminLegislation from "./pages/AdminLegislation";
-import AdminKnowledgeBase from "./pages/AdminKnowledgeBase";
-import AdminFormBuilder from "./pages/AdminFormBuilder";
-import AdminFormBuilderEdit from "./pages/AdminFormBuilderEdit";
-import AdminFormBuilderSubmissions from "./pages/AdminFormBuilderSubmissions";
-import PublicForm from "./pages/PublicForm";
-import Chat from "./pages/Chat";
-import UserProfile from "./pages/UserProfile";
-import { AIChatbot } from "./components/AIChatbot";
+
+// Lazy load heavy components
+const AccessibilityWidget = lazy(() => import("@/components/AccessibilityWidget"));
+const ReadingGuide = lazy(() => import("@/components/ReadingGuide"));
+const AIChatbot = lazy(() => import("@/components/AIChatbot").then(m => ({ default: m.AIChatbot })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,212 +92,305 @@ const App = () => {
         <AccessibilityProvider>
           <LogoSettingsProvider>
             <AuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <SkipLinks />
-                <ScrollToTop />
-                <AccessibilityWidget />
-                <ReadingGuide />
-                <AIChatbot />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/start" element={<Start />} />
-          <Route path="/duyuru/:id" element={<AnnouncementDetail />} />
-          <Route path="/incentive-tools" element={
-            <ProtectedMenuRoute settingKey="menu_item_tesvik_araclari">
-              <IncentiveTools />
-            </ProtectedMenuRoute>
-          } />
-              <Route path="/yatirim-firsatlari" element={
-                <ProtectedMenuRoute settingKey="menu_item_yatirim_firsatlari">
-                  <InvestmentOpportunities />
-                </ProtectedMenuRoute>
-              } />
-              <Route path="/tzy" element={
-                <ProtectedMenuRoute settingKey="menu_item_tedarik_zinciri">
-                  <TZY />
-                </ProtectedMenuRoute>
-              } />
-              <Route path="/tzyil" element={<TZYPublicList />} />
-              <Route path="/tzyotg" element={<TZYOTG />} />
-              <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
-              <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
-              <Route path="/tzy/kayitli-talepler" element={<TZYKayitliTalepler />} />
-              <Route path="/tzy/talepler/:on_request_id" element={<TZYTalepler />} />
-              <Route path="/tzy/talepler/basvuru/:on_request_id/:product_id" element={<TZYSupplierApplication />} />
-              <Route path="/tzy/supplier-application/success" element={<TZYSupplierApplicationSuccess />} />
-              <Route path="/tzy/supplier-application/error" element={<TZYSupplierApplicationError />} />
-              <Route path="/basvuru-sureci" element={
-                <ProtectedMenuRoute settingKey="menu_item_basvuru_sureci">
-                  <ApplicationProcess />
-                </ProtectedMenuRoute>
-              } />
-              <Route path="/chat" element={
-                <ProtectedMenuRoute settingKey="menu_item_chat">
-                  <Chat />
-                </ProtectedMenuRoute>
-              } />
-              <Route path="/qna" element={
-                <ProtectedMenuRoute settingKey="menu_item_soru_cevap">
-                  <QNA />
-                </ProtectedMenuRoute>
-              } />
-              <Route path="/searchsupport" element={
-                <ProtectedMenuRoute settingKey="menu_item_destek_arama">
-                  <SearchSupport />
-                </ProtectedMenuRoute>
-              } />
-              <Route path="/investor-glossary" element={
-                <ProtectedMenuRoute settingKey="menu_item_yatirimci_sozlugu">
-                  <InvestorGlossary />
-                </ProtectedMenuRoute>
-              } />
-              <Route path="/ydo/secure-access" element={<YdoSecureAccess />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={
-                <ProtectedAdminRoute>
-                  <Admin />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/support-programs" element={
-                <ProtectedAdminRoute>
-                  <AdminSupportPrograms />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/announcements" element={
-                <ProtectedAdminRoute>
-                  <AdminAnnouncements />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/newsletter-subscribers" element={
-                <ProtectedAdminRoute>
-                  <AdminNewsletterSubscribers />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/feasibility-reports" element={
-                <ProtectedAdminRoute>
-                  <AdminFeasibilityReports />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/feasibility-statistics" element={
-                <ProtectedAdminRoute>
-                  <AdminAnalytics />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/analytics" element={
-                <ProtectedAdminRoute>
-                  <AdminAnalytics />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/qa-management" element={
-                <ProtectedAdminRoute>
-                  <QAManagement />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/user-management" element={
-                <ProtectedAdminRoute>
-                  <AdminUserManagement />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/email-management" element={
-                <ProtectedAdminRoute>
-                  <AdminEmailManagement />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedAdminRoute>
-                  <UserProfile />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/glossary-management" element={
-                <ProtectedAdminRoute>
-                  <AdminGlossaryManagement />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/settings/incentive-calculation" element={
-                <ProtectedAdminRoute>
-                  <AdminIncentiveSettings />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/settings/menu-visibility" element={
-                <ProtectedAdminRoute>
-                  <AdminMenuSettings />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/tzyotl" element={
-                <ProtectedAdminRoute>
-                  <TZYPreRequestList />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/tzy-company-edit/:taxId" element={
-                <ProtectedAdminRoute>
-                  <TZYCompanyEdit />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/tzyue/:taxId" element={
-                <ProtectedAdminRoute>
-                  <TZYProductAdd />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/tzyutl" element={
-                <ProtectedAdminRoute>
-                  <TZYProductList />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/tzy-email-logs" element={
-                <ProtectedAdminRoute>
-                  <TZYEmailLogs />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/tzy-supplier-applications" element={
-                <ProtectedAdminRoute>
-                  <TZYSupplierApplications />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/mevzuat" element={<Legislation />} />
-              <Route path="/admin/legislation" element={
-                <ProtectedAdminRoute>
-                  <AdminLegislation />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/knowledge-base" element={
-                <ProtectedAdminRoute>
-                  <AdminKnowledgeBase />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/form-builder" element={
-                <ProtectedAdminRoute>
-                  <AdminFormBuilder />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/form-builder/new" element={
-                <ProtectedAdminRoute>
-                  <AdminFormBuilderEdit />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/form-builder/:id" element={
-                <ProtectedAdminRoute>
-                  <AdminFormBuilderEdit />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/admin/form-builder/:id/submissions" element={
-                <ProtectedAdminRoute>
-                  <AdminFormBuilderSubmissions />
-                </ProtectedAdminRoute>
-              } />
-              <Route path="/form/:slug" element={<PublicForm />} />
-              <Route path="/program/:id" element={<ProgramDetails />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </AuthProvider>
-        </LogoSettingsProvider>
-      </AccessibilityProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <SkipLinks />
+                  <ScrollToTop />
+                  <Suspense fallback={null}>
+                    <AccessibilityWidget />
+                    <ReadingGuide />
+                    <AIChatbot />
+                  </Suspense>
+                  <Routes>
+                    {/* Critical path - eagerly loaded */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/start" element={<Start />} />
+                    <Route path="/duyuru/:id" element={<AnnouncementDetail />} />
+                    <Route path="/mevzuat" element={<Legislation />} />
+                    <Route path="/program/:id" element={<ProgramDetails />} />
+                    <Route path="/form/:slug" element={<PublicForm />} />
+                    <Route path="/kullanim-kosullari" element={<TermsOfUse />} />
+                    <Route path="/gizlilik" element={<PrivacyPolicy />} />
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="*" element={<NotFound />} />
+                    
+                    {/* Public pages with lazy loading */}
+                    <Route path="/incentive-tools" element={
+                      <ProtectedMenuRoute settingKey="menu_item_tesvik_araclari">
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyIncentiveTools />
+                        </Suspense>
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/yatirim-firsatlari" element={
+                      <ProtectedMenuRoute settingKey="menu_item_yatirim_firsatlari">
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyInvestmentOpportunities />
+                        </Suspense>
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/chat" element={
+                      <ProtectedMenuRoute settingKey="menu_item_chat">
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyChat />
+                        </Suspense>
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/searchsupport" element={
+                      <ProtectedMenuRoute settingKey="menu_item_destek_arama">
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazySearchSupport />
+                        </Suspense>
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/qna" element={
+                      <ProtectedMenuRoute settingKey="menu_item_soru_cevap">
+                        <QNA />
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/investor-glossary" element={
+                      <ProtectedMenuRoute settingKey="menu_item_yatirimci_sozlugu">
+                        <InvestorGlossary />
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/basvuru-sureci" element={
+                      <ProtectedMenuRoute settingKey="menu_item_basvuru_sureci">
+                        <ApplicationProcess />
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/ydo/secure-access" element={<YdoSecureAccess />} />
+                    
+                    {/* TZY Routes */}
+                    <Route path="/tzy" element={
+                      <ProtectedMenuRoute settingKey="menu_item_tedarik_zinciri">
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyTZY />
+                        </Suspense>
+                      </ProtectedMenuRoute>
+                    } />
+                    <Route path="/tzyil" element={
+                      <Suspense fallback={<PageLoadingFallback />}>
+                        <LazyTZYPublicList />
+                      </Suspense>
+                    } />
+                    <Route path="/tzyotg" element={
+                      <Suspense fallback={<PageLoadingFallback />}>
+                        <LazyTZYOTG />
+                      </Suspense>
+                    } />
+                    <Route path="/tzy/otg/basarili" element={<TZYOTGBasarili />} />
+                    <Route path="/tzy/otg/basarisiz" element={<TZYOTGBasarisiz />} />
+                    <Route path="/tzy/kayitli-talepler" element={
+                      <Suspense fallback={<PageLoadingFallback />}>
+                        <LazyTZYKayitliTalepler />
+                      </Suspense>
+                    } />
+                    <Route path="/tzy/talepler/:on_request_id" element={
+                      <Suspense fallback={<PageLoadingFallback />}>
+                        <LazyTZYTalepler />
+                      </Suspense>
+                    } />
+                    <Route path="/tzy/talepler/basvuru/:on_request_id/:product_id" element={
+                      <Suspense fallback={<PageLoadingFallback />}>
+                        <LazyTZYSupplierApplication />
+                      </Suspense>
+                    } />
+                    <Route path="/tzy/supplier-application/success" element={<TZYSupplierApplicationSuccess />} />
+                    <Route path="/tzy/supplier-application/error" element={<TZYSupplierApplicationError />} />
+                    
+                    {/* Admin Routes - All Lazy Loaded */}
+                    <Route path="/admin" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdmin />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/support-programs" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminSupportPrograms />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/announcements" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminAnnouncements />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/newsletter-subscribers" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminNewsletterSubscribers />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/feasibility-reports" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminFeasibilityReports />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/feasibility-statistics" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminAnalytics />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/analytics" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminAnalytics />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/qa-management" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyQAManagement />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/user-management" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminUserManagement />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/email-management" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminEmailManagement />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/profile" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyUserProfile />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/glossary-management" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminGlossaryManagement />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/settings/incentive-calculation" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminIncentiveSettings />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/settings/menu-visibility" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminMenuSettings />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/tzyotl" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyTZYPreRequestList />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/tzy-company-edit/:taxId" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyTZYCompanyEdit />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/tzyue/:taxId" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyTZYProductAdd />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/tzyutl" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyTZYProductList />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/tzy-email-logs" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyTZYEmailLogs />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/tzy-supplier-applications" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyTZYSupplierApplications />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/legislation" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminLegislation />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/knowledge-base" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminKnowledgeBase />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/form-builder" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminFormBuilder />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/form-builder/new" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminFormBuilderEdit />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/form-builder/:id" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminFormBuilderEdit />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/form-builder/:id/submissions" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminFormBuilderSubmissions />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </AuthProvider>
+          </LogoSettingsProvider>
+        </AccessibilityProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 

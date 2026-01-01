@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import MainNavbar from '@/components/MainNavbar';
+import { useRecaptcha } from '@/hooks/useRecaptcha';
 
 const formSchema = z.object({
   vergi_kimlik_no: z.string()
@@ -45,6 +46,7 @@ const TZYOTG = () => {
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { verifyRecaptcha, isReady: recaptchaReady } = useRecaptcha();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -226,6 +228,20 @@ const TZYOTG = () => {
     try {
       // Save form data before submission
       saveFormData(data);
+
+      // Verify reCAPTCHA first
+      if (recaptchaReady) {
+        const recaptchaResult = await verifyRecaptcha('pre_request');
+        if (!recaptchaResult.success) {
+          toast({
+            title: "Hata",
+            description: "Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       // Check for spam
       const isSpam = await checkSpamSubmission(data.vergi_kimlik_no);

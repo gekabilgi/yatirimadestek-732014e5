@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SupportProgram } from '@/types/support';
 import { deleteFileFromStorage } from '@/utils/fileUpload';
 import * as XLSX from 'xlsx';
+import { isProgramOpen } from '@/utils/dateUtils';
 
 interface ProgramsListProps {
   onEdit: (program: SupportProgram) => void;
@@ -372,12 +373,6 @@ export const ProgramsList = ({ onEdit, onCreateNew, onClone }: ProgramsListProps
     return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
-  const isProgramOpen = (deadline?: string) => {
-    if (!deadline) return true;
-    const today = new Date();
-    const deadlineDate = new Date(deadline);
-    return today <= deadlineDate;
-  };
 
   const downloadTemplate = async () => {
     try {

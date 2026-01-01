@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -2434,6 +2434,7 @@ export type Database = {
           description: string
           eligibility_criteria: string | null
           embedding: string | null
+          fts_vector: unknown
           id: string
           institution_id: number | null
           title: string
@@ -2447,6 +2448,7 @@ export type Database = {
           description: string
           eligibility_criteria?: string | null
           embedding?: string | null
+          fts_vector?: unknown
           id?: string
           institution_id?: number | null
           title: string
@@ -2460,6 +2462,7 @@ export type Database = {
           description?: string
           eligibility_criteria?: string | null
           embedding?: string | null
+          fts_vector?: unknown
           id?: string
           institution_id?: number | null
           title?: string
@@ -2596,6 +2599,7 @@ export type Database = {
           session_id: string
           updated_at: string
           user_agent: string | null
+          user_id: string | null
         }
         Insert: {
           activity_data?: Json | null
@@ -2613,6 +2617,7 @@ export type Database = {
           session_id: string
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Update: {
           activity_data?: Json | null
@@ -2630,6 +2635,7 @@ export type Database = {
           session_id?: string
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2775,8 +2781,6 @@ export type Database = {
         Row: {
           answer: string | null
           answer_date: string | null
-          answer_status: string | null
-          answered: boolean | null
           category: string | null
           created_at: string | null
           id: string | null
@@ -2787,8 +2791,6 @@ export type Database = {
         Insert: {
           answer?: string | null
           answer_date?: string | null
-          answer_status?: string | null
-          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
@@ -2799,8 +2801,6 @@ export type Database = {
         Update: {
           answer?: string | null
           answer_date?: string | null
-          answer_status?: string | null
-          answered?: boolean | null
           category?: string | null
           created_at?: string | null
           id?: string | null
@@ -2810,10 +2810,62 @@ export type Database = {
         }
         Relationships: []
       }
+      vertex_configs_public: {
+        Row: {
+          config_key: string | null
+          created_at: string | null
+          id: number | null
+          max_output_tokens: number | null
+          model_name: string | null
+          rag_corpus: string | null
+          similarity_top_k: number | null
+          staging_bucket: string | null
+          system_instruction: string | null
+          temperature: number | null
+          top_p: number | null
+          updated_at: string | null
+          vector_distance_threshold: number | null
+        }
+        Insert: {
+          config_key?: string | null
+          created_at?: string | null
+          id?: number | null
+          max_output_tokens?: number | null
+          model_name?: string | null
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          staging_bucket?: string | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vector_distance_threshold?: number | null
+        }
+        Update: {
+          config_key?: string | null
+          created_at?: string | null
+          id?: number | null
+          max_output_tokens?: number | null
+          model_name?: string | null
+          rag_corpus?: string | null
+          similarity_top_k?: number | null
+          staging_bucket?: string | null
+          system_instruction?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string | null
+          vector_distance_threshold?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_chat_rate_limit: {
         Args: { session_id_param: string }
+        Returns: boolean
+      }
+      check_newsletter_rate_limit: {
+        Args: { p_email: string }
         Returns: boolean
       }
       check_submission_spam: {
@@ -2845,20 +2897,43 @@ export type Database = {
           title: string
         }[]
       }
-      get_public_qna: {
-        Args: { limit_count?: number }
+      get_public_qna:
+        | {
+            Args: { limit_count?: number; offset_count?: number }
+            Returns: {
+              answer: string
+              answer_date: string
+              category: string
+              created_at: string
+              id: string
+              province: string
+              question: string
+              question_number: number
+            }[]
+          }
+        | {
+            Args: { limit_count?: number }
+            Returns: {
+              answer: string
+              answer_date: string
+              category: string
+              created_at: string
+              id: string
+              province: string
+              question: string
+              question_number: number
+            }[]
+          }
+      get_public_qna_count: { Args: never; Returns: number }
+      get_search_suggestions: {
+        Args: { query_text: string; suggestion_limit?: number }
         Returns: {
-          answer: string
-          answer_date: string
-          category: string
-          created_at: string
-          id: string
-          province: string
-          question: string
-          question_number: number
+          category_name: string
+          suggestion_id: string
+          suggestion_text: string
+          suggestion_type: string
         }[]
       }
-      get_public_qna_count: { Args: never; Returns: number }
       get_user_roles: { Args: { p_user_id: string }; Returns: string[] }
       get_ydo_user_count: { Args: never; Returns: number }
       has_any_role: {
@@ -2914,6 +2989,29 @@ export type Database = {
               variants: string[]
             }[]
           }
+      hybrid_search_support_programs: {
+        Args: {
+          p_institution_id?: number
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_tag_ids?: number[]
+          query_text?: string
+        }
+        Returns: {
+          application_deadline: string
+          contact_info: string
+          created_at: string
+          description: string
+          eligibility_criteria: string
+          id: string
+          institution_id: number
+          match_type: string
+          score: number
+          title: string
+          updated_at: string
+        }[]
+      }
       increment_chatbot_stat: {
         Args: { p_source: string; p_stat_type: string }
         Returns: undefined
@@ -2995,22 +3093,39 @@ export type Database = {
               updated_at: string
             }[]
           }
-      match_custom_rag_chunks: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          p_store_id: string
-          query_embedding: string
-        }
-        Returns: {
-          chunk_index: number
-          content: string
-          document_id: string
-          document_name: string
-          id: string
-          similarity: number
-        }[]
-      }
+      match_custom_rag_chunks:
+        | {
+            Args: {
+              match_count?: number
+              match_threshold?: number
+              p_store_id: string
+              query_embedding: string
+            }
+            Returns: {
+              chunk_index: number
+              content: string
+              document_id: string
+              document_name: string
+              id: string
+              similarity: number
+            }[]
+          }
+        | {
+            Args: {
+              match_count?: number
+              match_threshold?: number
+              p_store_id: string
+              query_embedding: string
+            }
+            Returns: {
+              chunk_index: number
+              content: string
+              document_id: string
+              document_name: string
+              id: string
+              similarity: number
+            }[]
+          }
       match_document_chunks: {
         Args: {
           match_count?: number

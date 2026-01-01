@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Filter, X, Tag, Building2, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SearchFilters, Tag, Institution } from '@/types/support';
+import { SearchFilters, Tag as TagType, Institution } from '@/types/support';
 import { supabase } from '@/integrations/supabase/client';
+import { useSearchSuggestions, SearchSuggestion } from '@/hooks/useSearchSuggestions';
+import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
@@ -19,12 +20,18 @@ interface SearchBarProps {
 
 export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
   const [showFilters, setShowFilters] = useState(false);
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [availableTags, setAvailableTags] = useState<TagType[]>([]);
   const [availableInstitutions, setAvailableInstitutions] = useState<Institution[]>([]);
   const [selectedTags, setSelectedTags] = useState<number[]>(filters.tags || []);
   const [keyword, setKeyword] = useState(filters.keyword || '');
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | undefined>(filters.institutionId);
   const [status, setStatus] = useState<'all' | 'open' | 'closed'>(filters.status || 'all');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  
+  const { suggestions, loading: suggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchTags();
@@ -43,6 +50,23 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
       handleSearch();
     }
   }, [keyword]);
+
+  // Close suggestions on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current && 
+        !suggestionsRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchTags = async () => {
     try {
@@ -117,24 +141,199 @@ export const SearchBar = ({ onSearch, filters }: SearchBarProps) => {
     }
     acc[categoryName].push(tag);
     return acc;
-  }, {} as Record<string, Tag[]>);
+  }, {} as Record<string, TagType[]>);
 
   const activeFilterCount = selectedTags.length + (selectedInstitutionId ? 1 : 0) + (status !== 'all' ? 1 : 0);
+
+  // Handle keyword input change
+  const handleKeywordChange = (value: string) => {
+    setKeyword(value);
+    fetchSuggestions(value);
+    setShowSuggestions(true);
+    setSelectedSuggestionIndex(-1);
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+    if (suggestion.suggestion_type === 'tag') {
+      // Add tag to filters
+      const tagId = parseInt(suggestion.suggestion_id);
+      if (!selectedTags.includes(tagId)) {
+        const newSelectedTags = [...selectedTags, tagId];
+        setSelectedTags(newSelectedTags);
+      }
+      setKeyword('');
+    } else if (suggestion.suggestion_type === 'institution') {
+      // Set institution filter
+      setSelectedInstitutionId(parseInt(suggestion.suggestion_id));
+      setKeyword('');
+    } else {
+      // Set keyword to program title
+      setKeyword(suggestion.suggestion_text);
+    }
+    
+    setShowSuggestions(false);
+    clearSuggestions();
+    
+    // Trigger search after a short delay
+    setTimeout(() => {
+      handleSearch();
+    }, 100);
+  };
+
+  // Handle keyboard navigation in suggestions
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestions.length) {
+          handleSuggestionSelect(suggestions[selectedSuggestionIndex]);
+        } else {
+          setShowSuggestions(false);
+          handleSearch();
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        break;
+    }
+  };
+
+  // Group suggestions by type for display
+  const tagSuggestions = suggestions.filter(s => s.suggestion_type === 'tag');
+  const institutionSuggestions = suggestions.filter(s => s.suggestion_type === 'institution');
+  const programSuggestions = suggestions.filter(s => s.suggestion_type === 'program');
+
+  // Get flat index for a suggestion
+  const getSuggestionIndex = (type: string, indexInGroup: number): number => {
+    if (type === 'tag') return indexInGroup;
+    if (type === 'institution') return tagSuggestions.length + indexInGroup;
+    return tagSuggestions.length + institutionSuggestions.length + indexInGroup;
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col lg:flex-row gap-3 lg:gap-2">
-        <div className="flex-1 lg:flex-auto">
+        <div className="flex-1 lg:flex-auto relative">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Destek adı, kurum, çağrı veya anahtar kelime ile ara..."
+              ref={inputRef}
+              placeholder="Destek adı, kurum, etiket veya anahtar kelime ile ara..."
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={(e) => handleKeywordChange(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+              onKeyDown={handleKeyDown}
               className="pl-10 h-11 text-base w-full"
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
+          
+          {/* Autocomplete Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div 
+              ref={suggestionsRef}
+              className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden"
+            >
+              <div className="max-h-80 overflow-y-auto py-1">
+                {/* Tag Suggestions */}
+                {tagSuggestions.length > 0 && (
+                  <div>
+                    <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                      Etiketler
+                    </div>
+                    {tagSuggestions.map((suggestion, idx) => {
+                      const flatIndex = getSuggestionIndex('tag', idx);
+                      return (
+                        <button
+                          key={`tag-${suggestion.suggestion_id}`}
+                          onClick={() => handleSuggestionSelect(suggestion)}
+                          className={cn(
+                            "w-full px-3 py-2 flex items-center gap-3 hover:bg-accent text-left transition-colors",
+                            selectedSuggestionIndex === flatIndex && "bg-accent"
+                          )}
+                        >
+                          <Tag className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          <span className="flex-1 truncate">{suggestion.suggestion_text}</span>
+                          {suggestion.category_name && (
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
+                              {suggestion.category_name}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Institution Suggestions */}
+                {institutionSuggestions.length > 0 && (
+                  <div>
+                    <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                      Kurumlar
+                    </div>
+                    {institutionSuggestions.map((suggestion, idx) => {
+                      const flatIndex = getSuggestionIndex('institution', idx);
+                      return (
+                        <button
+                          key={`inst-${suggestion.suggestion_id}`}
+                          onClick={() => handleSuggestionSelect(suggestion)}
+                          className={cn(
+                            "w-full px-3 py-2 flex items-center gap-3 hover:bg-accent text-left transition-colors",
+                            selectedSuggestionIndex === flatIndex && "bg-accent"
+                          )}
+                        >
+                          <Building2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="flex-1 truncate">{suggestion.suggestion_text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Program Suggestions */}
+                {programSuggestions.length > 0 && (
+                  <div>
+                    <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                      Destek Programları
+                    </div>
+                    {programSuggestions.map((suggestion, idx) => {
+                      const flatIndex = getSuggestionIndex('program', idx);
+                      return (
+                        <button
+                          key={`prog-${suggestion.suggestion_id}`}
+                          onClick={() => handleSuggestionSelect(suggestion)}
+                          className={cn(
+                            "w-full px-3 py-2 flex items-center gap-3 hover:bg-accent text-left transition-colors",
+                            selectedSuggestionIndex === flatIndex && "bg-accent"
+                          )}
+                        >
+                          <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                          <span className="flex-1 truncate">{suggestion.suggestion_text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="flex gap-2 lg:gap-2 lg:flex-shrink-0">

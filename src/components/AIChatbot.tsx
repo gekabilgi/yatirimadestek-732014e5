@@ -25,6 +25,7 @@ import {
   Mic,
   MicOff,
   MessageSquare,
+  FlaskConical,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -917,15 +918,24 @@ export function AIChatbot() {
                   <p className="text-xs opacity-90 hidden sm:block">Yatırım Teşvikleri ve Destekleri</p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-white/20 h-8 w-8"
-                aria-label="Kapat"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant="outline" 
+                  className="bg-white/20 text-white border-white/30 text-[10px] px-1.5 py-0 gap-0.5 flex items-center"
+                >
+                  <FlaskConical className="h-2.5 w-2.5" />
+                  Beta
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsOpen(false)}
+                  className="text-white hover:bg-white/20 h-8 w-8"
+                  aria-label="Kapat"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Action Buttons */}

@@ -8,6 +8,7 @@ import { CalendarDays, Building2, ChevronDown, FileText, Download, Share2, Messa
 import { SupportProgram } from '@/types/support';
 import { toast } from 'sonner';
 import { getFileIcon, getFileIconColor } from '@/utils/fileIcons';
+import { isProgramOpen } from '@/utils/dateUtils';
 
 interface SupportCardProps {
   program: SupportProgram;
@@ -20,12 +21,7 @@ export const SupportCard = ({ program }: SupportCardProps) => {
     return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
-  const isProgramOpen = () => {
-    if (!program?.application_deadline) return true;
-    const today = new Date();
-    const deadline = new Date(program.application_deadline);
-    return today <= deadline;
-  };
+  const isOpenProgram = isProgramOpen(program?.application_deadline);
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/searchsupport`;
@@ -57,7 +53,7 @@ export const SupportCard = ({ program }: SupportCardProps) => {
     window.open(`mailto:destek@tesviksor.com?subject=${subject}&body=${body}`, '_blank');
   };
 
-  const isOpenProgram = isProgramOpen();
+  
 
   // Filter tags to show only "Applicant Type" tags
   const applicantTypeTags = program.tags?.filter(tag => 

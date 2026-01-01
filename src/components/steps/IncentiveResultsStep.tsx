@@ -13,7 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { pdf } from '@react-pdf/renderer';
 import IncentiveReportPDF from '@/components/IncentiveReportPDF';
 import { isIstanbulMiningInvestment, isResGesInvestment, getGesResOverrideValues, isIstanbulTargetInvestment } from '@/utils/investmentValidation';
-import { isRegion6Province } from '@/utils/regionUtils';
+import { isRegion6Province, checkSpecialProgramEligibility, SpecialProgramEligibility } from '@/utils/regionUtils';
 
 interface IncentiveResultsStepProps {
   queryData: UnifiedQueryData;
@@ -264,23 +264,48 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
     
     try {
       const region = await getProvinceRegion(queryData.selectedProvince);
-      const regionKey = `bolge_${region}` as keyof typeof queryData.selectedSector;
+      
+      // Check for special program eligibility (Cazibe Merkezleri / Deprem Bölgesi)
+      const specialProgram = checkSpecialProgramEligibility(
+        queryData.selectedProvince,
+        queryData.selectedDistrict,
+        queryData.osbStatus,
+        queryData.selectedSector.nace_kodu,
+        region
+      );
+      
+      // Determine effective region (6 if special program applies)
+      const effectiveRegion = specialProgram.isEligible ? 6 : region;
+      
+      const regionKey = `bolge_${effectiveRegion}` as keyof typeof queryData.selectedSector;
       const minInvestment = queryData.selectedSector[regionKey] as number || 0;
       
       const locationSupportData = await getLocationSupport(queryData.selectedProvince, queryData.selectedDistrict);
-      const sgkDuration = await getSgkDuration(queryData.selectedProvince, queryData.selectedDistrict, queryData.osbStatus);
-      const altBolge = await getAltBolge(queryData.selectedProvince, queryData.selectedDistrict, queryData.osbStatus);
       
-      // Check if current province is in Region 6
+      // Get SGK duration - if special program applies, use 6th region values
+      let sgkDuration: string;
+      let altBolge: string;
+      
+      if (specialProgram.isEligible) {
+        // 6th region SGK durations: OSB inside 14 years, OSB outside 12 years
+        sgkDuration = queryData.osbStatus === "İÇİ" ? "14 yıl" : "12 yıl";
+        altBolge = ""; // No subregion concept in special programs
+      } else {
+        sgkDuration = await getSgkDuration(queryData.selectedProvince, queryData.selectedDistrict, queryData.osbStatus);
+        altBolge = await getAltBolge(queryData.selectedProvince, queryData.selectedDistrict, queryData.osbStatus);
+      }
+      
+      // Check if current province is in Region 6 or special program applies
       const isProvince6 = isRegion6Province(queryData.selectedProvince);
+      const applyRegion6Benefits = isProvince6 || specialProgram.isEligible;
       
       const result: IncentiveResult = {
         sector: {
           nace_code: queryData.selectedSector.nace_kodu,
           name: queryData.selectedSector.sektor,
-          // For Region 6 provinces, replace Hedef with Öncelikli
-          isTarget: isProvince6 ? false : (queryData.selectedSector.hedef_yatirim || false),
-          isPriority: isProvince6 ? true : (queryData.selectedSector.oncelikli_yatirim || false),
+          // For Region 6 provinces or special programs, replace Hedef with Öncelikli
+          isTarget: applyRegion6Benefits ? false : (queryData.selectedSector.hedef_yatirim || false),
+          isPriority: applyRegion6Benefits ? true : (queryData.selectedSector.oncelikli_yatirim || false),
           isHighTech: queryData.selectedSector.yuksek_teknoloji || false,
           isMidHighTech: queryData.selectedSector.orta_yuksek_teknoloji || false,
           conditions: queryData.selectedSector.sartlar || "",
@@ -290,9 +315,11 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
           province: queryData.selectedProvince,
           district: queryData.selectedDistrict,
           osb_status: queryData.osbStatus,
-          region: region,
+          region: effectiveRegion,
+          originalRegion: specialProgram.isEligible ? region : undefined,
           subregion: altBolge,
-          sgk_duration: sgkDuration
+          sgk_duration: sgkDuration,
+          specialProgram: specialProgram.isEligible ? specialProgram : undefined
         },
         supports: {
           vat_exemption: locationSupportData?.kdv_istisnasi || false,
@@ -433,6 +460,32 @@ const IncentiveResultsStep: React.FC<IncentiveResultsStepProps> = ({
               )}
             </div>
           </div>
+
+          {/* Special Program Alert (Cazibe Merkezleri / Deprem Bölgesi) */}
+          {incentiveResult.location.specialProgram?.isEligible && (
+            <Alert className="border-emerald-200 bg-emerald-50">
+              <CheckCircle className="h-4 w-4 text-emerald-600" />
+              <AlertDescription className="text-emerald-800">
+                <strong>
+                  {incentiveResult.location.specialProgram.programType === 'earthquake_zone' 
+                    ? '🏗️ Deprem Bölgesi Teşviki Uygulandı' 
+                    : '🎯 Cazibe Merkezleri Programı Uygulandı'}
+                </strong>
+                <br />
+                {incentiveResult.location.specialProgram.description}
+                {incentiveResult.location.originalRegion && (
+                  <div className="mt-2 flex gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      Orijinal: {incentiveResult.location.originalRegion}. Bölge
+                    </Badge>
+                    <Badge className="bg-emerald-500 text-white text-xs">
+                      Uygulanan: 6. Bölge
+                    </Badge>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Istanbul Target Investment Tax Reduction Warning */}
           {incentiveResult.sector.isTarget && incentiveResult.location.province === "İstanbul" && (

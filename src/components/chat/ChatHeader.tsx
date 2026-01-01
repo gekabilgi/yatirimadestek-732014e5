@@ -1,4 +1,6 @@
-import { ChevronLeft, ChevronRight, Trash2, Download, Edit2, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Download, Edit2, Check, X, FlaskConical } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -95,7 +97,23 @@ export function ChatHeader({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-0.5 md:gap-1">
+        <div className="flex items-center gap-0.5 md:gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge 
+                  variant="outline" 
+                  className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700 text-xs px-2 py-0.5 gap-1 hidden sm:flex items-center cursor-help"
+                >
+                  <FlaskConical className="h-3 w-3" />
+                  Beta
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bu özellik beta aşamasındadır. Geri bildirimlerinizi bekliyoruz.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button
             variant="ghost"
             size="icon"

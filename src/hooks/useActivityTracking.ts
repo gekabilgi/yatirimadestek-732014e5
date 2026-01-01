@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Generate a unique session ID for this browser session
@@ -11,79 +11,103 @@ const generateSessionId = () => {
   return newId;
 };
 
-// Get user's accurate location using MaxMind GeoIP2
-const getUserLocation = async () => {
+// Get current authenticated user ID
+const getCurrentUserId = async (): Promise<string | null> => {
   try {
-    console.log('Starting location detection...');
-    
-    // First get the user's IP address with timeout
-    const ipController = new AbortController();
-    const ipTimeout = setTimeout(() => ipController.abort(), 3000);
-    
-    const ipResponse = await fetch('https://api.ipify.org?format=json', {
-      signal: ipController.signal
-    });
-    clearTimeout(ipTimeout);
-    
-    if (!ipResponse.ok) {
-      throw new Error(`IP fetch failed: ${ipResponse.status}`);
-    }
-    
-    const ipData = await ipResponse.json();
-    const userIP = ipData.ip;
-    console.log('Got IP:', userIP);
-    
-    // Call our MaxMind edge function for geolocation with timeout
-    const geoController = new AbortController();
-    const geoTimeout = setTimeout(() => geoController.abort(), 5000);
-    
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
+// Cached location data to avoid repeated API calls
+let cachedLocation: { country: string; city: string; region: string; ip: string } | null = null;
+let locationPromise: Promise<typeof cachedLocation> | null = null;
+
+// Get user's accurate location using MaxMind GeoIP2 - with caching
+const getUserLocation = async () => {
+  // Return cached location if available
+  if (cachedLocation) {
+    return cachedLocation;
+  }
+  
+  // If a request is already in progress, wait for it
+  if (locationPromise) {
+    return locationPromise;
+  }
+  
+  locationPromise = (async () => {
     try {
-      const { data: locationData, error } = await supabase.functions.invoke('ip-geolocation', {
-        body: { ip: userIP }
-      });
-      clearTimeout(geoTimeout);
+      // First get the user's IP address with timeout
+      const ipController = new AbortController();
+      const ipTimeout = setTimeout(() => ipController.abort(), 3000);
       
-      if (error) {
-        console.warn('MaxMind geolocation error:', error);
-        throw new Error('MaxMind geolocation failed');
+      const ipResponse = await fetch('https://api.ipify.org?format=json', {
+        signal: ipController.signal
+      });
+      clearTimeout(ipTimeout);
+      
+      if (!ipResponse.ok) {
+        throw new Error(`IP fetch failed: ${ipResponse.status}`);
       }
       
-      console.log('MaxMind success:', locationData);
-      return {
-        country: locationData.country || 'Turkey',
-        city: locationData.city || 'Unknown',
-        region: locationData.region,
-        ip: userIP
-      };
-    } catch (geoError) {
-      clearTimeout(geoTimeout);
-      console.warn('MaxMind failed, using fallback:', geoError);
+      const ipData = await ipResponse.json();
+      const userIP = ipData.ip;
       
-      // Fallback to basic location with the IP we already have
-      return {
+      // Call our MaxMind edge function for geolocation with timeout
+      const geoController = new AbortController();
+      const geoTimeout = setTimeout(() => geoController.abort(), 5000);
+      
+      try {
+        const { data: locationData, error } = await supabase.functions.invoke('ip-geolocation', {
+          body: { ip: userIP }
+        });
+        clearTimeout(geoTimeout);
+        
+        if (error) {
+          throw new Error('MaxMind geolocation failed');
+        }
+        
+        cachedLocation = {
+          country: locationData.country || 'Turkey',
+          city: locationData.city || 'Unknown',
+          region: locationData.region,
+          ip: userIP
+        };
+        return cachedLocation;
+      } catch (geoError) {
+        clearTimeout(geoTimeout);
+        // Fallback to basic location with the IP we already have
+        cachedLocation = {
+          country: 'Turkey',
+          city: 'Unknown',
+          region: 'Unknown',
+          ip: userIP
+        };
+        return cachedLocation;
+      }
+      
+    } catch (error) {
+      // Final fallback
+      cachedLocation = {
         country: 'Turkey',
         city: 'Unknown',
         region: 'Unknown',
-        ip: userIP
+        ip: 'Unknown'
       };
+      return cachedLocation;
     }
-    
-  } catch (error) {
-    console.error('Complete location detection failed:', error);
-    // Final fallback
-    return {
-      country: 'Turkey',
-      city: 'Unknown',
-      region: 'Unknown',
-      ip: 'Unknown'
-    };
-  }
+  })();
+  
+  return locationPromise;
 };
 
 export const useActivityTracking = () => {
   const sessionId = generateSessionId();
+  const isInitialized = useRef(false);
 
-  // Track user activity
+  // Track user activity - deferred to not block initial render
   const trackActivity = useCallback(async (
     activityType: 'calculation' | 'search' | 'page_view' | 'session_start' | 'session_end',
     activityData?: any,
@@ -95,35 +119,42 @@ export const useActivityTracking = () => {
       investmentTopic?: string;
     }
   ) => {
-    try {
-      console.log(`Tracking activity: ${activityType}`, activityData);
-      const location = await getUserLocation();
-      console.log('Location for tracking:', location);
-      
-      const { error } = await supabase
-        .from('user_sessions')
-        .insert({
-          session_id: sessionId,
-          ip_address: location.ip,
-          location_country: location.country,
-          location_city: location.city,
-          user_agent: navigator.userAgent,
-          page_path: pagePath || window.location.pathname,
-          activity_type: activityType,
-          activity_data: activityData,
-          module_name: contextData?.moduleName,
-          search_term: contextData?.searchTerm,
-          incentive_type: contextData?.incentiveType,
-          investment_topic: contextData?.investmentTopic,
-        });
-
-      if (error) {
-        console.error('Error inserting activity:', error);
-      } else {
-        console.log(`Successfully tracked ${activityType} activity`);
+  // Use requestIdleCallback for non-critical tracking
+    const track = async () => {
+      try {
+        const [location, userId] = await Promise.all([
+          getUserLocation(),
+          getCurrentUserId()
+        ]);
+        
+        await (supabase as any)
+          .from('user_sessions')
+          .insert({
+            session_id: sessionId,
+            user_id: userId,
+            ip_address: location?.ip || 'Unknown',
+            location_country: location?.country || 'Turkey',
+            location_city: location?.city || 'Unknown',
+            user_agent: navigator.userAgent,
+            page_path: pagePath || window.location.pathname,
+            activity_type: activityType,
+            activity_data: activityData,
+            module_name: contextData?.moduleName,
+            search_term: contextData?.searchTerm,
+            incentive_type: contextData?.incentiveType,
+            investment_topic: contextData?.investmentTopic,
+          });
+      } catch (error) {
+        // Silent fail - tracking should not break the app
+        console.warn('Activity tracking failed:', error);
       }
-    } catch (error) {
-      console.error('Error in trackActivity:', error);
+    };
+
+    // Use requestIdleCallback if available, otherwise use setTimeout
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(() => track(), { timeout: 5000 });
+    } else {
+      setTimeout(track, 100);
     }
   }, [sessionId]);
 
@@ -158,21 +189,22 @@ export const useActivityTracking = () => {
     trackActivity('search', searchData, undefined, contextData);
   }, [trackActivity]);
 
-  // Initialize session tracking
+  // Initialize session tracking - only once and deferred
   useEffect(() => {
-    // Track session start after a brief delay
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
+    // Defer session start tracking significantly
     const timer = setTimeout(() => {
       trackActivity('session_start');
-    }, 1000);
+    }, 3000); // Wait 3 seconds after page load
 
     // Track session end on page unload
     const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable tracking on page unload
-      const location = { country: 'Turkey', city: 'Unknown', ip: 'Unknown' };
       navigator.sendBeacon('/api/track-session-end', JSON.stringify({
         sessionId,
         activityType: 'session_end',
-        location
+        location: cachedLocation || { country: 'Turkey', city: 'Unknown', ip: 'Unknown' }
       }));
     };
 

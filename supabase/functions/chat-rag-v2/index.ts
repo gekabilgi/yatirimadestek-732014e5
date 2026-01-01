@@ -257,7 +257,7 @@ serve(async (req) => {
       .toLowerCase()
       .replace(/[?.,!]/g, "")
       .split(/\s+/)
-      .filter((w) => w.length > 3 && !["hangi", "nedir", "nasıl", "nerede", "kaç", "için", "olan", "gibi"].includes(w));
+      .filter((w: string) => w.length > 3 && !["hangi", "nedir", "nasıl", "nerede", "kaç", "için", "olan", "gibi"].includes(w));
     
     // Generate simple query variations
     const expandedQueries = keywords.length > 0 

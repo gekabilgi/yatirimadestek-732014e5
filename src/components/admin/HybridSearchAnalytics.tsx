@@ -31,24 +31,29 @@ import {
   RefreshCw,
   Target
 } from 'lucide-react';
-import { format, subDays, startOfDay } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { MapPin } from 'lucide-react';
 
 interface AnalyticsEntry {
   id: string;
   query: string;
-  query_hash: string;
+  query_hash?: string;
   total_response_time_ms: number | null;
   cache_hit: boolean;
-  qv_match_count: number;
+  qv_match_count?: number;
   qv_match_type: string | null;
-  vertex_has_results: boolean;
-  support_match_count: number;
+  vertex_has_results?: boolean;
+  support_match_count?: number;
   response_source: string | null;
-  response_length: number | null;
-  query_expanded: boolean;
+  response_length?: number | null;
+  query_expanded?: boolean;
   created_at: string;
   search_source?: string;
+  // user_sessions'tan gelen ek alanlar
+  location_city?: string | null;
+  ip_address?: string | null;
+  data_source?: 'analytics' | 'user_sessions';
 }
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1', '#a4de6c'];
@@ -59,6 +64,7 @@ const SOURCE_LABELS: Record<string, string> = {
   investment_search: 'Yatırım Fırsatları',
   glossary_search: 'Yatırımcı Sözlüğü',
   incentive_query: 'Teşvik Robotu',
+  sector_search: 'Teşvik Robotu', // Eski kayıtlar için geriye dönük uyumluluk
 };
 
 const HybridSearchAnalytics: React.FC = () => {
@@ -71,28 +77,104 @@ const HybridSearchAnalytics: React.FC = () => {
     return null;
   };
 
-  // Fetch analytics data
+  // Fetch analytics data from both sources
   const { data: analytics, isLoading, refetch } = useQuery({
     queryKey: ['hybrid-search-analytics', dateRange, searchSource],
     queryFn: async () => {
-      let query = supabase
+      const dateFilter = getDateFilter();
+      
+      // 1. hybrid_search_analytics'ten veri çek
+      let analyticsQuery = supabase
         .from('hybrid_search_analytics')
         .select('*')
         .order('created_at', { ascending: false });
       
-      const dateFilter = getDateFilter();
       if (dateFilter) {
-        query = query.gte('created_at', dateFilter);
+        analyticsQuery = analyticsQuery.gte('created_at', dateFilter);
       }
 
-      // Filter by search source
       if (searchSource !== 'all') {
-        query = query.eq('search_source', searchSource);
+        analyticsQuery = analyticsQuery.eq('search_source', searchSource);
       }
       
-      const { data, error } = await query.limit(1000);
-      if (error) throw error;
-      return data as AnalyticsEntry[];
+      const { data: analyticsData, error: analyticsError } = await analyticsQuery.limit(500);
+      if (analyticsError) throw analyticsError;
+
+      // 2. user_sessions'tan search aktivitelerini çek
+      let sessionsQuery = supabase
+        .from('user_sessions')
+        .select('id, session_id, activity_type, activity_data, search_term, location_city, ip_address, created_at')
+        .eq('activity_type', 'search')
+        .order('created_at', { ascending: false });
+      
+      if (dateFilter) {
+        sessionsQuery = sessionsQuery.gte('created_at', dateFilter);
+      }
+      
+      const { data: sessionsData, error: sessionsError } = await sessionsQuery.limit(500);
+      if (sessionsError) throw sessionsError;
+
+      // Analytics verilerini normalize et
+      const normalizedAnalytics: AnalyticsEntry[] = (analyticsData || []).map(a => ({
+        ...a,
+        data_source: 'analytics' as const
+      }));
+
+      // user_sessions verilerini analytics formatına dönüştür
+      const normalizedSessions: AnalyticsEntry[] = (sessionsData || []).map(session => {
+        const activityData = session.activity_data as Record<string, unknown> | null;
+        const query = activityData?.query as string || 
+                      activityData?.sector as string || 
+                      session.search_term || 
+                      'Bilinmeyen';
+        
+        // Kaynak türünü belirle
+        let searchSource = 'incentive_query'; // Varsayılan olarak Teşvik Robotu
+        if (activityData?.searchType) {
+          searchSource = 'incentive_query'; // NACE/sektör aramaları
+        }
+        
+        return {
+          id: session.id,
+          query,
+          total_response_time_ms: null,
+          cache_hit: false,
+          qv_match_type: null,
+          response_source: null,
+          created_at: session.created_at,
+          search_source: searchSource,
+          location_city: session.location_city,
+          ip_address: session.ip_address,
+          data_source: 'user_sessions' as const
+        };
+      });
+
+      // İki kaynağı birleştir
+      const combined = [...normalizedAnalytics, ...normalizedSessions];
+      
+      // Kaynak filtresini uygula (user_sessions için)
+      const filtered = searchSource === 'all' 
+        ? combined 
+        : combined.filter(item => {
+            let source = item.search_source || 'chatbot';
+            if (source === 'sector_search') source = 'incentive_query';
+            return source === searchSource;
+          });
+      
+      // Tarihe göre sırala ve duplicate'leri kaldır
+      const sorted = filtered.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      // Aynı sorgu + yakın zaman (5 saniye içinde) duplicate'leri kaldır
+      const deduplicated = sorted.filter((item, index, self) => 
+        index === self.findIndex(t => 
+          t.query === item.query && 
+          Math.abs(new Date(t.created_at).getTime() - new Date(item.created_at).getTime()) < 5000
+        )
+      );
+      
+      return deduplicated;
     }
   });
 
@@ -149,7 +231,11 @@ const HybridSearchAnalytics: React.FC = () => {
     // Search source distribution (for pie chart)
     const searchSources: Record<string, number> = {};
     analytics.forEach(a => {
-      const source = a.search_source || 'chatbot';
+      // sector_search'i incentive_query ile birleştir (ikisi de Teşvik Robotu)
+      let source = a.search_source || 'chatbot';
+      if (source === 'sector_search') {
+        source = 'incentive_query';
+      }
       searchSources[source] = (searchSources[source] || 0) + 1;
     });
 
@@ -530,6 +616,7 @@ const HybridSearchAnalytics: React.FC = () => {
                   <tr className="border-b">
                     <th className="text-left p-2 text-sm font-medium">Sorgu</th>
                     <th className="text-left p-2 text-sm font-medium">Sayfa</th>
+                    <th className="text-left p-2 text-sm font-medium">Konum</th>
                     <th className="text-left p-2 text-sm font-medium">Kaynak</th>
                     <th className="text-left p-2 text-sm font-medium">Süre</th>
                     <th className="text-left p-2 text-sm font-medium">Önbellek</th>
@@ -537,15 +624,25 @@ const HybridSearchAnalytics: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {analytics?.slice(0, 20).map((entry) => (
+                  {analytics?.slice(0, 30).map((entry) => (
                     <tr key={entry.id} className="border-b hover:bg-muted/50">
-                      <td className="p-2 text-sm max-w-[250px] truncate">
+                      <td className="p-2 text-sm max-w-[250px] truncate" title={entry.query}>
                         {entry.query}
                       </td>
                       <td className="p-2">
                         <Badge variant="secondary" className="text-xs">
                           {SOURCE_LABELS[entry.search_source || 'chatbot'] || entry.search_source}
                         </Badge>
+                      </td>
+                      <td className="p-2">
+                        {entry.location_city ? (
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            {entry.location_city}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
                       </td>
                       <td className="p-2">
                         <Badge variant="outline" className="text-xs">
@@ -562,7 +659,7 @@ const HybridSearchAnalytics: React.FC = () => {
                           <Badge variant="secondary" className="text-xs">MISS</Badge>
                         )}
                       </td>
-                      <td className="p-2 text-sm text-muted-foreground">
+                      <td className="p-2 text-sm text-muted-foreground whitespace-nowrap">
                         {format(new Date(entry.created_at), 'dd MMM HH:mm', { locale: tr })}
                       </td>
                     </tr>

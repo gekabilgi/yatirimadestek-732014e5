@@ -1,4 +1,3 @@
-
 /**
  * SECURITY NOTE: This component now uses the secure public_qna_view instead of 
  * direct access to the soru_cevap table. The view excludes ALL personal data
@@ -7,37 +6,69 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/types/qna';
-import { useToast, toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
+import SoruSorModal from '@/components/SoruSorModal';
+
+const ITEMS_PER_PAGE = 10;
 
 const AnsweredQuestionsSection = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [allQuestionsForSearch, setAllQuestionsForSearch] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [totalAnsweredCount, setTotalAnsweredCount] = useState(0);
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
+  // Fetch total count on mount
   useEffect(() => {
-    fetchAnsweredQuestions();
     fetchTotalAnsweredCount();
   }, []);
 
-  const fetchAnsweredQuestions = async () => {
+  // Fetch questions for current page (lazy loading)
+  useEffect(() => {
+    if (!isSearchMode) {
+      fetchPageQuestions(currentPage);
+    }
+  }, [currentPage, isSearchMode]);
+
+  // Handle search mode
+  useEffect(() => {
+    if (searchTerm.length >= 2) {
+      setIsSearchMode(true);
+      setCurrentPage(1);
+      // Load all questions for search if not already loaded
+      if (allQuestionsForSearch.length === 0) {
+        fetchAllQuestionsForSearch();
+      }
+    } else if (searchTerm.length === 0) {
+      setIsSearchMode(false);
+      setCurrentPage(1);
+    }
+  }, [searchTerm]);
+
+  const fetchPageQuestions = async (page: number) => {
     try {
-      console.log('🔍 Starting to fetch answered questions...');
-      // SECURITY FIX: Use secure RPC to avoid RLS blocking
-      const { data, error } = await supabase.rpc('get_public_qna', { limit_count: 100 });
+      setPageLoading(true);
+      const offset = (page - 1) * ITEMS_PER_PAGE;
+      
+      const { data, error } = await supabase.rpc('get_public_qna', { 
+        limit_count: ITEMS_PER_PAGE,
+        offset_count: offset 
+      });
 
       if (error) {
-        console.error('Error fetching answered questions:', error);
-        console.error('Error details:', error.message, error.details, error.hint);
+        console.error('Error fetching questions:', error);
         toast({
           title: "Hata",
           description: `Sorular yüklenirken hata oluştu: ${error.message}`,
@@ -46,31 +77,7 @@ const AnsweredQuestionsSection = () => {
         return;
       }
 
-      console.log('✅ Raw data from get_public_qna:', data);
-      console.log('📊 Number of records fetched:', data?.length || 0);
-
-      // Transform the secure RPC data to match the expected Question type
-      const transformedData = data?.map(item => ({
-        ...item,
-        // Personal data fields are intentionally excluded from the secure RPC
-        full_name: 'Anonim Kullanıcı', // Anonymous user for privacy
-        email: 'Gizli', // Hidden for privacy
-        phone: null,
-        answered: true,
-        sent_to_user: true,
-        sent_to_ydo: true,
-        answer_status: 'approved' as const,
-        return_status: null,
-        admin_notes: null,
-        answered_by_user_id: null,
-        approved_by_admin_id: null,
-        return_reason: null,
-        admin_sent: null,
-        return_date: null,
-        answered_by_full_name: null
-      })) || [];
-
-      console.log('🔄 Transformed data:', transformedData);
+      const transformedData = transformQnaData(data);
       setQuestions(transformedData);
     } catch (error: any) {
       console.error('Error:', error);
@@ -81,33 +88,84 @@ const AnsweredQuestionsSection = () => {
       });
     } finally {
       setLoading(false);
+      setPageLoading(false);
     }
+  };
+
+  const fetchAllQuestionsForSearch = async () => {
+    try {
+      setPageLoading(true);
+      const { data, error } = await supabase.rpc('get_public_qna', { 
+        limit_count: 10000,
+        offset_count: 0 
+      });
+
+      if (error) {
+        console.error('Error fetching all questions for search:', error);
+        return;
+      }
+
+      const transformedData = transformQnaData(data);
+      setAllQuestionsForSearch(transformedData);
+    } catch (error: any) {
+      console.error('Error:', error);
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const transformQnaData = (data: any[]): Question[] => {
+    return data?.map(item => ({
+      ...item,
+      full_name: 'Anonim Kullanıcı',
+      email: 'Gizli',
+      phone: null,
+      answered: true,
+      sent_to_user: true,
+      sent_to_ydo: true,
+      answer_status: 'approved' as const,
+      return_status: null,
+      admin_notes: null,
+      answered_by_user_id: null,
+      approved_by_admin_id: null,
+      return_reason: null,
+      admin_sent: null,
+      return_date: null,
+      answered_by_full_name: null
+    })) || [];
   };
 
   const fetchTotalAnsweredCount = async () => {
     try {
-      console.log('📊 Fetching total answered count...');
-      // SECURITY FIX: Use secure RPC to avoid RLS blocking
       const { data, error } = await supabase.rpc('get_public_qna_count');
-
       if (error) {
         console.error('Error fetching count:', error);
-        console.error('Count error details:', error.message, error.details, error.hint);
         return;
       }
-
-      console.log('✅ Total count fetched:', data);
       setTotalAnsweredCount(data || 0);
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  const filteredQuestions = questions.filter(question =>
-    question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.answer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.province.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter questions in search mode
+  const filteredQuestions = isSearchMode 
+    ? allQuestionsForSearch.filter(question =>
+        question.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        question.answer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        question.province.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : questions;
+
+  // Pagination calculations
+  const totalPages = isSearchMode 
+    ? Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE)
+    : Math.ceil(totalAnsweredCount / ITEMS_PER_PAGE);
+  
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedQuestions = isSearchMode 
+    ? filteredQuestions.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+    : questions; // In lazy mode, questions already contains the current page
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('tr-TR', {
@@ -133,9 +191,18 @@ const AnsweredQuestionsSection = () => {
     });
   };
 
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of section
+    const section = document.querySelector('[data-answered-section]');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   if (loading) {
     return (
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50" data-answered-section>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -147,22 +214,42 @@ const AnsweredQuestionsSection = () => {
   }
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gray-50" data-answered-section>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
+        {/* Desktop/Tablet: Sticky overlay - h-0 ile başlığı itmez */}
+        <div className="sticky top-24 z-50 h-0 pointer-events-none hidden sm:flex justify-end">
+          <SoruSorModal
+            trigger={
+              <Button
+                size="lg"
+                className="pointer-events-auto px-5 py-3 text-base font-semibold
+                           shadow-xl hover:shadow-2xl transition-all duration-300
+                           bg-gradient-to-r from-primary to-blue-600
+                           hover:from-primary/90 hover:to-blue-500
+                           animate-chatbot-pulse flex items-center gap-2"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span>Soru Sor</span>
+              </Button>
+            }
+          />
+        </div>
+
+        {/* Başlık */}
+        <div className="mb-12 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-4">
-            Yanıtlanmış 
+            Yanıtlanmış
             <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
               {" "}Sorular
             </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Daha önce uzmanlarımız tarafından yanıtlanmış soruları inceleyin. 
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-0">
+            Daha önce uzmanlarımız tarafından yanıtlanmış soruları inceleyin.
             Aradığınız bilgiyi burada bulabilirsiniz.
           </p>
-          
+
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mb-8">
+          <div className="max-w-2xl mx-auto mb-8 mt-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input
@@ -185,7 +272,11 @@ const AnsweredQuestionsSection = () => {
 
         {/* Questions List */}
         <div className="max-w-4xl mx-auto space-y-6">
-          {filteredQuestions.length === 0 ? (
+          {pageLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            </div>
+          ) : paginatedQuestions.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <MessageCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -198,7 +289,7 @@ const AnsweredQuestionsSection = () => {
               </CardContent>
             </Card>
           ) : (
-            filteredQuestions.map((question) => (
+            paginatedQuestions.map((question) => (
               <Card key={question.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0">
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
@@ -306,8 +397,89 @@ const AnsweredQuestionsSection = () => {
           )}
         </div>
 
-        {/* Call to Action */}
-        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-10">
+            <Button
+              variant="outline"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Önceki
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              {/* Show page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                // Show first, last, current, and adjacent pages
+                const showPage = page === 1 || 
+                                 page === totalPages || 
+                                 Math.abs(page - currentPage) <= 1;
+                
+                // Show ellipsis for gaps
+                const showEllipsisBefore = page === currentPage - 2 && currentPage > 3;
+                const showEllipsisAfter = page === currentPage + 2 && currentPage < totalPages - 2;
+                
+                if (showEllipsisBefore || showEllipsisAfter) {
+                  return <span key={page} className="text-gray-400 px-2">...</span>;
+                }
+                
+                if (!showPage) return null;
+                
+                return (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => goToPage(page)}
+                    className="min-w-[40px]"
+                  >
+                    {page}
+                  </Button>
+                );
+              })}
+            </div>
+            
+            <Button
+              variant="outline"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-2"
+            >
+              Sonraki
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Page info */}
+        {totalPages > 1 && (
+          <div className="text-center mt-4 text-sm text-gray-500 pb-20 sm:pb-0">
+            Sayfa {currentPage} / {totalPages} ({isSearchMode ? filteredQuestions.length : totalAnsweredCount} soru)
+          </div>
+        )}
+      </div>
+
+      {/* Mobile: Bottom fixed CTA */}
+      <div className="fixed inset-x-0 bottom-4 z-50 px-4 sm:hidden pointer-events-none">
+        <div className="max-w-sm mx-auto">
+          <SoruSorModal
+            trigger={
+              <Button
+                size="lg"
+                className="pointer-events-auto w-full px-5 py-3 text-base font-semibold
+                           shadow-xl transition-all duration-300
+                           bg-gradient-to-r from-primary to-blue-600
+                           animate-chatbot-pulse flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span>Soru Sor</span>
+              </Button>
+            }
+          />
+        </div>
       </div>
     </section>
   );

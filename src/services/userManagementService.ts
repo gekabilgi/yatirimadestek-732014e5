@@ -458,15 +458,19 @@ export const fetchUserLoginHistory = async (userId: string, limit: number = 10):
  */
 export const fetchUserActivityHistory = async (userId: string, limit: number = 20): Promise<ActivityHistory[]> => {
   try {
-    // Explicitly type to avoid deep instantiation
+    // Use service client through edge function if needed, or direct query with RLS
     const result = await (supabase as any)
       .from('user_sessions')
       .select('id, activity_type, page_path, created_at, activity_data')
       .eq('user_id', userId)
+      .not('activity_type', 'eq', 'session_end')
       .order('created_at', { ascending: false })
       .limit(limit);
     
-    if (result.error) throw result.error;
+    if (result.error) {
+      console.error('Error fetching activity history:', result.error);
+      return [];
+    }
 
     return (result.data || []).map((item: any) => ({
       id: item.id,

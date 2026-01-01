@@ -7,98 +7,58 @@ export interface YdoTokenPayload {
   iat: number;
 }
 
-// Platform-agnostic Base64 decoder that works on both mobile and desktop
-export function decodeTokenSafe(token: string): YdoTokenPayload | null {
+// Client-side JWT decoder (payload only - signature verification happens server-side)
+// This is safe because all sensitive operations are validated server-side via the edge function
+export function decodeTokenPayload(token: string): YdoTokenPayload | null {
   try {
-    // Normalize URL-safe Base64 (- → +, _ → /)
-    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+    // JWT format: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.error('Invalid JWT format');
+      return null;
+    }
+
+    // Decode the payload (second part)
+    const payloadBase64 = parts[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
     
-    // Add padding (=) to make it a multiple of 4
-    base64 += '='.repeat((4 - base64.length % 4) % 4);
+    // Add padding if needed
+    const padded = payloadBase64 + '='.repeat((4 - payloadBase64.length % 4) % 4);
     
-    // Decode to binary string
-    const binaryStr = atob(base64);
-    
-    // Convert to Uint8Array
-    const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
-    
-    // Use TextDecoder for safe UTF-8 decoding
-    const jsonStr = new TextDecoder('utf-8').decode(bytes);
-    
-    // Parse JSON
+    const jsonStr = atob(padded);
     const payload = JSON.parse(jsonStr) as YdoTokenPayload;
     
-    // SECURITY: Removed sensitive token logging - only log essential info
-    console.log('Token decoding successful');
+    // Basic client-side expiration check (server will also verify)
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (payload.exp < currentTime) {
+      console.error('Token expired');
+      return null;
+    }
     
+    // Validate required fields
+    if (!payload.email || !payload.province) {
+      console.error('Missing required fields in token');
+      return null;
+    }
+    
+    console.log('Token payload decoded successfully');
     return payload;
   } catch (error) {
-    // SECURITY: Log error without exposing token data
     console.error('Token decoding failed');
     return null;
   }
 }
 
-// Enhanced mobile-compatible token generation
+// Legacy function names for backward compatibility
+export const decodeTokenSafe = decodeTokenPayload;
+export const verifyYdoToken = decodeTokenPayload;
+
+// Note: Token generation is now only done server-side for security
+// The client should never generate tokens - they are created by the edge function
+// and sent via email links
 export const generateYdoToken = (email: string, province: string): string => {
-  const payload: YdoTokenPayload = {
-    email,
-    province,
-    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
-    iat: Math.floor(Date.now() / 1000)
-  };
-  
-  // SECURITY: Removed sensitive payload logging
-  console.log('Generating token...');
-  
-  const jsonString = JSON.stringify(payload);
-  
-  try {
-    // Use the same safe encoding approach
-    const encoder = new TextEncoder();
-    const bytes = encoder.encode(jsonString);
-    const binaryStr = Array.from(bytes, byte => String.fromCharCode(byte)).join('');
-    const encoded = btoa(binaryStr);
-    console.log('Token generated successfully');
-    return encoded;
-  } catch (error) {
-    console.error('Token generation error occurred');
-    // Ultra-simple fallback
-    return btoa(jsonString);
-  }
-};
-
-// Legacy function for backward compatibility - now uses the safe decoder
-export const verifyYdoToken = (token: string): YdoTokenPayload | null => {
-  // SECURITY: Removed sensitive environment and token logging
-  console.log('Token verification starting...');
-
-  if (!token || token.trim() === '') {
-    console.error('Token is empty');
-    return null;
-  }
-
-  // Use the new safe decoder
-  const payload = decodeTokenSafe(token);
-  
-  if (!payload) {
-    console.error('Token decoding failed');
-    return null;
-  }
-  
-  // Check expiration
-  const currentTime = Math.floor(Date.now() / 1000);
-  if (payload.exp < currentTime) {
-    console.error('Token expired');
-    return null;
-  }
-  
-  // Validate required fields
-  if (!payload.email || !payload.province) {
-    console.error('Missing required fields');
-    return null;
-  }
-  
-  console.log('Token verification successful');
-  return payload;
+  console.warn('Client-side token generation is deprecated. Tokens should only be generated server-side.');
+  // Return empty string - tokens should come from server
+  throw new Error('Token generation is only available server-side for security reasons');
 };
