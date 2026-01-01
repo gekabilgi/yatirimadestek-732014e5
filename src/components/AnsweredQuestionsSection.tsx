@@ -436,18 +436,7 @@ const AnsweredQuestionsSection = () => {
         </div>
 
         {/* Başlık */}
-        <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-4">
-            Yanıtlanmış
-            <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-              {" "}Sorular
-            </span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-0">
-            Daha önce uzmanlarımız tarafından yanıtlanmış soruları inceleyin.
-            Aradığınız bilgiyi burada bulabilirsiniz.
-          </p>
-
+        <div className="mb-6 text-center">
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-8 mt-8">
             <div className="relative">
