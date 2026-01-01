@@ -2897,33 +2897,19 @@ export type Database = {
           title: string
         }[]
       }
-      get_public_qna:
-        | {
-            Args: { limit_count?: number; offset_count?: number }
-            Returns: {
-              answer: string
-              answer_date: string
-              category: string
-              created_at: string
-              id: string
-              province: string
-              question: string
-              question_number: number
-            }[]
-          }
-        | {
-            Args: { limit_count?: number }
-            Returns: {
-              answer: string
-              answer_date: string
-              category: string
-              created_at: string
-              id: string
-              province: string
-              question: string
-              question_number: number
-            }[]
-          }
+      get_public_qna: {
+        Args: { limit_count?: number; offset_count?: number }
+        Returns: {
+          answer: string
+          answer_date: string
+          category: string
+          created_at: string
+          id: string
+          province: string
+          question: string
+          question_number: number
+        }[]
+      }
       get_public_qna_count: { Args: never; Returns: number }
       get_search_suggestions: {
         Args: { query_text: string; suggestion_limit?: number }
@@ -3215,10 +3201,7 @@ export type Database = {
         Args: { p_identifier: string; p_submission_type: string }
         Returns: undefined
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       test_final_security: { Args: never; Returns: string }
-      unaccent: { Args: { "": string }; Returns: string }
       update_chatbot_768: {
         Args: { row_id: string; vals: number }
         Returns: undefined

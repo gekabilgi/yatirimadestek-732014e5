@@ -2,8 +2,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminSetting, IncentiveCalculationSettings } from "@/types/adminSettings";
 
 export type LogoColorMode = 'all_themed' | 'graphic_themed' | 'text_themed' | 'original' | 'all_white';
+export type QnaDisplayMode = 'card' | 'accordion';
 
 export const adminSettingsService = {
+  async getQnaDisplayMode(): Promise<QnaDisplayMode> {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('setting_value_text')
+      .eq('setting_key', 'qna_display_mode')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching QnA display mode:', error);
+      return 'card'; // default
+    }
+
+    return (data?.setting_value_text as QnaDisplayMode) || 'card';
+  },
+
+  async setQnaDisplayMode(mode: QnaDisplayMode): Promise<void> {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({
+        setting_key: 'qna_display_mode',
+        category: 'qna',
+        setting_value: 0,
+        setting_value_text: mode,
+        description: 'QnA display mode: card or accordion'
+      }, { onConflict: 'setting_key' });
+
+    if (error) {
+      console.error('Error setting QnA display mode:', error);
+      throw error;
+    }
+  },
   async getIncentiveCalculationSettings(): Promise<IncentiveCalculationSettings> {
     const { data, error } = await supabase
       .from('admin_settings')
