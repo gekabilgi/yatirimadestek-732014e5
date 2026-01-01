@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageSquare, Plus, Minus } from 'lucide-react';
+import { Search, MessageCircle, Calendar, MapPin, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageSquare, Plus, Minus, CircleCheckBig } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
@@ -243,7 +243,7 @@ const AnsweredQuestionsSection = () => {
             value={question.id}
             className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
           >
-            <AccordionTrigger className="px-6 py-4 hover:no-underline group [&[data-state=open]>div>.icon-wrapper>.plus-icon]:rotate-180 [&[data-state=open]>div>.icon-wrapper>.plus-icon]:opacity-0 [&[data-state=open]>div>.icon-wrapper>.minus-icon]:rotate-0 [&[data-state=open]>div>.icon-wrapper>.minus-icon]:opacity-100">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline group [&[data-state=open]]:border-b [&[data-state=open]]:border-primary/30 [&[data-state=open]>div>.icon-wrapper>.plus-icon]:rotate-180 [&[data-state=open]>div>.icon-wrapper>.plus-icon]:opacity-0 [&[data-state=open]>div>.icon-wrapper>.minus-icon]:rotate-0 [&[data-state=open]>div>.icon-wrapper>.minus-icon]:opacity-100">
               <div className="flex items-start gap-4 text-left w-full">
                 <div className="icon-wrapper relative flex-shrink-0 w-6 h-6 mt-0.5">
                   <Plus className="plus-icon absolute inset-0 h-6 w-6 text-primary transition-all duration-300 ease-in-out" />
@@ -260,7 +260,7 @@ const AnsweredQuestionsSection = () => {
                     </span>
                   </div>
                   {!isOpen && (
-                    <p className="text-gray-800 font-medium line-clamp-2">{question.question}</p>
+                    <p className="text-sm text-foreground font-medium line-clamp-1">{question.question}</p>
                   )}
                 </div>
               </div>
@@ -268,8 +268,8 @@ const AnsweredQuestionsSection = () => {
             <AccordionContent className="px-6 pb-6 pt-2">
               {/* Question */}
               <div className="mb-4">
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-primary" />
+                <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <MessageCircle className="h-6 w-6 text-primary" />
                   Soru
                 </h4>
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
@@ -280,10 +280,8 @@ const AnsweredQuestionsSection = () => {
               {/* Answer */}
               {question.answer && (
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="h-4 w-4 bg-green-500 rounded-full flex items-center justify-center">
-                      <div className="h-2 w-2 bg-white rounded-full"></div>
-                    </div>
+                  <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <CircleCheckBig className="h-6 w-6 text-green-500" />
                     Cevap
                   </h4>
                   <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
