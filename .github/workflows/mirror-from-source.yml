@@ -17,7 +17,7 @@ jobs:
 
       - name: Add source remote & fetch
         run: |
-          git remote add source https://github.com/gekabilgi/ktlesr/m-rehberi-tr.git
+          git remote add source https://github.com/ktlesr/m-rehberi-tr.git
           git fetch source --prune
 
       - name: Force mirror source/main -> destination/main
