@@ -1,4 +1,4 @@
-name: Mirror source main -> destination main
+name: Mirror source yd1 -> destination main
 
 on:
   workflow_dispatch:
@@ -21,9 +21,9 @@ jobs:
           git remote add source https://x-access-token:${MIRROR_TOKEN}@github.com/ktlesr/m-rehberi-tr.git
           git fetch source --prune
 
-      - name: Force mirror source/main -> destination/main
+      - name: Force mirror source/yd1 -> destination/main
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
           git remote set-url origin https://x-access-token:${MIRROR_TOKEN}@github.com/gekabilgi/yatirimadestek-732014e5.git
-          git push origin refs/remotes/source/main:refs/heads/main --force
+          git push origin refs/remotes/source/yd1:refs/heads/main --force
