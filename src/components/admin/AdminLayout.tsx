@@ -87,6 +87,7 @@ const bottomNavigation = [
     subItems: [
       { name: 'Teşvik Hesaplama Ayarları', href: '/admin/settings/incentive-calculation' },
       { name: 'Menü Görünürlük Ayarları', href: '/admin/settings/menu-visibility' },
+      { name: 'Soru-Cevap Ayarları', href: '/admin/settings/qna' },
     ]
   },
   { name: 'Profilim', href: '/profile', icon: User },

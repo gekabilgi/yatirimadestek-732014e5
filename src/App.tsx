@@ -29,6 +29,7 @@ import {
   LazyAdminLegislation,
   LazyAdminKnowledgeBase,
   LazyAdminFormBuilder,
+  LazyAdminQnaSettings,
   LazyAdminFormBuilderEdit,
   LazyAdminFormBuilderSubmissions,
   LazyTZYPreRequestList,
@@ -296,6 +297,13 @@ const App = () => {
                       <ProtectedAdminRoute>
                         <Suspense fallback={<PageLoadingFallback />}>
                           <LazyAdminMenuSettings />
+                        </Suspense>
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/settings/qna" element={
+                      <ProtectedAdminRoute>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                          <LazyAdminQnaSettings />
                         </Suspense>
                       </ProtectedAdminRoute>
                     } />
