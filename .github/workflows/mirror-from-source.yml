@@ -14,14 +14,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Add source remote & fetch (with auth)
+      - name: Add source remote & fetch (private source with auth)
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
           git remote add source https://x-access-token:${MIRROR_TOKEN}@github.com/ktlesr/m-rehberi-tr.git
           git fetch source --prune
 
-      - name: Force mirror source/yd1 -> destination/yatirimadestek
+      - name: Force mirror source/yd1 -> destination/yatirimadestek (includes workflows)
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
