@@ -69,6 +69,7 @@ export const LazyAdminKnowledgeBase = lazy(() => import('@/pages/AdminKnowledgeB
 export const LazyAdminFormBuilder = lazy(() => import('@/pages/AdminFormBuilder'));
 export const LazyAdminFormBuilderEdit = lazy(() => import('@/pages/AdminFormBuilderEdit'));
 export const LazyAdminFormBuilderSubmissions = lazy(() => import('@/pages/AdminFormBuilderSubmissions'));
+export const LazyAdminQnaSettings = lazy(() => import('@/pages/AdminQnaSettings'));
 
 // TZY Admin pages
 export const LazyTZYPreRequestList = lazy(() => import('@/pages/admin/TZYPreRequestList'));
